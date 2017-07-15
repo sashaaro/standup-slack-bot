@@ -14,11 +14,11 @@ const questions = [
 const startCron = () => {
   const CronJob = require('cron').CronJob
   const cronJob = new CronJob({
-    cronTime: '* * * * *',
-    onTick: function () { // every minutes
-      const now = new DateTime()
-      startDailyMeetUpByDateTime(now)
-      console.log('You will see this message every second')
+    cronTime: '* * * * *', // every minutes
+    onTick: () => {
+      const now = new Date()
+      console.log('Start standup for ' + now)
+      startDailyMeetUpByDate(now)
     },
     start: false
   })
@@ -31,31 +31,28 @@ const getLastQuestion = (channel) => {
 
 }
 
-const ask = (channel) => {
-  const lastQuestion = getLastQuestion(channel)
-  if (lastQuestion) {
-      rtm.sendMessage(lastQuestion, channel);
-  }
+const ask = (channel, text) => {
+  rtm.sendMessage(text, channel);
+  // save log
 }
 
 
 const channels = [];
 const users = [];
-const getChannelsByDateTime = (dateTime) => {
-  const channels = users
-
+const getChannelsByDate = (date) => {
+  const channels = [users[0].channel]
 
   return channels;
 }
 
-const startDailyMeetUpByDateTime = (dateTime) => {
-  const channels = getChannelsByDateTime(dateTime)
+const startDailyMeetUpByDate = (date) => {
+  const channels = getChannelsByDate(date)
   channels.forEach((channel) => {
-    startAsk(channel, dateTime)
+    startAsk(channel)
   })
 }
 
-const startAsk = (channel, dateTime) => {
+const startAsk = (channel) => {
   ask(channel, questions[0])
 }
 
@@ -64,23 +61,17 @@ const getCurrentQuestion = (channel) => {
 }
 
 const nextAsk = (channel) => {
-  const currrentQuestion = getCurrentQuestion(channel)
+  const currentQuestion = getCurrentQuestion(channel)
+  if (currentQuestion) {
+
+  }
 }
 
 const startDailyMeetup = (channels) => {
   channels.forEach((channel) => {
-    askNext(channel)
+    nextAsk(channel)
   });
 }
-rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, (rtmStartData) => {
-  rtmStartData.users.forEach((user) => {
-  if (user.name == 'sashaaro')
-{
-  users.push(user)
-}
-})
-
-})
 
 const haveChannel = (channel) => {
   //return channels.contains(channel)
@@ -88,36 +79,58 @@ const haveChannel = (channel) => {
 }
 
 const getCommandAnswer = (command) => {
-  if (comman === 'help') {
-
-  } else if (comman === 'skip') {
-
+  if (command === 'help') {
+    return "Help command"
+  } else if (command === 'skip') {
+    return "Skip command"
   }
 
-  return;
+  return null;
 }
 
 const answer = (message) => {
-  console.log('Message:', message);
   const text = message.text;
   if (text.charAt(0) === "\\") {
-    const commandAnswer = getCommandAnswer(text.concat(1))
+    const command = text.slice(1)
+    const commandAnswer = getCommandAnswer(command)
+    if (commandAnswer) {
+      rtm.sendMessage(commandAnswer, message.channel);
+    } else {
+      rtm.sendMessage("Command "+command+" is not found. Type '\\help'", message.channel);
+    }
+  } else {
+    rtm.sendMessage("Hello!", message.channel);
   }
 }
 
+rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, (rtmStartData) => {
+  console.log(rtmStartData)
+
+rtmStartData.users.forEach((user) => {
+  if (user.name == 'sashaaro')
+  {
+    console.log(user)
+    users.push(user)
+  }
+})
+
+})
+
 rtm.on(slackClient.CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
-  console.log(gUser)
-  //rtm.sendMessage("Hello!", gUser.id);
+  console.log('connection opened')
+  console.log('Cron starting')
+  startCron();
 })
 
 rtm.on(slackClient.RTM_EVENTS.MESSAGE, function (message) {
-  if (!haveChannel(channel)){
+
+  console.log(message)
+  if (!haveChannel(message.channel)){
     // TODO log
-    return
+    //return
   }
 
   answer(message)
-  rtm.sendMessage("Hello!", message.channel);
 })
 
 rtm.start()
