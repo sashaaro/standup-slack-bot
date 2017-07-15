@@ -59,6 +59,14 @@ const startAsk = (channel, dateTime) => {
   ask(channel, questions[0])
 }
 
+const getCurrentQuestion = (channel) => {
+
+}
+
+const nextAsk = (channel) => {
+  const currrentQuestion = getCurrentQuestion(channel)
+}
+
 const startDailyMeetup = (channels) => {
   channels.forEach((channel) => {
     askNext(channel)
@@ -74,6 +82,28 @@ rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, (rtmStartData) => {
 
 })
 
+const haveChannel = (channel) => {
+  //return channels.contains(channel)
+  return true;
+}
+
+const getCommandAnswer = (command) => {
+  if (comman === 'help') {
+
+  } else if (comman === 'skip') {
+
+  }
+
+  return;
+}
+
+const answer = (message) => {
+  console.log('Message:', message);
+  const text = message.text;
+  if (text.charAt(0) === "\\") {
+    const commandAnswer = getCommandAnswer(text.concat(1))
+  }
+}
 
 rtm.on(slackClient.CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
   console.log(gUser)
@@ -81,7 +111,12 @@ rtm.on(slackClient.CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
 })
 
 rtm.on(slackClient.RTM_EVENTS.MESSAGE, function (message) {
-  console.log('Message:', message) //this is no doubt the lamest possible message handler, but you get the idea
+  if (!haveChannel(channel)){
+    // TODO log
+    return
+  }
+
+  answer(message)
   rtm.sendMessage("Hello!", message.channel);
 })
 
