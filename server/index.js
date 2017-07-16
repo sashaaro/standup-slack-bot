@@ -39,8 +39,19 @@ const ask = (channel, text) => {
 
 const channels = [];
 const users = [];
+let ims = [];
+
 const getChannelsByDate = (date) => {
-  const channels = [users[0].channel]
+  const channels = []
+
+  users.forEach((user) => {
+    const filtered = ims.filter((im) => (user.id === im.user))
+    if (filtered) {
+      channels.push(filtered[0].id)
+    } else {
+      // TODO log
+    }
+  })
 
   return channels;
 }
@@ -103,13 +114,13 @@ const answer = (message) => {
   }
 }
 
+
 rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, (rtmStartData) => {
-  console.log(rtmStartData)
+  ims = rtmStartData.ims
 
 rtmStartData.users.forEach((user) => {
   if (user.name == 'sashaaro')
   {
-    console.log(user)
     users.push(user)
   }
 })
