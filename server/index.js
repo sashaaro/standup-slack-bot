@@ -11,14 +11,16 @@ const questions = [
   'Is anything standing in your way?'
 ]
 
-const startStandUpInteraval = () => {
-  const onTick = () => {
-    const now = new Date()
-    console.log('Start standup for ' + now)
-    startDailyMeetUpByDate(now)
-  }
+const standUpForNow = () => {
+  const now = new Date()
+  console.log('Start standup for ' + now)
+  startDailyMeetUpByDate(now)
+}
 
-  const intervalID = setInterval(onTick, 60 * 1000) // every minutes
+const startStandUpInterval = () => {
+  const intervalID = setInterval(standUpForNow, 60 * 1000) // every minutes
+
+  return intervalID
 }
 
 
@@ -157,8 +159,15 @@ rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, (rtmStartData) => {
 
 rtm.on(slackClient.CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
   console.log('Connection opened')
-  console.log('StandUp interval starting')
-  startStandUpInteraval();
+  const now = new Date();
+  const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds()
+  const millisecondsDelay = 60 * 1000 - milliseconds
+
+  console.log('Wait delay ' + millisecondsDelay + ' milliseconds for run loop')
+  setTimeout(() => {
+    console.log('StandUp interval starting')
+    startStandUpInterval()
+  }, millisecondsDelay);
 })
 
 rtm.on(slackClient.RTM_EVENTS.MESSAGE, function (message) {
