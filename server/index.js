@@ -2,47 +2,40 @@ const slackClient = require('@slack/client')
 
 const token = 'xoxb-212107961745-Z7GjveDgOttAGpUL9jMIvXlV'
 const rtm = new slackClient.RtmClient(token)
-//const web = new slackClient.WebClient(token)
-//web.chat.postMessage(gUser.id, "Hello!");
 
+const standUpGreeting = 'Good morning/evening. Welcome to daily standup'
+const standUpGoodBye = 'Have good day. Good bye.'
 const questions = [
   'What I worked on yesterday?',
   'What I working on today?',
   'Is anything standing in your way?'
 ]
 
-const startCron = () => {
-  const CronJob = require('cron').CronJob
-  const cronJob = new CronJob({
-    cronTime: '* * * * *', // every minutes
-    onTick: () => {
-      const now = new Date()
-      console.log('Start standup for ' + now)
-      startDailyMeetUpByDate(now)
-    },
-    start: false
-  })
+const startStandUpInteraval = () => {
+  const onTick = () => {
+    const now = new Date()
+    console.log('Start standup for ' + now)
+    startDailyMeetUpByDate(now)
+  }
 
-  cronJob.start();
+  const intervalID = setInterval(onTick, 60 * 1000) // every minutes
 }
 
 
-const getLastQuestion = (channel) => {
-
-}
-
-const ask = (channel, text) => {
+const send = (channel, text) => {
   rtm.sendMessage(text, channel);
   // save log
 }
 
 
 const channels = [];
-const users = [];
+let users = [];
 let ims = [];
 
 const getChannelsByDate = (date) => {
   const channels = []
+
+  // teams filter by date.. team.users
 
   users.forEach((user) => {
     const filtered = ims.filter((im) => (user.id === im.user))
@@ -56,6 +49,40 @@ const getChannelsByDate = (date) => {
   return channels;
 }
 
+const report = [];
+
+
+const getNotReplyQuestion = (channel) => {
+  return questions[report.length]
+}
+
+const getNextQuestion = (channel) => {
+  return questions[report.length]
+}
+
+const resolveAnswer = (message) => {
+  const meetUpInProcess = true
+  if (meetUpInProcess) {
+    const question = getNotReplyQuestion(message.channel)
+    if (question) {
+      report.push(message.text)
+      // save answer message.text for question
+      const nextQuestion = getNextQuestion(message.channel)
+      if (nextQuestion) {
+        return nextQuestion
+      } else {
+        return standUpGoodBye
+      }
+    } else {
+      // TODO
+      return 'wtf'
+    }
+  } else {
+    // TODO
+    return 'wtf!'
+  }
+}
+
 const startDailyMeetUpByDate = (date) => {
   const channels = getChannelsByDate(date)
   channels.forEach((channel) => {
@@ -64,7 +91,10 @@ const startDailyMeetUpByDate = (date) => {
 }
 
 const startAsk = (channel) => {
-  ask(channel, questions[0])
+  send(channel, standUpGreeting)
+  //setTimeout(() => {
+    send(channel, questions[0])
+  //}, 1500)
 }
 
 const getCurrentQuestion = (channel) => {
@@ -84,7 +114,7 @@ const startDailyMeetup = (channels) => {
   });
 }
 
-const haveChannel = (channel) => {
+const existChannel = (channel) => {
   //return channels.contains(channel)
   return true;
 }
@@ -100,43 +130,41 @@ const getCommandAnswer = (command) => {
 }
 
 const answer = (message) => {
+  // todo save message
+
   const text = message.text;
-  if (text.charAt(0) === "\\") {
+  if (text.charAt(0) === "/") {
     const command = text.slice(1)
     const commandAnswer = getCommandAnswer(command)
     if (commandAnswer) {
       rtm.sendMessage(commandAnswer, message.channel);
     } else {
-      rtm.sendMessage("Command "+command+" is not found. Type '\\help'", message.channel);
+      rtm.sendMessage("Command "+command+" is not found. Type '/help'", message.channel);
     }
   } else {
-    rtm.sendMessage("Hello!", message.channel);
+    const answer = resolveAnswer(message)
+    rtm.sendMessage(answer, message.channel);
   }
 }
 
+const teams = []
 
 rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, (rtmStartData) => {
+  teams.push(rtmStartData.team)
   ims = rtmStartData.ims
-
-rtmStartData.users.forEach((user) => {
-  if (user.name == 'sashaaro')
-  {
-    users.push(user)
-  }
-})
-
+  users = rtmStartData.users.filter((user) => (user.name === 'sashaaro'))
 })
 
 rtm.on(slackClient.CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, function () {
-  console.log('connection opened')
-  console.log('Cron starting')
-  startCron();
+  console.log('Connection opened')
+  console.log('StandUp interval starting')
+  startStandUpInteraval();
 })
 
 rtm.on(slackClient.RTM_EVENTS.MESSAGE, function (message) {
 
   console.log(message)
-  if (!haveChannel(message.channel)){
+  if (!existChannel(message.channel)){
     // TODO log
     //return
   }

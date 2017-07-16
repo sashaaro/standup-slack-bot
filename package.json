@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@slack/client": "^3.10.0",
-    "cron": "^1.2.1"
+    "@slack/client": "^3.10.0"
   }
 }
