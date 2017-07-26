@@ -15,6 +15,6 @@ MongoClient.connect(mongoUrl, (err, db) => {
     const botClient = new SlackStandupBotClient(new slackClient.RtmClient(token), db)
     botClient.init()
     botClient.start()
-    //botClient.close()
+    //botClient.stop()
   }
 })

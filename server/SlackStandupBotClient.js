@@ -18,22 +18,10 @@ class SlackStandupBotClient {
     this.teamsCollection = this.mongodb.collection('teams')
     this.imsCollection = this.mongodb.collection('ims-channels')
     this.usersCollection = this.mongodb.collection('users')
+    this.everyMinutesIntervalID = null
   }
 
   init () {
-    this.rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, (rtmStartData) => {
-      this.teamsCollection.insertOne(rtmStartData.team, (err, db) => {
-
-      })
-      this.imsCollection.insertOne(rtmStartData.ims, (err, db) => {
-
-      })
-      this.usersCollection.insertOne({list: rtmStartData.users}, (err, db) => {
-
-      })
-      this.usersCollection.insertMany(rtmStartData.users.filter((user) => (user.name === 'sashaaro')))
-    })
-
     this.rtm.on(slackClient.CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, () => {
       console.log('Connection opened')
       const now = new Date()
@@ -41,14 +29,24 @@ class SlackStandupBotClient {
       const millisecondsDelay = 60 * 1000 - milliseconds
 
       console.log('Wait delay ' + millisecondsDelay + ' milliseconds for run loop')
-      setTimeout(() => {
+      //setTimeout(() => {
         console.log('StandUp interval starting')
         this.startStandUpInterval()
-      }, millisecondsDelay)
+      //}, millisecondsDelay)
+    })
+
+    this.rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, (rtmStartData) => {
+      this.teamsCollection.insertOne(rtmStartData.team, (err, db) => {})
+      this.imsCollection.insertMany(rtmStartData.ims, (err, db) => {})
+      //const users = rtmStartData.users;
+      const users = rtmStartData.users.filter((user) => (user.name === 'sashaaro'));
+      //this.usersCollection.insertOne({list: users}, (err, db) => {})
+      this.usersCollection.insertMany(users)
+
+      //this.usersCollection.find().toArray().then(console.log);
     })
 
     this.rtm.on(slackClient.RTM_EVENTS.MESSAGE, (message) => {
-
       console.log(message)
       if (!this.existChannel(message.channel)) {
         // TODO log
@@ -73,21 +71,14 @@ class SlackStandupBotClient {
     return null
   }
 
-  getChannelsByDate (date) {
-    const channels = []
-
+  async getChannelsByDate (date) {
     // teams filter by date.. team.users
+    const users = await this.usersCollection.find().toArray()
+    const userIDs = users.map((user) => (user.id));
+    const ims = await this.imsCollection.find({user: {$in: userIDs}}).toArray()
+    console.log(ims)
 
-    this.usersCollection.find().forEach((user) => {
-      const filtered = this.imsCollection.filter((im) => (user.id === im.user))
-      if (filtered) {
-        channels.push(filtered[0].id)
-      } else {
-        // TODO log
-      }
-    })
-
-    return channels
+    return ims.map((im) => (im.id));
   }
 
   getNotReplyQuestion (channel) {
@@ -128,13 +119,12 @@ class SlackStandupBotClient {
   }
 
   startStandUpInterval () {
-    const intervalID = setInterval(this.standUpForNow.bind(this), 60 * 1000) // every minutes
-
-    return intervalID
+    this.standUpForNow()
+    this.everyMinutesIntervalID = setInterval(this.standUpForNow.bind(this), 60 * 1000) // every minutes
   }
 
-  startDailyMeetUpByDate (date) {
-    const channels = this.getChannelsByDate(date)
+  async startDailyMeetUpByDate (date) {
+    const channels = await this.getChannelsByDate(date)
     channels.forEach((channel) => {
       this.startAsk(channel)
     })
@@ -191,10 +181,12 @@ class SlackStandupBotClient {
     return true
   }
 
-  close () {
-    this.rtm.close()
+  stop () {
+    clearInterval(this.everyMinutesIntervalID);
+    this.everyMinutesIntervalID = null
 
-    this.mongodb.close()
+    this.rtm.close()
+    //this.mongodb.close()
   }
 }
 
