@@ -21,7 +21,7 @@ class SlackStandupBotClient {
     this.everyMinutesIntervalID = null
   }
 
-  init () {
+  async init () {
     this.rtm.on(slackClient.CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, () => {
       console.log('Connection opened')
       const now = new Date()
@@ -35,15 +35,24 @@ class SlackStandupBotClient {
       //}, millisecondsDelay)
     })
 
-    this.rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, (rtmStartData) => {
-      this.teamsCollection.insertOne(rtmStartData.team, (err, db) => {})
-      this.imsCollection.insertMany(rtmStartData.ims, (err, db) => {})
+    this.rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, async (rtmStartData) => {
+      const team = rtmStartData.team
+
+      await this.teamsCollection.updateOne({id: team.id}, {$set: team}, {upsert: true})
+
+      for(const im of rtmStartData.ims) {
+        await this.imsCollection.updateOne({id: im.id}, {$set: im}, {upsert: true})
+      }
+
+
       //const users = rtmStartData.users;
       const users = rtmStartData.users.filter((user) => (user.name === 'sashaaro'));
-      //this.usersCollection.insertOne({list: users}, (err, db) => {})
-      this.usersCollection.insertMany(users)
+      for(const user of users) {
+        await this.usersCollection.updateOne({id: user.id}, {$set: user}, {upsert: true})
+      }
+      //this.usersCollection.insertMany(users)
 
-      //this.usersCollection.find().toArray().then(console.log);
+      console.log(await this.usersCollection.count());
     })
 
     this.rtm.on(slackClient.RTM_EVENTS.MESSAGE, (message) => {
@@ -55,6 +64,18 @@ class SlackStandupBotClient {
 
       this.answer(message)
     })
+
+
+    if (!await this.usersCollection.ensureIndex({ "id": 1 }, { unique: true })) {
+      await this.usersCollection.createIndex({ "id": 1 }, { unique: true })
+    }
+
+    if (!await this.teamsCollection.ensureIndex({ "id": 1 }, { unique: true })) {
+      await this.teamsCollection.createIndex({ "id": 1 }, { unique: true })
+    }
+    if (!await this.imsCollection.ensureIndex({ "id": 1 }, { unique: true })) {
+      await this.imsCollection.createIndex({ "id": 1 }, { unique: true })
+    }
   }
 
   start() {
@@ -76,6 +97,7 @@ class SlackStandupBotClient {
     const users = await this.usersCollection.find().toArray()
     const userIDs = users.map((user) => (user.id));
     const ims = await this.imsCollection.find({user: {$in: userIDs}}).toArray()
+    console.log(userIDs)
     console.log(ims)
 
     return ims.map((im) => (im.id));
@@ -161,19 +183,20 @@ class SlackStandupBotClient {
       const command = text.slice(1)
       const commandAnswer = this.getCommandAnswer(command)
       if (commandAnswer) {
-        this.rtm.sendMessage(commandAnswer, message.channel)
+        this.send(commandAnswer, message.channel)
       } else {
-        this.rtm.sendMessage('Command ' + command + ' is not found. Type \'/help\'', message.channel)
+        this.send('Command ' + command + ' is not found. Type \'/help\'', message.channel)
       }
     } else {
       const answer = this.resolveAnswer(message)
-      this.rtm.sendMessage(answer, message.channel)
+      this.send(answer, message.channel)
     }
   }
 
   send (channel, text) {
-    this.rtm.sendMessage(text, channel)
+    //this.rtm.sendMessage(text, channel)
     // save log
+    console.log(text);
   }
 
   existChannel (channel) {
