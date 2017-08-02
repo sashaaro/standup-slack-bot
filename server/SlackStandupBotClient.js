@@ -18,6 +18,8 @@ class SlackStandupBotClient {
     this.teamsCollection = this.mongodb.collection('teams')
     this.imsCollection = this.mongodb.collection('ims-channels')
     this.usersCollection = this.mongodb.collection('users')
+    this.reportsCollection = this.mongodb.collection('reports')
+    this.askCollection = this.mongodb.collection('ask')
     this.everyMinutesIntervalID = null
   }
 
@@ -55,14 +57,14 @@ class SlackStandupBotClient {
       console.log(await this.usersCollection.count());
     })
 
-    this.rtm.on(slackClient.RTM_EVENTS.MESSAGE, (message) => {
+    this.rtm.on(slackClient.RTM_EVENTS.MESSAGE, async (message) => {
       console.log(message)
       if (!this.existChannel(message.channel)) {
         // TODO log
         //return
       }
 
-      this.answer(message)
+      await this.answer(message)
     })
 
 
@@ -103,20 +105,25 @@ class SlackStandupBotClient {
     return ims.map((im) => (im.id));
   }
 
-  getNotReplyQuestion (channel) {
-    return questions[report.length]
+  async getNotReplyQuestion (channel) {
+      const ask = await this.askCollection.findOne({user_channel: channel})// sort
+      if (questions[ask.questionIndex])
+        return questions[ask.questionIndex]
   }
 
-  getNextQuestion (channel) {
-    return questions[report.length]
+  async getNextQuestion (channel) {
+    const ask = await this.askCollection.findOne({user_channel: channel})// sort
+    ++ask.questionIndex
+    if (questions[ask.questionIndex])
+        return questions[ask.questionIndex]
   }
 
-  resolveAnswer (message) {
+  async resolveAnswer (message) {
     const meetUpInProcess = true
     if (meetUpInProcess) {
       const question = this.getNotReplyQuestion(message.channel)
       if (question) {
-        report.push(message.text)
+        const report = await this.reportsCollection.insertOne(message)
         // save answer message.text for question
         const nextQuestion = this.getNextQuestion(message.channel)
         if (nextQuestion) {
@@ -155,28 +162,32 @@ class SlackStandupBotClient {
   startAsk (channel) {
     this.send(channel, standUpGreeting)
     //setTimeout(() => {
-    this.send(channel, questions[0])
+    this.askQuestion(channel, 0)
     //}, 1500)
   }
 
-  getCurrentQuestion (channel) {
-
-  }
-
-  nextAsk (channel) {
-    const currentQuestion = this.getCurrentQuestion(channel)
-    if (currentQuestion) {
-
+  askQuestion(channel, questionIndex) {
+    if (!questions[questionIndex]) {
+      throw new Error(`Question index ${questionIndex} does't exist`);
     }
-  }
-
-  startDailyMeetup (channels) {
-    channels.forEach((channel) => {
-      this.nextAsk(channel)
+    this.send(channel, questions[questionIndex])
+    this.askCollection.insertOne({
+      user_channel: channel,
+      questionIndex: questionIndex
     })
   }
 
-  answer (message) {
+  send (channel, text) {
+    const isDev = false;
+    if (isDev) {
+      console.log(text);
+    } else {
+      this.rtm.sendMessage(text, channel)
+    }
+    // save log
+  }
+
+  async answer (message) {
     // todo save message
     const text = message.text
     if (text.charAt(0) === '/') {
@@ -188,19 +199,9 @@ class SlackStandupBotClient {
         this.send('Command ' + command + ' is not found. Type \'/help\'', message.channel)
       }
     } else {
-      const answer = this.resolveAnswer(message)
+      const answer = await this.resolveAnswer(message)
       this.send(answer, message.channel)
     }
-  }
-
-  send (channel, text) {
-    const isDev = false;
-    if (isDev) {
-      console.log(text);
-    } else {
-      this.rtm.sendMessage(text, channel)
-    }
-    // save log
   }
 
   existChannel (channel) {
