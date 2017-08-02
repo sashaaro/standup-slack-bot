@@ -194,9 +194,13 @@ class SlackStandupBotClient {
   }
 
   send (channel, text) {
-    //this.rtm.sendMessage(text, channel)
+    const isDev = false;
+    if (isDev) {
+      console.log(text);
+    } else {
+      this.rtm.sendMessage(text, channel)
+    }
     // save log
-    console.log(text);
   }
 
   existChannel (channel) {

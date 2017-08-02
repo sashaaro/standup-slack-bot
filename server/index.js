@@ -12,13 +12,16 @@ const slackClientID = '220827250899.220366847441';
 const slackSecret = 'd202438e1265994c4b85be301983e6b5';
 const slackVerificationToken = 'Eeo49Ou9MDuvXEdFmnEZrRFB';
 
-const token = 'xoxb-212107961745-Z7GjveDgOttAGpUL9jMIvXlV'
+const token = slackVerificationToken
 const mongoUrl = 'mongodb://localhost:27017/standup-slack-bot'
 
 const SlackStandupBotClient = require('./SlackStandupBotClient')
-MongoClient.connect(mongoUrl).then( async (db) => {
+
+let db
+MongoClient.connect(mongoUrl).then( async (mongoDB) => {
     console.log('Connected successfully to server')
-    const botClient = new SlackStandupBotClient(new slackClient.RtmClient(token), db)
+    db = mongoDB;
+    const botClient = new SlackStandupBotClient(new slackClient.RtmClient(token), mongoDB)
     await botClient.init()
     botClient.start()
     //botClient.stop()
@@ -81,6 +84,20 @@ app.get('/dashboard', async (req, res) => {
     return;
   }
   const user = session.user;
+
+  /*const response = await request({
+    url: 'https://slack.com/api/chat.postMessage',
+    method: 'POST',
+    form: {
+      token: user.access_token,
+      channel: user.user_id,
+      text: 'Hello'
+    }
+  })*/
+
+  const botClient = new SlackStandupBotClient(new slackClient.RtmClient(user.bot.bot_access_token), db)
+  botClient.init();
+  botClient.start();
 
   res.send(`Team ${user.team_name} dashboard`)
 })
