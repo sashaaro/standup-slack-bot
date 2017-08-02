@@ -10,6 +10,10 @@
   "license": "ISC",
   "dependencies": {
     "@slack/client": "^3.10.0",
-    "mongodb": "^2.2.30"
+    "express": "^4.15.3",
+    "express-session": "^1.15.4",
+    "mongodb": "^2.2.30",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1"
   }
 }
