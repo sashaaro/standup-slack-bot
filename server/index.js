@@ -17,6 +17,8 @@ const mongoUrl = 'mongodb://localhost:27017/standup-slack-bot'
 
 const SlackStandupBotClient = require('./SlackStandupBotClient')
 
+const authLink = 'https://slack.com/oauth/authorize?&client_id=220827250899.220366847441&scope=bot,channels:read,team:read'
+
 let db
 MongoClient.connect(mongoUrl).then( async (mongoDB) => {
     console.log('Connected successfully to server')
@@ -74,7 +76,9 @@ app.get('/', async (req, res) => {
 
     return res.redirect('/dashboard')
   }
-  res.send(pug.compileFile('templates/index.pug')({}))
+  res.send(pug.compileFile('templates/index.pug')({
+      authLink: authLink
+  }))
 })
 
 app.get('/dashboard', async (req, res) => {
@@ -95,11 +99,24 @@ app.get('/dashboard', async (req, res) => {
     }
   })*/
 
-  const botClient = new SlackStandupBotClient(new slackClient.RtmClient(user.bot.bot_access_token), db)
-  botClient.init();
-  botClient.start();
+  //const botClient = new SlackStandupBotClient(new slackClient.RtmClient(user.bot.bot_access_token), db)
+  //botClient.init();
+  //botClient.start();
 
-  res.send(`Team ${user.team_name} dashboard`)
+    const webClient = new slackClient.WebClient(session.user.access_token)
+    const response = await webClient.channels.list();
+    if (!response.ok) {
+        throw new Error();
+    }
+    const channels = response.channels
+
+    res.send(pug.compileFile('templates/dashboard.pug')({
+        team: user.team_name,
+        authLink: authLink,
+        channels
+    }))
+
+    //res.send(`Team ${user.team_name} dashboard`)
 })
 
 app.listen(3000);
