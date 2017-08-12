@@ -1,0 +1,27 @@
+extends layout.pug
+
+block dashboard_content
+    div(class="row")
+        div(class="col")
+            form
+                h4= 'Settings'
+                div.form-group
+                    label= 'Locale timezone'
+                    select.form-control(name="DropDownTimezone")
+                        each timezone in timezoneList
+                            option(value= index)= timezone
+
+                div.form-group
+                    label= 'Start meeting'
+                    input.form-control(type="time")
+                div.form-group
+                    label= 'End meeting'
+                    input.form-control(type="time")
+                h4= 'Report'
+                div.form-group
+                    label= 'To channel'
+                    select.form-control
+                        each channel in channels
+                            option(value= channel.id)= channel.name
+                a(class="btn btn-outline-success" href="#")= 'Save settings'
+
