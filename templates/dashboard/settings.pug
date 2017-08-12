@@ -7,16 +7,17 @@ block dashboard_content
                 h4= 'Settings'
                 div.form-group
                     label= 'Locale timezone'
-                    select.form-control(name="DropDownTimezone")
-                        each timezone in timezoneList
-                            option(value= index)= timezone
+                    select.form-control(name="timezone")
+                        each timezone, index in timezoneList
+                            - var selected = settings.timezone == index
+                            option(value= index, selected=selected)= timezone
 
                 div.form-group
                     label= 'Start meeting'
-                    input.form-control(type="time")
+                    input.form-control(type="time", value= settings.start)
                 div.form-group
                     label= 'End meeting'
-                    input.form-control(type="time")
+                    input.form-control(type="time", value= settings.start)
                 h4= 'Report'
                 div.form-group
                     label= 'To channel'
