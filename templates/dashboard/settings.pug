@@ -14,10 +14,10 @@ block dashboard_content
 
                 div.form-group
                     label= 'Start meeting (locale time)'
-                    input.form-control(name="start", type="time", value= settings.start)
+                    input.form-control(name="start", type="time", step="300", value= settings.start)
                 div.form-group
                     label= 'End meeting'
-                    input.form-control(name="end", type="time", value= settings.end)
+                    input.form-control(name="end", type="time", step="300", value= settings.end)
                 h4= 'Report'
                 div.form-group
                     label= 'To channel'
