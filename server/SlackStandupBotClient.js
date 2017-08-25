@@ -39,6 +39,7 @@ class SlackStandupBotClient {
 
     this.rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, async (rtmStartData) => {
       const team = rtmStartData.team
+      console.log('Authenticated ' + team.name);
 
       await this.teamsCollection.updateOne({id: team.id}, {$set: team}, {upsert: true})
 
@@ -53,8 +54,6 @@ class SlackStandupBotClient {
         await this.usersCollection.updateOne({id: user.id}, {$set: user}, {upsert: true})
       }
       //this.usersCollection.insertMany(users)
-
-      console.log(await this.usersCollection.count());
     })
 
     this.rtm.on(slackClient.RTM_EVENTS.MESSAGE, async (message) => {
@@ -66,7 +65,6 @@ class SlackStandupBotClient {
 
       await this.answer(message)
     })
-
 
     if (!await this.usersCollection.ensureIndex({ "id": 1 }, { unique: true })) {
       await this.usersCollection.createIndex({ "id": 1 }, { unique: true })
@@ -96,13 +94,33 @@ class SlackStandupBotClient {
 
   async getChannelsByDate (date) {
     // teams filter by date.. team.users
-    const users = await this.usersCollection.find().toArray()
+    /*const users = await this.usersCollection.find().toArray()
     const userIDs = users.map((user) => (user.id));
     const ims = await this.imsCollection.find({user: {$in: userIDs}}).toArray()
     console.log(userIDs)
     console.log(ims)
 
-    return ims.map((im) => (im.id));
+    return ims.map((im) => (im.id));*/
+
+    const teams = await this.teamsCollection.find().toArray()
+
+    const channels = []
+    for(const team of teams) {
+      const settings = teams.settings
+      console.log(date)
+      console.log(date)
+      console.log(team)
+      console.log(settings)
+      const minutes = date.getMinutes()
+      const hours = date.getUTCHours()
+      const timezone = parseFloat(settings.timezone)
+      const isSame = settings.start === ((hours + timezone) + ':' + minutes)
+      if (isSame) {
+        channels.push(settings.report_channel)
+      }
+    }
+
+    return channels;
   }
 
   async getNotReplyQuestion (channel) {

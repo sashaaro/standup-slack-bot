@@ -3,7 +3,7 @@ extends layout.pug
 block dashboard_content
     div(class="row")
         div(class="col")
-            form
+            form(method='post')
                 h4= 'Settings'
                 div.form-group
                     label= 'Locale timezone'
@@ -13,16 +13,16 @@ block dashboard_content
                             option(value= index, selected=selected)= timezone
 
                 div.form-group
-                    label= 'Start meeting'
-                    input.form-control(type="time", value= settings.start)
+                    label= 'Start meeting (locale time)'
+                    input.form-control(name="start", type="time", value= settings.start)
                 div.form-group
                     label= 'End meeting'
-                    input.form-control(type="time", value= settings.start)
+                    input.form-control(name="end", type="time", value= settings.start)
                 h4= 'Report'
                 div.form-group
                     label= 'To channel'
-                    select.form-control
+                    select.form-control(name="report_channel")
                         each channel in channels
                             option(value= channel.id)= channel.name
-                a(class="btn btn-outline-success" href="#")= 'Save settings'
+                button(class="btn btn-outline-success" type="submit")= 'Save settings'
 
