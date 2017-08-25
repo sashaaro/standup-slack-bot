@@ -165,6 +165,7 @@ class SlackStandupBotClient {
 
   startStandUpInterval () {
     this.standUpForNow()
+    // todo every 5 minutes
     this.everyMinutesIntervalID = setInterval(this.standUpForNow.bind(this), 60 * 1000) // every minutes
   }
 

@@ -2,9 +2,10 @@ const mongodb = require('mongodb')
 const slackClient = require('@slack/client')
 const express = require('express')
 const session = require('express-session')
+const MongoStore = require('connect-mongo')(session)
 const request = require('request-promise')
 const pug = require('pug');
-const bodyParser = require("body-parser");
+const bodyParser = require("body-parser")
 
 const MongoClient = mongodb.MongoClient
 
@@ -32,8 +33,8 @@ app.use(bodyParser.json());
 
 app.use(session({
   secret: 'keyboard cat',
-  resave: false,
-  saveUninitialized: true,
+  store: new MongoStore({url: mongoUrl }),
+  //saveUninitialized: true,
   //cookie: { secure: true }
 }));
 
