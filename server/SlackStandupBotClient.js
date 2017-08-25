@@ -92,7 +92,7 @@ class SlackStandupBotClient {
     return null
   }
 
-  async getChannelsByDate (date) {
+  async getChannelsByStartDate (date) {
     // teams filter by date.. team.users
     /*const users = await this.usersCollection.find().toArray()
     const userIDs = users.map((user) => (user.id));
@@ -105,17 +105,21 @@ class SlackStandupBotClient {
     const teams = await this.teamsCollection.find().toArray()
 
     const channels = []
+
     for(const team of teams) {
-      const settings = teams.settings
-      console.log(date)
-      console.log(date)
-      console.log(team)
-      console.log(settings)
+      const settings = team.settings
+      if (!settings) {
+        continue;
+      }
+
       const minutes = date.getMinutes()
       const hours = date.getUTCHours()
       const timezone = parseFloat(settings.timezone)
-      const isSame = settings.start === ((hours + timezone) + ':' + minutes)
+      //const isSame = settings.start === ((hours + timezone) + ':' + minutes)
+      const isSame = true
+
       if (isSame) {
+        // TODO ims send to all users.
         channels.push(settings.report_channel)
       }
     }
@@ -171,7 +175,7 @@ class SlackStandupBotClient {
   }
 
   async startDailyMeetUpByDate (date) {
-    const channels = await this.getChannelsByDate(date)
+    const channels = await this.getChannelsByStartDate(date)
     channels.forEach((channel) => {
       this.startAsk(channel)
     })

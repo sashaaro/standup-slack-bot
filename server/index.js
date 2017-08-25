@@ -26,12 +26,6 @@ let db
 const host = 'http://localhost:3000'
 const app = express()
 
-const date = new Date();
-console.log(date);
-console.log(date.getHours());
-date.setUTCHours(0)
-console.log(date.getHours());
-return;
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 //app.use(express.static('public'));
@@ -164,8 +158,6 @@ app.route('/dashboard/settings').get(async (req, res) => {
   }
   const channels = response.channels
 
-  console.log(user.team_id)
-  console.log(await db.collection('teams').find().toArray())
   let team = await db.collection('teams').findOne({id: user.team_id})
   let settings = defaultSettings
   if(!team) {
