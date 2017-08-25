@@ -132,19 +132,20 @@ class SlackStandupBotClient {
     return ims.map((im) => (im.id))
   }
   
-  async resolveAnswer (message) {
-    const meetUpInProcess = true
+  async answer (message) {
+    const meetUpInProcess = true // TODO
     if (meetUpInProcess) {
-      const question = await this.questionsCollection.findOne({user_channel: channel}); // find Not Reply Question
+      const question = await this.questionsCollection.findOne({
+        user_channel: message.channel,
+        answer: {$exists: false}
+      }); // find Not Reply Question
       if (question) {
-        await this.questionsCollection.updateOne({id: question.id}, {$set: {
-          'answer': message
+        await this.questionsCollection.updateOne({_id: question._id}, {$set: {
+          'answer': message.text
         }})
-        const nextQuestion = questions[question.index + 1]
-        if (nextQuestion) {
-          return nextQuestion
-        } else {
-          return standUpGoodBye
+        if (!await this.askQuestion(message.channel, question.index + 1)) {
+          this.send(message.channel, standUpGoodBye)
+          return;
         }
       } else {
         // TODO
@@ -189,15 +190,18 @@ class SlackStandupBotClient {
     //}, 1500)
   }
 
-  askQuestion(channel, questionIndex) {
+  async askQuestion(channel, questionIndex) {
+    console.log(questionIndex)
     if (!questions[questionIndex]) {
-      throw new Error(`Question index ${questionIndex} does't exist`);
+      return false;
     }
     this.send(channel, questions[questionIndex])
-    this.questionsCollection.insertOne({
+    await this.questionsCollection.insertOne({
       user_channel: channel,
       index: questionIndex
     })
+
+    return true
   }
 
   send (channel, text) {
@@ -208,13 +212,6 @@ class SlackStandupBotClient {
       this.rtm.sendMessage(text, channel)
     }
     // save log
-  }
-
-  async answer (message) {
-    // todo save message
-    const text = message.text
-    const answer = await this.resolveAnswer(message)
-    this.send(answer, message.channel)
   }
 
   existChannel (channel) {
