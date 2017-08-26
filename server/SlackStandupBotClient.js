@@ -151,6 +151,7 @@ class SlackStandupBotClient {
       const question = await this.questionsCollection.findOne({
         user_channel: message.channel,
         answer: {$exists: false}
+        // created_at: today
       }); // find Not Reply Question
       if (question) {
         await this.questionsCollection.updateOne({_id: question._id}, {$set: {

@@ -74,6 +74,12 @@ app.get('/', async (req, res) => {
   }))
 })
 
+const questionList = [
+  'What I worked on yesterday?',
+  'What I working on today?',
+  'Is anything standing in your way?'
+]
+
 app.get('/dashboard', async (req, res) => {
   const session = req.session
   if (!session.user) {
@@ -82,9 +88,31 @@ app.get('/dashboard', async (req, res) => {
   }
   const user = session.user;
 
+  let questions = await db.collection('questions').find().toArray() // TODO filter team
+
+  const channels = questions.map((question) => (question.user_channel))
+  let ims = await db.collection('ims-channels').find({id: {$in: channels}}).toArray()
+  let users = await db.collection('users').find({id: {$in: ims.map((im) => (im.user))}}).toArray()
+
+  console.log(ims);
+  console.log(users);
+
+  const userList = {};
+  for(const im of ims) {
+    for(const user of users) {
+      if (im.user === user.id) {
+        userList[im.id] = user;
+        console.log(user);
+      }
+    }
+  }
+
   res.send(pug.compileFile('templates/dashboard/index.pug')({
     team: user.team_name,
     authLink: authLink,
+    questions,
+    questionList,
+    userList
   }))
 
   //res.send(`Team ${user.team_name} dashboard`)

@@ -4,3 +4,11 @@ block dashboard_content
     div(class="row")
         div(class="col")
             h4= 'Reports'
+            each question in questions
+                div.rounded.bg-light.border
+                    div
+                        img(src= userList[question.user_channel].profile.image_72)
+                        span= userList[question.user_channel].profile.real_name + ' (' + userList[question.user_channel].name + ')'
+                    div
+                        span= questionList[question.index]
+                        span= question.answer
