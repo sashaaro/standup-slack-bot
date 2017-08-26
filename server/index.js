@@ -6,17 +6,18 @@ const MongoStore = require('connect-mongo')(session)
 const request = require('request-promise')
 const pug = require('pug');
 const bodyParser = require("body-parser")
+const parameters = require("./parameters")
 
 const MongoClient = mongodb.MongoClient
 
-const slackClientID = '220827250899.220366847441';
-const slackSecret = 'd202438e1265994c4b85be301983e6b5';
-const slackVerificationToken = 'Eeo49Ou9MDuvXEdFmnEZrRFB';
-const botUserOAuthAccessToken = 'xoxb-220247998736-pWLHKrunnk9vfiZQAiHtz14f';
+const slackClientID = parameters.slackClientID;
+const slackSecret = parameters.slackSecret;
+const slackVerificationToken = parameters.slackVerificationToken;
+const botUserOAuthAccessToken = parameters.botUserOAuthAccessToken;
 
 //const token = slackVerificationToken
 const token = botUserOAuthAccessToken
-const mongoUrl = 'mongodb://localhost:27017/standup-slack-bot'
+const mongoUrl = parameters.mongoUrl
 
 const SlackStandupBotClient = require('./SlackStandupBotClient')
 
@@ -24,7 +25,7 @@ const authLink = 'https://slack.com/oauth/authorize?&client_id='+slackClientID+'
 
 let db
 
-const host = 'http://localhost:3000'
+const host = parameters.host
 const app = express()
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -123,12 +124,7 @@ const timezoneList = {
   '12.0': '(GMT +12:00) Auckland, Wellington, Fiji, Kamchatka',
 };
 
-const defaultSettings = {
-  timezone: '0.0',
-  start: '10:00',
-  end: '10:30',
-  report_channel: null
-}
+const defaultSettings = parameters.defaultSettings
 
 app.route('/dashboard/settings').get(async (req, res) => {
   const session = req.session
@@ -158,6 +154,8 @@ app.route('/dashboard/settings').get(async (req, res) => {
     throw new Error();
   }
   const channels = response.channels
+
+  console.log(channels)
 
   let team = await db.collection('teams').findOne({id: user.team_id})
   let settings = defaultSettings

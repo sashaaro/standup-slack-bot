@@ -1,5 +1,6 @@
 // real time messages client
 const slackClient = require('@slack/client')
+const parameters = require("./parameters")
 
 const standUpGreeting = 'Good morning/evening. Welcome to daily standup'
 const standUpGoodBye = 'Have good day. Good bye.'
@@ -31,7 +32,7 @@ class SlackStandupBotClient {
       const millisecondsDelay = 60 * 1000 - milliseconds
 
       console.log('Wait delay ' + millisecondsDelay + ' milliseconds for run loop')
-      //setTimeout(() => {
+      // TODO setTimeout(() => {
         console.log('StandUp interval starting')
         this.startStandUpInterval()
       //}, millisecondsDelay)
@@ -87,35 +88,31 @@ class SlackStandupBotClient {
     this.rtm.start()
   }
 
-  async findReportChannelsByStartDate (date) {
-    // teams filter by date.. team.users
-    /*const users = await this.usersCollection.find().toArray()
-    const userIDs = users.map((user) => (user.id));
-    const ims = await this.imsCollection.find({user: {$in: userIDs}}).toArray()
-    console.log(userIDs)
-    console.log(ims)
-
-    return ims.map((im) => (im.id));*/
-
-    const teams = await this.teamsCollection.find().toArray()
-
+  async findReportChannelsByStartEnd (date) {
     const reportedTeams = []
 
+    const teams = await this.teamsCollection.find().toArray()
     for(const team of teams) {
-      const settings = team.settings
-      if (!settings) {
+      if (!team.settings) {
+        team.settings = parameters.defaultSettings
+        await this.teamsCollection.updateOne({_id: team._id}, {$set: {settings: team.settings}})
+      }
+
+      if (!team.settings.report_channel) {
         continue;
       }
+      // todo check writable for bot
 
       const minutes = date.getMinutes()
       const hours = date.getUTCHours()
-      const timezone = parseFloat(settings.timezone)
-      //const isSame = settings.start === ((hours + timezone) + ':' + minutes)
-      const isSame = true
+      const timezone = parseFloat(team.settings.timezone)
+
+      const isSame = team.settings.end === (('0' + (hours + timezone)).slice(-2) + ':' + ('0' + minutes).slice(-2))
+      //const isSame = true
 
       if (isSame) {
         // TODO ims send to all users.
-        reportedTeams.push(settings)
+        reportedTeams.push(team)
       }
     }
 
@@ -123,13 +120,29 @@ class SlackStandupBotClient {
   }
 
   async findUserChannelsByStartDate (date) {
-    // TODO filter date
-    // teams filter by date.. team.users
-    const users = await this.usersCollection.find().toArray()
-    const userIDs = users.map((user) => (user.id))
-    const ims = await this.imsCollection.find({user: {$in: userIDs}}).toArray()
+    const teams = await this.teamsCollection.find().toArray()
+    let channels = []
+    for(const team of teams) {
+      if (!team.settings) {
+        team.settings = parameters.defaultSettings
+        await this.teamsCollection.updateOne({_id: team._id}, {$set: {settings: team.settings}})
+      }
 
-    return ims.map((im) => (im.id))
+      const minutes = date.getMinutes()
+      const hours = date.getUTCHours()
+      const timezone = parseFloat(team.settings.timezone)
+      const isSame = team.settings.start === (('0' + (hours + timezone)).slice(-2) + ':' + ('0' + minutes).slice(-2))
+      //const isSame = true
+      if (isSame) {
+        const users = await this.usersCollection.find({team_id: team.id}, ['id']).toArray()
+        const userIDs = users.map((user) => (user.id))
+        const ims = await this.imsCollection.find({user: {$in: userIDs}}).toArray()
+
+        channels = channels.concat(channels, ims.map((im) => (im.id)))
+      }
+    }
+
+    return channels;
   }
   
   async answer (message) {
@@ -177,7 +190,7 @@ class SlackStandupBotClient {
     })
 
     // send report for end of meetup
-    const reportedTeams = await this.findReportChannelsByStartDate(date);
+    const reportedTeams = await this.findReportChannelsByStartEnd(date);
     for(const reportedTeam of reportedTeams) {
       const reportText = 'Report ...';
       this.send(reportedTeam.settings.report_channel, reportText);
@@ -192,7 +205,6 @@ class SlackStandupBotClient {
   }
 
   async askQuestion(channel, questionIndex) {
-    console.log(questionIndex)
     if (!questions[questionIndex]) {
       return false;
     }
@@ -206,8 +218,7 @@ class SlackStandupBotClient {
   }
 
   send (channel, text) {
-    const isDev = false;
-    if (isDev) {
+    if (parameters.debug) {
       console.log(text);
     } else {
       this.rtm.sendMessage(text, channel)

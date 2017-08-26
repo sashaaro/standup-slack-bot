@@ -23,6 +23,7 @@ block dashboard_content
                     label= 'To channel'
                     select.form-control(name="report_channel")
                         each channel in channels
-                            option(value= channel.id)= channel.name
+                            - var selected = settings.report_channel == channel.id
+                            option(value= channel.id, selected=selected)= channel.name
                 button(class="btn btn-outline-success" type="submit")= 'Save settings'
 
