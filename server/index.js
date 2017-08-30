@@ -88,21 +88,18 @@ app.get('/dashboard', async (req, res) => {
   }
   const user = session.user;
 
-  let questions = await db.collection('questions').find().toArray() // TODO filter team
-
-  const channels = questions.map((question) => (question.user_channel))
-  let ims = await db.collection('ims-channels').find({id: {$in: channels}}).toArray()
-  let users = await db.collection('users').find({id: {$in: ims.map((im) => (im.user))}}).toArray()
+  let users = await db.collection('users').find({team_id: user.team_id}).toArray()
+  let ims = await db.collection('ims-channels').find({user: {$in: users.map((user) => (user.id))}}).toArray()
 
   console.log(ims);
   console.log(users);
 
-  const userList = {};
-  for(const im of ims) {
-    for(const user of users) {
-      if (im.user === user.id) {
-        userList[im.id] = user;
-        console.log(user);
+  users: for(const user of users) {
+    for(const im of ims) {
+      if (user.id === im.user) {
+        //user.channel = im.id
+        user.questions = await db.collection('questions').find({user_channel: im.id}).toArray();
+        continue users;
       }
     }
   }
@@ -110,9 +107,9 @@ app.get('/dashboard', async (req, res) => {
   res.send(pug.compileFile('templates/dashboard/index.pug')({
     team: user.team_name,
     authLink: authLink,
-    questions,
     questionList,
-    userList
+    users,
+    activeMenu: 'reports'
   }))
 
   //res.send(`Team ${user.team_name} dashboard`)
@@ -199,7 +196,8 @@ app.route('/dashboard/settings').get(async (req, res) => {
     authLink: authLink,
     channels,
     timezoneList,
-    settings
+    settings,
+    activeMenu: 'settings'
   }))
 }).post(async (req, res) => {
   const session = req.session
@@ -230,7 +228,8 @@ app.route('/dashboard/settings').get(async (req, res) => {
     authLink: authLink,
     channels,
     timezoneList,
-    settings
+    settings,
+    activeMenu: 'settings'
   }))
 })
 

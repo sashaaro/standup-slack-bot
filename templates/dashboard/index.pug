@@ -3,12 +3,15 @@ extends layout.pug
 block dashboard_content
     div.row
         div.col
-            h4= 'Reports'
-            each question in questions
+            h4= 'For 4 october'
+
+            each user in users
                 div.rounded.bg-light.border.row
                     div.col
-                        img(src= userList[question.user_channel].profile.image_72).img-thumbnail
-                        span= userList[question.user_channel].profile.real_name + ' (' + userList[question.user_channel].name + ')'
+                        img(src= user.profile.image_72).img-thumbnail
+                        span= user.profile.real_name + ' (' + user.name + ')'
                     div.col
-                        span= questionList[question.index]
-                        span= question.answer
+                        each question in user.questions
+                            div
+                                div= questionList[question.index]
+                                div= question.answer
