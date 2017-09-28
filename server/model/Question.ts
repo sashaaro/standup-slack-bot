@@ -1,11 +1,14 @@
-interface QuestionInterface {
-    id: number;
-    text: string;
-}
+import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
 
-class Question implements QuestionInterface
+@Entity()
+class Question
 {
+    @PrimaryGeneratedColumn()
     id: number;
+
+    @Column({
+        length: 500
+    })
     text: string;
 }
 

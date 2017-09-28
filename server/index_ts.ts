@@ -1,6 +1,8 @@
 import "reflect-metadata";
 import {createConnection} from "typeorm";
-import {Photo} from "./model/Photo";
+import Question from "./model/Question";
+import Team from "./model/Team";
+import User from "./model/User";
 
 createConnection({
     driver: {
@@ -13,9 +15,24 @@ createConnection({
         database: "standup"
     },
     entities: [
-        Photo
+        Question,
+        Team,
+        User,
     ],
     autoSchemaSync: true,
-}).then(connection => {
+}).then(async connection => {
+    const n = await connection.getRepository(Question)
+        .createQueryBuilder("q")
+        .getCount()
+
+    let team = new Team();
+    team.settings = {key: 'value11'};
+    const user = new User;
+    user.name = 'Иван';
+    team.users = [user];
+
+    team = await connection.entityManager.persist(team)
+
+    console.log(team);
     // here you can start to work with your entities
 }).catch(error => console.log(error));
