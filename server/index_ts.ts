@@ -4,6 +4,27 @@ import Question from "./model/Question";
 import Team from "./model/Team";
 import User from "./model/User";
 
+//const slackClient = require('@slack/client')
+import * as slackClient from '@slack/client'
+import * as express from 'express'
+import * as bodyParser from 'body-parser'
+
+
+const app = express()
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+app.get('/', async (req, res) => {
+
+    res.send('hi');
+    /*res.send(pug.compileFile('templates/index.pug')({
+        authLink: authLink
+    }))*/
+})
+
+app.listen(3000);
+
 createConnection({
     driver: {
         type: "postgres",
