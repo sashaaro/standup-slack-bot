@@ -10,6 +10,9 @@ const questions = [
   'Is anything standing in your way?'
 ]
 
+/**
+ * @author Arofikin Aleksandr <sashaaro@gmail.com>
+ */
 class SlackStandupBotClient {
   constructor (rtm, mongodb) {
     this.rtm = rtm
