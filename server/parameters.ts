@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   slackClientID: '220827250899.220366847441',
   slackSecret: 'd202438e1265994c4b85be301983e6b5',
   slackVerificationToken: 'Eeo49Ou9MDuvXEdFmnEZrRFB',
