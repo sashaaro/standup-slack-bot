@@ -1,11 +1,11 @@
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm";
+import {Entity, Column, ManyToOne, PrimaryColumn} from "typeorm";
 import Team from "./Team";
 
 @Entity()
 class User
 {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryColumn()
+    id: string;
 
     @Column({
         length: 500

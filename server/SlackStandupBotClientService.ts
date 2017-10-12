@@ -4,6 +4,8 @@ import {Connection} from "typeorm";
 import Team from "./model/Team";
 import { SlackTeam } from "./slack/model/SlackTeam";
 import { RTMAuthenticatedResponse } from "./slack/model/rtm/RTMAuthenticatedResponse";
+import {SlackUser} from "./slack/model/SlackUser";
+import User from "./model/User";
 
 
 const standUpGreeting = 'Good morning/evening. Welcome to daily standup'
@@ -40,16 +42,18 @@ export default class SlackStandupBotClientService {
         })
 
         this.rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, async (rtmStartData: RTMAuthenticatedResponse) => {
-            const team: SlackTeam = rtmStartData.team
-            console.log('Authenticated ' + team.name);
+            console.log('Authenticated ' + rtmStartData.team.name);
 
 
-            console.log(rtmStartData.ims[0]);
-            console.log(rtmStartData.channels[0]);
+            const teamRepository = this.connection.getRepository(Team)
+            let teamModal = await teamRepository.findOneById(rtmStartData.team.id)
+            if (!teamModal) {
+                teamModal = new Team();
+                teamModal.id = rtmStartData.team.id
+            }
 
-            //const teamRepository = this.connection.getRepository(Team)
-            //let team = new Team();
-            //team = await this.connection.entityManager.persist(team)
+            await this.connection.entityManager.persist(teamModal)
+            console.log(teamModal);
             //await this.teamsCollection.updateOne({id: team.id}, {$set: team}, {upsert: true})
 
             for(const im of rtmStartData.ims) {
@@ -59,10 +63,19 @@ export default class SlackStandupBotClientService {
 
             //const users = rtmStartData.users;
             //const users = rtmStartData.users.filter((user) => (user.name === 'sashaaro'));
-            //for(const user of users) {
-                //await this.usersCollection.updateOne({id: user.id}, {$set: user}, {upsert: true})
-            //}
-            //this.usersCollection.insertMany(users)
+            const userRepository = this.connection.getRepository(User)
+            for(const user of rtmStartData.users) {
+                let userModal = await userRepository.findOneById(user.id)
+                if (!userModal) {
+                    userModal = new User();
+                    userModal.id = user.id
+                    userModal.name = user.name
+
+                    const teamModal = await teamRepository.findOneById(user.team_id)
+                    userModal.team = teamModal
+                }
+                await this.connection.entityManager.persist(userModal)
+            }
         })
 
         this.rtm.on(slackClient.RTM_EVENTS.MESSAGE, async (message) => {

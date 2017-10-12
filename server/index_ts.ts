@@ -250,13 +250,13 @@ createConnection({
         .createQueryBuilder("q")
         .getCount()
 
-    let team = new Team();
+    /*let team = new Team();
     team.settings = {key: 'value11'};
     const user = new User;
     user.name = 'Иван';
     team.users = [user];
 
-    team = await connection.entityManager.persist(team)
+    team = await connection.entityManager.persist(team)*/
 
 
     const botClient = new SlackStandupBotClient(new slackClient.RtmClient(token), connection)
