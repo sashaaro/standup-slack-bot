@@ -2,8 +2,8 @@ import * as slackClient from '@slack/client'
 import parameters from './parameters'
 import {Connection} from "typeorm";
 import Team from "./model/Team";
-import SlackTime from "./slack/model/SlackTeam";
-import RTMAuthenticatedResponse from "./slack/model/rtm/RTMAuthenticatedResponse";
+import { SlackTeam } from "./slack/model/SlackTeam";
+import { RTMAuthenticatedResponse } from "./slack/model/rtm/RTMAuthenticatedResponse";
 
 
 const standUpGreeting = 'Good morning/evening. Welcome to daily standup'
@@ -40,11 +40,12 @@ export default class SlackStandupBotClientService {
         })
 
         this.rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, async (rtmStartData: RTMAuthenticatedResponse) => {
-            const team: SlackTime = rtmStartData.team
+            const team: SlackTeam = rtmStartData.team
             console.log('Authenticated ' + team.name);
 
 
-            console.log(rtmStartData.users[1]);
+            console.log(rtmStartData.ims[0]);
+            console.log(rtmStartData.channels[0]);
 
             //const teamRepository = this.connection.getRepository(Team)
             //let team = new Team();

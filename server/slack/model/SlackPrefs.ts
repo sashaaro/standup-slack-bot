@@ -1,4 +1,4 @@
-export default class SlackPrefs
+export interface SlackPrefs
 {
     invites_only_admins: boolean;
     show_join_leave: boolean;

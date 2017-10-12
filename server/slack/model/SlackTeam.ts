@@ -1,6 +1,6 @@
-import SlackPrefs from "./SlackPrefs";
+import { SlackPrefs } from "./SlackPrefs";
 
-class Icon {
+export interface  Icon {
     image_34: string;
     image_44: string;
     image_68: string;
@@ -11,7 +11,7 @@ class Icon {
     image_default: boolean;
 }
 
-export default class SlackTeam
+export interface SlackTeam
 {
     id: string;
     name: string;
