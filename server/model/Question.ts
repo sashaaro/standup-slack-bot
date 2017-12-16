@@ -1,4 +1,5 @@
-import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm";
+import Im from "./Im";
 
 @Entity()
 class Question
@@ -10,6 +11,11 @@ class Question
         length: 500
     })
     text: string;
+
+    @ManyToOne(type => Im, null, {
+        eager: true
+    })
+    im: Im;
 }
 
 export default Question;

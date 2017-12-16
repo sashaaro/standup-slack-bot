@@ -6,6 +6,7 @@ import { SlackTeam } from "./slack/model/SlackTeam";
 import { RTMAuthenticatedResponse } from "./slack/model/rtm/RTMAuthenticatedResponse";
 import {SlackUser} from "./slack/model/SlackUser";
 import User from "./model/User";
+import Im from "./model/Im";
 
 
 const standUpGreeting = 'Good morning/evening. Welcome to daily standup'
@@ -52,14 +53,9 @@ export default class SlackStandupBotClientService {
                 teamModal.id = rtmStartData.team.id
             }
 
-            await this.connection.entityManager.persist(teamModal)
+            await teamRepository.save(teamModal)
             console.log(teamModal);
             //await this.teamsCollection.updateOne({id: team.id}, {$set: team}, {upsert: true})
-
-            for(const im of rtmStartData.ims) {
-                //await this.imsCollection.updateOne({id: im.id}, {$set: im}, {upsert: true})
-            }
-
 
             //const users = rtmStartData.users;
             //const users = rtmStartData.users.filter((user) => (user.name === 'sashaaro'));
@@ -69,12 +65,29 @@ export default class SlackStandupBotClientService {
                 if (!userModal) {
                     userModal = new User();
                     userModal.id = user.id
-                    userModal.name = user.name
-
-                    const teamModal = await teamRepository.findOneById(user.team_id)
-                    userModal.team = teamModal
                 }
-                await this.connection.entityManager.persist(userModal)
+                userModal.name = user.name
+                userModal.profile = user.profile
+                userModal.team = await teamRepository.findOneById(user.team_id)
+
+                await userRepository.save(userModal)
+            }
+
+
+
+            const imRepository = this.connection.getRepository(Im)
+            for(const imItem of rtmStartData.ims) {
+                const im = new Im;
+                im.created = imItem.created
+                im.has_pins = imItem.has_pins
+                im.id = imItem.id
+                im.is_im = imItem.is_im
+                im.is_open = imItem.is_open
+                im.is_org_shared = imItem.is_org_shared
+                im.last_read = imItem.last_read
+                im.user = await userRepository.findOneById(imItem.user)
+
+                await imRepository.save(im)
             }
         })
 

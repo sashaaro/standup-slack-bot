@@ -7,13 +7,14 @@ import User from "./model/User";
 //const slackClient = require('@slack/client')
 import * as slackClient from '@slack/client'
 import * as express from 'express'
-//import * as session from 'express-session'
+import * as session from 'express-session'
 //import * as connectMongo from 'connect-mongo'
 import * as request from 'request-promise'
 import * as pug from 'pug'
 import * as bodyParser from 'body-parser'
 import parameters from './parameters'
 import SlackStandupBotClient from './SlackStandupBotClientService'
+import Im from "./model/Im";
 
 //const MongoStore = connectMongo(session)
 
@@ -27,10 +28,17 @@ const host = parameters.host
 const authLink = 'https://slack.com/oauth/authorize?&client_id='+slackClientID+'&scope=bot,channels:read,team:read'
 let db;
 
+let connection: Connection;
 
 const app = express()
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(session({
+    secret: 'keyboard cat',
+    //resave: false,
+    //saveUninitialized: true,
+    //cookie: { secure: true }
+}))
 
 app.get('/', async (req, res) => {
     if (req.query.code){
@@ -58,6 +66,8 @@ app.get('/', async (req, res) => {
                 team_id: data.team_id,
                 bot: data.bot,
             }
+        } else {
+            console.log(data);
         }
 
         return res.redirect('/dashboard')
@@ -81,12 +91,14 @@ app.get('/dashboard', async (req, res) => {
     }
     const user = session.user;
 
-    let users = await db.collection('users').find({team_id: user.team_id}).toArray()
-    let ims = await db.collection('ims-channels').find({user: {$in: users.map((user) => (user.id))}}).toArray()
 
-    console.log(ims);
-    console.log(users);
+    let users = await connection.getRepository(User).find({team: user.team_id})
 
+    for(const user of users) {
+        user.questions = await connection.getRepository(Question).find();
+    }
+
+    /*
     users: for(const user of users) {
         for(const im of ims) {
             if (user.id === im.user) {
@@ -95,17 +107,15 @@ app.get('/dashboard', async (req, res) => {
                 continue users;
             }
         }
-    }
+    }*/
 
     res.send(pug.compileFile('templates/dashboard/index.pug')({
         team: user.team_name,
         authLink: authLink,
-        questionList,
+        questionList: [],
         users,
         activeMenu: 'reports'
     }))
-
-    //res.send(`Team ${user.team_name} dashboard`)
 })
 
 const timezoneList = {
@@ -226,29 +236,27 @@ app.route('/dashboard/settings').get(async (req, res) => {
     }))
 })
 
-
-//app.listen(3000);
-
 createConnection({
-    driver: {
-        type: "postgres",
-        host: "localhost",
-        //host: "172.17.0.1",
-        port: 5432,
-        username: "default",
-        password: "secret",
-        database: "standup"
-    },
+    type: "postgres",
+    host: "localhost",
+    //host: "172.17.0.1",
+    port: 5432,
+    username: "default",
+    password: "secret",
+    database: "standup",
     entities: [
         Question,
         Team,
         User,
+        Im,
     ],
-    autoSchemaSync: true,
-}).then(async (connection: Connection) => {
-    const n = await connection.getRepository(Question)
+    synchronize: true,
+}).then(async (conn: Connection) => {
+    const n = await conn.getRepository(Question)
         .createQueryBuilder("q")
         .getCount()
+
+    connection = conn;
 
     /*let team = new Team();
     team.settings = {key: 'value11'};
@@ -257,6 +265,10 @@ createConnection({
     team.users = [user];
 
     team = await connection.entityManager.persist(team)*/
+
+
+
+    app.listen(3000);
 
 
     const botClient = new SlackStandupBotClient(new slackClient.RtmClient(token), connection)
