@@ -7,6 +7,7 @@ import { RTMAuthenticatedResponse } from "./slack/model/rtm/RTMAuthenticatedResp
 import {SlackUser} from "./slack/model/SlackUser";
 import User from "./model/User";
 import Im from "./model/Im";
+import Question from "./model/Question";
 
 
 const standUpGreeting = 'Good morning/evening. Welcome to daily standup'
@@ -45,7 +46,6 @@ export default class SlackStandupBotClientService {
         this.rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, async (rtmStartData: RTMAuthenticatedResponse) => {
             console.log('Authenticated ' + rtmStartData.team.name);
 
-
             const teamRepository = this.connection.getRepository(Team)
             let teamModal = await teamRepository.findOneById(rtmStartData.team.id)
             if (!teamModal) {
@@ -54,11 +54,7 @@ export default class SlackStandupBotClientService {
             }
 
             await teamRepository.save(teamModal)
-            console.log(teamModal);
-            //await this.teamsCollection.updateOne({id: team.id}, {$set: team}, {upsert: true})
 
-            //const users = rtmStartData.users;
-            //const users = rtmStartData.users.filter((user) => (user.name === 'sashaaro'));
             const userRepository = this.connection.getRepository(User)
             for(const user of rtmStartData.users) {
                 let userModal = await userRepository.findOneById(user.id)
@@ -72,8 +68,6 @@ export default class SlackStandupBotClientService {
 
                 await userRepository.save(userModal)
             }
-
-
 
             const imRepository = this.connection.getRepository(Im)
             for(const imItem of rtmStartData.ims) {
@@ -105,34 +99,19 @@ export default class SlackStandupBotClientService {
             console.log(message)
             this.stopInterval()
         })
-
-        /*if (!await this.usersCollection.ensureIndex({ "id": 1 }, { unique: true })) {
-            await this.usersCollection.createIndex({ "id": 1 }, { unique: true })
-        }
-
-        if (!await this.teamsCollection.ensureIndex({ "id": 1 }, { unique: true })) {
-            await this.teamsCollection.createIndex({ "id": 1 }, { unique: true })
-        }
-        if (!await this.imsCollection.ensureIndex({ "id": 1 }, { unique: true })) {
-            await this.imsCollection.createIndex({ "id": 1 }, { unique: true })
-        }*/
     }
 
     start() {
         this.rtm.start()
     }
 
-    async findReportChannelsByStartEnd (date) {
-        const reportedTeams = []
+    async findReportChannelsByStartEnd (date): Promise<Team[]> {
+        const reportedTeams: Team[] = []
 
-        /*const teams = await this.teamsCollection.find().toArray()
+        const teams = await this.connection.getRepository(Team).find()
         for(const team of teams) {
-            if (!team.settings) {
-                team.settings = parameters.defaultSettings
-                await this.teamsCollection.updateOne({_id: team._id}, {$set: {settings: team.settings}})
-            }
-
             if (!team.settings.report_channel) {
+                // TODO log
                 continue;
             }
             // todo check writable for bot
@@ -148,35 +127,31 @@ export default class SlackStandupBotClientService {
                 // TODO ims send to all users.
                 reportedTeams.push(team)
             }
-        }*/
+        }
 
         return reportedTeams;
     }
 
-    async findUserChannelsByStartDate (date) {
-        /*const teams = await this.teamsCollection.find().toArray()
-        let channels = []
+    async findUserChannelsByStartDate (date): Promise<Im[]> {
+        const teams = await this.connection.getRepository(Team).find()
+        const userRepository = this.connection.getRepository(User)
+        let channels:Im[] = []
         for(const team of teams) {
-            if (!team.settings) {
-                team.settings = parameters.defaultSettings
-                await this.teamsCollection.updateOne({_id: team._id}, {$set: {settings: team.settings}})
-            }
-
             const minutes = date.getMinutes()
             const hours = date.getUTCHours()
             const timezone = parseFloat(team.settings.timezone)
             const isSame = team.settings.start === (('0' + (hours + timezone)).slice(-2) + ':' + ('0' + minutes).slice(-2))
             //const isSame = true
             if (isSame) {
-                const users = await this.usersCollection.find({team_id: team.id}, ['id']).toArray()
-                const userIDs = users.map((user) => (user.id))
-                const ims = await this.imsCollection.find({user: {$in: userIDs}}).toArray()
-
-                channels = channels.concat(channels, ims.map((im) => (im.id)))
+                const users = await userRepository.find({team: team})
+                for(const user of users) {
+                    console.log(user.ims);
+                    channels = channels.concat(channels, user.ims.map((im) => (im)))
+                }
             }
         }
 
-        return channels;*/
+        return channels;
     }
 
     async answer (message) {
@@ -219,44 +194,50 @@ export default class SlackStandupBotClientService {
 
     async startDailyMeetUpByDate (date) {
         // start ask users
-        /*const userChannels = await this.findUserChannelsByStartDate(date)
-        userChannels.forEach((userChannel) => {
-            this.startAsk(userChannel)
-        })
+
+        const userChannels = await this.findUserChannelsByStartDate(date)
+        for(const userChannel of userChannels) {
+            await this.startAsk(userChannel)
+        }
 
         // send report for end of meetup
         const reportedTeams = await this.findReportChannelsByStartEnd(date);
         for(const reportedTeam of reportedTeams) {
             const reportText = 'Report ...';
-            this.send(reportedTeam.settings.report_channel, reportText);
-        }*/
+            const im = await this.connection.getRepository(Im).findOne({id: reportedTeam.settings.report_channel});
+            this.send(im, reportText);
+        }
     }
 
-    startAsk (channel) {
+    async startAsk (channel: Im) {
         this.send(channel, standUpGreeting)
         //setTimeout(() => {
-        this.askQuestion(channel, 0)
+        await this.askQuestion(channel, 0)
         //}, 1500)
     }
 
-    async askQuestion(channel, questionIndex) {
-        /*if (!questions[questionIndex]) {
+    async askQuestion(channel: Im, questionIndex) {
+        if (!questions[questionIndex]) {
             return false;
         }
-        this.send(channel, questions[questionIndex])
-        await this.questionsCollection.insertOne({
-            user_channel: channel,
-            index: questionIndex
-        })*/
+        const text = questions[questionIndex];
+
+        const question = new Question();
+        question.index = questionIndex;
+        question.im = channel;
+        question.text = text
+
+        this.send(channel, question.text)
+        await this.connection.getRepository(Question).save(question)
 
         return true
     }
 
-    send (channel, text) {
+    send (channel: Im, text) {
         if (parameters.debug) {
             console.log(text);
         } else {
-            this.rtm.sendMessage(text, channel)
+            this.rtm.sendMessage(text, channel.id)
         }
         // save log
     }

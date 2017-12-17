@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {createConnection, Connection} from "typeorm";
 import Question from "./model/Question";
-import Team from "./model/Team";
+import Team, {TeamSettings} from "./model/Team";
 import User from "./model/User";
 
 //const slackClient = require('@slack/client')
@@ -15,6 +15,7 @@ import * as bodyParser from 'body-parser'
 import parameters from './parameters'
 import SlackStandupBotClient from './SlackStandupBotClientService'
 import Im from "./model/Im";
+import {SlackChannel} from "./slack/model/SlackChannel";
 
 //const MongoStore = connectMongo(session)
 
@@ -52,11 +53,8 @@ app.get('/', async (req, res) => {
         }
 
         const response = await request(options)
-        //console.log(response)
         const data = JSON.parse(response);
         if (data.ok) {
-            //console.log(data);
-
             const session = req.session
             session.user = {
                 access_token: data.access_token,
@@ -67,7 +65,7 @@ app.get('/', async (req, res) => {
                 bot: data.bot,
             }
         } else {
-            console.log(data);
+            throw new Error(data)
         }
 
         return res.redirect('/dashboard')
@@ -97,17 +95,6 @@ app.get('/dashboard', async (req, res) => {
     for(const user of users) {
         user.questions = await connection.getRepository(Question).find();
     }
-
-    /*
-    users: for(const user of users) {
-        for(const im of ims) {
-            if (user.id === im.user) {
-                //user.channel = im.id
-                user.questions = await db.collection('questions').find({user_channel: im.id}).toArray();
-                continue users;
-            }
-        }
-    }*/
 
     res.send(pug.compileFile('templates/dashboard/index.pug')({
         team: user.team_name,
@@ -152,8 +139,6 @@ const timezoneList = {
     '12.0': '(GMT +12:00) Auckland, Wellington, Fiji, Kamchatka',
 };
 
-const defaultSettings = parameters.defaultSettings
-
 app.route('/dashboard/settings').get(async (req, res) => {
     const session = req.session
     if (!session.user) {
@@ -181,17 +166,13 @@ app.route('/dashboard/settings').get(async (req, res) => {
     if (!response.ok) {
         throw new Error();
     }
-    const channels = response.channels
+    const channels = <SlackChannel[]>response.channels
 
-    console.log(channels)
+    let team = await connection.getRepository(Team).findOne({id: user.team_id})
 
-    let team = await db.collection('teams').findOne({id: user.team_id})
-    let settings = defaultSettings
     if(!team) {
         // TODO
-    }
-    if (team && team.settings) {
-        settings = team.settings
+        throw new Error('team is not found');
     }
 
     res.send(pug.compileFile('templates/dashboard/settings.pug')({
@@ -199,7 +180,7 @@ app.route('/dashboard/settings').get(async (req, res) => {
         authLink: authLink,
         channels,
         timezoneList,
-        settings,
+        settings: team.settings,
         activeMenu: 'settings'
     }))
 }).post(async (req, res) => {
@@ -217,13 +198,18 @@ app.route('/dashboard/settings').get(async (req, res) => {
     }
     const channels = response.channels
 
-    let settings = defaultSettings
+    const teamRepository = connection.getRepository(Team);
+    let team = await teamRepository.findOne({id: user.team_id})
+
+    if(!team) {
+        // TODO
+        throw new Error('team is not found');
+    }
+
     if (req.body) {
         // todo validate
-        settings = req.body
-        await db.collection('teams').updateOne({id: user.team_id}, {$set: {
-            settings: settings
-        }}, {upsert: true})
+        team.settings = <TeamSettings>req.body
+        await teamRepository.save(team)
     }
 
     res.send(pug.compileFile('templates/dashboard/settings.pug')({
@@ -231,7 +217,7 @@ app.route('/dashboard/settings').get(async (req, res) => {
         authLink: authLink,
         channels,
         timezoneList,
-        settings,
+        settings: team.settings,
         activeMenu: 'settings'
     }))
 })
@@ -252,28 +238,12 @@ createConnection({
     ],
     synchronize: true,
 }).then(async (conn: Connection) => {
-    const n = await conn.getRepository(Question)
-        .createQueryBuilder("q")
-        .getCount()
-
     connection = conn;
-
-    /*let team = new Team();
-    team.settings = {key: 'value11'};
-    const user = new User;
-    user.name = 'Иван';
-    team.users = [user];
-
-    team = await connection.entityManager.persist(team)*/
-
-
-
-    app.listen(3000);
-
 
     const botClient = new SlackStandupBotClient(new slackClient.RtmClient(token), connection)
     await botClient.init()
     botClient.start()
 
+    app.listen(3000);
     // here you can start to work with your entities
 }).catch(error => console.log(error));

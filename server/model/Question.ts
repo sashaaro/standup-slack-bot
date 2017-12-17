@@ -7,9 +7,10 @@ class Question
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({
-        length: 500
-    })
+    @Column()
+    index: number;
+
+    @Column()
     text: string;
 
     @ManyToOne(type => Im, null, {

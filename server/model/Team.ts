@@ -1,5 +1,6 @@
 import {Entity, Column, PrimaryColumn, OneToMany} from "typeorm";
 import User from "./User";
+import parameters from './../parameters'
 
 export class TeamSettings
 {
@@ -25,7 +26,7 @@ class Team
 
     constructor()
     {
-        this.settings = new TeamSettings()
+        this.settings = <TeamSettings>parameters.defaultSettings
     }
 }
 
