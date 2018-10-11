@@ -161,8 +161,8 @@ app.route('/dashboard/settings').get(async (req, res) => {
     //botClient.init();
     //botClient.start();
 
-    const webClient = new slackClient.WebClient(session.user.access_token)
-    const response = await webClient.channels.list();
+    const RTMClient = new slackClient.RTMClient(session.user.access_token)
+    const response = await RTMClient.channels.list();
     if (!response.ok) {
         throw new Error();
     }
@@ -240,7 +240,7 @@ createConnection({
 }).then(async (conn: Connection) => {
     connection = conn;
 
-    const botClient = new SlackStandupBotClient(new slackClient.RtmClient(token), connection)
+    const botClient = new SlackStandupBotClient(new slackClient.WebClient(token), connection)
     await botClient.init()
     botClient.start()
 

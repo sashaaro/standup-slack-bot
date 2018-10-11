@@ -8,6 +8,7 @@ import {SlackUser} from "./slack/model/SlackUser";
 import User from "./model/User";
 import Im from "./model/Im";
 import Question from "./model/Question";
+import { createEventAdapter } from '@slack/events-api';
 
 
 const standUpGreeting = 'Good morning/evening. Welcome to daily standup'
@@ -19,11 +20,11 @@ const questions = [
 ]
 
 export default class SlackStandupBotClientService {
-    protected rtm: slackClient.RtmClient;
+    protected rtm: slackClient.RTMClient;
     protected connection: Connection;
     protected everyMinutesIntervalID: number;
 
-    constructor (rtm: slackClient.RtmClient, connection: Connection) {
+    constructor (rtm: slackClient.RTMClient, connection: Connection) {
         this.rtm = rtm;
         this.connection = connection;
         // TODO logger

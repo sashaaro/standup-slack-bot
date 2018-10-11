@@ -1,0 +1,9 @@
+version: "3.7"
+
+services:
+  serve:
+    image: node:8.12.0-alpine
+    command: npm install && ./node_modules/typescript/bin/tsc help
+    volumes:
+      - .:/opt/app
+    working_dir: /opt/app
