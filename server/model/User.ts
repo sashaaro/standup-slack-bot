@@ -42,7 +42,7 @@ class User
     team: Team;
 
     @OneToMany(type => Im, im => im.user, {
-        cascadeInsert: true,
+        cascade: true,
         eager: true
     })
     ims: Im[];

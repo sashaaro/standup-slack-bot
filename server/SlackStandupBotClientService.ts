@@ -8,8 +8,7 @@ import {SlackUser} from "./slack/model/SlackUser";
 import User from "./model/User";
 import Im from "./model/Im";
 import Question from "./model/Question";
-import { createEventAdapter } from '@slack/events-api';
-
+import Timeout = NodeJS.Timeout;
 
 const standUpGreeting = 'Good morning/evening. Welcome to daily standup'
 const standUpGoodBye = 'Have good day. Good bye.'
@@ -22,7 +21,7 @@ const questions = [
 export default class SlackStandupBotClientService {
     protected rtm: slackClient.RTMClient;
     protected connection: Connection;
-    protected everyMinutesIntervalID: number;
+    protected everyMinutesIntervalID: Timeout;
 
     constructor (rtm: slackClient.RTMClient, connection: Connection) {
         this.rtm = rtm;
@@ -31,7 +30,7 @@ export default class SlackStandupBotClientService {
     }
 
     async init () {
-        this.rtm.on(slackClient.CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, () => {
+        this.rtm.on('connected', () => {
             console.log('Connection opened')
             const now = new Date()
             const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds()
@@ -44,11 +43,11 @@ export default class SlackStandupBotClientService {
             //}, millisecondsDelay)
         })
 
-        this.rtm.on(slackClient.CLIENT_EVENTS.RTM.AUTHENTICATED, async (rtmStartData: RTMAuthenticatedResponse) => {
+        this.rtm.on('authenticated', async (rtmStartData: RTMAuthenticatedResponse) => {
             console.log('Authenticated ' + rtmStartData.team.name);
 
             const teamRepository = this.connection.getRepository(Team)
-            let teamModal = await teamRepository.findOneById(rtmStartData.team.id)
+            let teamModal = await teamRepository.findOne(rtmStartData.team.id)
             if (!teamModal) {
                 teamModal = new Team();
                 teamModal.id = rtmStartData.team.id
@@ -58,14 +57,14 @@ export default class SlackStandupBotClientService {
 
             const userRepository = this.connection.getRepository(User)
             for(const user of rtmStartData.users) {
-                let userModal = await userRepository.findOneById(user.id)
+                let userModal = await userRepository.findOne(user.id)
                 if (!userModal) {
                     userModal = new User();
                     userModal.id = user.id
                 }
                 userModal.name = user.name
                 userModal.profile = user.profile
-                userModal.team = await teamRepository.findOneById(user.team_id)
+                userModal.team = await teamRepository.findOne(user.team_id)
 
                 await userRepository.save(userModal)
             }
@@ -80,13 +79,13 @@ export default class SlackStandupBotClientService {
                 im.is_open = imItem.is_open
                 im.is_org_shared = imItem.is_org_shared
                 im.last_read = imItem.last_read
-                im.user = await userRepository.findOneById(imItem.user)
+                im.user = await userRepository.findOne(imItem.user)
 
                 await imRepository.save(im)
             }
         })
 
-        this.rtm.on(slackClient.RTM_EVENTS.MESSAGE, async (message) => {
+        this.rtm.on('message', async (message) => {
             console.log(message)
             if (!this.existChannel(message.channel)) {
                 // TODO log
@@ -96,14 +95,16 @@ export default class SlackStandupBotClientService {
             await this.answer(message)
         })
 
-        this.rtm.on(slackClient.RTM_EVENTS.ERROR, async (message) => {
+        this.rtm.on('error', async (message) => {
             console.log(message)
             this.stopInterval()
         })
     }
 
     start() {
-        this.rtm.start()
+        this.rtm.start().then(() => {
+
+        })
     }
 
     async findReportChannelsByStartEnd (date): Promise<Team[]> {
@@ -184,7 +185,7 @@ export default class SlackStandupBotClientService {
     standUpForNow () {
         const now = new Date()
         console.log('Start standup for ' + now)
-        this.startDailyMeetUpByDate(now)
+        this.startDailyMeetUpByDate(now).then()
     }
 
     startStandUpInterval () {
@@ -255,7 +256,7 @@ export default class SlackStandupBotClientService {
 
     stop () {
         this.stopInterval()
-        this.rtm.close()
+        this.rtm.disconnect()
         //this.mongodb.close()
     }
 }

@@ -3,7 +3,9 @@ version: "3.7"
 services:
   serve:
     image: node:8.12.0-alpine
-    command: npm install && ./node_modules/typescript/bin/tsc help
+    #entrypoint: npm install
+    entrypoint: ./node_modules/typescript/bin/tsc
+    user: 1000:1000
     volumes:
       - .:/opt/app
     working_dir: /opt/app

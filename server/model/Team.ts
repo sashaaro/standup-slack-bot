@@ -20,7 +20,7 @@ class Team
     settings: TeamSettings;
 
     @OneToMany(type => User, user => user.team, {
-        cascadeInsert: true
+        cascade: true
     })
     users: User[]
 

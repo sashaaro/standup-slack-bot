@@ -16,6 +16,7 @@ import parameters from './parameters'
 import SlackStandupBotClient from './SlackStandupBotClientService'
 import Im from "./model/Im";
 import {SlackChannel} from "./slack/model/SlackChannel";
+import { createEventAdapter } from '@slack/events-api';
 
 //const MongoStore = connectMongo(session)
 
@@ -161,12 +162,12 @@ app.route('/dashboard/settings').get(async (req, res) => {
     //botClient.init();
     //botClient.start();
 
-    const RTMClient = new slackClient.RTMClient(session.user.access_token)
-    const response = await RTMClient.channels.list();
+    const webClient = new slackClient.WebClient(session.user.access_token)
+    const response = await webClient.channels.list();
     if (!response.ok) {
         throw new Error();
     }
-    const channels = <SlackChannel[]>response.channels
+    const channels = (response as any).channels as SlackChannel[]
 
     let team = await connection.getRepository(Team).findOne({id: user.team_id})
 
@@ -196,7 +197,7 @@ app.route('/dashboard/settings').get(async (req, res) => {
     if (!response.ok) {
         throw new Error();
     }
-    const channels = response.channels
+    const channels = (response as any).channels
 
     const teamRepository = connection.getRepository(Team);
     let team = await teamRepository.findOne({id: user.team_id})
@@ -240,7 +241,7 @@ createConnection({
 }).then(async (conn: Connection) => {
     connection = conn;
 
-    const botClient = new SlackStandupBotClient(new slackClient.WebClient(token), connection)
+    const botClient = new SlackStandupBotClient(new slackClient.RTMClient(token), connection)
     await botClient.init()
     botClient.start()
 
