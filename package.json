@@ -14,11 +14,13 @@
     "body-parser": "^1.18.3",
     "connect-mongo": "^2.0.1",
     "express": "^4.16.4",
+    "express-session": "^1.15.6",
     "mongodb": "^3.1.8",
     "pg": "^7.5.0",
     "pug": "^2.0.3",
     "reflect-metadata": "^0.1.12",
     "request": "^2.88.0",
+    "request-promise": "^4.2.2",
     "typeorm": "^0.2.7"
   },
   "devDependencies": {
