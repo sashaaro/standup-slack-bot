@@ -1,18 +1,14 @@
 import { SlackTeam } from "../SlackTeam";
-import { SlackUser } from "../SlackUser";
-import { SlackBot } from "../SlackBot";
-import { SlackChannel } from "../SlackChannel";
 
-export interface Im
+export interface SlackIm
 {
     id: string,
     created: number,
     is_im: boolean,
     is_org_shared: boolean,
     user: string,
-    has_pins: boolean,
-    last_read: string,
-    is_open: boolean
+    is_user_deleted: boolean,
+    priority: number
 }
 
 export interface RTMAuthenticatedResponse
@@ -21,8 +17,4 @@ export interface RTMAuthenticatedResponse
     self: object
     team: SlackTeam
     latest_event_ts: string
-    channels: Array<SlackChannel>
-    ims: Array<Im>
-    users: Array<SlackUser>
-    bots: Array<SlackBot>
 }

@@ -16,11 +16,9 @@ class Im
     @ManyToOne(type => User, user => user.ims)
     user: User
     @Column()
-    has_pins: boolean
+    is_user_deleted: boolean
     @Column()
-    last_read: string
-    @Column()
-    is_open: boolean
+    priority: number
 }
 
 export default Im;

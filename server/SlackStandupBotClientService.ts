@@ -2,9 +2,8 @@ import * as slackClient from '@slack/client'
 import parameters from './parameters'
 import {Connection} from "typeorm";
 import Team from "./model/Team";
-import { SlackTeam } from "./slack/model/SlackTeam";
-import { RTMAuthenticatedResponse } from "./slack/model/rtm/RTMAuthenticatedResponse";
-import {SlackUser} from "./slack/model/SlackUser";
+import {RTMAuthenticatedResponse, SlackIm} from "./slack/model/rtm/RTMAuthenticatedResponse";
+import {SlackMember} from "./slack/model/SlackUser";
 import User from "./model/User";
 import Im from "./model/Im";
 import Question from "./model/Question";
@@ -19,14 +18,12 @@ const questions = [
 ]
 
 export default class SlackStandupBotClientService {
-    protected rtm: slackClient.RTMClient;
-    protected connection: Connection;
     protected everyMinutesIntervalID: Timeout;
 
-    constructor (rtm: slackClient.RTMClient, connection: Connection) {
-        this.rtm = rtm;
-        this.connection = connection;
-        // TODO logger
+    constructor (
+        private rtm: slackClient.RTMClient,
+        private webClient: slackClient.WebClient,
+        private connection: Connection) {
     }
 
     async init () {
@@ -44,6 +41,7 @@ export default class SlackStandupBotClientService {
         })
 
         this.rtm.on('authenticated', async (rtmStartData: RTMAuthenticatedResponse) => {
+            console.log(rtmStartData);
             console.log('Authenticated ' + rtmStartData.team.name);
 
             const teamRepository = this.connection.getRepository(Team)
@@ -55,30 +53,42 @@ export default class SlackStandupBotClientService {
 
             await teamRepository.save(teamModal)
 
-            const userRepository = this.connection.getRepository(User)
-            for(const user of rtmStartData.users) {
-                let userModal = await userRepository.findOne(user.id)
-                if (!userModal) {
-                    userModal = new User();
-                    userModal.id = user.id
-                }
-                userModal.name = user.name
-                userModal.profile = user.profile
-                userModal.team = await teamRepository.findOne(user.team_id)
+            const usersResult = await this.webClient.users.list()
 
-                await userRepository.save(userModal)
+            if (!usersResult.ok) {
+                // throw..
+                return;
+            }
+            const users = <SlackMember[]>(usersResult as any).members;
+            const userRepository = this.connection.getRepository(User)
+            for(const user of users) {
+                let userModel = await userRepository.findOne(user.id)
+                if (!userModel) {
+                    userModel = new User();
+                    userModel.id = user.id
+                }
+                userModel.name = user.name
+                userModel.profile = user.profile
+                userModel.team = await teamRepository.findOne(user.team_id)
+
+                await userRepository.save(userModel)
             }
 
+            const imResult = await this.webClient.im.list()
+            if (!imResult.ok) {
+                // throw..
+                return;
+            }
+            const ims = <SlackIm[]>(imResult as any).ims
             const imRepository = this.connection.getRepository(Im)
-            for(const imItem of rtmStartData.ims) {
+            for(const imItem of ims) {
                 const im = new Im;
                 im.created = imItem.created
-                im.has_pins = imItem.has_pins
                 im.id = imItem.id
                 im.is_im = imItem.is_im
-                im.is_open = imItem.is_open
+                im.is_user_deleted = imItem.is_user_deleted
                 im.is_org_shared = imItem.is_org_shared
-                im.last_read = imItem.last_read
+                im.priority = imItem.priority
                 im.user = await userRepository.findOne(imItem.user)
 
                 await imRepository.save(im)

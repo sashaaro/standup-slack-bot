@@ -5,9 +5,20 @@ services:
     image: node:8.12.0-alpine
     #entrypoint: npm install
     #entrypoint: ./node_modules/typescript/bin/tsc
-    entrypoint: node ./dist/index_ts.js
+    entrypoint: /bin/sh -c "npm install && ./node_modules/typescript/bin/tsc && node ./dist/index_ts.js"
     #entrypoint: npm install --save express express-session request-promise pug body-parser
     user: 1000:1000
+    ports:
+      - "3000:3000"
     volumes:
       - .:/opt/app
     working_dir: /opt/app
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
