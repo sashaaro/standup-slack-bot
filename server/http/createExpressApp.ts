@@ -1,0 +1,38 @@
+import * as bodyParser from 'body-parser'
+import {Connection} from "typeorm";
+import * as express from 'express'
+import * as session from 'express-session'
+import {HttpController} from "./controller";
+import "./controller/dashboard";
+import "./controller/main";
+import "./controller/settings";
+import {IAppConfig} from "../index_ts";
+
+const questionList = [
+    'What I worked on yesterday?',
+    'What I working on today?',
+    'Is anything standing in your way?'
+]
+
+export const createExpressApp = (connection: Connection, config: IAppConfig) => {
+    const app = express()
+    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(bodyParser.json());
+    app.use(session({
+        secret: 'keyboard cat',
+        //resave: false,
+        //saveUninitialized: true,
+        //cookie: { secure: true }
+    }))
+
+    const httpController = new HttpController(connection, config);
+
+    app.get('/', httpController.mainAction.bind(httpController));
+    app.get('/dashboard', httpController.dashboardAction.bind(httpController));
+
+    app.route('/dashboard/settings')
+        .get(httpController.settingsAction.bind(httpController))
+        .post(httpController.postSettingsAction.bind(httpController));
+
+    return app;
+}
