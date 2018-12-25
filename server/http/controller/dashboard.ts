@@ -1,7 +1,7 @@
 import User from "../../model/User";
 import Question from "../../model/Question";
 import * as pug from 'pug'
-import {HttpController} from "./index";
+import {HttpController, templateDirPath} from "./index";
 
 HttpController.prototype.dashboardAction = async function(req, res) {
     const session = req.session
@@ -21,7 +21,7 @@ HttpController.prototype.dashboardAction = async function(req, res) {
     const authLink = 'https://slack.com/oauth/authorize?&client_id='+this.config.slackClientID+'&scope=bot,channels:read,team:read'
 
 
-    res.send(pug.compileFile('../templates/dashboard/index.pug')({
+    res.send(pug.compileFile(`${templateDirPath}/dashboard/index.pug`)({
         team: user.team_name,
         authLink: authLink,
         questionList: [],

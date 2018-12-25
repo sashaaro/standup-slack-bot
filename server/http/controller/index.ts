@@ -5,6 +5,8 @@ const noImplementation = () => {
     throw Error("No implementation")
 }
 
+export const templateDirPath = './resources/templates'
+
 export class HttpController {
     constructor(protected connection: Connection, protected config: IAppConfig) {
     }

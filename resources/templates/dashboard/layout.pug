@@ -1,0 +1,15 @@
+extends ../layout/main
+
+block content
+    .ui.large.top.fixed.hidden.menu
+        .ui.container
+            a.active.item Home
+            a.item(href="/dashboard" class= {'active': activeMenu === 'reports'}) Dashboard
+            a.item(href="/dashboard/settings" class= {'active': activeMenu === 'settings'})= 'User settings'
+            .right.menu
+                .item
+                    a.ui.button Log in
+                .item
+                    a.ui.primary.button Sign Up
+    .content
+        block dashboard_content

@@ -1,12 +1,12 @@
 import * as request from 'request-promise'
 import * as pug from 'pug'
-import {HttpController} from "./index";
+import {HttpController, templateDirPath} from "./index";
 
 HttpController.prototype.mainAction = async function(req, res) {
     if (!req.query.code) {
         const authLink = 'https://slack.com/oauth/authorize?&client_id='+this.config.slackClientID+'&scope=bot,channels:read,team:read'
 
-        res.send(pug.compileFile('../templates/index.pug')({
+        res.send(pug.compileFile(`${templateDirPath}/index.pug`)({
             authLink: authLink
         }))
         return;

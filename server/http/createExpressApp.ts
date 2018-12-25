@@ -25,6 +25,8 @@ export const createExpressApp = (connection: Connection, config: IAppConfig) => 
         //cookie: { secure: true }
     }))
 
+    app.use(express.static('./resources/public'));
+
     const httpController = new HttpController(connection, config);
 
     app.get('/', httpController.mainAction.bind(httpController));

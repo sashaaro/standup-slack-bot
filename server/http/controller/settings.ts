@@ -3,7 +3,7 @@ import {SlackChannel} from "../../slack/model/SlackChannel";
 import Team, {TeamSettings} from "../../model/Team";
 import * as pug from 'pug'
 import {timezone} from "../../dictionary/timezone";
-import {HttpController} from "./index";
+import {HttpController, templateDirPath} from "./index";
 const timezoneList = timezone
 
 HttpController.prototype.settingsAction = async function (req, res) {
@@ -43,7 +43,7 @@ HttpController.prototype.settingsAction = async function (req, res) {
     }
     const authLink = 'https://slack.com/oauth/authorize?&client_id='+this.config.slackClientID+'&scope=bot,channels:read,team:read'
 
-    res.send(pug.compileFile('../templates/dashboard/settings.pug')({
+    res.send(pug.compileFile(`${templateDirPath}/dashboard/settings.pug`)({
         team: user.team_name,
         authLink: authLink,
         channels,
@@ -84,7 +84,7 @@ HttpController.prototype.postSettingsAction = async function(req, res) {
     const authLink = 'https://slack.com/oauth/authorize?&client_id='+this.config.slackClientID+'&scope=bot,channels:read,team:read'
 
 
-    res.send(pug.compileFile('../templates/dashboard/settings.pug')({
+    res.send(pug.compileFile(`${templateDirPath}/dashboard/settings.pug`)({
         team: user.team_name,
         authLink: authLink,
         channels,

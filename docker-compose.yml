@@ -5,8 +5,8 @@ services:
     image: node:8.12.0-alpine
     #entrypoint: npm install
     #entrypoint: ./node_modules/typescript/bin/tsc
-    #entrypoint: /bin/sh -c "./node_modules/typescript/bin/tsc && node ./dist/index_ts.js"
-    entrypoint: /bin/sh -c "node ./node_modules/copyfile/app.js -src ./ ./server/**/*.pug ./dist/"
+    entrypoint: /bin/sh -c "./node_modules/typescript/bin/tsc && node ./dist/index_ts.js"
+    #entrypoint: /bin/sh -c "node ./node_modules/copyfile/app.js -src ./ ./server/**/*.pug ./dist/"
     #entrypoint: npm install --save copyfile
     user: 1000:1000
     ports:
