@@ -1,9 +1,8 @@
-import User from "../../model/User";
-import Question from "../../model/Question";
 import * as pug from 'pug'
 import {HttpController, templateDirPath} from "./index";
+import StandUp from "../../model/StandUp";
 
-HttpController.prototype.dashboardAction = async function(req, res) {
+HttpController.prototype.dashboardAction = async function (req, res) {
     const session = req.session
     if (!session.user) {
         res.send('Access deny')
@@ -11,21 +10,42 @@ HttpController.prototype.dashboardAction = async function(req, res) {
     }
     const user = session.user;
 
-
-    let users = await this.connection.getRepository(User).find({team: user.team_id})
-
-    for(const user of users) {
-        user.questions = await this.connection.getRepository(Question).find();
-    }
+    const standUpRepository = this.connection.getRepository(StandUp)
+    const standUps = await standUpRepository
+        .createQueryBuilder('st')
+        .innerJoinAndSelect('st.team', 'team')
+        .leftJoinAndSelect('team.users', 'user')
+        .leftJoinAndSelect('st.answers', 'answers')
+        .leftJoinAndSelect('answers.im', 'answersIm')
+        .leftJoinAndSelect('answers.question', 'answersQuestion')
+        .leftJoinAndSelect('answersIm.user', 'answersImUser')
+        .where('team.id = :teamID', {teamID: user.team_id})
+        .getMany()
 
     const authLink = 'https://slack.com/oauth/authorize?&client_id='+this.config.slackClientID+'&scope=bot,channels:read,team:read'
 
 
+    const standUpList = [];
+    for(let standUp of standUps) {
+        //standUp = await standUpRepository.preload(standUp)
+        const userAnswers = []
+        for(const u of standUp.team.users) {
+            userAnswers.push({
+                user: u,
+                answers:  standUp.answers.filter(ans => ans.im.user.id === u.id)
+            })
+        }
+
+        standUpList.push({
+            standUp: standUp,
+            answers: userAnswers
+        })
+    }
+
     res.send(pug.compileFile(`${templateDirPath}/dashboard/index.pug`)({
         team: user.team_name,
         authLink: authLink,
-        questionList: [],
-        users,
+        standUpList,
         activeMenu: 'reports'
     }))
 }

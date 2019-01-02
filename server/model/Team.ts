@@ -20,7 +20,7 @@ class Team
     settings: TeamSettings;
 
     @OneToMany(type => User, user => user.team)
-    users: Promise<User[]>
+    users: User[]
 
     constructor()
     {

@@ -1,11 +1,12 @@
-import {Entity, Column, BeforeInsert, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, Column, BeforeInsert, ManyToOne, PrimaryGeneratedColumn, OneToMany} from "typeorm";
 import Team from "./Team";
+import Answer from "./Answer";
 
 @Entity()
 class StandUp
 {
     @PrimaryGeneratedColumn()
-    id: string;
+    id: number;
 
     @ManyToOne(type => Team, {
         cascade: true
@@ -15,8 +16,11 @@ class StandUp
     @Column()
     start: Date;
 
-    @Column()
+    @Column({nullable: true})
     end: Date;
+
+    @OneToMany(type => Answer, answer => answer.standUp)
+    answers: Answer[];
 
     @BeforeInsert()
     setupCreatedAt() {

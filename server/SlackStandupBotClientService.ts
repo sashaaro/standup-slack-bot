@@ -34,10 +34,10 @@ export default class SlackStandupBotClientService {
             const millisecondsDelay = 60 * 1000 - milliseconds
 
             console.log('Wait delay ' + millisecondsDelay + ' milliseconds for run loop')
-            setTimeout(() => {
+            //setTimeout(() => {
                 console.log('StandUp interval starting')
                 this.startStandUpInterval()
-            }, millisecondsDelay)
+            //}, millisecondsDelay)
         })
 
         this.rtm.on('authenticated', async (rtmStartData: RTMAuthenticatedResponse) => {
@@ -121,13 +121,26 @@ export default class SlackStandupBotClientService {
     async startTeamStandUpByDate (date: Date): Promise<StandUp[]> {
         const standUpRepository = this.connection.getRepository(StandUp)
         let standUps: StandUp[] = [];
-        for(const team of await this.connection.getRepository(Team).find()) {
-            const timeString = this.getTimeString(date, parseFloat(team.settings.timezone))
+        const teams = await this.connection.getRepository(Team)
+            .createQueryBuilder('team')
+            .leftJoinAndSelect('team.users', 'users')
+            .leftJoinAndSelect('users.ims', 'ims')
+            .getMany()
+
+        for(const team of teams) {
+            const timezone = parseFloat(team.settings.timezone)
+            const timeString = this.getTimeString(date, timezone)
             const inTime = team.settings.start === timeString
 
             if (inTime) {
                 const standUp = new StandUp();
                 standUp.team = team
+                standUp.end = new Date()
+
+                const [hours, minutes] = team.settings.end.split(':')
+                standUp.end.setHours(parseInt(hours) + timezone);
+                standUp.end.setMinutes(parseInt(minutes));
+
                 await standUpRepository.insert(standUp)
                 standUps.push(standUp);
             }
@@ -139,16 +152,15 @@ export default class SlackStandupBotClientService {
     async endTeamStandUpByDate (date): Promise<StandUp[]> {
         const standUpRepository = this.connection.getRepository(StandUp)
         let standUps: StandUp[] = [];
+
+        /* TODO const now = new Date();
+        now.setSeconds(0)
+        now.setMilliseconds(0)
+        standUpRepository.createQueryBuilder('st')
+        .where('st.end = :now', {now: now})*/
         for(const team of await this.connection.getRepository(Team).find()) {
             const timeString = this.getTimeString(date, parseFloat(team.settings.timezone))
             const inTime = team.settings.end === timeString
-
-            if (inTime) {
-                const standUp = new StandUp();
-                standUp.team = team
-                await standUpRepository.insert(standUp)
-                standUps.push(standUp);
-            }
         }
 
         return standUps;
@@ -181,9 +193,10 @@ export default class SlackStandupBotClientService {
 
     async answer(message: RTMMessageResponse): Promise<Answer> {
         const standUpRepository = this.connection.getRepository(StandUp)
-        const progressStandUp = standUpRepository.createQueryBuilder('st')
+        const progressStandUp = await standUpRepository.createQueryBuilder('st')
             .where('st.team = :team', {team: message.team})
-            .andWhere('st.end IS NULL')
+            // .andWhere('st.end IS NULL')
+            .orderBy('st.start', "DESC")
             .getOne();
 
         if (!progressStandUp) {
@@ -197,13 +210,12 @@ export default class SlackStandupBotClientService {
 
         const lastNoReplyAnswer = await answerRepository.
             createQueryBuilder('a')
-            //.innerJoin('q.im', 'im')
-            //.where('im.id := :imid', {imid: message.channel}).getOne()
-            .where('a.im = :im', {im: message.channel})
-            .andWhere('a.message IS NULL')
-            .andWhere('a.standUp = :standUp', {standUp: progressStandUp})
             .leftJoinAndSelect("a.im", "im")
             .leftJoinAndSelect("a.question", "question")
+            .innerJoinAndSelect("a.standUp", "standUp")
+            .where('im.id = :im', {im: message.channel})
+            .andWhere('a.message IS NULL')
+            .andWhere('standUp.id = :standUp', {standUp: progressStandUp.id})
             .getOne()
 
         if (!lastNoReplyAnswer) {
@@ -233,7 +245,7 @@ export default class SlackStandupBotClientService {
 
         for(const standUp of standUps) {
             let channels: Im[] = [];
-            for(const user of await standUp.team.users) {
+            for(const user of standUp.team.users) {
                 user.ims.forEach(im => {
                     if (channels.filter(cim => (cim.id === im.id)).length === 0) {
                         channels.push(im)
@@ -252,7 +264,7 @@ export default class SlackStandupBotClientService {
             endedStandUp.end = new Date();
             await this.connection.getRepository(StandUp).save(endedStandUp)
             const reportText = 'Report ...';
-            const im = await this.connection.getRepository(Im).findOne({id: endedStandUp.team.settings.report_channel});
+            const im = await this.connection.getRepository(Im).findOne(endedStandUp.team.settings.report_channel);
             if (!im) {
                 console.log('Report channel is not found')
                 continue;
