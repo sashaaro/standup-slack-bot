@@ -179,11 +179,9 @@ export default class SlackStandupBotClientService {
             createQueryBuilder('q')
             //.innerJoin('q.im', 'im')
             //.where('im.id := :imid', {imid: message.channel}).getOne()
-            .where('q.im = :im', {im: message.channel}).getOne()
-
-        console.log('Message for question')
-        console.log(message)
-        console.log(question)
+            .where('q.im = :im', {im: message.channel})
+            .leftJoinAndSelect("q.im", "im")
+            .getOne()
 
         if (!question) {
             // TODO
