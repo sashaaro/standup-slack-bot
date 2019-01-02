@@ -1,5 +1,5 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, BeforeUpdate} from "typeorm";
-import Im from "./Im";
+import Team from "./Team";
 
 @Entity()
 class Question
@@ -13,26 +13,18 @@ class Question
     @Column()
     text: string;
 
-    @ManyToOne(type => Im, null, {
-        eager: true
-    })
-    im: Im;
+    @Column()
+    disabled: boolean;
 
     @Column()
     createdAt: Date;
 
-    @Column()
-    updatedAt: Date;
+    // TODO @ManyToOne(type => Team)
+    team: Team;
 
     @BeforeInsert()
     setupCreatedAt() {
         this.createdAt = new Date();
-    }
-
-    @BeforeInsert()
-    @BeforeUpdate()
-    setupUpdatedAt() {
-        this.updatedAt = new Date();
     }
 }
 

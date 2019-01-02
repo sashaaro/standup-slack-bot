@@ -1,5 +1,4 @@
 import * as slackClient from '@slack/client'
-import parameters from './parameters'
 import {Connection} from "typeorm";
 import Team from "./model/Team";
 import {RTMAuthenticatedResponse, SlackIm} from "./slack/model/rtm/RTMAuthenticatedResponse";
@@ -9,14 +8,11 @@ import Im from "./model/Im";
 import Question from "./model/Question";
 import Timeout = NodeJS.Timeout;
 import {RTMMessageResponse} from "./slack/model/rtm/RTMMessageResponse";
+import Answer from "./model/Answer";
+import StandUp from "./model/StandUp";
 
 const standUpGreeting = 'Good morning/evening. Welcome to daily standup'
 const standUpGoodBye = 'Have good day. Good bye.'
-const questions = [
-    'What I worked on yesterday?',
-    'What I working on today?',
-    'Is anything standing in your way?'
-]
 
 export default class SlackStandupBotClientService {
     protected everyMinutesIntervalID: Timeout;
@@ -28,6 +24,9 @@ export default class SlackStandupBotClientService {
     }
 
     async init () {
+        const userRepository = this.connection.getRepository(User)
+        const imRepository = this.connection.getRepository(Im)
+
         this.rtm.on('connected', () => {
             console.log('Connection opened')
             const now = new Date()
@@ -61,7 +60,6 @@ export default class SlackStandupBotClientService {
                 return;
             }
             const users = <SlackMember[]>(usersResult as any).members;
-            const userRepository = this.connection.getRepository(User)
             for(const user of users) {
                 let userModel = await userRepository.findOne(user.id)
                 if (!userModel) {
@@ -81,7 +79,6 @@ export default class SlackStandupBotClientService {
                 return;
             }
             const ims = <SlackIm[]>(imResult as any).ims
-            const imRepository = this.connection.getRepository(Im)
             for(const imItem of ims) {
                 const im = new Im;
                 im.created = imItem.created
@@ -97,12 +94,14 @@ export default class SlackStandupBotClientService {
         })
 
         this.rtm.on('message', async (message: RTMMessageResponse) => {
-            if (!this.existChannel(message.channel)) {
-                // TODO log
-                //return
+            if (!imRepository.findOne(message.channel)) {
+                console.log(`Message channel ${message.channel} is not im`)
+
+                // TODO try update from api
+                return
             }
 
-            await this.answer(message)
+            await this.answerAndSendNext(message)
         })
 
         this.rtm.on('error', async (message) => {
@@ -119,22 +118,40 @@ export default class SlackStandupBotClientService {
         })
     }
 
-    async findReportChannelsByStartEnd (date): Promise<Team[]> {
-        const reportedTeams: Team[] = []
-
-        const teams = await this.connection.getRepository(Team).find()
-        for(const team of teams.filter((team) => (team.settings.report_channel))) {
-            // todo check writable for bot
+    async startTeamStandUpByDate (date: Date): Promise<StandUp[]> {
+        const standUpRepository = this.connection.getRepository(StandUp)
+        let standUps: StandUp[] = [];
+        for(const team of await this.connection.getRepository(Team).find()) {
             const timeString = this.getTimeString(date, parseFloat(team.settings.timezone))
-            const isTime = team.settings.end === timeString
+            const inTime = team.settings.start === timeString
 
-            if (isTime) {
-                // TODO ims send to all users.
-                reportedTeams.push(team)
+            if (inTime) {
+                const standUp = new StandUp();
+                standUp.team = team
+                await standUpRepository.insert(standUp)
+                standUps.push(standUp);
             }
         }
 
-        return reportedTeams;
+        return standUps;
+    }
+
+    async endTeamStandUpByDate (date): Promise<StandUp[]> {
+        const standUpRepository = this.connection.getRepository(StandUp)
+        let standUps: StandUp[] = [];
+        for(const team of await this.connection.getRepository(Team).find()) {
+            const timeString = this.getTimeString(date, parseFloat(team.settings.timezone))
+            const inTime = team.settings.end === timeString
+
+            if (inTime) {
+                const standUp = new StandUp();
+                standUp.team = team
+                await standUpRepository.insert(standUp)
+                standUps.push(standUp);
+            }
+        }
+
+        return standUps;
     }
 
     private getTimeString(date: Date, timezone: number) {
@@ -143,60 +160,56 @@ export default class SlackStandupBotClientService {
         return ('0' + (hours - date.getTimezoneOffset() + timezone)).slice(-2) + ':' + ('0' + minutes).slice(-2)
     }
 
-    async findUserChannelsByStartDate (date: Date): Promise<Im[]> {
-        const teams = await this.connection.getRepository(Team).find()
-        const userRepository = this.connection.getRepository(User)
-        let channels:Im[] = []
-        for(const team of teams) {
-            const timeString = this.getTimeString(date, parseFloat(team.settings.timezone))
-            const inTime = team.settings.start === timeString
+    async answerAndSendNext(message: RTMMessageResponse): Promise<Answer> {
+        const repliedAnswer = await this.answer(message)
 
-            if (inTime) {
-                const users = await userRepository.find({team: team})
-                for(const user of users) {
-                    user.ims.forEach(im => {
-                        if (channels.filter(cim => (cim.id === im.id)).length === 0) {
-                            channels.push(im)
-                        }
-                    })
-                }
-            }
+        const nextQuestion = await this.connection.getRepository(Question).findOne({index: repliedAnswer.question.index+1, team: message.team})
+
+        if (!nextQuestion) {
+            console.log('Next question is not found')
+            this.send(repliedAnswer.im, standUpGoodBye)
+            return;
         }
 
-        return channels;
+        return await this.askQuestion(repliedAnswer.im, nextQuestion, repliedAnswer.standUp);
     }
 
-    async answer (message: RTMMessageResponse) {
-        const meetUpInProcess = true // TODO
-        if (!meetUpInProcess) {
-                // TODO
-            return 'wtf!'
+    async answer(message: RTMMessageResponse): Promise<Answer> {
+        const standUpRepository = this.connection.getRepository(StandUp)
+        const progressStandUp = standUpRepository.createQueryBuilder('st')
+            .where('st.team = :team', {team: message.team})
+            .andWhere('st.end IS NULL')
+            .getOne();
+
+        if (!progressStandUp) {
+            console.log('no progress stand up')
+            return new Promise<Answer>((resolve, reject) => {
+                reject('no progress stand up')
+            })
         }
 
-        const questionRepository = this.connection.getRepository(Question)
+        const answerRepository = this.connection.getRepository(Answer)
 
-        const question = await questionRepository.
-            createQueryBuilder('q')
+        const lastNoReplyAnswer = await answerRepository.
+            createQueryBuilder('a')
             //.innerJoin('q.im', 'im')
             //.where('im.id := :imid', {imid: message.channel}).getOne()
-            .where('q.im = :im', {im: message.channel})
-            .leftJoinAndSelect("q.im", "im")
+            .where('a.im = :im', {im: message.channel})
+            .andWhere('a.message IS NULL')
+            .andWhere('a.standUp = :standUp', {standUp: progressStandUp})
+            .leftJoinAndSelect("a.im", "im")
+            .leftJoinAndSelect("a.question", "question")
             .getOne()
 
-        if (!question) {
+        if (!lastNoReplyAnswer) {
+            console.log('lastNoReplyAnswer is not found')
             // TODO
             return 'wtf'
         }
 
-        /*await questionRepository.update(question._id, <Question>{
-            answer: message.text
-        });*/
-        const nextQuestion = await this.askQuestion(question.im, question.index + 1);
-        if (!nextQuestion) {
-            console.log(`question.im ${question.im}`)
-            this.send(question.im, standUpGoodBye)
-            return;
-        }
+        lastNoReplyAnswer.message = message.text
+        return answerRepository.save(lastNoReplyAnswer);
+
     }
 
     standUpForNow () {
@@ -211,62 +224,67 @@ export default class SlackStandupBotClientService {
 
     async startDailyMeetUpByDate (date) {
         // start ask users
-        const userChannels = await this.findUserChannelsByStartDate(date)
+        const standUps = await this.startTeamStandUpByDate(date)
 
-        for(const userChannel of userChannels) {
-            console.log('userChannel')
-            console.log(userChannel)
-            await this.startAsk(userChannel)
+        for(const standUp of standUps) {
+            let channels: Im[] = [];
+            for(const user of standUp.team.users) {
+                user.ims.forEach(im => {
+                    if (channels.filter(cim => (cim.id === im.id)).length === 0) {
+                        channels.push(im)
+                    }
+                })
+            }
+
+            for(const channel of channels) {
+                await this.startAsk(channel, standUp)
+            }
         }
 
-        // send report for end of meetup
-        /*const reportedTeams = await this.findReportChannelsByStartEnd(date);
-        for(const reportedTeam of reportedTeams) {
+
+        const endedStandUps = await this.endTeamStandUpByDate(date);
+        for(const endedStandUp of endedStandUps) {
+            endedStandUp.end = new Date();
+            await this.connection.getRepository(StandUp).save(endedStandUp)
             const reportText = 'Report ...';
-            const im = await this.connection.getRepository(Im).findOne({id: reportedTeam.settings.report_channel});
-            if (im) {
-                this.send(im, reportText);
-            } else {
+            const im = await this.connection.getRepository(Im).findOne({id: endedStandUp.team.settings.report_channel});
+            if (!im) {
                 console.log('Report channel is not found')
+                continue;
             }
-        }*/
+            await this.send(im, reportText);
+        }
     }
 
-    async startAsk (channel: Im) {
-
-        console.log(`startAsk ${channel}`)
-        console.log(channel)
+    async startAsk(channel: Im, standUp: StandUp) {
         this.send(channel, standUpGreeting)
         //setTimeout(() => {
-        await this.askQuestion(channel, 0)
+
+
+        const question = await this.connection.getRepository(Question).findOne(); // TODO filter
+        if (!question) {
+            console.log('No questions')
+            return;
+        }
+        await this.askQuestion(channel, question, standUp)
         //}, 1500)
     }
 
-    async askQuestion(channel: Im, questionIndex) {
-        if (!questions[questionIndex]) {
-            return false;
-        }
-        const text = questions[questionIndex];
+    async askQuestion(channel: Im, question: Question, standUp: StandUp): Promise<Answer> {
+        const answer = new Answer()
 
-        const question = new Question();
-        question.index = questionIndex;
-        question.im = channel;
-        question.text = text
+        answer.im = channel;
+        answer.question = question;
+        answer.standUp = standUp;
 
-        await this.send(question.im, question.text)
-        await this.connection.getRepository(Question).save(question)
+        await this.send(answer.im, question.text)
+        await this.connection.getRepository(Answer).insert(answer)
 
-        return true
+        return answer
     }
 
     send (channel: Im, text): Promise<void> {
         return new Promise((resolve, reject) => {
-            console.log('Send to channel')
-            console.log(channel)
-            if (!channel) { // TODO remove
-                reject('')
-                return;
-            }
             this.rtm.sendMessage(text, channel.id).then(result => {
                 if (result.error) {
                     console.log(result.error)
@@ -279,11 +297,6 @@ export default class SlackStandupBotClientService {
                 reject(error)
             })
         })
-    }
-
-    existChannel (channel) {
-        //return channels.contains(channel)
-        return true
     }
 
     stopInterval() {

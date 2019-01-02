@@ -8,6 +8,8 @@ import parameters from './parameters'
 import SlackStandupBotClient from './SlackStandupBotClientService'
 import Im from "./model/Im";
 import {createExpressApp} from "./http/createExpressApp";
+import Answer from "./model/Answer";
+import StandUp from "./model/StandUp";
 
 const config = parameters as IAppConfig;
 
@@ -54,9 +56,29 @@ createConnection({
             Team,
             User,
             Im,
+            Answer,
+            StandUp
         ],
         synchronize: true,
     })
+
+    const questions = [
+        'What I worked on yesterday?',
+        'What I working on today?',
+        'Is anything standing in your way?'
+    ]
+
+    if (!await connection.getRepository(Question).count()) {
+        let index = 0
+        for (const q of questions) {
+            const qu = new Question()
+            qu.text = q
+            qu.index = index
+            qu.disabled = false
+            await connection.getRepository(Question).insert(qu)
+            ++index;
+        }
+    }
 
     const botClient = new SlackStandupBotClient(
         new RTMClient(config.botUserOAuthAccessToken),

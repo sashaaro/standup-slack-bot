@@ -19,10 +19,8 @@ class Team
     @Column('json')
     settings: TeamSettings;
 
-    @OneToMany(type => User, user => user.team, {
-        cascade: true
-    })
-    users: User[]
+    @OneToMany(type => User, user => user.team)
+    users: Promise<User[]>
 
     constructor()
     {
