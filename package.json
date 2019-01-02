@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "concurrently": "^4.1.0",
+    "connect-redis": "^3.4.0",
     "nodemon": "^1.18.9",
     "typescript": "3.2.2"
   }

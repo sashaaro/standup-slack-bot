@@ -7,6 +7,9 @@ import "./controller/dashboard";
 import "./controller/main";
 import "./controller/settings";
 import {IAppConfig} from "../index_ts";
+import * as createRedisConnectStore from 'connect-redis';
+
+const RedisConnecStore = createRedisConnectStore(session);
 
 const questionList = [
     'What I worked on yesterday?',
@@ -22,6 +25,7 @@ export const createExpressApp = (connection: Connection, config: IAppConfig) => 
         secret: 'keyboard cat',
         resave: true,
         saveUninitialized: true,
+        store: new RedisConnecStore({host: 'redis'})
         //cookie: { secure: true }
     }))
 
