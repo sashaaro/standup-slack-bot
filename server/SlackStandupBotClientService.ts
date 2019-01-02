@@ -163,7 +163,12 @@ export default class SlackStandupBotClientService {
     async answerAndSendNext(message: RTMMessageResponse): Promise<Answer> {
         const repliedAnswer = await this.answer(message)
 
-        const nextQuestion = await this.connection.getRepository(Question).findOne({index: repliedAnswer.question.index+1, team: message.team})
+        const nextQuestion = await this.connection.getRepository(Question).findOne({
+            where: {
+                index: repliedAnswer.question.index + 1,
+                team: message.team
+            }
+        })
 
         if (!nextQuestion) {
             console.log('Next question is not found')
@@ -204,7 +209,7 @@ export default class SlackStandupBotClientService {
         if (!lastNoReplyAnswer) {
             console.log('lastNoReplyAnswer is not found')
             // TODO
-            return 'wtf'
+            return new Promise((r,e) => (e('lastNoReplyAnswer is not found')))
         }
 
         lastNoReplyAnswer.message = message.text
@@ -228,7 +233,7 @@ export default class SlackStandupBotClientService {
 
         for(const standUp of standUps) {
             let channels: Im[] = [];
-            for(const user of standUp.team.users) {
+            for(const user of await standUp.team.users) {
                 user.ims.forEach(im => {
                     if (channels.filter(cim => (cim.id === im.id)).length === 0) {
                         channels.push(im)
