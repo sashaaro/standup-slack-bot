@@ -20,8 +20,8 @@ export const createExpressApp = (connection: Connection, config: IAppConfig) => 
     app.use(bodyParser.json());
     app.use(session({
         secret: 'keyboard cat',
-        //resave: false,
-        //saveUninitialized: true,
+        resave: true,
+        saveUninitialized: true,
         //cookie: { secure: true }
     }))
 

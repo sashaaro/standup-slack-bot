@@ -16,7 +16,6 @@ export interface IAppConfig {
     slackSecret: string,
     slackVerificationToken: string,
     botUserOAuthAccessToken: string,
-    mongoUrl: string,
     host: string,
     defaultSettings: {
         timezone: string,

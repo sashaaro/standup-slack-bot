@@ -3,7 +3,6 @@ export default {
   slackSecret: 'd202438e1265994c4b85be301983e6b5',
   slackVerificationToken: 'Eeo49Ou9MDuvXEdFmnEZrRFB',
   botUserOAuthAccessToken: 'xoxb-220247998736-pWLHKrunnk9vfiZQAiHtz14f',
-  mongoUrl: 'mongodb://localhost:27017/standup-slack-bot',
   host: 'http://localhost:3000',
   defaultSettings: {
     timezone: '0.0',

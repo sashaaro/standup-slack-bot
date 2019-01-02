@@ -1,4 +1,4 @@
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, BeforeUpdate} from "typeorm";
 import Im from "./Im";
 
 @Entity()
@@ -17,6 +17,23 @@ class Question
         eager: true
     })
     im: Im;
+
+    @Column()
+    createdAt: Date;
+
+    @Column()
+    updatedAt: Date;
+
+    @BeforeInsert()
+    setupCreatedAt() {
+        this.createdAt = new Date();
+    }
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    setupUpdatedAt() {
+        this.updatedAt = new Date();
+    }
 }
 
 export default Question;
