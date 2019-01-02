@@ -64,7 +64,7 @@ createConnection({
         connection)
     await botClient.init()
     botClient.start()
-
+console.log(1);
     const app = createExpressApp(connection, config)
     app.listen(3000);
     // here you can start to work with your entities
