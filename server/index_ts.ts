@@ -6,6 +6,7 @@ import User from "./model/User";
 import { RTMClient, WebClient } from '@slack/client'
 import parameters from './parameters'
 import StandupBotClient, {
+    ITimezone, ITimezoneProvider,
     SlackProvider,
     STAND_UP_BOT_STAND_UP_PROVIDER,
     STAND_UP_BOT_TEAM_PROVIDER, STAND_UP_BOT_TRANSPORT
@@ -14,6 +15,7 @@ import {createExpressApp} from "./http/createExpressApp";
 import Answer from "./model/Answer";
 import StandUp from "./model/StandUp";
 import {Container, Service, Token} from "typedi";
+import {timezone} from "./dictionary/timezone";
 
 const config = parameters as IAppConfig;
 
@@ -87,11 +89,30 @@ createConnection({
     const CONFIG_TOKEN = new Token('config')
 
 
+
+    const getPgTimezoneList = (connection: Connection): ITimezoneProvider => (
+        (() => (connection.query('select * from pg_timezone_names LIMIT 10') as Promise<ITimezone[]>)) as ITimezoneProvider
+    )
+
+    const getTimezoneList: ITimezoneProvider = () => (new Promise(resolve => {
+        const list: ITimezone[] = []
+        for(const time in timezone) {
+            const value = timezone[time]
+
+            list.push({name: value, abbrev: time, utc_offset: {hours: parseFloat(time)}} as ITimezone)
+        }
+
+        resolve(list);
+    }))
+
+
     const rtmClient = new RTMClient(config.botUserOAuthAccessToken)
     const webClient = new WebClient(config.botUserOAuthAccessToken)
+
     Container.set(RTMClient, rtmClient);
     Container.set(WebClient, webClient);
     Container.set(Connection, connection);
+    Container.set('timezoneList', getTimezoneList());
 
     const slackProvider = Container.get(SlackProvider)
 

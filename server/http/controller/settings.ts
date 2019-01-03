@@ -3,10 +3,14 @@ import {SlackChannel} from "../../slack/model/SlackChannel";
 import Team, {TeamSettings} from "../../model/Team";
 import * as pug from 'pug'
 import {HttpController, templateDirPath} from "./index";
-const timezoneList = []
+import {Container} from "typedi";
+import {ITimezone} from "../../SlackStandupBotClientService";
 
 HttpController.prototype.settingsAction = async function (req, res) {
     const session = req.session
+    const timezoneList = Container.get('timezoneList') as Promise<ITimezone[]>;
+
+
     if (!session.user) {
         res.send('Access deny') // TODO 403
         return;
@@ -46,12 +50,14 @@ HttpController.prototype.settingsAction = async function (req, res) {
         team: user.team_name,
         authLink: authLink,
         channels,
-        timezoneList,
+        timezoneList: await timezoneList,
         settings: team.settings,
         activeMenu: 'settings'
     }))
 }
 HttpController.prototype.postSettingsAction = async function(req, res) {
+    const timezoneList = Container.get('timezoneList') as Promise<ITimezone[]>;
+
     const session = req.session
     if (!session.user) {
         res.send('Access deny') // TODO 403
@@ -87,7 +93,7 @@ HttpController.prototype.postSettingsAction = async function(req, res) {
         team: user.team_name,
         authLink: authLink,
         channels,
-        timezoneList,
+        timezoneList: await timezoneList,
         settings: team.settings,
         activeMenu: 'settings'
     }))

@@ -9,8 +9,8 @@ block dashboard_content
                     label= 'Locale timezone'
                     select.form-control(name="timezone")
                         each timezone, index in timezoneList
-                            - var selected = settings.timezone == index
-                            option(value= index, selected=selected)= timezone
+                            - var selected = settings.timezone == timezone.utc_offset.hours
+                            option(value= timezone.utc_offset.hours, selected=selected)= timezone.name
 
                 .field
                     label= 'Start meeting (locale time)'

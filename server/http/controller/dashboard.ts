@@ -31,7 +31,7 @@ HttpController.prototype.dashboardAction = async function (req, res) {
         for(const u of standUp.team.users) {
             userAnswers.push({
                 user: u,
-                answers:  standUp.answers.filter(ans => ans.im.user.id === u.id)
+                answers:  standUp.answers.filter(ans => ans.user.id === u.id)
             })
         }
 
