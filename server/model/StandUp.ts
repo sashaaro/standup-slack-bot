@@ -1,9 +1,10 @@
 import {Entity, Column, BeforeInsert, ManyToOne, PrimaryGeneratedColumn, OneToMany} from "typeorm";
 import Team from "./Team";
 import Answer from "./Answer";
+import {IStandUp} from "../SlackStandupBotClientService";
 
 @Entity()
-class StandUp
+class StandUp implements IStandUp
 {
     @PrimaryGeneratedColumn()
     id: number;
@@ -16,7 +17,7 @@ class StandUp
     @Column()
     start: Date;
 
-    @Column({nullable: true})
+    @Column()
     end: Date;
 
     @OneToMany(type => Answer, answer => answer.standUp)

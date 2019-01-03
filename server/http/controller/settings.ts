@@ -2,9 +2,8 @@ import {WebClient} from "@slack/client";
 import {SlackChannel} from "../../slack/model/SlackChannel";
 import Team, {TeamSettings} from "../../model/Team";
 import * as pug from 'pug'
-import {timezone} from "../../dictionary/timezone";
 import {HttpController, templateDirPath} from "./index";
-const timezoneList = timezone
+const timezoneList = []
 
 HttpController.prototype.settingsAction = async function (req, res) {
     const session = req.session

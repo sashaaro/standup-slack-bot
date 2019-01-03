@@ -1,6 +1,7 @@
 import {Entity, Column, PrimaryColumn, OneToMany} from "typeorm";
 import User from "./User";
 import parameters from './../parameters'
+import {ITeam} from "../SlackStandupBotClientService";
 
 export class TeamSettings
 {
@@ -11,7 +12,7 @@ export class TeamSettings
 }
 
 @Entity()
-class Team
+class Team implements ITeam
 {
     @PrimaryColumn()
     id: string;

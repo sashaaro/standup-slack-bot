@@ -1,8 +1,9 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, BeforeUpdate} from "typeorm";
 import Team from "./Team";
+import {IQuestion} from "../SlackStandupBotClientService";
 
 @Entity()
-class Question
+class Question implements IQuestion
 {
     @PrimaryGeneratedColumn()
     id: number;

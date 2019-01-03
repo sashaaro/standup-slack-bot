@@ -1,18 +1,19 @@
 import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn} from "typeorm";
 import Question from "./Question";
-import Im from "./Im";
 import StandUp from "./StandUp";
+import {IAnswer} from "../SlackStandupBotClientService";
+import User from "./User";
 
 @Entity()
-class Answer
+class Answer implements IAnswer
 {
     @PrimaryGeneratedColumn()
     id: string
 
-    @ManyToOne(type => Im, null, {
+    @ManyToOne(type => User, null, {
         eager: true
     })
-    im: Im;
+    user: User;
 
     @ManyToOne(type => StandUp, null, {
         eager: true

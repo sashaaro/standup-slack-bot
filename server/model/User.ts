@@ -3,6 +3,7 @@ import Team from "./Team";
 import Im from "./Im";
 import {SlackUserProfile} from "../slack/model/SlackUser";
 import Question from "./Question";
+import {IUser} from "../SlackStandupBotClientService";
 
 class Profile implements SlackUserProfile
 {
@@ -31,7 +32,7 @@ class Profile implements SlackUserProfile
 }
 
 @Entity()
-class User
+class User implements IUser
 {
     @PrimaryColumn()
     id: string;
@@ -46,15 +47,13 @@ class User
     })
     team: Team;
 
-    @OneToMany(type => Im, im => im.user, {
-        eager: true
+    @Column({
+        length: 10
     })
-    ims: Im[];
+    im: string;
 
     @Column('json', {default: new Profile()})
     profile: Profile;
-
-    questions: Question[];
 
     constructor() {
         this.profile = new Profile()

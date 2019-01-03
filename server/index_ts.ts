@@ -10,6 +10,7 @@ import Im from "./model/Im";
 import {createExpressApp} from "./http/createExpressApp";
 import Answer from "./model/Answer";
 import StandUp from "./model/StandUp";
+import {Container, Service, Token} from "typedi";
 
 const config = parameters as IAppConfig;
 
@@ -81,10 +82,15 @@ createConnection({
         }
     }
 
-    const botClient = new SlackStandupBotClient(
-        new RTMClient(config.botUserOAuthAccessToken),
-        new WebClient(config.botUserOAuthAccessToken),
-        connection)
+    const CONFIG_TOKEN = new Token('config')
+
+
+    Container.set(RTMClient, new RTMClient(config.botUserOAuthAccessToken));
+    Container.set(WebClient, new WebClient(config.botUserOAuthAccessToken));
+    Container.set(Connection, connection);
+
+
+    const botClient = Container.get(SlackStandupBotClient)
     await botClient.init()
     botClient.start()
 
