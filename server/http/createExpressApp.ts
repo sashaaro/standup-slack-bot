@@ -3,8 +3,8 @@ import {Connection} from "typeorm";
 import * as express from 'express'
 import * as session from 'express-session'
 import {HttpController} from "./controller";
-import "./controller/dashboard";
-import "./controller/main";
+import "./controller/standUps";
+import "./controller/auth";
 import "./controller/settings";
 import {IAppConfig} from "../index_ts";
 import * as createRedisConnectStore from 'connect-redis';
@@ -33,10 +33,26 @@ export const createExpressApp = (connection: Connection, config: IAppConfig) => 
 
     const httpController = new HttpController(connection, config);
 
-    app.get('/', httpController.mainAction.bind(httpController));
-    app.get('/dashboard', httpController.dashboardAction.bind(httpController));
+    app.get('/', (req, res) => {
+      const session = req.session;
+      const user = session.user;
 
-    app.route('/dashboard/settings')
+      if (!user) {
+        res.redirect('/auth');
+        return;
+      }
+
+      return httpController.standUpsAction.call(httpController, req, res)
+    });
+
+    app.get('/auth', httpController.authAction.bind(httpController));
+    app.get('/logout', (req, res) => {
+      req.session.destroy()
+      res.redirect('/auth');
+      return;
+    });
+
+    app.route('/settings')
         .get(httpController.settingsAction.bind(httpController))
         .post(httpController.postSettingsAction.bind(httpController));
 

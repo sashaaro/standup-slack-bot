@@ -4,32 +4,17 @@ import Team, {TeamSettings} from "../../model/Team";
 import * as pug from 'pug'
 import {HttpController, templateDirPath} from "./index";
 import {Container} from "typedi";
-import {ITimezone} from "../../SlackStandupBotClientService";
+import {ITimezone} from "../../StandUpBotService";
 
 HttpController.prototype.settingsAction = async function (req, res) {
     const session = req.session
     const timezoneList = Container.get('timezoneList') as Promise<ITimezone[]>;
-
 
     if (!session.user) {
         res.send('Access deny') // TODO 403
         return;
     }
     const user = session.user;
-
-    /*const response = await request({
-      url: 'https://slack.com/api/chat.postMessage',
-      method: 'POST',
-      form: {
-        token: user.access_token,
-        channel: user.user_id,
-        text: 'Hello'
-      }
-    })*/
-
-    //const botClient = new SlackStandupBotClient(new slackClient.RtmClient(user.bot.bot_access_token), db)
-    //botClient.init();
-    //botClient.start();
 
     const webClient = new WebClient(session.user.access_token)
     const response = await webClient.channels.list();
@@ -46,7 +31,7 @@ HttpController.prototype.settingsAction = async function (req, res) {
     }
     const authLink = 'https://slack.com/oauth/authorize?&client_id='+this.config.slackClientID+'&scope=bot,channels:read,team:read'
 
-    res.send(pug.compileFile(`${templateDirPath}/dashboard/settings.pug`)({
+    res.send(pug.compileFile(`${templateDirPath}/settings.pug`)({
         team: user.team_name,
         authLink: authLink,
         channels,
@@ -89,7 +74,7 @@ HttpController.prototype.postSettingsAction = async function(req, res) {
     const authLink = 'https://slack.com/oauth/authorize?&client_id='+this.config.slackClientID+'&scope=bot,channels:read,team:read'
 
 
-    res.send(pug.compileFile(`${templateDirPath}/dashboard/settings.pug`)({
+    res.send(pug.compileFile(`${templateDirPath}/settings.pug`)({
         team: user.team_name,
         authLink: authLink,
         channels,

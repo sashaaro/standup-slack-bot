@@ -1,7 +1,7 @@
 import {Entity, Column, ManyToOne, PrimaryColumn} from "typeorm";
 import Team from "./Team";
 import {SlackUserProfile} from "../slack/model/SlackUser";
-import {IUser} from "../SlackStandupBotClientService";
+import {IUser} from "../StandUpBotService";
 
 class Profile implements SlackUserProfile
 {

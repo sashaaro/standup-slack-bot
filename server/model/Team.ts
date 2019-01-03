@@ -1,9 +1,9 @@
 import {Entity, Column, PrimaryColumn, OneToMany} from "typeorm";
 import User from "./User";
 import parameters from './../parameters'
-import {ITeam} from "../SlackStandupBotClientService";
+import {ITeam, ITeamSettings} from "../StandUpBotService";
 
-export class TeamSettings
+export class TeamSettings implements ITeamSettings
 {
     timezone: string
     start: string

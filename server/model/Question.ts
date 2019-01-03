@@ -1,6 +1,6 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, BeforeUpdate} from "typeorm";
 import Team from "./Team";
-import {IQuestion} from "../SlackStandupBotClientService";
+import {IQuestion} from "../StandUpBotService";
 
 @Entity()
 class Question implements IQuestion

@@ -1,21 +1,21 @@
 import "reflect-metadata";
 import {createConnection, Connection} from "typeorm";
 import Question from "./model/Question";
-import Team, {TeamSettings} from "./model/Team";
+import Team from "./model/Team";
 import User from "./model/User";
 import { RTMClient, WebClient } from '@slack/client'
 import parameters from './parameters'
-import StandupBotClient, {
+import StandUpBotService, {
     ITimezone, ITimezoneProvider,
-    SlackProvider,
     STAND_UP_BOT_STAND_UP_PROVIDER,
     STAND_UP_BOT_TEAM_PROVIDER, STAND_UP_BOT_TRANSPORT
-} from './SlackStandupBotClientService'
+} from './StandUpBotService'
 import {createExpressApp} from "./http/createExpressApp";
 import Answer from "./model/Answer";
 import StandUp from "./model/StandUp";
 import {Container, Service, Token} from "typedi";
 import {timezone} from "./dictionary/timezone";
+import {SlackProvider} from "./slack/SlackProvider";
 
 const config = parameters as IAppConfig;
 
@@ -122,7 +122,7 @@ createConnection({
     Container.set(STAND_UP_BOT_TRANSPORT, slackProvider);
 
     await slackProvider.init();
-    const botClient = Container.get(StandupBotClient)
+    const botClient = Container.get(StandUpBotService)
     botClient.start()
 
     const app = createExpressApp(connection, config)

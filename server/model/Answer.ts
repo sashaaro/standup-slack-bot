@@ -1,8 +1,8 @@
 import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn} from "typeorm";
 import Question from "./Question";
 import StandUp from "./StandUp";
-import {IAnswer} from "../SlackStandupBotClientService";
 import User from "./User";
+import {IAnswer} from "../StandUpBotService";
 
 @Entity()
 class Answer implements IAnswer
