@@ -7,8 +7,7 @@ export default {
   defaultSettings: {
     timezone: '0.0',
     start: '10:00',
-    end: '10:30',
-    report_channel: null
+    end: '10:30'
   },
   debug: false
 }

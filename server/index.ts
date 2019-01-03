@@ -13,11 +13,13 @@ import StandUpBotService, {
 import {createExpressApp} from "./http/createExpressApp";
 import Answer from "./model/Answer";
 import StandUp from "./model/StandUp";
-import {Container, Service, Token} from "typedi";
+import {Container, Token} from "typedi";
 import {timezone} from "./dictionary/timezone";
 import {SlackProvider} from "./slack/SlackProvider";
+import {CONFIG_TOKEN} from "./services/token";
 
 const config = parameters as IAppConfig;
+
 
 export interface IAppConfig {
     slackClientID: string,
@@ -29,10 +31,26 @@ export interface IAppConfig {
         timezone: string,
         start: string,
         end: string,
-        report_channel?: string
     },
     debug: false
 }
+
+
+// move
+const getPgTimezoneList = (connection: Connection): ITimezoneProvider => (
+  (() => (connection.query('select * from pg_timezone_names LIMIT 10') as Promise<ITimezone[]>)) as ITimezoneProvider
+)
+const getTimezoneList: ITimezoneProvider = () => (new Promise(resolve => {
+  const list: ITimezone[] = []
+  for(const time in timezone) {
+    const value = timezone[time]
+
+    list.push({name: value, abbrev: time, utc_offset: {hours: parseFloat(time)}} as ITimezone)
+  }
+
+  resolve(list);
+}))
+
 
 createConnection({
     type: "postgres",
@@ -86,36 +104,17 @@ createConnection({
         }
     }
 
-    const CONFIG_TOKEN = new Token('config')
-
-
-
-    const getPgTimezoneList = (connection: Connection): ITimezoneProvider => (
-        (() => (connection.query('select * from pg_timezone_names LIMIT 10') as Promise<ITimezone[]>)) as ITimezoneProvider
-    )
-
-    const getTimezoneList: ITimezoneProvider = () => (new Promise(resolve => {
-        const list: ITimezone[] = []
-        for(const time in timezone) {
-            const value = timezone[time]
-
-            list.push({name: value, abbrev: time, utc_offset: {hours: parseFloat(time)}} as ITimezone)
-        }
-
-        resolve(list);
-    }))
-
-
     const rtmClient = new RTMClient(config.botUserOAuthAccessToken)
     const webClient = new WebClient(config.botUserOAuthAccessToken)
 
     Container.set(RTMClient, rtmClient);
     Container.set(WebClient, webClient);
     Container.set(Connection, connection);
+    Container.set(CONFIG_TOKEN, config);
     Container.set('timezoneList', getTimezoneList());
 
-    const slackProvider = Container.get(SlackProvider)
 
+    const slackProvider = Container.get(SlackProvider)
 
     Container.set(STAND_UP_BOT_TEAM_PROVIDER, slackProvider);
     Container.set(STAND_UP_BOT_STAND_UP_PROVIDER, slackProvider);
@@ -125,7 +124,7 @@ createConnection({
     const botClient = Container.get(StandUpBotService)
     botClient.start()
 
-    const app = createExpressApp(connection, config)
+    const app = createExpressApp()
     app.listen(3000);
     // here you can start to work with your entities
 }).catch(error => console.log(error));
