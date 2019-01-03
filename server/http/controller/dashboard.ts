@@ -16,9 +16,8 @@ HttpController.prototype.dashboardAction = async function (req, res) {
         .innerJoinAndSelect('st.team', 'team')
         .leftJoinAndSelect('team.users', 'user')
         .leftJoinAndSelect('st.answers', 'answers')
-        .leftJoinAndSelect('answers.im', 'answersIm')
+        .leftJoinAndSelect('answers.user', 'answersUser')
         .leftJoinAndSelect('answers.question', 'answersQuestion')
-        .leftJoinAndSelect('answersIm.user', 'answersImUser')
         .where('team.id = :teamID', {teamID: user.team_id})
         .getMany()
 

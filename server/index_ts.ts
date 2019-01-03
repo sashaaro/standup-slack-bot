@@ -5,8 +5,11 @@ import Team, {TeamSettings} from "./model/Team";
 import User from "./model/User";
 import { RTMClient, WebClient } from '@slack/client'
 import parameters from './parameters'
-import SlackStandupBotClient from './SlackStandupBotClientService'
-import Im from "./model/Im";
+import StandupBotClient, {
+    SlackProvider,
+    STAND_UP_BOT_STAND_UP_PROVIDER,
+    STAND_UP_BOT_TEAM_PROVIDER, STAND_UP_BOT_TRANSPORT
+} from './SlackStandupBotClientService'
 import {createExpressApp} from "./http/createExpressApp";
 import Answer from "./model/Answer";
 import StandUp from "./model/StandUp";
@@ -56,7 +59,6 @@ createConnection({
             Question,
             Team,
             User,
-            Im,
             Answer,
             StandUp
         ],
@@ -85,13 +87,21 @@ createConnection({
     const CONFIG_TOKEN = new Token('config')
 
 
-    Container.set(RTMClient, new RTMClient(config.botUserOAuthAccessToken));
-    Container.set(WebClient, new WebClient(config.botUserOAuthAccessToken));
+    const rtmClient = new RTMClient(config.botUserOAuthAccessToken)
+    const webClient = new WebClient(config.botUserOAuthAccessToken)
+    Container.set(RTMClient, rtmClient);
+    Container.set(WebClient, webClient);
     Container.set(Connection, connection);
 
+    const slackProvider = Container.get(SlackProvider)
 
-    const botClient = Container.get(SlackStandupBotClient)
-    await botClient.init()
+
+    Container.set(STAND_UP_BOT_TEAM_PROVIDER, slackProvider);
+    Container.set(STAND_UP_BOT_STAND_UP_PROVIDER, slackProvider);
+    Container.set(STAND_UP_BOT_TRANSPORT, slackProvider);
+
+    await slackProvider.init();
+    const botClient = Container.get(StandupBotClient)
     botClient.start()
 
     const app = createExpressApp(connection, config)
