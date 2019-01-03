@@ -1,0 +1,29 @@
+.content {
+    margin-top: 55px;
+    width: 1127px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.logo {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-image: url("/logo.png");
+    width: 50px;
+}
+
+.auth-block {
+    width: 300px;
+    margin: 50px auto;
+    text-align: center;
+}
+
+.auth-block__title {
+    margin-bottom: 10px;
+}
+
+.auth-block .logo {
+    height: 50px;
+    margin: 0 auto 10px auto;
+}

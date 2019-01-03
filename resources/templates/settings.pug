@@ -1,29 +1,29 @@
-extends layout.pug
+extends layout/authorized_main
 
 block dashboard_content
-    div(class="row")
-        div(class="col")
-            form(method='post')
+    .row
+        .col
+            form.ui.form(method='post')
                 h4= 'Settings'
-                div.form-group
+                .field
                     label= 'Locale timezone'
                     select.form-control(name="timezone")
                         each timezone, index in timezoneList
-                            - var selected = settings.timezone == index
-                            option(value= index, selected=selected)= timezone
+                            - var selected = settings.timezone == timezone.utc_offset.hours
+                            option(value= timezone.utc_offset.hours, selected=selected)= timezone.name
 
-                div.form-group
+                .field
                     label= 'Start meeting (locale time)'
-                    input.form-control(name="start", type="time", step="300", value= settings.start)
-                div.form-group
+                    input.form-control(name="start", type="time", step="60", value= settings.start)
+                .field
                     label= 'End meeting'
-                    input.form-control(name="end", type="time", step="300", value= settings.end)
+                    input.form-control(name="end", type="time", step="60", value= settings.end)
                 h4= 'Report'
-                div.form-group
+                .field
                     label= 'To channel'
                     select.form-control(name="report_channel")
                         each channel in channels
                             - var selected = settings.report_channel == channel.id
                             option(value= channel.id, selected=selected)= channel.name
-                button(class="btn btn-outline-success" type="submit")= 'Save settings'
+                button.ui.button(type="submit")= 'Save settings'
 

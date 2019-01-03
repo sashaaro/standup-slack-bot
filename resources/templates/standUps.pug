@@ -1,0 +1,16 @@
+extends layout/authorized_main
+
+block dashboard_content
+    each standUp in standUpList
+        .ui.items
+            h4.six.wide.right.floated.column=standUp.standUp.start
+            each userAnswers in standUp.answers
+                .item
+                    .image
+                        img(src= userAnswers.user.profile.image_72).img-thumbnail
+                    .content
+                        .header= userAnswers.user.profile.real_name + ' (' + userAnswers.user.name + ')'
+                        each answer in userAnswers.answers
+                            .description
+                                div= answer.question.text
+                                div= answer.message
