@@ -22,7 +22,7 @@
     "request-promise": "^4.2.2",
     "rxjs": "^6.3.3",
     "typedi": "^0.8.0",
-    "typeorm": "^0.2.9"
+    "typeorm": "^0.2.11"
   },
   "devDependencies": {
     "concurrently": "^4.1.0",
