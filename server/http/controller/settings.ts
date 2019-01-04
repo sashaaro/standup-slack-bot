@@ -24,25 +24,18 @@ export class SettingsAction implements IHttpAction {
     }
     const user = session.user;
 
-    const webClient = new WebClient(session.user.access_token)
-    const response = await webClient.channels.list();
-    if (!response.ok) {
-      throw new Error();
-    }
-    const channels = (response as any).channels as SlackChannel[]
-
     let team = await this.connection.getRepository(Team).findOne({id: user.team_id})
-
     if(!team) {
-      // TODO
+      // TODO 404
       throw new Error('team is not found');
     }
+
     const authLink = 'https://slack.com/oauth/authorize?&client_id='+this.config.slackClientID+'&scope=bot,channels:read,team:read'
 
     res.send(pug.compileFile(`${templateDirPath}/settings.pug`)({
       team: user.team_name,
       authLink: authLink,
-      channels,
+      channels: team.channel,
       timezoneList: await timezoneList,
       settings: team.settings,
       activeMenu: 'settings'

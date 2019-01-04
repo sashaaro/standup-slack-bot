@@ -11,6 +11,8 @@ import StandUp from "../model/StandUp";
 import Answer from "../model/Answer";
 import Question from "../model/Question";
 import {IMessage, IStandUpProvider, ITeam, ITeamProvider, ITransport} from "../StandUpBotService";
+import {SlackChannel} from "./model/SlackChannel";
+import {Channel} from "../model/Channel";
 
 @Service()
 export class SlackProvider implements IStandUpProvider, ITeamProvider, ITransport {
@@ -64,14 +66,14 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
       console.log(rtmStartData);
 
       const teamRepository = this.connection.getRepository(Team);
-      let teamModel = await teamRepository.findOne(rtmStartData.team.id);
-      if (!teamModel) {
-        teamModel = new Team();
-        teamModel.id = rtmStartData.team.id
+      let team = await teamRepository.findOne(rtmStartData.team.id);
+      if (!team) {
+        team = new Team();
+        team.id = rtmStartData.team.id
       }
 
-      await teamRepository.save(teamModel);
-      await this.loadUsers();
+      await teamRepository.save(team);
+      await this.updateData(team);
     })
 
     await this.rtm.start();
@@ -151,19 +153,19 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
   }
 
 
-  private async loadUsers() {
+  private async updateData(team: Team) {
     const userRepository = this.connection.getRepository(User);
     const teamRepository = this.connection.getRepository(Team);
 
     const usersResult = await this.webClient.users.list();
     if (!usersResult.ok) {
       // throw..
+      console.log(usersResult.error)
       return;
     }
 
     const ims = <SlackIm[]>(await this.webClient.im.list() as any).ims;
     const members = <SlackMember[]>(usersResult as any).members;
-
 
     for (const member of members.filter(u => !u.is_bot && !u.deleted)) {
       let user = await userRepository.findOne(member.id);
@@ -173,7 +175,12 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
       }
       user.name = member.name;
       user.profile = member.profile;
-      user.team = await teamRepository.findOne(member.team_id);
+
+      if (member.team_id !== team.id) {
+        throw new Error(`Team #${team.id} is not equal to member.team_id as ${member.team_id}`)
+      }
+
+      user.team = team //await teamRepository.findOne(member.team_id);
 
       const im = ims.filter(im => (im.user === user.id && !im.is_user_deleted)).pop();
 
@@ -185,6 +192,39 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
       user.im = im.id;
 
       await userRepository.save(user)
+    }
+
+    const response = await this.webClient.channels.list();
+    if (!response.ok) {
+      throw new Error(response.error);
+    }
+    const channels = (response as any).channels as SlackChannel[]
+
+    const channelRepository = this.connection.getRepository(Channel)
+
+    for(const channel of channels.filter((channel) => !channel.is_general && !channel.is_archived && channel.is_channel)) {
+      let ch = await channelRepository.findOne(channel.id)
+      if (!ch) {
+        ch = new Channel()
+        ch.id = channel.id;
+      }
+
+      ch.createdBy = await userRepository.findOne(channel.creator)
+      if (!ch.createdBy) {
+        console.log('Created by is not found')
+        continue;
+      }
+      ch.team = team //await teamRepository.findOne()
+      if (!ch.team) {
+        console.log('Created by is not found')
+        continue;
+      }
+
+      ch.name = channel.name
+      ch.nameNormalized = channel.name_normalized
+      ch.users = await userRepository.createQueryBuilder('u').whereInIds(channel.members).getMany()
+
+      await channelRepository.save(ch);
     }
   }
 }
