@@ -1,23 +1,11 @@
-import {Entity, Column, PrimaryColumn, OneToMany, ManyToOne} from "typeorm";
+import {Entity, OneToMany, PrimaryColumn} from "typeorm";
 import User from "./User";
-import parameters from './../parameters'
-import {ITeam, ITeamSettings} from "../StandUpBotService";
 import {Channel} from "./Channel";
 
-export class TeamSettings implements ITeamSettings {
-  timezone: string
-  start: string
-  end: string
-  report_channel: string
-}
-
 @Entity()
-class Team implements ITeam {
+class Team {
   @PrimaryColumn()
   id: string;
-
-  @Column('json')
-  settings: TeamSettings;
 
   @OneToMany(type => User, user => user.team)
   users: User[]
@@ -25,11 +13,7 @@ class Team implements ITeam {
   @OneToMany(type => Channel, channel => channel.team, {
     eager: true
   })
-  channel: Channel[]
-
-  constructor() {
-    this.settings = <TeamSettings>parameters.defaultSettings
-  }
+  channels: Channel[]
 }
 
 export default Team;

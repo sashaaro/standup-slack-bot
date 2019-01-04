@@ -5,7 +5,7 @@ import * as createRedisConnectStore from 'connect-redis';
 import {Container} from "typedi";
 import {AuthAction} from "./controller/auth";
 import {StandUpsAction} from "./controller/standUps";
-import {PostSettingsAction, SettingsAction} from "./controller/settings";
+import {SettingsAction} from "./controller/settings";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -48,10 +48,7 @@ export const createExpressApp = () => {
   });
 
   const settingAction = Container.get(SettingsAction)
-  const postSettingAction = Container.get(PostSettingsAction)
-  app.route('/settings')
-    .get(settingAction.handle.bind(settingAction))
-    .post(postSettingAction.handle.bind(postSettingAction));
+  app.all('/settings', settingAction.handle.bind(settingAction));
 
   return app;
 }

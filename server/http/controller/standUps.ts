@@ -23,8 +23,9 @@ export class StandUpsAction implements IHttpAction {
     const standUpRepository = this.connection.getRepository(StandUp);
     const standUps = await standUpRepository
       .createQueryBuilder('st')
-      .innerJoinAndSelect('st.team', 'team')
-      .leftJoinAndSelect('team.users', 'user')
+      .innerJoinAndSelect('st.channel', 'channel')
+      .leftJoinAndSelect('channel.users', 'user')
+      .leftJoinAndSelect('channel.team', 'team')
       .leftJoinAndSelect('st.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'answersUser')
       .leftJoinAndSelect('answers.question', 'answersQuestion')
@@ -38,7 +39,7 @@ export class StandUpsAction implements IHttpAction {
     for (let standUp of standUps) {
       //standUp = await standUpRepository.preload(standUp)
       const userAnswers = [];
-      for (const u of standUp.team.users) {
+      for (const u of standUp.channel.users) {
         userAnswers.push({
           user: u,
           answers: standUp.answers.filter(ans => ans.user.id === u.id)

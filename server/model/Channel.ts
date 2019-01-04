@@ -1,9 +1,10 @@
-import {Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryColumn} from "typeorm";
+import {Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryColumn} from "typeorm";
 import User from "./User";
 import Team from "./Team";
+import {ITeam} from "../StandUpBotService";
 
 @Entity()
-export class Channel {
+export class Channel implements ITeam {
   @PrimaryColumn()
   id: string
 
@@ -26,4 +27,11 @@ export class Channel {
   @ManyToMany(type => User, null, {cascade: true})
   @JoinTable()
   users: Array<User>
+
+  @Column({default: '3:00'})
+  timezone: string
+  @Column({default: '11:00'})
+  start: string
+  @Column({default: '11:30'})
+  end: string
 }

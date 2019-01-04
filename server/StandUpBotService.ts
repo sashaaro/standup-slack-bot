@@ -14,7 +14,7 @@ export interface ITimezone {
   is_dst?: false
 }
 
-export interface ITeamSettings {
+export interface IStandUpSettings {
   timezone: string
   start: string
   end: string
@@ -30,12 +30,11 @@ export interface ITransport {
 export interface IUser {
   id: string | number
   name: string
-  team: Team;
+  teams: ITeam[]
 }
 
-export interface ITeam {
+export interface ITeam extends IStandUpSettings{
   id: string | number;
-  settings: ITeamSettings;
   users: IUser[]
 }
 
@@ -84,6 +83,7 @@ export interface IStandUpProvider {
   insert(standUp: IStandUp): Promise<any>
 
   findProgressByTeam(team: ITeam): Promise<IStandUp>
+  findProgressByUser(user: IUser): Promise<IStandUp>
 
   findLastNoReplyAnswer(standUp: IStandUp, user: IUser): Promise<Answer>
 
@@ -95,7 +95,7 @@ export interface IStandUpProvider {
 }
 
 export interface ITeamProvider {
-  all(): Promise<Team[]>
+  all(): Promise<ITeam[]>
 }
 
 export interface ITimezoneProvider {
@@ -139,18 +139,18 @@ export default class StandUpBotService {
     const teams = await this.teamProvider.all();
 
     for (const team of teams) {
-      const timezone = parseFloat(team.settings.timezone);
+      const timezone = parseFloat(team.timezone);
       const timeString = this.getTimeString(date, timezone);
-      const inTime = team.settings.start === timeString;
+      const inTime = team.start === timeString;
 
-      console.log('Time', team.settings.start, timeString);
+      console.log('Time', team.start, timeString);
 
       if (inTime) {
         const standUp = this.standUpProvider.createStandUp();
         standUp.team = team;
         standUp.end = new Date();
 
-        const [hours, minutes] = team.settings.end.split(':');
+        const [hours, minutes] = team.end.split(':');
         standUp.end.setHours(parseInt(hours) + timezone);
         standUp.end.setMinutes(parseInt(minutes));
 
@@ -174,7 +174,7 @@ export default class StandUpBotService {
 
   async answerAndSendNext(message: IMessage): Promise<IAnswer> {
     const repliedAnswer = await this.answer(message);
-    const nextQuestion = await this.standUpProvider.getQuestion(message.team, repliedAnswer.question.index + 1);
+    const nextQuestion = await this.standUpProvider.getQuestion(repliedAnswer.standUp.team, repliedAnswer.question.index + 1);
 
     if (!nextQuestion) {
       console.log('Next question is not found');
@@ -186,7 +186,7 @@ export default class StandUpBotService {
   }
 
   async answer(message: IMessage): Promise<Answer> {
-    const progressStandUp = await this.standUpProvider.findProgressByTeam(message.team);
+    const progressStandUp = await this.standUpProvider.findProgressByUser(message.user);
 
     if (!progressStandUp) {
       console.log('no progress stand up');
@@ -245,7 +245,7 @@ export default class StandUpBotService {
   }
 
   async startAsk(user: IUser, standUp: IStandUp) {
-    const question = await this.standUpProvider.getQuestion(user.team, 0);
+    const question = await this.standUpProvider.getQuestion(standUp.team, 0);
     if (!question) {
       console.log('No questions');
       return;

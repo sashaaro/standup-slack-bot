@@ -1,7 +1,7 @@
 import {Entity, Column, BeforeInsert, ManyToOne, PrimaryGeneratedColumn, OneToMany} from "typeorm";
-import Team from "./Team";
 import Answer from "./Answer";
 import {IStandUp} from "../StandUpBotService";
+import {Channel} from "./Channel";
 
 @Entity()
 class StandUp implements IStandUp
@@ -9,10 +9,11 @@ class StandUp implements IStandUp
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(type => Team, {
+    // slack channel
+    @ManyToOne(type => Channel, {
         cascade: true
     })
-    team: Team
+    channel: Channel
 
     @Column()
     start: Date;
@@ -26,6 +27,12 @@ class StandUp implements IStandUp
     @BeforeInsert()
     setupCreatedAt() {
         this.start = new Date();
+    }
+
+
+    // implements IStandUp
+    get team() {
+        return this.channel;
     }
 }
 

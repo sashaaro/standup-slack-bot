@@ -10,7 +10,7 @@ import {SlackMember} from "./model/SlackUser";
 import StandUp from "../model/StandUp";
 import Answer from "../model/Answer";
 import Question from "../model/Question";
-import {IMessage, IStandUpProvider, ITeam, ITeamProvider, ITransport} from "../StandUpBotService";
+import {IMessage, IStandUpProvider, ITeam, ITeamProvider, ITransport, IUser} from "../StandUpBotService";
 import {SlackChannel} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
 
@@ -46,7 +46,7 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
         }
 
         const message = {
-          team: await this.connection.getRepository(Team).findOne(messageResponse.team),
+          //team: await this.connection.getRepository(Channel).findOne(messageResponse.channel),
           text: messageResponse.text,
           user: await this.connection.getRepository(User).findOne(messageResponse.user)
         } as IMessage;
@@ -80,10 +80,10 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
     return;
   }
 
-  all(): Promise<Team[]> {
-    return this.connection.getRepository(Team)
-      .createQueryBuilder('team')
-      .leftJoinAndSelect('team.users', 'users')
+  all(): Promise<Channel[]> {
+    return this.connection.getRepository(Channel)
+      .createQueryBuilder('channel')
+      .leftJoinAndSelect('channel.users', 'users')
       .getMany();
   }
 
@@ -105,14 +105,27 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
     return standUpRepository.insert(standUp)
   }
 
-  async findProgressByTeam(team: ITeam): Promise<StandUp> {
+  async findProgressByTeam(team: ITeam|Channel): Promise<StandUp> {
     const standUpRepository = this.connection.getRepository(StandUp);
     return await standUpRepository.createQueryBuilder('st')
-      .where('st.team = :team', {team: team.id})
+      .where('st.channel = :channel', {channel: team.id})
       // .andWhere('st.end IS NULL')
       .orderBy('st.start', "DESC")
       .getOne();
   }
+
+  async findProgressByUser(user: IUser): Promise<StandUp> {
+    const standUpRepository = this.connection.getRepository(StandUp);
+    return await standUpRepository.createQueryBuilder('st')
+      .innerJoinAndSelect('st.channel', 'channel')
+      .innerJoinAndSelect('channel.users', 'users')
+      .where('users.id = :user', {user: user.id})
+      // .andWhere('st.end IS NULL')
+      .orderBy('st.start', "DESC")
+      .getOne();
+  }
+
+
 
   async findLastNoReplyAnswer(standUp: StandUp, user: User): Promise<Answer> {
     const answerRepository = this.connection.getRepository(Answer);

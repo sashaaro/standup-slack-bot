@@ -4,10 +4,5 @@ export default {
   slackVerificationToken: 'Eeo49Ou9MDuvXEdFmnEZrRFB',
   botUserOAuthAccessToken: 'xoxb-220247998736-pWLHKrunnk9vfiZQAiHtz14f',
   host: 'http://localhost:3000',
-  defaultSettings: {
-    timezone: '0.0',
-    start: '10:00',
-    end: '10:30'
-  },
   debug: false
 }

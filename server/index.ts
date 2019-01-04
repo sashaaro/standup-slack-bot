@@ -28,11 +28,6 @@ export interface IAppConfig {
   slackVerificationToken: string,
   botUserOAuthAccessToken: string,
   host: string,
-  defaultSettings: {
-    timezone: string,
-    start: string,
-    end: string,
-  },
   debug: false
 }
 
