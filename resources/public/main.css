@@ -5,12 +5,20 @@
     margin-right: auto;
 }
 
+.item.item--logo {
+    padding: 0;
+}
+
 .logo {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center center;
-    background-image: url("/logo.png");
+    background-image: url("/robot.png");
     width: 50px;
+}
+
+.logo.active {
+    background-color: rgba(0,0,0,.05);
 }
 
 .auth-block {

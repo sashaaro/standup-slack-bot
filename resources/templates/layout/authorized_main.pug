@@ -3,7 +3,7 @@ extends main
 block content
     .ui.large.top.fixed.hidden.menu
         .ui.container
-            a.logo(href="/")
+            a.logo(href="/" class= {'active': activeMenu === 'reports'})
             a.item.menu-title(href="/" class= {'active': activeMenu === 'reports'})
                 div
                     |Standups
