@@ -224,6 +224,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
     const channelRepository = this.connection.getRepository(Channel)
 
+    await this.connection.createQueryBuilder().update(Channel).set({isActive: false}).where({team: team.id}).execute()
     for(const channel of channels.filter((channel) => !channel.is_general && !channel.is_archived && channel.is_channel)) {
       let ch = await channelRepository.findOne(channel.id)
       if (!ch) {
@@ -231,6 +232,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         ch.id = channel.id;
       }
 
+      ch.isActive = true;
       ch.createdBy = await userRepository.findOne(channel.creator)
       if (!ch.createdBy) {
         console.log('Created by is not found')

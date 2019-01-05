@@ -12,6 +12,9 @@ export class Channel implements ITeam {
   name: string
 
   @Column()
+  isActive: boolean
+
+  @Column()
   nameNormalized: string
 
   @ManyToOne(type => User, null, {

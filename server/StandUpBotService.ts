@@ -132,7 +132,7 @@ export default class StandUpBotService {
     const teams = await this.standUpProvider.findTeams();
 
     for (const team of teams) {
-      const timezone = parseFloat(team.timezone);
+      const timezone = parseFloat(team.timezone as string);
       const timeString = this.getTimeString(date, timezone);
       const inTime = team.start === timeString;
 

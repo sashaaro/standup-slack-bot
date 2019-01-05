@@ -35,7 +35,7 @@ class StandUp implements IStandUp
     }
 
     set team(channel: Channel) {
-      return this.channel = channel
+      this.channel = channel
     }
 }
 
