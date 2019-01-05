@@ -71,6 +71,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         team = new Team();
         team.id = rtmStartData.team.id
       }
+      team.name = rtmStartData.team.name
+      team.domain = rtmStartData.team.domain
 
       await teamRepository.save(team);
       await this.updateData(team);
@@ -165,10 +167,13 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     })
   }
 
-
   async updateData(team: Team) {
+    await this.updateUsers(team)
+    await this.updateChannels(team)
+  }
+
+  private async updateUsers(team: Team) {
     const userRepository = this.connection.getRepository(User);
-    const teamRepository = this.connection.getRepository(Team);
 
     const usersResult = await this.webClient.users.list();
     if (!usersResult.ok) {
@@ -206,6 +211,10 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
       await userRepository.save(user)
     }
+  }
+
+  private async updateChannels(team: Team) {
+    const userRepository = this.connection.getRepository(User);
 
     const response = await this.webClient.channels.list();
     if (!response.ok) {

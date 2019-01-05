@@ -9,13 +9,15 @@ import Team from "../../model/Team";
 
 @Service()
 export class SyncAction implements IHttpAction {
+  standUpProvider: SlackStandUpProvider
   constructor(
     private connection: Connection,
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
-    @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) private standUpProvider: SlackStandUpProvider,
-
+    @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) standUpProvider: IStandUpProvider,
   ) {
-    if (!standUpProvider instanceof SlackStandUpProvider) {
+    if (standUpProvider instanceof SlackStandUpProvider) {
+      this.standUpProvider = standUpProvider;
+    } else {
       throw new Error('IStandUpProvider is not supported by UI')
     }
   }

@@ -29,10 +29,13 @@ class StandUp implements IStandUp
         this.start = new Date();
     }
 
-
     // implements IStandUp
     get team() {
         return this.channel;
+    }
+
+    set team(channel: Channel) {
+      return this.channel = channel
     }
 }
 

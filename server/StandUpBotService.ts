@@ -15,7 +15,7 @@ export interface ITimezone {
 }
 
 export interface IStandUpSettings {
-  timezone: string
+  timezone: string|number
   start: string
   end: string
 }

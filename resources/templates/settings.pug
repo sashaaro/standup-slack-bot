@@ -4,13 +4,12 @@ block authorized_content
     .row
         .col
             form.ui.form(method='post')
-                h4= 'Settings'
                 .field
                     label= 'Locale timezone'
                     select.form-control(name="timezone")
-                        each timezone in timezoneList
-                            - var selected = channel.timezone === timezone.utc_offset.hours
-                            option(value= timezone.utc_offset.hours, selected=selected)= timezone.name
+                        each timezone, index in timezoneList
+                            - var selected = channel.timezone == timezone.utc_offset.hours
+                            option(value=timezone.utc_offset.hours, selected=selected)= timezone.name
 
                 .field
                     label= 'Start meeting (locale time)'
@@ -18,4 +17,4 @@ block authorized_content
                 .field
                     label= 'End meeting'
                     input.form-control(name="end", type="time", step="60", value= channel.end)
-                button.ui.button(type="submit")= 'Save settings'
+                button.ui.button.fluid.positive(type="submit")= 'Save'

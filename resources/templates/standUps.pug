@@ -2,15 +2,14 @@ extends layout/authorized_main
 
 block authorized_content
     each standUp in standUpList
-        .ui.items
-            h4.six.wide.right.floated.column=standUp.standUp.start
+        .ui.items.stand-up
+            .stand-up__date=standUp.standUp.start.toLocaleDateString("en-US", { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })
             each userAnswers in standUp.answers
-                .item
-                    .image
-                        img(src= userAnswers.user.profile.image_72).img-thumbnail
-                    .content
-                        .header= userAnswers.user.profile.real_name + ' (' + userAnswers.user.name + ')'
-                        each answer in userAnswers.answers
-                            .description
-                                div= answer.question.text
-                                div= answer.message
+                .item.stand-up-item
+                    img.stand-up-item__image(src=userAnswers.user.profile.image_48).img-thumbnail
+                    .stand-up-item__content
+                        .stand-up-item__name= userAnswers.user.profile.real_name + ' (' + userAnswers.user.name + ')'
+                        each answer, index in userAnswers.answers
+                            .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
+                                .stand-up-item__question= answer.question.text
+                                .stand-up-item__answer= answer.message

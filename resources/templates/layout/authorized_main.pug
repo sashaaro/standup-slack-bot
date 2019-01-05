@@ -3,20 +3,29 @@ extends main
 block content
     .ui.large.top.fixed.hidden.menu
         .ui.container
-            .logo
-            a.item(href="/" class= {'active': activeMenu === 'reports'}) StandUps
-            a.item(href="/settings" class= {'active': activeMenu === 'settings'})= 'Settings'
+            a.logo(href="/")
+            a.item.menu-title(href="/" class= {'active': activeMenu === 'reports'})
+                div
+                    |Standups
+                    .menu-title__sign= 'for ' + team.domain + '.slack.com'
+
             .right.menu
-                form.item.ui.mini.form(action="/channel", method="POST")
-                    select.dropdown#selectChannel(name="id", placeholder="Select channel")
-                        each ch in team.channels
-                            option(value=ch.id, selected=ch.id === channel.id)= ch.name
-                a.item(href="/sync")= 'Sync data from slack api'
+                if channel
+                    form.item.ui.mini.form(action="/channel", method="POST")
+                        select.dropdown#selectChannel(name="id", placeholder="Select channel")
+                            each ch in team.channels
+                                option(value=ch.id, selected=ch.id === channel.id)= ch.name
+                    a.item(href="/settings" class= {'active': activeMenu === 'settings'})
+                        i.icon.cog
+                        |Settings
+                a.item#sync-link(href="/sync")
+                    i.icon.sync
+                    |Sync data from slack api
                 .item
                     a.ui.button(href="/logout") Log out
     .content
         block authorized_content
-    .ui.inverted.vertical.footer.segment
+    //.ui.inverted.vertical.footer.segment
         .ui.container
             .ui.stackable.inverted.divided.equal.height.stackable.grid
                 .three.wide.column
@@ -43,4 +52,7 @@ block append scripts
         if (this.value) {
           $(this).closest('form').submit();
         }
+      })
+      $('#sync-link').click(function () {
+        this.classList.add('active')
       })

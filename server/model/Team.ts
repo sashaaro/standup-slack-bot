@@ -1,4 +1,4 @@
-import {Entity, OneToMany, PrimaryColumn} from "typeorm";
+import {Column, Entity, OneToMany, PrimaryColumn} from "typeorm";
 import User from "./User";
 import {Channel} from "./Channel";
 
@@ -6,6 +6,12 @@ import {Channel} from "./Channel";
 class Team {
   @PrimaryColumn()
   id: string;
+
+  @Column()
+  name: string;
+
+  @Column()
+  domain: string;
 
   @OneToMany(type => User, user => user.team)
   users: User[]

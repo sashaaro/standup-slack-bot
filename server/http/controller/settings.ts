@@ -4,15 +4,13 @@ import {IHttpAction, templateDirPath} from "./index";
 import {Inject, Service} from "typedi";
 import {IStandUpSettings, ITimezone} from "../../StandUpBotService";
 import {Connection} from "typeorm";
-import {IAppConfig} from "../../index";
-import {CONFIG_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
+import {TIMEZONES_TOKEN} from "../../services/token";
 import {Channel} from "../../model/Channel";
 
 @Service()
 export class SettingsAction implements IHttpAction {
   constructor(
     private connection: Connection,
-    @Inject(CONFIG_TOKEN) private config: IAppConfig,
     @Inject(TIMEZONES_TOKEN) private timezoneList: Promise<ITimezone[]>
   ) {
   }
@@ -42,13 +40,12 @@ export class SettingsAction implements IHttpAction {
     if (req.method == "POST") {
       // todo validate
       const settings = <IStandUpSettings>req.body
-      const channel_id = req.body.channel_id
-      const channel = await channelRepository.findOne(channel_id)
       Object.assign(channel, settings)
       await channelRepository.save(channel)
     }
 
     res.send(pug.compileFile(`${templateDirPath}/settings.pug`)({
+      team: team,
       channel: channel,
       timezoneList: await this.timezoneList,
       activeMenu: 'settings'

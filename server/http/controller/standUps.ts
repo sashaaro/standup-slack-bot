@@ -1,16 +1,14 @@
 import * as pug from 'pug'
 import {IHttpAction, templateDirPath} from "./index";
 import StandUp from "../../model/StandUp";
-import {Inject, Service} from "typedi";
+import {Service} from "typedi";
 import {Connection} from "typeorm";
-import {IAppConfig} from "../../index";
-import {CONFIG_TOKEN} from "../../services/token";
 import Team from "../../model/Team";
 import {Channel} from "../../model/Channel";
 
 @Service()
 export class StandUpsAction implements IHttpAction {
-  constructor(private connection: Connection, @Inject(CONFIG_TOKEN) private config: IAppConfig) {
+  constructor(private connection: Connection) {
 
   }
   async handle(req, res) {

@@ -28,7 +28,7 @@ export class Channel implements ITeam {
   @JoinTable()
   users: Array<User>
 
-  @Column({default: '3:00'})
+  @Column({default: '3'})
   timezone: string
   @Column({default: '11:00'})
   start: string
