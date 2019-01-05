@@ -13,6 +13,7 @@
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center center;
+    /* https://www.flaticon.com/free-icon/robot_270137 */
     background-image: url("/robot.png");
     width: 50px;
 }
@@ -94,17 +95,17 @@
     border-left: 4px solid;
 }
 /* https://semantic-ui.com/usage/theming.html*/
-.stand-up-item__question-answer--1 {
-    border-left-color: #B413EC;
+.stand-up-item__question-answer--0 {
+    border-left-color: #00a6a6;
 }
-.stand-up-item__question-answer--2 {
+.stand-up-item__question-answer--1 {
     border-left-color: #0E6EB8;
 }
-.stand-up-item__question-answer--3 {
+.stand-up-item__question-answer--2 {
     border-left-color: #EE82EE;
 }
 
-.stand-up-item__question-answer--4 {
+.stand-up-item__question-answer--3 {
     border-left-color: #016936;
 }
 
@@ -123,10 +124,10 @@
     margin-left: 15px;
 }
 
-.menu .item:hover .icon {
+.menu .item:hover > .icon {
     animation: icon-loading 2s linear infinite;
 }
-.menu .item.active .icon {
+.menu .item.active > .icon {
     animation: icon-loading .5s linear infinite;
 }
 
