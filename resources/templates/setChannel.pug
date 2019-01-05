@@ -1,0 +1,8 @@
+extends layout/authorized_main
+
+block authorized_content
+    form.row.auth-block.field(action="/channel", method="POST")
+       select.dropdown#selectChannel(name="id")
+           option= 'Select channel'
+           each channel in team.channels
+               option(value=channel.id)= channel.name

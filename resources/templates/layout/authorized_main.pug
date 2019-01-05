@@ -7,10 +7,15 @@ block content
             a.item(href="/" class= {'active': activeMenu === 'reports'}) StandUps
             a.item(href="/settings" class= {'active': activeMenu === 'settings'})= 'Settings'
             .right.menu
+                form.item.ui.mini.form(action="/channel", method="POST")
+                    select.dropdown#selectChannel(name="id", placeholder="Select channel")
+                        each ch in team.channels
+                            option(value=ch.id, selected=ch.id === channel.id)= ch.name
+                a.item(href="/sync")= 'Sync data from slack api'
                 .item
                     a.ui.button(href="/logout") Log out
     .content
-        block dashboard_content
+        block authorized_content
     .ui.inverted.vertical.footer.segment
         .ui.container
             .ui.stackable.inverted.divided.equal.height.stackable.grid
@@ -32,3 +37,10 @@ block content
                     h4.ui.inverted.header Footer Header
                     p
                         | Extra space for a call to action inside the footer that could help re-engage users.
+block append scripts
+    script.
+      $('#selectChannel').on('change', function () {
+        if (this.value) {
+          $(this).closest('form').submit();
+        }
+      })

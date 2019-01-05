@@ -20,13 +20,6 @@ export interface IStandUpSettings {
   end: string
 }
 
-export interface ITransport {
-  sendMessage(user: IUser, message: string): Promise<any>
-
-  message$: Observable<IMessage>
-}
-
-
 export interface IUser {
   id: string | number
   name: string
@@ -75,34 +68,35 @@ export interface IStandUp {
 export interface IStandUpProvider {
   // TODO startTeamStandUpByDate(): Promise<IStandUp[]>
   createStandUp(): IStandUp
+  insertStandUp(standUp: IStandUp): Promise<any>
 
   createAnswer(): IAnswer
-
   insertAnswer(answer: IAnswer): Promise<any>
-
-  insert(standUp: IStandUp): Promise<any>
-
-  findProgressByTeam(team: ITeam): Promise<IStandUp>
-  findProgressByUser(user: IUser): Promise<IStandUp>
-
-  findLastNoReplyAnswer(standUp: IStandUp, user: IUser): Promise<Answer>
-
   updateAnswer(answer: IAnswer): Promise<Answer>
 
-  endedByDate(date: Date): Promise<IStandUp[]>
 
-  getQuestion(team: ITeam, index): Promise<IQuestion>
+
+  findTeams(): Promise<ITeam[]>
+  findProgressByTeam(team: ITeam): Promise<IStandUp>
+  findProgressByUser(user: IUser): Promise<IStandUp>
+  findLastNoReplyAnswer(standUp: IStandUp, user: IUser): Promise<Answer>
+  findOneQuestion(team: ITeam, index): Promise<IQuestion>
+
+
+  findStandUpsEndNowByDate(date: Date): Promise<IStandUp[]>
+
 }
 
-export interface ITeamProvider {
-  all(): Promise<ITeam[]>
+
+export interface ITransport {
+  sendMessage(user: IUser, message: string): Promise<any>
+  message$: Observable<IMessage>
 }
 
 export interface ITimezoneProvider {
   (): Promise<ITimezone[]>
 }
 
-export const STAND_UP_BOT_TEAM_PROVIDER = new Token();
 export const STAND_UP_BOT_STAND_UP_PROVIDER = new Token();
 export const STAND_UP_BOT_TRANSPORT = new Token();
 
@@ -112,7 +106,6 @@ export default class StandUpBotService {
   protected everyMinutesIntervalID: number | any;
 
   constructor(
-    @Inject(STAND_UP_BOT_TEAM_PROVIDER) protected teamProvider: ITeamProvider,
     @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) protected standUpProvider: IStandUpProvider,
     @Inject(STAND_UP_BOT_TRANSPORT) protected transport: ITransport) {
   }
@@ -129,14 +122,14 @@ export default class StandUpBotService {
     this.startStandUpInterval();
     //}, millisecondsDelay)
 
-    this.transport.message$.subscribe((message: IMessage) => {
-      this.answerAndSendNext(message)
+    this.transport.message$.subscribe(async (message: IMessage) => {
+      await this.answerAndSendNext(message)
     })
   }
 
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
     let standUps: IStandUp[] = [];
-    const teams = await this.teamProvider.all();
+    const teams = await this.standUpProvider.findTeams();
 
     for (const team of teams) {
       const timezone = parseFloat(team.timezone);
@@ -154,7 +147,7 @@ export default class StandUpBotService {
         standUp.end.setHours(parseInt(hours) + timezone);
         standUp.end.setMinutes(parseInt(minutes));
 
-        await this.standUpProvider.insert(standUp);
+        await this.standUpProvider.insertStandUp(standUp);
         standUps.push(standUp);
       }
     }
@@ -163,7 +156,7 @@ export default class StandUpBotService {
   }
 
   endTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
-    return this.standUpProvider.endedByDate(date);
+    return this.standUpProvider.findStandUpsEndNowByDate(date);
   }
 
   private getTimeString(date: Date, timezone: number) {
@@ -174,7 +167,7 @@ export default class StandUpBotService {
 
   async answerAndSendNext(message: IMessage): Promise<IAnswer> {
     const repliedAnswer = await this.answer(message);
-    const nextQuestion = await this.standUpProvider.getQuestion(repliedAnswer.standUp.team, repliedAnswer.question.index + 1);
+    const nextQuestion = await this.standUpProvider.findOneQuestion(repliedAnswer.standUp.team, repliedAnswer.question.index + 1);
 
     if (!nextQuestion) {
       console.log('Next question is not found');
@@ -245,7 +238,7 @@ export default class StandUpBotService {
   }
 
   async startAsk(user: IUser, standUp: IStandUp) {
-    const question = await this.standUpProvider.getQuestion(standUp.team, 0);
+    const question = await this.standUpProvider.findOneQuestion(standUp.team, 0);
     if (!question) {
       console.log('No questions');
       return;

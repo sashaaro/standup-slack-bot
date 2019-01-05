@@ -1,23 +1,19 @@
 import "reflect-metadata";
-import {createConnection, Connection} from "typeorm";
+import {Connection, createConnection} from "typeorm";
 import Question from "./model/Question";
 import Team from "./model/Team";
 import User from "./model/User";
 import {RTMClient, WebClient} from '@slack/client'
 import parameters from './parameters'
-import StandUpBotService, {
-  ITimezone, ITimezoneProvider,
-  STAND_UP_BOT_STAND_UP_PROVIDER,
-  STAND_UP_BOT_TEAM_PROVIDER, STAND_UP_BOT_TRANSPORT
-} from './StandUpBotService'
+import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from './StandUpBotService'
 import {createExpressApp} from "./http/createExpressApp";
 import Answer from "./model/Answer";
 import StandUp from "./model/StandUp";
-import {Container, Token} from "typedi";
-import {timezone} from "./dictionary/timezone";
-import {SlackProvider} from "./slack/SlackProvider";
-import {CONFIG_TOKEN} from "./services/token";
+import {Container} from "typedi";
+import {SlackStandUpProvider} from "./slack/SlackStandUpProvider";
+import {CONFIG_TOKEN, TIMEZONES_TOKEN} from "./services/token";
 import {Channel} from "./model/Channel";
+import {getTimezoneList} from "./services/timezones";
 
 const config = parameters as IAppConfig;
 
@@ -30,22 +26,6 @@ export interface IAppConfig {
   host: string,
   debug: false
 }
-
-
-// move
-const getPgTimezoneList = (connection: Connection): ITimezoneProvider => (
-  (() => (connection.query('select * from pg_timezone_names LIMIT 10') as Promise<ITimezone[]>)) as ITimezoneProvider
-)
-const getTimezoneList: ITimezoneProvider = () => (new Promise(resolve => {
-  const list: ITimezone[] = []
-  for (const time in timezone) {
-    const value = timezone[time]
-
-    list.push({name: value, abbrev: time, utc_offset: {hours: parseFloat(time)}} as ITimezone)
-  }
-
-  resolve(list);
-}))
 
 
 createConnection({
@@ -108,12 +88,11 @@ createConnection({
   Container.set(WebClient, webClient);
   Container.set(Connection, connection);
   Container.set(CONFIG_TOKEN, config);
-  Container.set('timezoneList', getTimezoneList());
+  Container.set(TIMEZONES_TOKEN, getTimezoneList());
 
 
-  const slackProvider = Container.get(SlackProvider)
+  const slackProvider = Container.get(SlackStandUpProvider)
 
-  Container.set(STAND_UP_BOT_TEAM_PROVIDER, slackProvider);
   Container.set(STAND_UP_BOT_STAND_UP_PROVIDER, slackProvider);
   Container.set(STAND_UP_BOT_TRANSPORT, slackProvider);
 

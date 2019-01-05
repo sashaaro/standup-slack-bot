@@ -10,7 +10,6 @@ export class AuthAction implements IHttpAction {
   constructor(@Inject(CONFIG_TOKEN) private config: IAppConfig) {
   }
 
-
   async handle(req, res) {
     const session = req.session;
     const user = session.user;
@@ -28,6 +27,8 @@ export class AuthAction implements IHttpAction {
       }))
       return;
     }
+
+    // https://api.slack.com/methods/oauth.access
     const link = 'https://slack.com/api/oauth.access';
     const query = `code=${req.query.code}&client_id=${this.config.slackClientID}&client_secret=${this.config.slackSecret}`
     const options = {

@@ -10,12 +10,12 @@ import {SlackMember} from "./model/SlackUser";
 import StandUp from "../model/StandUp";
 import Answer from "../model/Answer";
 import Question from "../model/Question";
-import {IMessage, IStandUpProvider, ITeam, ITeamProvider, ITransport, IUser} from "../StandUpBotService";
+import {IMessage, IStandUpProvider, ITeam, ITransport, IUser} from "../StandUpBotService";
 import {SlackChannel} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
 
 @Service()
-export class SlackProvider implements IStandUpProvider, ITeamProvider, ITransport {
+export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   message$: Observable<IMessage>;
 
   constructor(
@@ -80,7 +80,7 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
     return;
   }
 
-  all(): Promise<Channel[]> {
+  findTeams(): Promise<Channel[]> {
     return this.connection.getRepository(Channel)
       .createQueryBuilder('channel')
       .leftJoinAndSelect('channel.users', 'users')
@@ -99,7 +99,7 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
     return this.connection.getRepository(Answer).insert(answer)
   }
 
-  insert(standUp: StandUp): Promise<any> {
+  insertStandUp(standUp: StandUp): Promise<any> {
     const standUpRepository = this.connection.getRepository(StandUp);
 
     return standUpRepository.insert(standUp)
@@ -146,7 +146,7 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
   }
 
 
-  async endedByDate(date: Date): Promise<StandUp[]> {
+  async findStandUpsEndNowByDate(date: Date): Promise<StandUp[]> {
     const standUpRepository = this.connection.getRepository(StandUp);
 
     //now.setSeconds(0)
@@ -156,7 +156,7 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
       .getMany()
   }
 
-  getQuestion(team: ITeam, index): Promise<Question> {
+  findOneQuestion(team: ITeam, index): Promise<Question> {
     return this.connection.getRepository(Question).findOne({
       where: {
         index: index,
@@ -166,7 +166,7 @@ export class SlackProvider implements IStandUpProvider, ITeamProvider, ITranspor
   }
 
 
-  private async updateData(team: Team) {
+  async updateData(team: Team) {
     const userRepository = this.connection.getRepository(User);
     const teamRepository = this.connection.getRepository(Team);
 

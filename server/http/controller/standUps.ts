@@ -5,6 +5,8 @@ import {Inject, Service} from "typedi";
 import {Connection} from "typeorm";
 import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
+import Team from "../../model/Team";
+import {Channel} from "../../model/Channel";
 
 @Service()
 export class StandUpsAction implements IHttpAction {
@@ -20,20 +22,37 @@ export class StandUpsAction implements IHttpAction {
       return;
     }
 
+    const teamRepository = this.connection.getRepository(Team);
+
+    let team = await teamRepository.findOne({where: {id: user.team_id}})
+    if (!team) {
+      // TODO 404
+      throw new Error('team is not found');
+    }
+
+    const channelRepository = this.connection.getRepository(Channel);
+
+    let channel: Channel;
+    if (session.channel) {
+      channel = await channelRepository.findOne(session.channel)
+    }
+
+    if (!channel) {
+      return res.send(pug.compileFile(`${templateDirPath}/setChannel.pug`)({
+        team: team,
+      }))
+    }
+
     const standUpRepository = this.connection.getRepository(StandUp);
     const standUps = await standUpRepository
       .createQueryBuilder('st')
       .innerJoinAndSelect('st.channel', 'channel')
       .leftJoinAndSelect('channel.users', 'user')
-      .leftJoinAndSelect('channel.team', 'team')
       .leftJoinAndSelect('st.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'answersUser')
       .leftJoinAndSelect('answers.question', 'answersQuestion')
-      .where('team.id = :teamID', {teamID: user.team_id})
+      .where('channel.id = :channelID', {channelID: channel.id})
       .getMany();
-
-    const authLink = 'https://slack.com/oauth/authorize?&client_id=' + this.config.slackClientID + '&scope=bot,channels:read,team:read';
-
 
     const standUpList = [];
     for (let standUp of standUps) {
@@ -53,8 +72,8 @@ export class StandUpsAction implements IHttpAction {
     }
 
     res.send(pug.compileFile(`${templateDirPath}/standUps.pug`)({
-      team: user.team_name,
-      authLink: authLink,
+      team,
+      channel,
       standUpList,
       activeMenu: 'reports'
     }))

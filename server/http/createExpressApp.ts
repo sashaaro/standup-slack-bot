@@ -6,6 +6,8 @@ import {Container} from "typedi";
 import {AuthAction} from "./controller/auth";
 import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
+import {SyncAction} from "./controller/sync";
+import {SetChannelAction} from "./controller/setChannel";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -49,6 +51,13 @@ export const createExpressApp = () => {
 
   const settingAction = Container.get(SettingsAction)
   app.all('/settings', settingAction.handle.bind(settingAction));
+
+  const syncAction = Container.get(SyncAction)
+  app.get('/sync', syncAction.handle.bind(syncAction));
+
+  const setChannelAction = Container.get(SetChannelAction)
+  app.post('/channel', setChannelAction.handle.bind(setChannelAction));
+
 
   return app;
 }
