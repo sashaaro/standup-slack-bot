@@ -27,8 +27,7 @@ export class Channel implements ITeam {
   })
   team: Team
 
-  @ManyToMany(type => User, null, {cascade: true})
-  @JoinTable()
+  @ManyToMany(type => User, user => user.channels)
   users: Array<User>
 
   @Column({default: '3'})

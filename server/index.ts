@@ -7,7 +7,7 @@ import {RTMClient, WebClient} from '@slack/client'
 import parameters from './parameters'
 import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from './StandUpBotService'
 import {createExpressApp} from "./http/createExpressApp";
-import Answer from "./model/Answer";
+import AnswerRequest from "./model/AnswerRequest";
 import StandUp from "./model/StandUp";
 import {Container} from "typedi";
 import {SlackStandUpProvider} from "./slack/SlackStandUpProvider";
@@ -55,12 +55,12 @@ createConnection({
       Question,
       Team,
       User,
-      Answer,
+      AnswerRequest,
       StandUp,
       Channel
     ],
     synchronize: true,
-    //logging: true
+    logging: true
   })
 
   const questions = [
@@ -89,7 +89,6 @@ createConnection({
   Container.set(Connection, connection);
   Container.set(CONFIG_TOKEN, config);
   Container.set(TIMEZONES_TOKEN, getTimezoneList());
-
 
   const slackProvider = Container.get(SlackStandUpProvider)
 

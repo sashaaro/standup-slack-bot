@@ -11,10 +11,11 @@ export interface SlackIm
     priority: number
 }
 
-export interface RTMAuthenticatedResponse
-{
-    ok: boolean
-    self: object
-    team: SlackTeam
-    latest_event_ts: string
+export interface RTMAuthenticatedResponse {
+  ok: boolean
+  url: string,
+  self: { id: string, name: string }
+  team: { id: string, name: string, domain: string }
+  scopes: string[],
+  acceptedScopes: string[]
 }

@@ -38,13 +38,12 @@ export const createExpressApp = () => {
     return standUpsAction.handle(req, res)
   });
 
-  console.log(AuthAction)
   const authAction = Container.get(AuthAction)
-  console.log(authAction)
 
   app.get('/auth', authAction.handle.bind(authAction));
   app.get('/logout', (req, res) => {
-    req.session.destroy()
+    const session = req.session as any;
+    session.destroy()
     res.redirect('/auth');
     return;
   });

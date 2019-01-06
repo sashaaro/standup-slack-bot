@@ -8,7 +8,7 @@ import Team from "../model/Team";
 import {RTMAuthenticatedResponse, SlackIm} from "./model/rtm/RTMAuthenticatedResponse";
 import {SlackMember} from "./model/SlackUser";
 import StandUp from "../model/StandUp";
-import Answer from "../model/Answer";
+import AnswerRequest from "../model/AnswerRequest";
 import Question from "../model/Question";
 import {IMessage, IStandUpProvider, ITeam, ITransport, IUser} from "../StandUpBotService";
 import {SlackChannel} from "./model/SlackChannel";
@@ -33,12 +33,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     const userRepository = this.connection.getRepository(User);
 
     this.rtm.on('connected', () => {
-      console.log('Connection opened')
+      console.log('Slack RTM connected')
     });
 
     this.message$ = Observable.create((observer) => {
       this.rtm.on('message', async (messageResponse: RTMMessageResponse) => {
-        // be sure it is direct message to bot
+        // be sure it is direct answerMessage to bot
         if (!userRepository.findOne({where: {im: messageResponse.channel}})) {
           console.log(`User channel ${messageResponse.channel} is not im`);
           // TODO try update from api
@@ -63,7 +63,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
     this.rtm.on('authenticated', async (rtmStartData: RTMAuthenticatedResponse) => {
       console.log(`Authenticated to team "${rtmStartData.team.name}"`);
-      console.log(rtmStartData);
 
       const teamRepository = this.connection.getRepository(Team);
       let team = await teamRepository.findOne(rtmStartData.team.id);
@@ -93,12 +92,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return new StandUp();
   }
 
-  createAnswer(): Answer {
-    return new Answer();
+  createAnswer(): AnswerRequest {
+    return new AnswerRequest();
   }
 
-  insertAnswer(answer: Answer): Promise<any> {
-    return this.connection.getRepository(Answer).insert(answer)
+  insertAnswer(answer: AnswerRequest): Promise<any> {
+    return this.connection.getRepository(AnswerRequest).insert(answer)
   }
 
   insertStandUp(standUp: StandUp): Promise<any> {
@@ -122,39 +121,39 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .innerJoinAndSelect('st.channel', 'channel')
       .innerJoinAndSelect('channel.users', 'users')
       .where('users.id = :user', {user: user.id})
-      // .andWhere('st.end IS NULL')
+      // TODO if.. .andWhere('st.end lt now')
       .orderBy('st.start', "DESC")
       .getOne();
   }
 
 
 
-  async findLastNoReplyAnswer(standUp: StandUp, user: User): Promise<Answer> {
-    const answerRepository = this.connection.getRepository(Answer);
+  async findLastNoReplyAnswerRequest(standUp: StandUp, user: User): Promise<AnswerRequest> {
+    const answerRepository = this.connection.getRepository(AnswerRequest);
     return await answerRepository.createQueryBuilder('a')
       .leftJoinAndSelect("a.user", "user")
       .leftJoinAndSelect("a.question", "question")
       .innerJoinAndSelect("a.standUp", "standUp")
       .where('user.id = :userID', {userID: user.id})
-      .andWhere('a.message IS NULL')
+      .andWhere('a.answerMessage IS NULL')
       .andWhere('standUp.id = :standUp', {standUp: standUp.id})
       .getOne()
   }
 
-  async updateAnswer(lastNoReplyAnswer: Answer): Promise<Answer> {
-    const answerRepository = this.connection.getRepository(Answer);
+  async updateAnswer(lastNoReplyAnswer: AnswerRequest): Promise<AnswerRequest> {
+    const answerRepository = this.connection.getRepository(AnswerRequest);
 
     return answerRepository.save(lastNoReplyAnswer);
   }
 
-
   async findStandUpsEndNowByDate(date: Date): Promise<StandUp[]> {
-    const standUpRepository = this.connection.getRepository(StandUp);
-
-    //now.setSeconds(0)
-    //now.setMilliseconds(0)
-    return standUpRepository.createQueryBuilder('st')
-      .where('TO_CHAR(st.end, \'YYYY-MM-DD HH24:MI\') = TO_CHAR(NOW()::timestamp at time zone \'Europe/Moscow\', \'YYYY-MM-DD HH24:MI\')')
+    return await this.connection.getRepository(StandUp).createQueryBuilder('st')
+      .where('date_trunc(\'minute\', st.end) = date_trunc(\'minute\', NOW()::timestamp)')
+      //.leftJoinAndSelect('st.channel', 'channel')
+      //.leftJoinAndSelect('channel.team', 'team')
+      //.leftJoinAndSelect('st.answers', 'answers')
+      //.leftJoinAndSelect('answers.user', 'user')
+      //.leftJoinAndSelect('answers.question', 'question')
       .getMany()
   }
 
@@ -224,7 +223,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
     const channelRepository = this.connection.getRepository(Channel)
 
-    await this.connection.createQueryBuilder().update(Channel).set({isActive: false}).where({team: team.id}).execute()
+    await this.connection.createQueryBuilder()
+      .update(Channel)
+      .where({team: team.id})
+      .set({isActive: false})
+      .execute()
+
     for(const channel of channels.filter((channel) => !channel.is_general && !channel.is_archived && channel.is_channel)) {
       let ch = await channelRepository.findOne(channel.id)
       if (!ch) {
@@ -238,7 +242,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         console.log('Created by is not found')
         continue;
       }
-      ch.team = team //await teamRepository.findOne()
+      ch.team = team
       if (!ch.team) {
         console.log('Created by is not found')
         continue;
@@ -246,8 +250,9 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
       ch.name = channel.name
       ch.nameNormalized = channel.name_normalized
-      ch.users = await userRepository.createQueryBuilder('u').whereInIds(channel.members).getMany()
+      await channelRepository.save(ch);
 
+      ch.users = await userRepository.createQueryBuilder('u').whereInIds(channel.members).getMany()
       await channelRepository.save(ch);
     }
   }

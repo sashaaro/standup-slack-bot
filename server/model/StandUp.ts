@@ -1,5 +1,5 @@
 import {Entity, Column, BeforeInsert, ManyToOne, PrimaryGeneratedColumn, OneToMany} from "typeorm";
-import Answer from "./Answer";
+import AnswerRequest from "./AnswerRequest";
 import {IStandUp} from "../StandUpBotService";
 import {Channel} from "./Channel";
 
@@ -21,8 +21,8 @@ class StandUp implements IStandUp
     @Column()
     end: Date;
 
-    @OneToMany(type => Answer, answer => answer.standUp)
-    answers: Answer[];
+    @OneToMany(type => AnswerRequest, answer => answer.standUp)
+    answers: AnswerRequest[];
 
     @BeforeInsert()
     setupCreatedAt() {

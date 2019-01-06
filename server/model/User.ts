@@ -55,7 +55,7 @@ class User implements IUser {
   @ManyToMany(type => Channel, channel => channel.users, {
     eager: true
   })
-  @JoinTable({name: "channel_users_user"})
+  @JoinTable()
   channels: Channel[];
 
   constructor() {

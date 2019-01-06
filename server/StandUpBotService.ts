@@ -1,5 +1,5 @@
 import Team from "./model/Team";
-import Answer from "./model/Answer";
+import AnswerRequest from "./model/AnswerRequest";
 import {Inject, Service, Token} from "typedi";
 import {Observable} from "rxjs";
 
@@ -47,12 +47,13 @@ export interface IMessage {
 }
 
 
-export interface IAnswer {
+export interface IAnswerRequest {
   id: string | number
   user: IUser;
   standUp: IStandUp;
   question: IQuestion
-  message: string
+  answerMessage: string
+  answerCreatedAt: Date
   createdAt: Date;
 }
 
@@ -62,7 +63,7 @@ export interface IStandUp {
 
   start: Date;
   end: Date;
-  answers: IAnswer[];
+  answers: IAnswerRequest[];
 }
 
 export interface IStandUpProvider {
@@ -70,21 +71,18 @@ export interface IStandUpProvider {
   createStandUp(): IStandUp
   insertStandUp(standUp: IStandUp): Promise<any>
 
-  createAnswer(): IAnswer
-  insertAnswer(answer: IAnswer): Promise<any>
-  updateAnswer(answer: IAnswer): Promise<Answer>
+  createAnswer(): IAnswerRequest
+  insertAnswer(answer: IAnswerRequest): Promise<any>
+  updateAnswer(answer: IAnswerRequest): Promise<AnswerRequest>
 
 
 
   findTeams(): Promise<ITeam[]>
   findProgressByTeam(team: ITeam): Promise<IStandUp>
   findProgressByUser(user: IUser): Promise<IStandUp>
-  findLastNoReplyAnswer(standUp: IStandUp, user: IUser): Promise<Answer>
+  findLastNoReplyAnswerRequest(standUp: IStandUp, user: IUser): Promise<IAnswerRequest>
   findOneQuestion(team: ITeam, index): Promise<IQuestion>
-
-
   findStandUpsEndNowByDate(date: Date): Promise<IStandUp[]>
-
 }
 
 
@@ -146,6 +144,7 @@ export default class StandUpBotService {
         const [hours, minutes] = team.end.split(':');
         standUp.end.setHours(parseInt(hours) + timezone);
         standUp.end.setMinutes(parseInt(minutes));
+        standUp.end.setSeconds(0, 0);
 
         await this.standUpProvider.insertStandUp(standUp);
         standUps.push(standUp);
@@ -155,17 +154,13 @@ export default class StandUpBotService {
     return standUps;
   }
 
-  endTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
-    return this.standUpProvider.findStandUpsEndNowByDate(date);
-  }
-
   private getTimeString(date: Date, timezone: number) {
     const minutes = date.getUTCMinutes();
     const hours = date.getUTCHours();
     return ('0' + (hours + timezone)).slice(-2) + ':' + ('0' + minutes).slice(-2)
   }
 
-  async answerAndSendNext(message: IMessage): Promise<IAnswer> {
+  async answerAndSendNext(message: IMessage): Promise<IAnswerRequest> {
     const repliedAnswer = await this.answer(message);
     const nextQuestion = await this.standUpProvider.findOneQuestion(repliedAnswer.standUp.team, repliedAnswer.question.index + 1);
 
@@ -178,35 +173,37 @@ export default class StandUpBotService {
     return this.askQuestion(repliedAnswer.user, nextQuestion, repliedAnswer.standUp);
   }
 
-  async answer(message: IMessage): Promise<Answer> {
+  async answer(message: IMessage): Promise<AnswerRequest> {
     const progressStandUp = await this.standUpProvider.findProgressByUser(message.user);
 
     if (!progressStandUp) {
       console.log('no progress stand up');
-      return new Promise<Answer>((resolve, reject) => {
+      return new Promise<AnswerRequest>((resolve, reject) => {
         reject('no progress stand up')
       })
     }
 
-    const lastNoReplyAnswer = await this.standUpProvider.findLastNoReplyAnswer(progressStandUp, message.user);
+    const lastNoReplyAnswerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(progressStandUp, message.user);
 
-    if (!lastNoReplyAnswer) {
-      console.log('lastNoReplyAnswer is not found');
+    if (!lastNoReplyAnswerRequest) {
+      console.log('LastNoReplyAnswerRequest is not found');
       // TODO
       return new Promise((r, e) => (e('lastNoReplyAnswer is not found')))
     }
 
-    lastNoReplyAnswer.message = message.text;
-    return this.standUpProvider.updateAnswer(lastNoReplyAnswer)
+    lastNoReplyAnswerRequest.answerMessage = message.text;
+    lastNoReplyAnswerRequest.answerCreatedAt = new Date();
+    return this.standUpProvider.updateAnswer(lastNoReplyAnswerRequest)
   }
 
-  standUpForNow() {
+  async standUpForNow() {
     const now = new Date();
     this.startDailyMeetUpByDate(now).then()
+    this.checkStandUpEndByDate(now).then()
   }
 
   startStandUpInterval() {
-    this.standUpForNow();
+    this.standUpForNow().then();
     this.everyMinutesIntervalID = setInterval(this.standUpForNow.bind(this), 60 * 1000) // every minutes
   }
 
@@ -219,21 +216,13 @@ export default class StandUpBotService {
         await this.startAsk(user, standUp)
       }
     }
+  }
 
-
-    const endedStandUps = await this.endTeamStandUpByDate(date);
+  async checkStandUpEndByDate(date) {
+    const endedStandUps = await this.standUpProvider.findStandUpsEndNowByDate(date);
+    console.log(`endedStandUps: ${endedStandUps.length}`)
     for (const endedStandUp of endedStandUps) {
-
       console.log('Send stand up report')
-      /*endedStandUp.end = new Date();
-      await this.connection.getRepository(StandUp).save(endedStandUp)
-      const reportText = 'Report ...';
-      const im = await this.connection.getRepository(Im).findOne(endedStandUp.team.settings.report_channel);
-      if (!im) {
-          console.log('Report channel is not found')
-          continue;
-      }
-      await this.send(im, reportText);*/
     }
   }
 
@@ -247,7 +236,7 @@ export default class StandUpBotService {
     await this.askQuestion(user, question, standUp)
   }
 
-  async askQuestion(user: IUser, question: IQuestion, standUp: IStandUp): Promise<IAnswer> {
+  async askQuestion(user: IUser, question: IQuestion, standUp: IStandUp): Promise<IAnswerRequest> {
     const answer = this.standUpProvider.createAnswer();
 
     answer.user = user;
