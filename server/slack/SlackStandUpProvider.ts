@@ -19,7 +19,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   message$: Observable<IMessage>;
 
   constructor(
-    private rtm: slackClient.RTMClient,
+    public readonly rtm: slackClient.RTMClient,
     private webClient: slackClient.WebClient,
     private connection: Connection) {
   }
@@ -148,12 +148,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
   async findStandUpsEndNowByDate(date: Date): Promise<StandUp[]> {
     return await this.connection.getRepository(StandUp).createQueryBuilder('st')
-      .where('date_trunc(\'minute\', st.end) = date_trunc(\'minute\', NOW()::timestamp)')
-      //.leftJoinAndSelect('st.channel', 'channel')
-      //.leftJoinAndSelect('channel.team', 'team')
-      //.leftJoinAndSelect('st.answers', 'answers')
-      //.leftJoinAndSelect('answers.user', 'user')
-      //.leftJoinAndSelect('answers.question', 'question')
+      .where('date_trunc(\'minute\', st.end) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
+      .leftJoinAndSelect('st.channel', 'channel')
+      .leftJoinAndSelect('channel.team', 'team')
+      .leftJoinAndSelect('st.answers', 'answers')
+      .leftJoinAndSelect('answers.user', 'user')
+      .leftJoinAndSelect('answers.question', 'question')
       .getMany()
   }
 

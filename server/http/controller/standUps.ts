@@ -49,7 +49,9 @@ export class StandUpsAction implements IHttpAction {
       .leftJoinAndSelect('st.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'answersUser')
       .leftJoinAndSelect('answers.question', 'answersQuestion')
+      .orderBy('st.end', 'DESC')
       .where('channel.id = :channelID', {channelID: channel.id})
+      .andWhere('st.end <= CURRENT_TIMESTAMP')
       .getMany();
 
     const standUpList = [];

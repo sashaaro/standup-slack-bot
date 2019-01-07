@@ -1,7 +1,7 @@
 import Team from "./model/Team";
 import AnswerRequest from "./model/AnswerRequest";
 import {Inject, Service, Token} from "typedi";
-import {Observable} from "rxjs";
+import {Observable, Subject} from "rxjs";
 
 const standUpGreeting = 'Good morning/evening. Welcome to daily standup';
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -17,7 +17,7 @@ export interface ITimezone {
 export interface IStandUpSettings {
   timezone: string|number
   start: string
-  end: string
+  duration: number
 }
 
 export interface IUser {
@@ -102,6 +102,9 @@ export const STAND_UP_BOT_TRANSPORT = new Token();
 @Service()
 export default class StandUpBotService {
   protected everyMinutesIntervalID: number | any;
+  protected finishStandUp = new Subject<IStandUp>()
+
+  finishStandUp$ = this.finishStandUp.asObservable()
 
   constructor(
     @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) protected standUpProvider: IStandUpProvider,
@@ -112,13 +115,14 @@ export default class StandUpBotService {
   start() {
     const now = new Date();
     const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds();
-    const millisecondsDelay = 60 * 1000 - milliseconds;
+    let millisecondsDelay = 60 * 1000 - milliseconds;
+    millisecondsDelay += 5 * 1000; // 5 seconds delay
 
     console.log('Wait delay ' + millisecondsDelay + ' milliseconds for run loop');
-    //setTimeout(() => {
-    console.log('StandUp interval starting');
-    this.startStandUpInterval();
-    //}, millisecondsDelay)
+    setTimeout(() => {
+      console.log('StandUp interval starting');
+      this.startStandUpInterval();
+    }, millisecondsDelay)
 
     this.transport.message$.subscribe(async (message: IMessage) => {
       await this.answerAndSendNext(message)
@@ -130,21 +134,18 @@ export default class StandUpBotService {
     const teams = await this.standUpProvider.findTeams();
 
     for (const team of teams) {
-      const timezone = parseFloat(team.timezone as string);
-      const timeString = this.getTimeString(date, timezone);
+      const timezoneShift = parseFloat(team.timezone as string);
+      const timeString = this.getTimeString(date, timezoneShift);
       const inTime = team.start === timeString;
 
-      console.log('Time', team.start, timeString);
+      console.log(`team.start ${team.start}, timeString ${timeString}`)
 
       if (inTime) {
         const standUp = this.standUpProvider.createStandUp();
         standUp.team = team;
         standUp.end = new Date();
-
-        const [hours, minutes] = team.end.split(':');
-        standUp.end.setHours(parseInt(hours) + timezone);
-        standUp.end.setMinutes(parseInt(minutes));
         standUp.end.setSeconds(0, 0);
+        standUp.end.setTime(standUp.end.getTime() + team.duration * 60 * 1000)
 
         await this.standUpProvider.insertStandUp(standUp);
         standUps.push(standUp);
@@ -154,10 +155,10 @@ export default class StandUpBotService {
     return standUps;
   }
 
-  private getTimeString(date: Date, timezone: number) {
+  private getTimeString(date: Date, timezoneShift: number) {
     const minutes = date.getUTCMinutes();
     const hours = date.getUTCHours();
-    return ('0' + (hours + timezone)).slice(-2) + ':' + ('0' + minutes).slice(-2)
+    return ('0' + (hours + parseInt(timezoneShift.toFixed(0)))).slice(-2) + ':' + ('0' + minutes).slice(-2) // TODO shift minutes
   }
 
   async answerAndSendNext(message: IMessage): Promise<IAnswerRequest> {
@@ -220,9 +221,9 @@ export default class StandUpBotService {
 
   async checkStandUpEndByDate(date) {
     const endedStandUps = await this.standUpProvider.findStandUpsEndNowByDate(date);
-    console.log(`endedStandUps: ${endedStandUps.length}`)
+
     for (const endedStandUp of endedStandUps) {
-      console.log('Send stand up report')
+      this.finishStandUp.next(endedStandUp);
     }
   }
 

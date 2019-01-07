@@ -5,7 +5,7 @@ import Team from "./model/Team";
 import User from "./model/User";
 import {RTMClient, WebClient} from '@slack/client'
 import parameters from './parameters'
-import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from './StandUpBotService'
+import StandUpBotService, {IStandUp, STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from './StandUpBotService'
 import {createExpressApp} from "./http/createExpressApp";
 import AnswerRequest from "./model/AnswerRequest";
 import StandUp from "./model/StandUp";
@@ -60,7 +60,7 @@ createConnection({
       Channel
     ],
     synchronize: true,
-    logging: true
+    //logging: true
   })
 
   const questions = [
@@ -96,8 +96,20 @@ createConnection({
   Container.set(STAND_UP_BOT_TRANSPORT, slackProvider);
 
   await slackProvider.init();
-  const botClient = Container.get(StandUpBotService)
-  botClient.start()
+  const standUpBot = Container.get(StandUpBotService)
+  standUpBot.start()
+
+  standUpBot.finishStandUp$.subscribe((standUp: StandUp) => {
+
+    console.log(standUp)
+
+    /*if (!standUp instanceof StandUp) {
+      console.log('Slack reporter is not supported')
+      return;
+    }*/
+
+    slackProvider.rtm.sendMessage('Report!!!!!', standUp.channel.id)
+  });
 
   const app = createExpressApp()
   app.listen(3000);

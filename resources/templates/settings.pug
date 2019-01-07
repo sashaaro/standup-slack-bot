@@ -15,6 +15,6 @@ block authorized_content
                     label= 'Start meeting (locale time)'
                     input.form-control(name="start", type="time", step="60", value=channel.start)
                 .field
-                    label= 'End meeting'
-                    input.form-control(name="end", type="time", step="60", value= channel.end)
+                    label= 'Duration'
+                    input.form-control(name="duration", type="number", step="5", value= channel.duration)
                 button.ui.button.fluid.positive(type="submit")= 'Save'

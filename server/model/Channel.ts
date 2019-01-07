@@ -34,6 +34,6 @@ export class Channel implements ITeam {
   timezone: string
   @Column({default: '11:00'})
   start: string
-  @Column({default: '11:30'})
-  end: string
+  @Column({default: 30})
+  duration: number
 }
