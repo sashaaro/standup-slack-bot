@@ -6,6 +6,7 @@ import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
 import {SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
 import Team from "../../model/Team";
+import AuthorizationContext from "../../services/AuthorizationContext";
 
 @Service()
 export class SyncAction implements IHttpAction {
@@ -14,6 +15,7 @@ export class SyncAction implements IHttpAction {
     private connection: Connection,
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) standUpProvider: IStandUpProvider,
+    private authorizationContext: AuthorizationContext
   ) {
     if (standUpProvider instanceof SlackStandUpProvider) {
       this.standUpProvider = standUpProvider;
@@ -22,12 +24,11 @@ export class SyncAction implements IHttpAction {
     }
   }
   async handle(req, res) {
-    const session = req.session
-    if (!session.user) {
+    const user = this.authorizationContext.getUser(req)
+    if (!user) {
       res.send('Access deny') // TODO 403
       return;
     }
-    const user = session.user;
 
     const teamRepository = this.connection.getRepository(Team)
     let team = await teamRepository.findOne({id: user.team_id})

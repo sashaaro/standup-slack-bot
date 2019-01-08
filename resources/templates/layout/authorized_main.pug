@@ -8,12 +8,14 @@ block content
                 div
                     |Standups
                     .menu-title__sign= 'for ' + team.domain + '.slack.com'
+                //a.item(href="/channels" class= {'active': activeMenu === 'channels'})
+                    | Channels
 
             .right.menu
-                if channel
-                    form.item.ui.mini.form(action="/channel", method="POST")
+                if channel && team.enableChannels.length
+                    form.item.ui.mini.form(action="/channel/selected", method="POST")
                         select.dropdown#selectChannel(name="id", placeholder="Select channel")
-                            each ch in team.channels
+                            each ch in team.enableChannels
                                 option(value=ch.id, selected=ch.id === channel.id)= ch.name
                     a.item(href="/settings" class= {'active': activeMenu === 'settings'})
                         i.icon.cog

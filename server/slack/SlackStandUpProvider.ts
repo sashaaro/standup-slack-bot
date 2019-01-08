@@ -11,7 +11,7 @@ import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
 import Question from "../model/Question";
 import {IMessage, IStandUpProvider, ITeam, ITransport, IUser} from "../StandUpBotService";
-import {SlackChannel} from "./model/SlackChannel";
+import {SlackChannel, SlackGroup} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
 
 @Service()
@@ -37,7 +37,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     });
 
     this.message$ = Observable.create((observer) => {
-      this.rtm.on('message', async (messageResponse: RTMMessageResponse) => {
+      this.rtm.on('message.im', async (messageResponse: RTMMessageResponse) => {
         // be sure it is direct answerMessage to bot
         if (!userRepository.findOne({where: {im: messageResponse.channel}})) {
           console.log(`User channel ${messageResponse.channel} is not im`);
@@ -60,6 +60,102 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         observer.complete();
       });
     });
+
+    const channelRepository = this.connection.getRepository(Channel);
+
+    const joinSlackChannel = async (channel: SlackChannel) => {
+      let ch = await channelRepository.findOne(channel.id);
+      if (!ch) {
+        ch = new Channel();
+        ch.id = channel.id
+      }
+
+      ch.isArchived = channel.is_archived
+      ch.isEnabled = true
+
+      await channelRepository.save(ch);
+    }
+
+    const leftSlackChannel = async (channel: SlackChannel) => {
+      let ch = await channelRepository.findOne(channel.id);
+      if (!ch) {
+        ch = new Channel();
+        ch.id = channel.id
+      }
+
+      ch.isArchived = channel.is_archived
+      ch.isEnabled = false
+
+      await channelRepository.save(ch);
+    }
+
+    const archiveSlackChannel = async (channel: SlackChannel) => {
+      let ch = await channelRepository.findOne(channel.id);
+      if (!ch) {
+        ch = new Channel();
+        ch.id = channel.id
+        ch.isEnabled = false
+      }
+
+      ch.isArchived = true
+
+      await channelRepository.save(ch);
+    }
+
+    const unArchiveSlackChannel = async (channel: SlackChannel) => {
+      let ch = await channelRepository.findOne(channel.id);
+      if (!ch) {
+        ch = new Channel();
+        ch.id = channel.id
+        ch.isEnabled = false
+      }
+
+      ch.isArchived = false
+
+      await channelRepository.save(ch);
+    }
+
+    this.rtm.on('channel_joined', async (response) => {
+      const channel = response.channel as SlackChannel
+      await joinSlackChannel(channel)
+    })
+
+    this.rtm.on('group_joined', async (response) => {
+      const channel = response.channel as SlackChannel
+      await joinSlackChannel(channel)
+    })
+
+    this.rtm.on('channel_left', async (response) => {
+      const channel = response.channel as SlackChannel
+      await leftSlackChannel(channel)
+    })
+
+    this.rtm.on('group_left', async (response) => {
+      const channel = response.channel as SlackChannel
+      await leftSlackChannel(channel)
+    })
+
+
+    this.rtm.on('channel_archive', async (response) => {
+      const channel = response.channel as SlackChannel
+      await archiveSlackChannel(channel)
+    })
+    this.rtm.on('channel_unarchived', async (response) => {
+      const channel = response.channel as SlackChannel
+      await unArchiveSlackChannel(channel)
+    })
+
+    this.rtm.on('group_archive', async (response) => {
+      const channel = response.channel as SlackChannel
+      await archiveSlackChannel(channel)
+    })
+    this.rtm.on('group_unarchived', async (response) => {
+      const channel = response.channel as SlackChannel
+      await unArchiveSlackChannel(channel)
+    })
+
+
+
 
     this.rtm.on('authenticated', async (rtmStartData: RTMAuthenticatedResponse) => {
       console.log(`Authenticated to team "${rtmStartData.team.name}"`);
@@ -85,6 +181,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return this.connection.getRepository(Channel)
       .createQueryBuilder('channel')
       .leftJoinAndSelect('channel.users', 'users')
+      .andWhere('channel.isArchived = false')
+      .andWhere('channel.isEnabled = true')
       .getMany();
   }
 
@@ -121,7 +219,9 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .innerJoinAndSelect('st.channel', 'channel')
       .innerJoinAndSelect('channel.users', 'users')
       .where('users.id = :user', {user: user.id})
-      // TODO if.. .andWhere('st.end lt now')
+      .andWhere('st.end <= CURRENT_TIMESTAMP')
+      .andWhere('channel.isArchived = false')
+      .andWhere('channel.isEnabled = true')
       .orderBy('st.start', "DESC")
       .getOne();
   }
@@ -134,9 +234,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .leftJoinAndSelect("a.user", "user")
       .leftJoinAndSelect("a.question", "question")
       .innerJoinAndSelect("a.standUp", "standUp")
+      .innerJoinAndSelect("standUp.channel", "channel")
       .where('user.id = :userID', {userID: user.id})
       .andWhere('a.answerMessage IS NULL')
       .andWhere('standUp.id = :standUp', {standUp: standUp.id})
+      .andWhere('channel.isArchived = false')
+      .andWhere('channel.isEnabled = true')
       .getOne()
   }
 
@@ -148,12 +251,14 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
   async findStandUpsEndNowByDate(date: Date): Promise<StandUp[]> {
     return await this.connection.getRepository(StandUp).createQueryBuilder('st')
-      .where('date_trunc(\'minute\', st.end) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
       .leftJoinAndSelect('st.channel', 'channel')
       .leftJoinAndSelect('channel.team', 'team')
       .leftJoinAndSelect('st.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'user')
       .leftJoinAndSelect('answers.question', 'question')
+      .where('date_trunc(\'minute\', st.end) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
+      .andWhere('channel.isArchived = false')
+      .andWhere('channel.isEnabled = true')
       .getMany()
   }
 
@@ -215,28 +320,38 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   private async updateChannels(team: Team) {
     const userRepository = this.connection.getRepository(User);
 
-    const response = await this.webClient.channels.list();
+    let response = await this.webClient.channels.list();
     if (!response.ok) {
       throw new Error(response.error);
     }
-    const channels = (response as any).channels as SlackChannel[]
+    let channels = (response as any).channels as SlackChannel[]
 
+    response = await this.webClient.groups.list();
+    if (!response.ok) {
+      throw new Error(response.error);
+    }
+    let privateChannel = ((response as any).groups as SlackGroup[])
+
+
+    channels = channels.concat(privateChannel as any)
     const channelRepository = this.connection.getRepository(Channel)
 
     await this.connection.createQueryBuilder()
       .update(Channel)
       .where({team: team.id})
-      .set({isActive: false})
+      .set({isArchived: true})
       .execute()
 
-    for(const channel of channels.filter((channel) => !channel.is_general && !channel.is_archived && channel.is_channel)) {
+    for(const channel of channels) {
+      // channel.is_channel
       let ch = await channelRepository.findOne(channel.id)
       if (!ch) {
         ch = new Channel()
         ch.id = channel.id;
+        ch.isEnabled = false;
       }
 
-      ch.isActive = true;
+      ch.isArchived = channel.is_archived;
       ch.createdBy = await userRepository.findOne(channel.creator)
       if (!ch.createdBy) {
         console.log('Created by is not found')

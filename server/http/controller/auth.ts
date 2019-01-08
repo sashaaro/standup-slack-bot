@@ -4,15 +4,16 @@ import {IHttpAction, templateDirPath} from "./index";
 import {Inject, Service} from "typedi";
 import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
+import AuthorizationContext, {IAuthUser} from "../../services/AuthorizationContext";
 
 @Service()
 export class AuthAction implements IHttpAction {
-  constructor(@Inject(CONFIG_TOKEN) private config: IAppConfig) {
+  constructor(@Inject(CONFIG_TOKEN) private config: IAppConfig,
+              private authorizationContext: AuthorizationContext) {
   }
 
   async handle(req, res) {
-    const session = req.session;
-    const user = session.user;
+    const user = this.authorizationContext.getUser(req)
 
     if (user) {
       res.redirect('/');
@@ -20,7 +21,7 @@ export class AuthAction implements IHttpAction {
     }
 
     if (!req.query.code) {
-      const authLink = `https://slack.com/oauth/authorize?&client_id=${this.config.slackClientID}&scope=bot,channels:read,team:read&redirect_uri=${this.config.host}/auth`
+      const authLink = `https://slack.com/oauth/authorize?&client_id=${this.config.slackClientID}&scope=bot,channels:read,team:read,groups:read&redirect_uri=${this.config.host}/auth`
 
       res.send(pug.compileFile(`${templateDirPath}/auth.pug`)({
         authLink: authLink
@@ -49,14 +50,14 @@ export class AuthAction implements IHttpAction {
       throw new Error(data)
     }
 
-    session.user = {
+    this.authorizationContext.setUser(req, {
       access_token: data.access_token,
       scope: data.scope,
       user_id: data.user_id,
       team_name: data.team_name,
       team_id: data.team_id,
       bot: data.bot,
-    }
+    } as IAuthUser)
 
     return res.redirect('/')
   }

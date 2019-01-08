@@ -4,18 +4,20 @@ import StandUp from "../../model/StandUp";
 import {Service} from "typedi";
 import {Connection} from "typeorm";
 import Team from "../../model/Team";
-import {Channel} from "../../model/Channel";
+import AuthorizationContext from "../../services/AuthorizationContext";
 
 @Service()
 export class StandUpsAction implements IHttpAction {
-  constructor(private connection: Connection) {
+  constructor(
+    private connection: Connection,
+    private authorizationContext: AuthorizationContext
+  ) {
 
   }
   async handle(req, res) {
-    const session = req.session;
-    const user = session.user;
+    const user = this.authorizationContext.getUser(req);
 
-    if (!session.user) {
+    if (!user) {
       res.send('Access deny');
       return;
     }
@@ -28,12 +30,7 @@ export class StandUpsAction implements IHttpAction {
       throw new Error('team is not found');
     }
 
-    const channelRepository = this.connection.getRepository(Channel);
-
-    let channel: Channel;
-    if (session.channel) {
-      channel = await channelRepository.findOne(session.channel)
-    }
+    const channel = await this.authorizationContext.getSelectedChannel(req);
 
     if (!channel) {
       return res.send(pug.compileFile(`${templateDirPath}/setChannel.pug`)({

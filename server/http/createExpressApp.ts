@@ -8,6 +8,8 @@ import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
 import {SyncAction} from "./controller/sync";
 import {SetChannelAction} from "./controller/setChannel";
+import {ChannelsAction} from "./controller/channels";
+import {UpdateChannelAction} from "./controller/updateChannel";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -55,7 +57,13 @@ export const createExpressApp = () => {
   app.get('/sync', syncAction.handle.bind(syncAction));
 
   const setChannelAction = Container.get(SetChannelAction)
-  app.post('/channel', setChannelAction.handle.bind(setChannelAction));
+  app.post('/channel/selected', setChannelAction.handle.bind(setChannelAction));
+
+  //const channelsAction = Container.get(ChannelsAction)
+  //app.get('/channels', channelsAction.handle.bind(channelsAction));
+
+  //const updateChannelAction = Container.get(UpdateChannelAction)
+  //app.post('/channel', updateChannelAction.handle.bind(updateChannelAction));
 
 
   return app;

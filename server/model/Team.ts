@@ -20,6 +20,10 @@ class Team {
     eager: true
   })
   channels: Channel[]
+
+  get enableChannels() {
+    return this.channels.filter((ch) => ch.isEnabled && !ch.isArchived)
+  }
 }
 
 export default Team;

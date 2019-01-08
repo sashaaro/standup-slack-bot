@@ -27,7 +27,6 @@ export interface IAppConfig {
   debug: false
 }
 
-
 createConnection({
   type: "postgres",
   host: "postgres",

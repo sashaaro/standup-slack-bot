@@ -1,8 +1,22 @@
 extends layout/authorized_main
 
 block authorized_content
-    form.row.auth-block.field(action="/channel", method="POST")
-       select.dropdown#selectChannel(name="id")
-           option= 'Select channel'
-           each channel in team.channels
-               option(value=channel.id)= channel.name
+    if team.enableChannels.length
+        form.row.auth-block.field(action="/channel/selected", method="POST")
+           select#selectChannel(name="id")
+               each channel in team.enableChannels
+                   option(value=channel.id)= channel.name
+    else
+        div
+            | No meeting channel
+        div
+            | Use "/invite @daily_standup" for your meeting channel
+block append scripts
+    script.
+      $('#selectChannel').dropdown({
+        clearable: true,
+        placeholder: 'Select channel'
+      }).dropdown('clear')
+      $('#sync-link').click(function () {
+        this.classList.add('active')
+      })

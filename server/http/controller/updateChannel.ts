@@ -6,7 +6,7 @@ import {Channel} from "../../model/Channel";
 import AuthorizationContext from "../../services/AuthorizationContext";
 
 @Service()
-export class SetChannelAction implements IHttpAction {
+export class UpdateChannelAction implements IHttpAction {
   constructor(
     private connection: Connection,
     private authorizationContext: AuthorizationContext
@@ -29,7 +29,6 @@ export class SetChannelAction implements IHttpAction {
     const channelRepository = this.connection.getRepository(Channel)
 
     let channel: Channel;
-
     if (req.body.id) {
       channel = await channelRepository.findOne({where: {id: req.body.id}, relations: ['team']})
     }
@@ -39,8 +38,12 @@ export class SetChannelAction implements IHttpAction {
       return;
     }
 
-    this.authorizationContext.setSelectedChannel(req, channel)
+    if (!channel.isArchived) {
+      channel.isEnabled = req.body.isEnabled
+      await channelRepository.save(channel)
+    }
 
+    return res.send(channel)
     return res.redirect('/')
   }
 }

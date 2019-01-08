@@ -11,11 +11,14 @@ export class Channel implements ITeam {
   @Column()
   name: string
 
-  @Column()
-  isActive: boolean
+  @Column({default: false})
+  isArchived: boolean;
+
+  @Column({default: false})
+  isEnabled: boolean;
 
   @Column()
-  nameNormalized: string
+  nameNormalized: string;
 
   @ManyToOne(type => User, null, {
     eager: true
