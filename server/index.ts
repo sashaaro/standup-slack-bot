@@ -115,12 +115,17 @@ createConnection({
 
   const app = createExpressApp()
 
-  const hasSSL = fs.existsSync('cert/key.key') && fs.existsSync('cert/cert.crt')
+  const privateKey = 'cert/privkey.pem'
+  const certificate = 'cert/cert.crt';
+  const ca = 'cert/chain.pem';
+
+  const hasSSL = fs.existsSync(privateKey) && fs.existsSync(certificate)
   console.log(`SSL ${hasSSL ? 'enabled': 'disabled'}`)
   if (hasSSL) {
     const options = {
-      key: fs.readFileSync('cert/key.key'),
-      cert: fs.readFileSync( 'cert/cert.crt'),
+      key: fs.readFileSync(privateKey),
+      cert: fs.readFileSync(certificate),
+      ca: fs.readFileSync(ca),
     }
 
     https.createServer(options, app).listen(443);
