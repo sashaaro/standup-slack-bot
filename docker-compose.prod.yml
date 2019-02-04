@@ -1,7 +1,10 @@
 version: "3.7"
 
+volumes:
+  postgres_data:
+
 services:
-  serve:
+  app:
     image: node:10.15.0-alpine
     entrypoint: ["node", "dist/index.js"]
     user: 1000:1000
@@ -19,6 +22,8 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:5.0.3
