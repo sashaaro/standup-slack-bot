@@ -21,4 +21,4 @@ services:
       POSTGRES_PASSWORD: postgres
 
   redis:
-    image: redis:5.0.3-alpine
+    image: redis:5.0.3
