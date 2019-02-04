@@ -14,6 +14,7 @@ import {SlackStandUpProvider} from "./slack/SlackStandUpProvider";
 import {CONFIG_TOKEN, TIMEZONES_TOKEN} from "./services/token";
 import {Channel} from "./model/Channel";
 import {getTimezoneList} from "./services/timezones";
+import * as http from "http";
 import * as https from "https";
 import * as fs from "fs";
 
@@ -124,7 +125,7 @@ createConnection({
 
     https.createServer(options, app).listen(443);
   } else {
-    https.createServer({}, app).listen(3000);
+    http.createServer(app).listen(3000);
   }
 
 }).catch(error => console.log(error));
