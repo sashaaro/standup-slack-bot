@@ -14,6 +14,8 @@ import {SlackStandUpProvider} from "./slack/SlackStandUpProvider";
 import {CONFIG_TOKEN, TIMEZONES_TOKEN} from "./services/token";
 import {Channel} from "./model/Channel";
 import {getTimezoneList} from "./services/timezones";
+import * as https from "https";
+import * as fs from "fs";
 
 const config = parameters as IAppConfig;
 
@@ -111,6 +113,18 @@ createConnection({
   });
 
   const app = createExpressApp()
-  app.listen(3000);
-  // here you can start to work with your entities
+
+  const hasSSL = fs.existsSync('cert/key.key') && fs.existsSync('cert/cert.crt')
+  console.log(`SSL ${hasSSL ? 'enabled': 'disabled'}`)
+  if (hasSSL) {
+    const options = {
+      key: fs.readFileSync('cert/key.key'),
+      cert: fs.readFileSync( 'cert/cert.crt'),
+    }
+
+    https.createServer(options, app).listen(443);
+  } else {
+    https.createServer({}, app).listen(3000);
+  }
+
 }).catch(error => console.log(error));
