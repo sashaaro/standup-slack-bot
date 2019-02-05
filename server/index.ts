@@ -14,6 +14,9 @@ import {SlackStandUpProvider} from "./slack/SlackStandUpProvider";
 import {CONFIG_TOKEN, TIMEZONES_TOKEN} from "./services/token";
 import {Channel} from "./model/Channel";
 import {getTimezoneList} from "./services/timezones";
+import * as http from "http";
+import * as https from "https";
+import * as fs from "fs";
 
 const config = parameters as IAppConfig;
 
@@ -115,6 +118,22 @@ createConnection({
 
   app.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
 
-  app.listen(3000);
-  // here you can start to work with your entities
+  const privateKey = 'cert/privkey.pem'
+  const certificate = 'cert/cert.crt';
+  const ca = 'cert/chain.pem';
+
+  const hasSSL = fs.existsSync(privateKey) && fs.existsSync(certificate)
+  console.log(`SSL ${hasSSL ? 'enabled': 'disabled'}`)
+  if (hasSSL) {
+    const options = {
+      key: fs.readFileSync(privateKey),
+      cert: fs.readFileSync(certificate),
+      ca: fs.readFileSync(ca),
+    }
+
+    https.createServer(options, app).listen(443);
+  } else {
+    http.createServer(app).listen(3000);
+  }
+
 }).catch(error => console.log(error));
