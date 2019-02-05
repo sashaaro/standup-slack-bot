@@ -111,6 +111,10 @@ createConnection({
   });
 
   const app = createExpressApp()
+  const apiSlackInteractiveAction = Container.get(ApiSlackInteractive) as ApiSlackInteractive
+
+  app.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
+
   app.listen(3000);
   // here you can start to work with your entities
 }).catch(error => console.log(error));
