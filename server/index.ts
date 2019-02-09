@@ -4,7 +4,6 @@ import Question from "./model/Question";
 import Team from "./model/Team";
 import User from "./model/User";
 import {RTMClient, WebClient} from '@slack/client'
-import parameters from './parameters'
 import StandUpBotService, {IStandUp, STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from './StandUpBotService'
 import {createExpressApp} from "./http/createExpressApp";
 import AnswerRequest from "./model/AnswerRequest";
@@ -19,7 +18,10 @@ import * as https from "https";
 import * as fs from "fs";
 import {ApiSlackInteractive} from "./http/controller/apiSlackInteractive";
 
-const config = parameters as IAppConfig;
+import parameters from './parameters';
+import localParameters from './parameters.local'
+
+const config = Object.assign(parameters, localParameters) as IAppConfig;
 
 
 export interface IAppConfig {
@@ -123,7 +125,7 @@ createConnection({
   const privateKey = certFolder + '/privkey.pem';
   const certificate = certFolder + '/cert.pem';
   const ca = certFolder + '/chain.pem';
-  
+
   const hasSSL = fs.existsSync(privateKey) && fs.existsSync(certificate)
   console.log(`SSL ${hasSSL ? 'enabled': 'disabled'}`)
   if (hasSSL) {
