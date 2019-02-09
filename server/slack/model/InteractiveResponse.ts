@@ -37,7 +37,7 @@ export interface InteractiveDialogSubmissionResponse {
   team: { id: 'T6GQB7CSF', domain: 'sashaaro' },
   user: { id: 'U6GSG49R8', name: 'sashaaro' },
   channel: { id: 'D6HVDGXSB', name: 'directmessage' },
-  submission: object,
+  submission: { [key: string]: string},
   callback_id: 'send_answers',
   response_url:
     'https://hooks.slack.com/app/T6GQB7CSF/546930635013/J9cESTDMkRkgwazXoIccQsR2',

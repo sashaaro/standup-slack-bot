@@ -1,5 +1,5 @@
 import {Service} from "typedi";
-import {Observable} from "rxjs";
+import {Observable, Observer} from "rxjs";
 import * as slackClient from "@slack/client";
 import {Connection} from "typeorm";
 import User from "../model/User";
@@ -24,6 +24,7 @@ const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
 @Service()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   message$: Observable<IMessage>;
+  private observer: Observer;// TODO remove use Subject
 
   constructor(
     public readonly rtm: slackClient.RTMClient,
@@ -34,29 +35,28 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   async sendMessage(user: User, message: string): Promise<any> {
     await this.webClient.chat.postMessage({
       "channel": user.im,
-      "text": "There is time to start stand up meeting!",
+      "text": "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
       "attachments": [
         {
-          "text": "Choose a game to play",
+          "text": "Ready to start ",
           "callback_id": `${CALLBACK_PREFIX_STANDUP_INVITE}`,// save standup channel id if have multi standups
           "actions": [
             {
-              //"id": "action1",
               "name": "start",
-              "text": "Start",
+              "text": "Open dialog",
               "type": "button",
               "value": "start"
             },
+            // TODO I'm late
             {
-              //"id": "action2",
               "name": "skip",
-              "text": "Skip",
+              "text": "I skip",
               "type": "button",
               "value": "skip",
               "style": "danger",
               "confirm": {
                 "title": "Are you sure?",
-                "text": "Wouldn't you prefer a good game of chess?",
+                "text": "Wouldn't you prefer to skip standup today?",
                 "ok_text": "Yes",
                 "dismiss_text": "No"
               }
@@ -79,6 +79,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     });
 
     this.message$ = Observable.create((observer) => {
+      this.observer = observer// TODO remove
       this.rtm.on('message.im', async (messageResponse: RTMMessageResponse) => {
         // be sure it is direct answerMessage to bot
         if (!userRepository.findOne({where: {im: messageResponse.channel}})) {
@@ -414,8 +415,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
   async handleInteractiveResponse(response: InteractiveResponse) {
     if (response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
-
-      // check action is not skip
+      
+      // TODO  check action is not skip
       const openDialogRequest = {
         "trigger_id": response.trigger_id,
         //"token": this.webClient.token,
@@ -425,23 +426,22 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
           "submit_label": "Request",
           "notify_on_cancel": true,
           "state": "Limo",
-          "elements": [
-            {
-              "type": "text",
-              "label": "Pickup Location",
-              "name": "loc_origin"
-            },
-            {
-              "type": "text",
-              "label": "Dropoff Location",
-              "name": "loc_destination"
-            }
-          ]
+          "elements": []
         }
       }
 
-      // TODO put questions
-      //openDialogRequest.dialog.elements
+      const questions = await this.connection.getRepository(Question)
+        .createQueryBuilder('q')
+        .orderBy('q.index', 'ASC')
+        .execute()
+
+      for(const question of questions) {
+        openDialogRequest.dialog.elements.push({
+          "type": "text",
+          "label": question.text,
+          "name": question.index
+        })
+      }
 
       try {
         const result = await this.webClient.apiCall('dialog.open', openDialogRequest)
@@ -463,15 +463,28 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       const user = await this.connection.getRepository(User).findOne(response.user);
 
       if (!user) {
-        throw new Error('user is not found')
+        throw new Error(`User ${response.user} is not found`)
       }
 
+      const channelTeam = user.team.channels.filter((channel) => (channel.id === response.channel.id)).pop()
+      if (!user) {
+        throw new Error(`Channel team ${response.channel.id} is not found`)
+      }
 
-      // response.submission
-      // TODO save answer
+      for (const index of Object.keys(response.submission).sort((current, next) => current > next ? 1 : -1)) {
+        const text = response.submission[index]
+        this.observer.next({
+          team: channelTeam,
+          text: text,
+          user: user
+        } as IMessage)
 
+        await sleep(1000) // wait to save... TODO remove!
+      }
+
+      // TODO move to standupBot service
       try {
-        await this.sendMessage(user, 'Thanks');
+        await this.sendMessage(user, 'Good luck today!');
       } catch (e) {
         console.log(e.message)
         throw new Error(e.message)
@@ -480,4 +493,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       console.log(`There is no handler for callback ${response.callback_id}`);
     }
   }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

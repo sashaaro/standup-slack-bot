@@ -233,8 +233,14 @@ export default class StandUpBotService {
       console.log('No questions');
       return;
     }
-    await this.send(user, standUpGreeting);
+
+    await this.beforeStartStandUp(user, standUp)
+
     await this.askQuestion(user, question, standUp)
+  }
+
+  private async beforeStartStandUp(user: IUser, standUp: IStandUp) {
+    await this.send(user, standUpGreeting);
   }
 
   async askQuestion(user: IUser, question: IQuestion, standUp: IStandUp): Promise<IAnswerRequest> {
