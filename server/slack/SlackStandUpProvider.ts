@@ -24,7 +24,7 @@ const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
 @Service()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   message$: Observable<IMessage>;
-  private observer: Observer;// TODO remove use Subject
+  private observer: Observer<IMessage>;// TODO remove use Subject
 
   constructor(
     public readonly rtm: slackClient.RTMClient,
@@ -415,7 +415,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
   async handleInteractiveResponse(response: InteractiveResponse) {
     if (response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
-      
+
       // TODO  check action is not skip
       const openDialogRequest = {
         "trigger_id": response.trigger_id,
