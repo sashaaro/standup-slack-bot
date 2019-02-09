@@ -121,7 +121,7 @@ createConnection({
 
   const certFolder = './../cert';
   const privateKey = certFolder + '/privkey.pem';
-  const certificate = certFolder + '/cert.crt';
+  const certificate = certFolder + '/cert.pem';
   const ca = certFolder + '/chain.pem';
 
   const hasSSL = fs.existsSync(privateKey) && fs.existsSync(certificate)
