@@ -24,7 +24,48 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     private connection: Connection) {
   }
 
-  sendMessage(user: User, message: string): Promise<any> {
+  async sendMessage(user: User, message: string): Promise<any> {
+    await this.webClient.chat.postMessage({
+      "channel": user.im,
+      "text": "Would you like to play a game?",
+      "attachments": [
+        {
+          "text": "Choose a game to play",
+          "actions": [
+            {
+              "id": "action1",
+              "name": "game",
+              "text": "Chess",
+              "type": "button",
+              "value": "chess"
+            },
+            {
+              "id": "action2",
+              "name": "game",
+              "text": "Falken's Maze",
+              "type": "button",
+              "value": "maze"
+            },
+            {
+              "id": "action3",
+              "name": "game",
+              "text": "Thermonuclear War",
+              "style": "danger",
+              "type": "button",
+              "value": "war",
+              "confirm": {
+                "title": "Are you sure?",
+                "text": "Wouldn't you prefer a good game of chess?",
+                "ok_text": "Yes",
+                "dismiss_text": "No"
+              }
+            }
+          ]
+        }
+      ]
+    })
+
+
     return this.rtm.sendMessage(message, user.im);
   }
 

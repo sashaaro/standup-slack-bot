@@ -114,6 +114,9 @@ createConnection({
   });
 
   const app = createExpressApp()
+  const apiSlackInteractiveAction = Container.get(ApiSlackInteractive) as ApiSlackInteractive
+
+  app.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
 
   const privateKey = 'cert/privkey.pem'
   const certificate = 'cert/cert.crt';
