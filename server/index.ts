@@ -119,9 +119,10 @@ createConnection({
 
   app.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
 
-  const privateKey = 'cert/privkey.pem'
-  const certificate = 'cert/cert.crt';
-  const ca = 'cert/chain.pem';
+  const certFolder = './../cert';
+  const privateKey = certFolder + '/privkey.pem';
+  const certificate = certFolder + '/cert.crt';
+  const ca = certFolder + '/chain.pem';
 
   const hasSSL = fs.existsSync(privateKey) && fs.existsSync(certificate)
   console.log(`SSL ${hasSSL ? 'enabled': 'disabled'}`)
