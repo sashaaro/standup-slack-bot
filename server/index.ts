@@ -17,6 +17,7 @@ import {getTimezoneList} from "./services/timezones";
 import * as http from "http";
 import * as https from "https";
 import * as fs from "fs";
+import {ApiSlackInteractive} from "./http/controller/apiSlackInteractive";
 
 const config = parameters as IAppConfig;
 
