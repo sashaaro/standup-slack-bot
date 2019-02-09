@@ -16,10 +16,9 @@ export class ApiSlackInteractive implements IHttpAction {
   }
 
   async handle(req, res) {
-    console.log(typeof req.body)
-    console.log(req.body)
-    const response = req.body as InteractiveResponse
+    const response = JSON.parse(req.body.payload) as InteractiveResponse
 
+    console.log(response);
 
     if (response.type !== "interactive_message") {
       console.log(`Unknown interactive response type:  ${response.type}`)
