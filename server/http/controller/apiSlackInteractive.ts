@@ -2,15 +2,30 @@ import {IHttpAction} from "./index";
 import {Inject, Service} from "typedi";
 import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
+import {SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
+import {InteractiveResponse} from "../../slack/model/InteractiveResponse";
+
+
 
 @Service()
 export class ApiSlackInteractive implements IHttpAction {
-  constructor(@Inject(CONFIG_TOKEN) private config: IAppConfig) {
+  constructor(
+    @Inject(CONFIG_TOKEN) private config: IAppConfig,
+    private slackStandUpProvider: SlackStandUpProvider
+  ) {
   }
 
   async handle(req, res) {
-    console.log(req)
-    console.log(req.body)
+    const response = req.body as InteractiveResponse
+
+
+    if (response.type !== "interactive_message") {
+      console.log(`Unknown interactive response type:  ${response.type}`)
+      res.sendStatus(400);
+      return res.send('', )
+    }
+
+    this.slackStandUpProvider.handleInteractiveResponse(response)
 
     return res.send('')
   }

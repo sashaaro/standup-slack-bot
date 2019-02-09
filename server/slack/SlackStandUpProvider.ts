@@ -13,6 +13,10 @@ import Question from "../model/Question";
 import {IMessage, IStandUpProvider, ITeam, ITransport, IUser} from "../StandUpBotService";
 import {SlackChannel, SlackGroup} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
+import {InteractiveResponse} from "./model/InteractiveResponse";
+
+const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
+const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
 
 @Service()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
@@ -31,29 +35,22 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       "attachments": [
         {
           "text": "Choose a game to play",
-          "callback_id": "answer111",
+          "callback_id": `${CALLBACK_PREFIX_STANDUP_INVITE}`,// save standup channel id if have multi standups
           "actions": [
             {
-              "id": "action1",
-              "name": "game",
-              "text": "Chess",
+              //"id": "action1",
+              "name": "start",
+              "text": "Start",
               "type": "button",
-              "value": "chess"
+              "value": "start"
             },
             {
-              "id": "action2",
-              "name": "game",
-              "text": "Falken's Maze",
+              //"id": "action2",
+              "name": "skip",
+              "text": "Skip",
               "type": "button",
-              "value": "maze"
-            },
-            {
-              "id": "action3",
-              "name": "game",
-              "text": "Thermonuclear War",
+              "value": "skip",
               "style": "danger",
-              "type": "button",
-              "value": "war",
               "confirm": {
                 "title": "Are you sure?",
                 "text": "Wouldn't you prefer a good game of chess?",
@@ -411,6 +408,47 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
       ch.users = await userRepository.createQueryBuilder('u').whereInIds(channel.members).getMany()
       await channelRepository.save(ch);
+    }
+  }
+
+
+  handleInteractiveResponse(response: InteractiveResponse) {
+    const user = this.connection.getRepository(User).find(response.user);
+
+    if (!user) {
+      throw new Error('user is not found')
+    }
+
+    if (response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
+
+      // check action is not skip
+      const openDialogRequest = {
+        "trigger_id": response.trigger_id,
+        "token": response.token,
+        "dialog": {
+          "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}_`, // TODO multi standups
+          "title": "Request a Ride",
+          "submit_label": "Request",
+          "notify_on_cancel": true,
+          "state": "Limo",
+          "elements": [
+            {
+              "type": "text",
+              "label": "Pickup Location",
+              "name": "loc_origin"
+            },
+            {
+              "type": "text",
+              "label": "Dropoff Location",
+              "name": "loc_destination"
+            }
+          ]
+        }
+      }
+
+      this.rtm.send('dialog.open', openDialogRequest)
+    } else if (response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
+      this.sendMessage(user , 'Thanks');
     }
   }
 }
