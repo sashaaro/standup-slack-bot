@@ -424,7 +424,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       // check action is not skip
       const openDialogRequest = {
         "trigger_id": response.trigger_id,
-        "token": response.token,
+        //"token": this.webClient.token,
         "dialog": {
           "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
           "title": "Request a Ride",
