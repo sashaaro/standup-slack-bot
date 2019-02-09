@@ -433,7 +433,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       const questions = await this.connection.getRepository(Question)
         .createQueryBuilder('q')
         .orderBy('q.index', 'ASC')
-        .execute()
+        .getMany()
 
       for(const question of questions) {
         openDialogRequest.dialog.elements.push({
