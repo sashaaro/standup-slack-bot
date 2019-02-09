@@ -412,8 +412,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   }
 
 
-  handleInteractiveResponse(response: InteractiveResponse) {
-    const user = this.connection.getRepository(User).find(response.user);
+  async handleInteractiveResponse(response: InteractiveResponse) {
+    const user = await this.connection.getRepository(User).findOne(response.user);
 
     if (!user) {
       throw new Error('user is not found')
@@ -448,7 +448,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
       this.rtm.send('dialog.open', openDialogRequest)
     } else if (response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
-      this.sendMessage(user , 'Thanks');
+      this.sendMessage(user, 'Thanks');
     }
   }
 }

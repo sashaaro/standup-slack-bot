@@ -25,7 +25,7 @@ export class ApiSlackInteractive implements IHttpAction {
       return res.send('', )
     }
 
-    this.slackStandUpProvider.handleInteractiveResponse(response)
+    await this.slackStandUpProvider.handleInteractiveResponse(response)
 
     return res.send('')
   }
