@@ -20,8 +20,9 @@ export class AuthAction implements IHttpAction {
       return;
     }
 
+    const redirectUri = `${this.config.host}/auth`
     if (!req.query.code) {
-      const authLink = `https://slack.com/oauth/authorize?&client_id=${this.config.slackClientID}&scope=bot,channels:read,team:read,groups:read&redirect_uri=${this.config.host}/auth`
+      const authLink = `https://slack.com/oauth/authorize?&client_id=${this.config.slackClientID}&scope=bot,channels:read,team:read,groups:read&redirect_uri=${redirectUri}`
 
       res.send(pug.compileFile(`${templateDirPath}/auth.pug`)({
         authLink: authLink
@@ -31,7 +32,7 @@ export class AuthAction implements IHttpAction {
 
     // https://api.slack.com/methods/oauth.access
     const link = 'https://slack.com/api/oauth.access';
-    const query = `code=${req.query.code}&client_id=${this.config.slackClientID}&client_secret=${this.config.slackSecret}`
+    const query = `code=${req.query.code}&client_id=${this.config.slackClientID}&client_secret=${this.config.slackSecret}&redirect_uri=${redirectUri}`
     const options = {
       uri: `${link}?${query}`,
       method: 'GET'
