@@ -438,7 +438,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       for(const question of questions) {
         openDialogRequest.dialog.elements.push({
           "type": "text",
-          "label": question.text,
+          "label": question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
+          "placeholder": question.text,
           "name": question.index
         })
       }
@@ -449,6 +450,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         //await this.rtm.send('dialog.open', openDialogRequest)
       } catch (e) {
         console.log(e.message)
+        console.log(e.data.response_metadata.messages)
         throw new Error(e.message)
       }
 
