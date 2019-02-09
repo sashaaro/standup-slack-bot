@@ -1,5 +1,10 @@
+export enum InteractiveResponseTypeEnum {
+  interactive_message = 'interactive_message',
+  dialog_submission = 'dialog_submission'
+}
+
 export interface InteractiveResponse {
-  type: 'interactive_message',
+  type: InteractiveResponseTypeEnum,
   actions: [{ name: 'start', type: 'button', value: 'start' }],
   callback_id: 'standup_invite',
   team: { id: 'T6GQB7CSF', domain: 'sashaaro' },
@@ -23,6 +28,20 @@ export interface InteractiveResponse {
   response_url:
     'https://hooks.slack.com/actions/T6GQB7CSF/546720711042/j8HC7oybBaJji5485y5LcBAl',
   trigger_id: '546562582292.220827250899.33196fe718bc1de4fb286ac689f7b612'
+}
+
+export interface InteractiveDialogSubmissionResponse {
+  type: 'dialog_submission',
+  token: 'Eeo49Ou9MDuvXEdFmnEZrRFB',
+  action_ts: '1549718276.192685',
+  team: { id: 'T6GQB7CSF', domain: 'sashaaro' },
+  user: { id: 'U6GSG49R8', name: 'sashaaro' },
+  channel: { id: 'D6HVDGXSB', name: 'directmessage' },
+  submission: object,
+  callback_id: 'send_answers',
+  response_url:
+    'https://hooks.slack.com/app/T6GQB7CSF/546930635013/J9cESTDMkRkgwazXoIccQsR2',
+  state: 'Limo'
 }
 
 

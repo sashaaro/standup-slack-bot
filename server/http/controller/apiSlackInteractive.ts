@@ -3,7 +3,11 @@ import {Inject, Service} from "typedi";
 import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
 import {SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
-import {InteractiveResponse} from "../../slack/model/InteractiveResponse";
+import {
+  InteractiveDialogSubmissionResponse,
+  InteractiveResponse,
+  InteractiveResponseTypeEnum
+} from "../../slack/model/InteractiveResponse";
 
 
 
@@ -16,17 +20,19 @@ export class ApiSlackInteractive implements IHttpAction {
   }
 
   async handle(req, res) {
-    const response = JSON.parse(req.body.payload) as InteractiveResponse
+    const response = JSON.parse(req.body.payload) as any
 
-    console.log(response);
-
-    if (response.type !== "interactive_message") {
+    if (!response.type || !Object.values(InteractiveResponseTypeEnum).includes(response.type)) {
       console.log(`Unknown interactive response type:  ${response.type}`)
       res.sendStatus(400);
       return res.send('', )
     }
 
-    await this.slackStandUpProvider.handleInteractiveResponse(response)
+    if (response.type === InteractiveResponseTypeEnum.interactive_message) {
+      await this.slackStandUpProvider.handleInteractiveResponse(response as InteractiveResponse)
+    } else if (response.type === InteractiveResponseTypeEnum.dialog_submission) {
+      await this.slackStandUpProvider.handleInteractiveDialogSubmissionResponse(response as InteractiveDialogSubmissionResponse)
+    }
 
     return res.send('')
   }

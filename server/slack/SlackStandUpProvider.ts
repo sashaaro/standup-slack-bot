@@ -13,7 +13,10 @@ import Question from "../model/Question";
 import {IMessage, IStandUpProvider, ITeam, ITransport, IUser} from "../StandUpBotService";
 import {SlackChannel, SlackGroup} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
-import {InteractiveResponse} from "./model/InteractiveResponse";
+import {
+  InteractiveDialogSubmissionResponse,
+  InteractiveResponse
+} from "./model/InteractiveResponse";
 
 const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
@@ -194,8 +197,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     })
 
 
-
-
     this.rtm.on('authenticated', async (rtmStartData: RTMAuthenticatedResponse) => {
       console.log(`Authenticated to team "${rtmStartData.team.name}"`);
 
@@ -243,7 +244,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return standUpRepository.insert(standUp)
   }
 
-  async findProgressByTeam(team: ITeam|Channel): Promise<StandUp> {
+  async findProgressByTeam(team: ITeam | Channel): Promise<StandUp> {
     const standUpRepository = this.connection.getRepository(StandUp);
     return await standUpRepository.createQueryBuilder('st')
       .where('st.channel = :channel', {channel: team.id})
@@ -264,7 +265,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .orderBy('st.start', "DESC")
       .getOne();
   }
-
 
 
   async findLastNoReplyAnswerRequest(standUp: StandUp, user: User): Promise<AnswerRequest> {
@@ -381,7 +381,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .set({isArchived: true})
       .execute()
 
-    for(const channel of channels) {
+    for (const channel of channels) {
       // channel.is_channel
       let ch = await channelRepository.findOne(channel.id)
       if (!ch) {
@@ -413,12 +413,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
 
   async handleInteractiveResponse(response: InteractiveResponse) {
-    const user = await this.connection.getRepository(User).findOne(response.user);
-
-    if (!user) {
-      throw new Error('user is not found')
-    }
-
     if (response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
 
       // check action is not skip
@@ -446,6 +440,9 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         }
       }
 
+      // TODO put questions
+      //openDialogRequest.dialog.elements
+
       try {
         const result = await this.webClient.apiCall('dialog.open', openDialogRequest)
         console.log(result)
@@ -455,7 +452,24 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         throw new Error(e.message)
       }
 
-    } else if (response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
+    } else {
+      console.log(`There is no handler for callback ${response.callback_id}`);
+    }
+  }
+
+
+  async handleInteractiveDialogSubmissionResponse(response: InteractiveDialogSubmissionResponse) {
+    if (response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
+      const user = await this.connection.getRepository(User).findOne(response.user);
+
+      if (!user) {
+        throw new Error('user is not found')
+      }
+
+
+      // response.submission
+      // TODO save answer
+
       try {
         await this.sendMessage(user, 'Thanks');
       } catch (e) {
