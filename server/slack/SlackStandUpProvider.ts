@@ -31,7 +31,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   async sendMessage(user: User, message: string): Promise<any> {
     await this.webClient.chat.postMessage({
       "channel": user.im,
-      "text": "Would you like to play a game?",
+      "text": "There is time to start stand up meeting!",
       "attachments": [
         {
           "text": "Choose a game to play",
@@ -446,9 +446,23 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         }
       }
 
-      this.rtm.send('dialog.open', openDialogRequest)
+      try {
+        await this.rtm.send('dialog.open', openDialogRequest)
+      } catch (e: Error) {
+        console.log(e.message)
+        throw new Error(e.message)
+      }
+
     } else if (response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
-      this.sendMessage(user, 'Thanks');
+
+      try {
+        this.sendMessage(user, 'Thanks');
+      } catch (e: Error) {
+        console.log(e.message)
+        throw new Error(e.message)
+      }
+    } else {
+      console.log(`There is no handler for callback ${response.callback_id}`);
     }
   }
 }
