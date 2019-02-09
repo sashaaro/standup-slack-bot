@@ -16,6 +16,8 @@ export class ApiSlackInteractive implements IHttpAction {
   }
 
   async handle(req, res) {
+    console.log(typeof req.body)
+    console.log(req.body)
     const response = req.body as InteractiveResponse
 
 
