@@ -31,10 +31,10 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       "attachments": [
         {
           "text": "Choose a game to play",
+          "callback_id": "answer111",
           "actions": [
             {
               "id": "action1",
-              "callback_id": "callback_id1",
               "name": "game",
               "text": "Chess",
               "type": "button",
@@ -42,7 +42,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
             },
             {
               "id": "action2",
-              "callback_id": "callback_id2",
               "name": "game",
               "text": "Falken's Maze",
               "type": "button",
@@ -50,7 +49,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
             },
             {
               "id": "action3",
-              "callback_id": "callback_id3",
               "name": "game",
               "text": "Thermonuclear War",
               "style": "danger",
