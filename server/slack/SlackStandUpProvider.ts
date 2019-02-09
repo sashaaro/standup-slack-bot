@@ -426,7 +426,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         "trigger_id": response.trigger_id,
         "token": response.token,
         "dialog": {
-          "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}_`, // TODO multi standups
+          "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
           "title": "Request a Ride",
           "submit_label": "Request",
           "notify_on_cancel": true,
@@ -447,7 +447,9 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       }
 
       try {
-        await this.rtm.send('dialog.open', openDialogRequest)
+        const result = await this.webClient.apiCall('dialog.open', openDialogRequest)
+        console.log(result)
+        //await this.rtm.send('dialog.open', openDialogRequest)
       } catch (e) {
         console.log(e.message)
         throw new Error(e.message)
