@@ -448,16 +448,15 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
       try {
         await this.rtm.send('dialog.open', openDialogRequest)
-      } catch (e: Error) {
+      } catch (e) {
         console.log(e.message)
         throw new Error(e.message)
       }
 
     } else if (response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
-
       try {
-        this.sendMessage(user, 'Thanks');
-      } catch (e: Error) {
+        await this.sendMessage(user, 'Thanks');
+      } catch (e) {
         console.log(e.message)
         throw new Error(e.message)
       }
