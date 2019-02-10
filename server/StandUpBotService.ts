@@ -190,8 +190,9 @@ export default class StandUpBotService {
   }
 
   async answerAndSendNext(message: IMessage): Promise<IAnswerRequest> {
+    let repliedAnswer: IAnswerRequest;
     try {
-      const repliedAnswer = await this.answer(message);
+      repliedAnswer = await this.answer(message);
     } catch (e) {
       if (e instanceof InProgressStandUpNotFoundError) {
         await this.send(message.user, `I will remind you when your next standup is up`)
