@@ -103,6 +103,23 @@ export const STAND_UP_BOT_STAND_UP_PROVIDER = new Token();
 export const STAND_UP_BOT_TRANSPORT = new Token();
 
 
+class InProgressStandUpNotFoundError extends Error {
+  answerMessage: IMessage
+
+  constructor() {
+    super('No stand up in progress')
+  }
+}
+
+class AlreadySubmittedStandUpError extends Error {
+  standUp: IStandUp
+  answerMessage: IMessage
+
+  constructor() {
+    super('Standup already submitted')
+  }
+}
+
 @Service()
 export default class StandUpBotService {
   protected everyMinutesIntervalID: number | any;
@@ -173,7 +190,18 @@ export default class StandUpBotService {
   }
 
   async answerAndSendNext(message: IMessage): Promise<IAnswerRequest> {
-    const repliedAnswer = await this.answer(message);
+    try {
+      const repliedAnswer = await this.answer(message);
+    } catch (e) {
+      if (e instanceof InProgressStandUpNotFoundError) {
+        await this.send(message.user, `I will remind you when your next standup is up`)
+      }
+      if (e instanceof AlreadySubmittedStandUpError) {
+        await this.send(message.user, `You've already submitted your standup for today.`)
+      }
+
+      return;
+    }
     const nextQuestion = await this.standUpProvider.findOneQuestion(repliedAnswer.standUp.team, repliedAnswer.question.index + 1);
 
     if (!nextQuestion) {
@@ -207,26 +235,40 @@ export default class StandUpBotService {
     await this.afterStandUp(user, progressStandUp);
   }
 
+  /**
+   * @throws InProgressStandUpNotFoundError
+   * @throws AlreadySubmittedStandUpError
+   * @param message
+   */
   async answer(message: IMessage): Promise<IAnswerRequest> {
     const progressStandUp = await this.standUpProvider.findProgressByUser(message.user);
 
     if (!progressStandUp) {
-      console.log('no progress stand up');
-      return new Promise<IAnswerRequest>((resolve, reject) => {
-        reject('no progress stand up')
-      })
+      const error = new InProgressStandUpNotFoundError()
+      error.answerMessage = message
+      throw error;
     }
 
     return this.answerByStandUp(message, progressStandUp);
   }
 
+  /**
+   * @throws AlreadySubmittedStandUpError
+   * @param message
+   * @param standUp
+   * @param question
+   */
   private async answerByStandUp(message: IMessage, standUp: IStandUp, question?: IQuestion): Promise<IAnswerRequest> {
     let answerRequest: IAnswerRequest;
     if (!question) {
       answerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(standUp, message.user);
+      
       if (!answerRequest) {
-        // throw ?!
-        return new Promise((r, e) => (e(`Last no reply answerRequest is not found for standup ${standUp.id} and message ${message.text}`)))
+        const error = new AlreadySubmittedStandUpError()
+        error.standUp = standUp
+        error.answerMessage = message
+        throw error
+        // throw new Error(`Last no reply answerRequest is not found for standup ${standUp.id} and message ${message.text}`)
       }
     } else {
       answerRequest = this.standUpProvider.createAnswer()
