@@ -271,7 +271,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .innerJoinAndSelect('st.channel', 'channel')
       .innerJoinAndSelect('channel.users', 'users')
       .where('users.id = :user', {user: user.id})
-      .andWhere('st.end <= CURRENT_TIMESTAMP')
+      .andWhere('CURRENT_TIMESTAMP <= st.end')
       .andWhere('channel.isArchived = false')
       .andWhere('channel.isEnabled = true')
       .orderBy('st.start', "DESC")

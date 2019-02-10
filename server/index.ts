@@ -65,7 +65,7 @@ createConnection({
       Channel
     ],
     synchronize: true,
-    //logging: true
+    logging: true
   })
 
   const questions = [
