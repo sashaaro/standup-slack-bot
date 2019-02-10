@@ -89,10 +89,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     this.message$ = Observable.create((observer) => {
       const userRepository = this.connection.getRepository(User);
 
-      console.log('Listen message.im')
-      this.rtm.on('message.im', async (messageResponse: RTMMessageResponse) => {
-        console.log('Trigger message.im')
-        console.log(messageResponse)
+      this.rtm.on('message.app_home event', async (messageResponse: RTMMessageResponse) => {
         // be sure it is direct answerMessage to bot
         if (!userRepository.findOne({where: {im: messageResponse.channel}})) {
           console.log(`User channel ${messageResponse.channel} is not im`);

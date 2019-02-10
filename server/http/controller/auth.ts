@@ -22,7 +22,8 @@ export class AuthAction implements IHttpAction {
 
     const redirectUri = `${this.config.host}/auth`
     if (!req.query.code) {
-      const scopes = ['bot', 'channels:read', 'team:read', 'groups:read', 'im:history']
+      const scopes = ['bot', 'channels:read', 'team:read', 'groups:read'//, 'im:history'
+      ]
       const authLink = `https://slack.com/oauth/authorize?&client_id=${this.config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${redirectUri}`
 
       res.send(pug.compileFile(`${templateDirPath}/auth.pug`)({
