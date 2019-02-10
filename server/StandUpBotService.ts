@@ -196,12 +196,12 @@ export default class StandUpBotService {
 
     const progressStandUp = await this.standUpProvider.findProgressByUser(user);
     for(const [i, message] of messages.entries()) {
-      const question = this.standUpProvider.findOneQuestion(progressStandUp.team, i)
+      const question = await this.standUpProvider.findOneQuestion(progressStandUp.team, i)
       if (!question) {
         throw new Error(`Question #${i} in standup #${progressStandUp.id}`)
       }
       // TODO try catch
-      await this.answerByStandUp(message, progressStandUp)
+      await this.answerByStandUp(message, progressStandUp, question)
     }
 
     await this.afterStandUp(user, progressStandUp);
@@ -217,7 +217,7 @@ export default class StandUpBotService {
       })
     }
 
-    return this.answerByStandUp(message, progressStandUp,);
+    return this.answerByStandUp(message, progressStandUp);
   }
 
   private async answerByStandUp(message: IMessage, standUp: IStandUp, question?: IQuestion): Promise<IAnswerRequest> {
