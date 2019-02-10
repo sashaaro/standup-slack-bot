@@ -90,7 +90,9 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       const userRepository = this.connection.getRepository(User);
 
       this.rtm.on('message', async (messageResponse: RTMMessageResponse) => {
-        console.log(messageResponse)
+        if (messageResponse.type !== "message") {
+          return;
+        }
         // be sure it is direct answerMessage to bot
         if (!userRepository.findOne({where: {im: messageResponse.channel}})) {
           console.log(`User channel ${messageResponse.channel} is not im`);
@@ -104,7 +106,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
           user: await this.connection.getRepository(User).findOne(messageResponse.user)
         } as IMessage;
 
-        console.log(message) // TODO remove
         observer.next(message)
       })
 
