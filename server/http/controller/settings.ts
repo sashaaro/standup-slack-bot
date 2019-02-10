@@ -39,7 +39,7 @@ export class SettingsAction implements IHttpAction {
       throw new Error('Channel is not found');
     }
 
-    if (req.method == "POST") {
+    if (req.method == "POST") { // TODO check if standup in progress then not dave
       // todo validate
       const settings = <IStandUpSettings>req.body
       Object.assign(channel, settings)

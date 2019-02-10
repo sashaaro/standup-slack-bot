@@ -69,7 +69,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       "text": "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
       "attachments": [
         {
-          "text": "Ready to start ",
+          "text": "Choose start asking in char or open dialog window",
           "callback_id": `${CALLBACK_PREFIX_STANDUP_INVITE}`,// save standup channel id if have multi standups
           "actions": [
             {
@@ -434,7 +434,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
           "dialog": {
             "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
             "title": "Standup", // for my_privat...
-            "submit_label": "Request",
+            "submit_label": "Submit standup",
             "notify_on_cancel": true,
             "state": "Limo",
             "elements": []

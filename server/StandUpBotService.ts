@@ -2,7 +2,7 @@ import Team from "./model/Team";
 import AnswerRequest from "./model/AnswerRequest";
 import {Inject, Service, Token} from "typedi";
 import {Observable, of, Subject} from "rxjs";
-import {filter, map, take} from "rxjs/operators";
+import {filter, map, take, takeUntil} from "rxjs/operators";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -195,7 +195,11 @@ export default class StandUpBotService {
     const user = messages[0].user;
 
     const progressStandUp = await this.standUpProvider.findProgressByUser(user);
-    for(const message of messages) {
+    for(const [i, message] of messages.entries()) {
+      const question = this.standUpProvider.findOneQuestion(progressStandUp.team, i)
+      if (!question) {
+        throw new Error(`Question #${i} in standup #${progressStandUp.id}`)
+      }
       // TODO try catch
       await this.answerByStandUp(message, progressStandUp)
     }
@@ -213,21 +217,28 @@ export default class StandUpBotService {
       })
     }
 
-    return this.answerByStandUp(message, progressStandUp);
+    return this.answerByStandUp(message, progressStandUp,);
   }
 
-  async answerByStandUp(message: IMessage, standUp: IStandUp): Promise<IAnswerRequest> {
-    const lastNoReplyAnswerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(standUp, message.user);
-
-    if (!lastNoReplyAnswerRequest) {
-      console.log('LastNoReplyAnswerRequest is not found');
-      // TODO
-      return new Promise((r, e) => (e('lastNoReplyAnswer is not found')))
+  private async answerByStandUp(message: IMessage, standUp: IStandUp, question?: IQuestion): Promise<IAnswerRequest> {
+    let answerRequest: IAnswerRequest;
+    if (!question) {
+      answerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(standUp, message.user);
+      if (!answerRequest) {
+        // throw ?!
+        return new Promise((r, e) => (e(`Last no reply answerRequest is not found for standup ${standUp.id} and message ${message.text}`)))
+      }
+    } else {
+      answerRequest = this.standUpProvider.createAnswer()
+      answerRequest.standUp = standUp;
+      answerRequest.user = message.user
+      answerRequest.question = question
+      answerRequest.createdAt = new Date();
     }
 
-    lastNoReplyAnswerRequest.answerMessage = message.text;
-    lastNoReplyAnswerRequest.answerCreatedAt = new Date();
-    return this.standUpProvider.updateAnswer(lastNoReplyAnswerRequest)
+    answerRequest.answerMessage = message.text;
+    answerRequest.answerCreatedAt = new Date();
+    return this.standUpProvider.updateAnswer(answerRequest)
   }
 
   async standUpForNow() {
@@ -297,6 +308,7 @@ export default class StandUpBotService {
       this.standUpProvider.agreeToStart$.pipe(
           filter((u) => u.id === user.id),
           take(1)
+          //TODO takeUntil(standUp.end)
         ).subscribe((u) => {
           observer.next(true)
           observer.complete();
