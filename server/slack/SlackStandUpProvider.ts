@@ -1,5 +1,5 @@
 import {Service} from "typedi";
-import {Observable, Observer, Subject} from "rxjs";
+import {Observable, Subject} from "rxjs";
 import * as slackClient from "@slack/client";
 import {Connection} from "typeorm";
 import User from "../model/User";
@@ -454,6 +454,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
           })
         }
 
+        // TODO already submit
+
         if (!this.findProgressByUser(user)) {
           await this.sendMessage(user, `I will remind you when your next standup is up`)
           return;
@@ -508,8 +510,4 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       console.log(`There is no handler for callback ${response.callback_id}`);
     }
   }
-}
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
