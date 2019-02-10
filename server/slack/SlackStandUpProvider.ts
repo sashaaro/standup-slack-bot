@@ -89,7 +89,10 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     this.message$ = Observable.create((observer) => {
       const userRepository = this.connection.getRepository(User);
 
+      console.log('Listen message.im')
       this.rtm.on('message.im', async (messageResponse: RTMMessageResponse) => {
+        console.log('Trigger message.im')
+        console.log(messageResponse)
         // be sure it is direct answerMessage to bot
         if (!userRepository.findOne({where: {im: messageResponse.channel}})) {
           console.log(`User channel ${messageResponse.channel} is not im`);
@@ -367,6 +370,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   }
 
   private async updateChannels(team: Team) {
+    // TODO fix update private channel where bot invited already
     const userRepository = this.connection.getRepository(User);
 
     let response = await this.webClient.channels.list();
@@ -456,7 +460,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
         try {
           const result = await this.webClient.apiCall('dialog.open', openDialogRequest)
-          console.log(result)
+          //console.log(result)
           //await this.rtm.send('dialog.open', openDialogRequest)
         } catch (e) {
           console.log(e.message)
