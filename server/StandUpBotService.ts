@@ -81,7 +81,6 @@ export interface IStandUpProvider {
 
 
   findTeams(): Promise<ITeam[]>
-  findProgressByTeam(team: ITeam): Promise<IStandUp>
   findProgressByUser(user: IUser): Promise<IStandUp>
   findLastNoReplyAnswerRequest(standUp: IStandUp, user: IUser): Promise<IAnswerRequest>
   findOneQuestion(team: ITeam, index): Promise<IQuestion>

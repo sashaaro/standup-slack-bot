@@ -256,15 +256,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return standUpRepository.insert(standUp)
   }
 
-  async findProgressByTeam(team: ITeam | Channel): Promise<StandUp> {
-    const standUpRepository = this.connection.getRepository(StandUp);
-    return await standUpRepository.createQueryBuilder('st')
-      .where('st.channel = :channel', {channel: team.id})
-      // .andWhere('st.end IS NULL')
-      .orderBy('st.start', "DESC")
-      .getOne();
-  }
-
   async findProgressByUser(user: IUser): Promise<StandUp> {
     const standUpRepository = this.connection.getRepository(StandUp);
     return await standUpRepository.createQueryBuilder('st')
@@ -426,6 +417,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
 
   async handleInteractiveResponse(response: InteractiveResponse) {
+    const user = await this.connection.getRepository(User).findOne(response.user);
+
+    if (!user) {
+      throw new Error(`User ${response.user} is not found`)
+    }
+
     if (response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
 
       const selectedActions = response.actions.map(a => a.value)
@@ -457,6 +454,11 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
           })
         }
 
+        if (!this.findProgressByUser(user)) {
+          await this.sendMessage(user, `I will remind you when your next standup is up`)
+          return;
+        }
+
         try {
           const result = await this.webClient.apiCall('dialog.open', openDialogRequest)
           //console.log(result)
@@ -467,12 +469,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
           throw new Error(e.message)
         }
       } else if (selectedActions.includes("start")) {
-        const user = await this.connection.getRepository(User).findOne(response.user);
-
-        if (!user) {
-          throw new Error(`User ${response.user} is not found`)
-        }
-
         this.agreeToStartSubject.next(user)
       } else {
         throw new Error("No corresponded actions")
