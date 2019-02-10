@@ -1,11 +1,12 @@
 export enum InteractiveResponseTypeEnum {
   interactive_message = 'interactive_message',
-  dialog_submission = 'dialog_submission'
+  dialog_submission = 'dialog_submission',
+  dialog_cancellation = 'dialog_cancellation'
 }
 
 export interface InteractiveResponse {
   type: InteractiveResponseTypeEnum,
-  actions: [{ name: 'start', type: 'button', value: 'start' }],
+  actions: { name: string, type: string, value: string }[],
   callback_id: 'standup_invite',
   team: { id: 'T6GQB7CSF', domain: 'sashaaro' },
   channel: { id: 'D6HVDGXSB', name: 'directmessage' },

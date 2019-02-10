@@ -1,5 +1,5 @@
 import {Service} from "typedi";
-import {Observable, Observer} from "rxjs";
+import {Observable, Observer, Subject} from "rxjs";
 import * as slackClient from "@slack/client";
 import {Connection} from "typeorm";
 import User from "../model/User";
@@ -23,8 +23,39 @@ const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
 
 @Service()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
+  private messagesSubject = new Subject<IMessage[]>();
+  private agreeToStartSubject = new Subject<User>();
+
   message$: Observable<IMessage>;
-  private observer: Observer<IMessage>;// TODO remove use Subject
+  messages$ = this.messagesSubject.asObservable();
+  agreeToStart$ = this.agreeToStartSubject.asObservable();
+
+  private messageObserverFn = (observer) => {
+    const userRepository = this.connection.getRepository(User);
+
+    this.rtm.on('message.im', async (messageResponse: RTMMessageResponse) => {
+      // be sure it is direct answerMessage to bot
+      if (!userRepository.findOne({where: {im: messageResponse.channel}})) {
+        console.log(`User channel ${messageResponse.channel} is not im`);
+        // TODO try update from api
+        return
+      }
+
+      const message = {
+        //team: await this.connection.getRepository(Channel).findOne(messageResponse.channel),
+        text: messageResponse.text,
+        user: await this.connection.getRepository(User).findOne(messageResponse.user)
+      } as IMessage;
+
+      observer.next(message)
+    })
+
+
+    this.rtm.on('error', async (message) => {
+      console.log(message)
+      observer.complete();
+    });
+  }
 
   constructor(
     public readonly rtm: slackClient.RTMClient,
@@ -32,7 +63,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     private connection: Connection) {
   }
 
-  async sendMessage(user: User, message: string): Promise<any> {
+  async sendGreetingMessage(user: User) {
     await this.webClient.chat.postMessage({
       "channel": user.im,
       "text": "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
@@ -43,12 +74,18 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
           "actions": [
             {
               "name": "start",
-              "text": "Open dialog",
+              "text": "Start",
               "type": "button",
               "value": "start"
             },
-            // TODO I'm late
             {
+              "name": "dialog",
+              "text": "Open dialog",
+              "type": "button",
+              "value": "dialog"
+            },
+            // TODO I'm late?!
+            /*{
               "name": "skip",
               "text": "I skip",
               "type": "button",
@@ -60,52 +97,25 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
                 "ok_text": "Yes",
                 "dismiss_text": "No"
               }
-            }
+            }*/
           ]
         }
       ]
     })
+  }
 
-
+  async sendMessage(user: User, message: string): Promise<any> {
     return this.rtm.sendMessage(message, user.im);
   }
 
-
   async init(): Promise<any> {
-    const userRepository = this.connection.getRepository(User);
-
     this.rtm.on('connected', () => {
       console.log('Slack RTM connected')
     });
 
-    this.message$ = Observable.create((observer) => {
-      this.observer = observer// TODO remove
-      this.rtm.on('message.im', async (messageResponse: RTMMessageResponse) => {
-        // be sure it is direct answerMessage to bot
-        if (!userRepository.findOne({where: {im: messageResponse.channel}})) {
-          console.log(`User channel ${messageResponse.channel} is not im`);
-          // TODO try update from api
-          return
-        }
-
-        const message = {
-          //team: await this.connection.getRepository(Channel).findOne(messageResponse.channel),
-          text: messageResponse.text,
-          user: await this.connection.getRepository(User).findOne(messageResponse.user)
-        } as IMessage;
-
-        observer.next(message)
-      })
-
-
-      this.rtm.on('error', async (message) => {
-        console.log(message)
-        observer.complete();
-      });
-    });
+    this.message$ = Observable.create(this.messageObserverFn.bind(this));
 
     const channelRepository = this.connection.getRepository(Channel);
-
     const joinSlackChannel = async (channel: SlackChannel) => {
       let ch = await channelRepository.findOne(channel.id);
       if (!ch) {
@@ -416,42 +426,54 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   async handleInteractiveResponse(response: InteractiveResponse) {
     if (response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
 
-      // TODO  check action is not skip
-      const openDialogRequest = {
-        "trigger_id": response.trigger_id,
-        //"token": this.webClient.token,
-        "dialog": {
-          "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
-          "title": "Request a Ride",
-          "submit_label": "Request",
-          "notify_on_cancel": true,
-          "state": "Limo",
-          "elements": []
+      const selectedActions = response.actions.map(a => a.value)
+      if (selectedActions.includes("dialog")) {
+        const openDialogRequest = {
+          "trigger_id": response.trigger_id,
+          //"token": this.webClient.token,
+          "dialog": {
+            "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
+            "title": "Standup", // for my_privat...
+            "submit_label": "Request",
+            "notify_on_cancel": true,
+            "state": "Limo",
+            "elements": []
+          }
         }
-      }
 
-      const questions = await this.connection.getRepository(Question)
-        .createQueryBuilder('q')
-        .orderBy('q.index', 'ASC')
-        .getMany()
+        const questions = await this.connection.getRepository(Question)
+          .createQueryBuilder('q')
+          .orderBy('q.index', 'ASC')
+          .getMany()
 
-      for(const question of questions) {
-        openDialogRequest.dialog.elements.push({
-          "type": "text",
-          "label": question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
-          "placeholder": question.text,
-          "name": question.index
-        })
-      }
+        for(const question of questions) {
+          openDialogRequest.dialog.elements.push({
+            "type": "text",
+            "label": question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
+            "placeholder": question.text,
+            "name": question.index
+          })
+        }
 
-      try {
-        const result = await this.webClient.apiCall('dialog.open', openDialogRequest)
-        console.log(result)
-        //await this.rtm.send('dialog.open', openDialogRequest)
-      } catch (e) {
-        console.log(e.message)
-        console.log(e.data.response_metadata.messages)
-        throw new Error(e.message)
+        try {
+          const result = await this.webClient.apiCall('dialog.open', openDialogRequest)
+          console.log(result)
+          //await this.rtm.send('dialog.open', openDialogRequest)
+        } catch (e) {
+          console.log(e.message)
+          console.log(e.data.response_metadata.messages)
+          throw new Error(e.message)
+        }
+      } else if (selectedActions.includes("start")) {
+        const user = await this.connection.getRepository(User).findOne(response.user);
+
+        if (!user) {
+          throw new Error(`User ${response.user} is not found`)
+        }
+
+        this.agreeToStartSubject.next(user)
+      } else {
+        throw new Error("No corresponded actions")
       }
 
     } else {
@@ -473,24 +495,17 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         throw new Error(`Channel team ${response.channel.id} is not found`)
       }
 
+      const messages: IMessage[] = []
       for (const index of Object.keys(response.submission).sort((current, next) => current > next ? 1 : -1)) {
         const text = response.submission[index]
-        this.observer.next({
+        messages.push({
           team: channelTeam,
           text: text,
           user: user
         } as IMessage)
-
-        await sleep(1000) // wait to save... TODO remove!
       }
 
-      // TODO move to standupBot service
-      try {
-        await this.sendMessage(user, 'Good luck today!');
-      } catch (e) {
-        console.log(e.message)
-        throw new Error(e.message)
-      }
+      this.messagesSubject.next(messages)
     } else {
       console.log(`There is no handler for callback ${response.callback_id}`);
     }

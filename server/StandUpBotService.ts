@@ -1,9 +1,10 @@
 import Team from "./model/Team";
 import AnswerRequest from "./model/AnswerRequest";
 import {Inject, Service, Token} from "typedi";
-import {Observable, Subject} from "rxjs";
+import {Observable, of, Subject} from "rxjs";
+import {filter, map, take} from "rxjs/operators";
 
-const standUpGreeting = 'Good morning/evening. Welcome to daily standup';
+const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
 
 
@@ -33,7 +34,7 @@ export interface ITeam extends IStandUpSettings{
 
 export interface IQuestion {
   id: string | number;
-  // index: number;
+  index: number;
   text: string;
   //disabled: boolean;
   createdAt: Date;
@@ -67,6 +68,8 @@ export interface IStandUp {
 }
 
 export interface IStandUpProvider {
+  agreeToStart$: Observable<IUser>
+  sendGreetingMessage?(user: IUser);
   // TODO startTeamStandUpByDate(): Promise<IStandUp[]>
   createStandUp(): IStandUp
   insertStandUp(standUp: IStandUp): Promise<any>
@@ -88,7 +91,8 @@ export interface IStandUpProvider {
 
 export interface ITransport {
   sendMessage(user: IUser, message: string): Promise<any>
-  message$: Observable<IMessage>
+  message$?: Observable<IMessage>
+  messages$?: Observable<IMessage[]> // should correct order
 }
 
 export interface ITimezoneProvider {
@@ -124,9 +128,16 @@ export default class StandUpBotService {
       this.startStandUpInterval();
     }, millisecondsDelay)
 
-    this.transport.message$.subscribe(async (message: IMessage) => {
-      await this.answerAndSendNext(message)
-    })
+    if (this.transport.message$) {
+      this.transport.message$.subscribe(async (message: IMessage) => {
+        await this.answerAndSendNext(message)
+      })
+    }
+    if (this.transport.messages$) {
+      this.transport.messages$.subscribe(async (messages: IMessage[]) => {
+        await this.answersAndFinish(messages)
+      })
+    }
   }
 
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
@@ -166,25 +177,47 @@ export default class StandUpBotService {
     const nextQuestion = await this.standUpProvider.findOneQuestion(repliedAnswer.standUp.team, repliedAnswer.question.index + 1);
 
     if (!nextQuestion) {
-      console.log('Next question is not found');
-      await this.send(repliedAnswer.user, standUpGoodBye);
+      await this.afterStandUp(repliedAnswer.user, repliedAnswer.standUp);
       return;
     }
 
     return this.askQuestion(repliedAnswer.user, nextQuestion, repliedAnswer.standUp);
   }
 
-  async answer(message: IMessage): Promise<AnswerRequest> {
+
+  async answersAndFinish(messages: IMessage[]) {
+    if (messages.length === 0) {
+      throw new Error('Invalid argument messages is empty array')
+    }
+
+    // TODO validate every message's author should be same
+
+    const user = messages[0].user;
+
+    const progressStandUp = await this.standUpProvider.findProgressByUser(user);
+    for(const message of messages) {
+      // TODO try catch
+      await this.answerByStandUp(message, progressStandUp)
+    }
+
+    await this.afterStandUp(user, progressStandUp);
+  }
+
+  async answer(message: IMessage): Promise<IAnswerRequest> {
     const progressStandUp = await this.standUpProvider.findProgressByUser(message.user);
 
     if (!progressStandUp) {
       console.log('no progress stand up');
-      return new Promise<AnswerRequest>((resolve, reject) => {
+      return new Promise<IAnswerRequest>((resolve, reject) => {
         reject('no progress stand up')
       })
     }
 
-    const lastNoReplyAnswerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(progressStandUp, message.user);
+    return this.answerByStandUp(message, progressStandUp);
+  }
+
+  async answerByStandUp(message: IMessage, standUp: IStandUp): Promise<IAnswerRequest> {
+    const lastNoReplyAnswerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(standUp, message.user);
 
     if (!lastNoReplyAnswerRequest) {
       console.log('LastNoReplyAnswerRequest is not found');
@@ -234,13 +267,45 @@ export default class StandUpBotService {
       return;
     }
 
-    await this.beforeStartStandUp(user, standUp)
-
-    await this.askQuestion(user, question, standUp)
+    const canStart$ = await this.beforeStandUp(user, standUp)
+    canStart$.subscribe(async (canStart) => {
+      if (canStart) {
+        await this.askQuestion(user, question, standUp)
+      } else {
+        // cancel?!
+      }
+    })
   }
 
-  private async beforeStartStandUp(user: IUser, standUp: IStandUp) {
-    await this.send(user, standUpGreeting);
+  /**
+   * Returns observable boolean Can we start to asking
+   * @param user
+   * @param standUp
+   */
+  private async beforeStandUp(user: IUser, standUp: IStandUp): Promise<Observable<boolean>> {
+    if (this.standUpProvider.sendGreetingMessage) {
+      await this.standUpProvider.sendGreetingMessage(user)
+    } else {
+      await this.send(user, standUpGreeting);
+    }
+
+    if (!this.standUpProvider.agreeToStart$) {
+      return of(true);
+    }
+
+    return Observable.create((observer) => {
+      this.standUpProvider.agreeToStart$.pipe(
+          filter((u) => u.id === user.id),
+          take(1)
+        ).subscribe((u) => {
+          observer.next(true)
+          observer.complete();
+      });
+    })
+  }
+
+  private async afterStandUp(user: IUser, standUp: IStandUp) {
+    await this.send(user, standUpGoodBye);
   }
 
   async askQuestion(user: IUser, question: IQuestion, standUp: IStandUp): Promise<IAnswerRequest> {
