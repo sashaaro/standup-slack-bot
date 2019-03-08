@@ -1,8 +1,8 @@
 import Team from "./model/Team";
 import AnswerRequest from "./model/AnswerRequest";
 import {Inject, Service, Token} from "typedi";
-import {Observable, of, Subject} from "rxjs";
-import {filter, map, take, takeUntil} from "rxjs/operators";
+import {Observable, of, Subject, timer} from "rxjs";
+import {delay, filter, map, take, takeUntil} from "rxjs/operators";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -327,6 +327,8 @@ export default class StandUpBotService {
       } else {
         // cancel?!
       }
+    }, (e) => {
+      console.error(e)
     })
   }
 
@@ -347,10 +349,19 @@ export default class StandUpBotService {
     }
 
     return Observable.create((observer) => {
+      const now = new Date();
+      const delayTime = standUp.end.getTime() - now.getTime()
+      if (delayTime < 1) {
+        observer.error('WTF')
+        return;
+      }
+      if (delayTime > 1000 * 100) {
+        // wtf?!
+      }
       this.standUpProvider.agreeToStart$.pipe(
           filter((u) => u.id === user.id),
-          take(1)
-          //TODO takeUntil(standUp.end)
+          take(1),
+          takeUntil(timer(delayTime))
         ).subscribe((u) => {
           observer.next(true)
           observer.complete();
