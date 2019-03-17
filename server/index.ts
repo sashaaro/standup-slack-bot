@@ -20,6 +20,7 @@ import {ApiSlackInteractive} from "./http/controller/apiSlackInteractive";
 
 import parameters from './parameters';
 import localParameters from './parameters.local'
+import {logError} from "./services/logError";
 
 const config = Object.assign(parameters, localParameters) as IAppConfig;
 
@@ -33,21 +34,22 @@ export interface IAppConfig {
   debug: false
 }
 
-createConnection({
-  type: "postgres",
-  host: "postgres",
-  port: 5432,
-  username: "postgres",
-  password: "postgres",
-  database: "postgres"
-}).then(async (conn: Connection) => {
-  const isExist =
-    ((await conn.query("SELECT datname FROM pg_database WHERE datname = 'standup' LIMIT 1")) as any[]).length === 1;
+const run = async () => {
+   let connection = await createConnection({
+    type: "postgres",
+    host: "postgres",
+    port: 5432,
+    username: "postgres",
+    password: "postgres",
+    database: "postgres"
+  })
+
+  const isExist = ((await connection.query("SELECT datname FROM pg_database WHERE datname = 'standup' LIMIT 1")) as any[]).length === 1;
   if (!isExist) {
-    await conn.query("CREATE DATABASE standup");
+    await connection.query("CREATE DATABASE standup");
   }
-  await conn.close()
-  const connection = await createConnection({
+  await connection.close()
+  connection = await createConnection({
     type: "postgres",
     //host: "localhost",
     host: "postgres",
@@ -65,7 +67,7 @@ createConnection({
       Channel
     ],
     synchronize: true,
-    logging: true
+    logging: config.debug
   })
 
   const questions = [
@@ -121,6 +123,8 @@ createConnection({
 
   app.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
 
+
+
   const certFolder = './cert';
   const privateKey = certFolder + '/privkey.pem';
   const certificate = certFolder + '/cert.pem';
@@ -139,5 +143,8 @@ createConnection({
   } else {
     http.createServer(app).listen(3000);
   }
+}
 
-}).catch(error => console.log(error));
+run().then(() => {}).catch(error => {
+  logError(error)
+});

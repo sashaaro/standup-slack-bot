@@ -8,6 +8,7 @@ import {
   InteractiveResponse,
   InteractiveResponseTypeEnum
 } from "../../slack/model/InteractiveResponse";
+import {logError} from "../../services/logError";
 
 
 
@@ -23,7 +24,7 @@ export class ApiSlackInteractive implements IHttpAction {
     const response = JSON.parse(req.body.payload) as any
 
     if (!response.type || !Object.values(InteractiveResponseTypeEnum).includes(response.type)) {
-      console.log(`Unknown interactive response type:  ${response.type}`)
+      logError(`Unknown interactive response type:  ${response.type}`)
       res.sendStatus(400);
       return res.send('', )
     }

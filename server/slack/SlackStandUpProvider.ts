@@ -17,6 +17,7 @@ import {
   InteractiveDialogSubmissionResponse,
   InteractiveResponse
 } from "./model/InteractiveResponse";
+import {logError} from "../services/logError";
 
 const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
@@ -95,7 +96,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         }
         // be sure it is direct answerMessage to bot
         if (!userRepository.findOne({where: {im: messageResponse.channel}})) {
-          console.log(`User channel ${messageResponse.channel} is not im`);
+          logError(`User channel ${messageResponse.channel} is not im`);
           // TODO try update from api
           return
         }
@@ -111,7 +112,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
 
       this.rtm.on('error', async (message) => {
-        console.log(message)
+        logError(message)
         observer.complete();
       });
     });
@@ -324,7 +325,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     const usersResult = await this.webClient.users.list();
     if (!usersResult.ok) {
       // throw..
-      console.log(usersResult.error)
+      logError(usersResult.error)
       return;
     }
 
@@ -349,7 +350,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       const im = ims.filter(im => (im.user === user.id && !im.is_user_deleted)).pop();
 
       if (!im) {
-        console.log('im not found');
+        logError('im not found');
         continue;
       }
 
@@ -397,12 +398,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       ch.isArchived = channel.is_archived;
       ch.createdBy = await userRepository.findOne(channel.creator)
       if (!ch.createdBy) {
-        console.log('Created by is not found')
+        logError('Created by is not found')
         continue;
       }
       ch.team = team
       if (!ch.team) {
-        console.log('Created by is not found')
+        logError('Created by is not found')
         continue;
       }
 
@@ -466,8 +467,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
           //console.log(result)
           //await this.rtm.send('dialog.open', openDialogRequest)
         } catch (e) {
-          console.log(e.message)
-          console.log(e.data.response_metadata.messages)
+          logError(e.message)
+          logError(e.data.response_metadata.messages)
           throw new Error(e.message)
         }
       } else if (selectedActions.includes("start")) {
@@ -477,7 +478,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       }
 
     } else {
-      console.log(`There is no handler for callback ${response.callback_id}`);
+      logError(`There is no handler for callback ${response.callback_id}`);
     }
   }
 
@@ -507,7 +508,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
       this.messagesSubject.next(messages)
     } else {
-      console.log(`There is no handler for callback ${response.callback_id}`);
+      logError(`There is no handler for callback ${response.callback_id}`);
     }
   }
 }

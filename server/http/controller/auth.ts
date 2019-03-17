@@ -5,6 +5,7 @@ import {Inject, Service} from "typedi";
 import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
 import AuthorizationContext, {IAuthUser} from "../../services/AuthorizationContext";
+import {logError} from "../../services/logError";
 
 @Service()
 export class AuthAction implements IHttpAction {
@@ -44,12 +45,12 @@ export class AuthAction implements IHttpAction {
     try {
       response = await request(options)
     } catch (e) {
-      console.log(e)
+      logError(e)
       throw new Error(e)
     }
     const data = JSON.parse(response);
     if (!data.ok) {
-      console.log(data);
+      logError(data);
       throw new Error(data)
     }
 
