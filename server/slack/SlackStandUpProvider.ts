@@ -1,6 +1,7 @@
 import {Service} from "typedi";
 import {Observable, Subject} from "rxjs";
-import * as slackClient from "@slack/client";
+import {RTMClient} from '@slack/rtm-api'
+import {WebClient} from '@slack/web-api'
 import {Connection} from "typeorm";
 import User from "../model/User";
 import {RTMMessageResponse} from "./model/rtm/RTMMessageResponse";
@@ -32,13 +33,13 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   agreeToStart$ = this.agreeToStartSubject.asObservable();
 
   constructor(
-    public readonly rtm: slackClient.RTMClient,
-    private webClient: slackClient.WebClient,
+    public readonly rtm: RTMClient,
+    private webClient: WebClient,
     private connection: Connection) {
   }
 
   async sendGreetingMessage(user: User) {
-    await this.webClient.chat.postMessage({
+    const result = await this.webClient.chat.postMessage({
       "channel": user.im,
       "text": "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
       "attachments": [
@@ -76,6 +77,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         }
       ]
     })
+
+    // result.response_metadata.
   }
 
   async sendMessage(user: User, message: string): Promise<any> {

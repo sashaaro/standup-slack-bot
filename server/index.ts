@@ -3,8 +3,9 @@ import {Connection, createConnection} from "typeorm";
 import Question from "./model/Question";
 import Team from "./model/Team";
 import User from "./model/User";
-import {RTMClient, WebClient} from '@slack/client'
-import StandUpBotService, {IStandUp, STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from './StandUpBotService'
+import {LogLevel, RTMClient} from '@slack/rtm-api'
+import {WebClient} from '@slack/web-api'
+import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from './StandUpBotService'
 import {createExpressApp} from "./http/createExpressApp";
 import AnswerRequest from "./model/AnswerRequest";
 import StandUp from "./model/StandUp";
@@ -89,8 +90,12 @@ const run = async () => {
     }
   }
 
-  const rtmClient = new RTMClient(config.botUserOAuthAccessToken)
-  const webClient = new WebClient(config.botUserOAuthAccessToken)
+  const rtmClient = new RTMClient(config.botUserOAuthAccessToken, {
+    logLevel: config.debug ? LogLevel.DEBUG : undefined
+  })
+  const webClient = new WebClient(config.botUserOAuthAccessToken, {
+    logLevel: config.debug ? LogLevel.DEBUG : undefined
+  })
 
   Container.set(RTMClient, rtmClient);
   Container.set(WebClient, webClient);
