@@ -10,8 +10,7 @@ import {
 } from "../../slack/model/InteractiveResponse";
 import {logError} from "../../services/logError";
 
-
-
+// TODO remove
 @Service()
 export class ApiSlackInteractive implements IHttpAction {
   constructor(

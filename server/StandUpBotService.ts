@@ -100,6 +100,7 @@ export interface ITimezoneProvider {
 
 export const STAND_UP_BOT_STAND_UP_PROVIDER = new Token();
 export const STAND_UP_BOT_TRANSPORT = new Token();
+export const SLACK_INTERACTIONS_ADAPTER = new Token();
 
 
 class InProgressStandUpNotFoundError extends Error {

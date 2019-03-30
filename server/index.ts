@@ -5,12 +5,20 @@ import Team from "./model/Team";
 import User from "./model/User";
 import {LogLevel, RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
-import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from './StandUpBotService'
+import StandUpBotService, {
+  SLACK_INTERACTIONS_ADAPTER,
+  STAND_UP_BOT_STAND_UP_PROVIDER,
+  STAND_UP_BOT_TRANSPORT
+} from './StandUpBotService'
 import {createExpressApp} from "./http/createExpressApp";
 import AnswerRequest from "./model/AnswerRequest";
 import StandUp from "./model/StandUp";
 import {Container} from "typedi";
-import {SlackStandUpProvider} from "./slack/SlackStandUpProvider";
+import {
+  CALLBACK_PREFIX_SEND_STANDUP_ANSWERS,
+  CALLBACK_PREFIX_STANDUP_INVITE,
+  SlackStandUpProvider
+} from "./slack/SlackStandUpProvider";
 import {CONFIG_TOKEN, TIMEZONES_TOKEN} from "./services/token";
 import {Channel} from "./model/Channel";
 import {getTimezoneList} from "./services/timezones";
@@ -18,10 +26,12 @@ import * as http from "http";
 import * as https from "https";
 import * as fs from "fs";
 import {ApiSlackInteractive} from "./http/controller/apiSlackInteractive";
+import { createMessageAdapter } from "@slack/interactive-messages";
 
 import parameters from './parameters';
 import localParameters from './parameters.local'
 import {logError} from "./services/logError";
+import {InteractiveResponseTypeEnum} from "./slack/model/InteractiveResponse";
 
 const config = Object.assign(parameters, localParameters) as IAppConfig;
 
@@ -125,9 +135,24 @@ const run = async () => {
   });
 
   const app = createExpressApp()
-  const apiSlackInteractiveAction = Container.get(ApiSlackInteractive) as ApiSlackInteractive
 
-  app.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
+  Container.set(SLACK_INTERACTIONS_ADAPTER, createMessageAdapter(config.slackSecret));
+  const slackInteractions = Container.get(SLACK_INTERACTIONS_ADAPTER);
+
+  slackInteractions.action({type: InteractiveResponseTypeEnum.interactive_message, callbackId: CALLBACK_PREFIX_STANDUP_INVITE},
+    async (response) => {
+      await slackProvider.handleInteractiveAnswers(response)
+    }
+  )
+
+  slackInteractions.action({type: InteractiveResponseTypeEnum.dialog_submission, callbackId: CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}, async (response) => {
+    await this.handleInteractiveDialogSubmission(response)
+  })
+
+  app.use('/api/slack/interactive', Container.get(SLACK_INTERACTIONS_ADAPTER).expressMiddleware());
+
+  //const apiSlackInteractiveAction = Container.get(ApiSlackInteractive) as ApiSlackInteractive
+  //app.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
 
 
 

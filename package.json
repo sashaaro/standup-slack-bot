@@ -12,6 +12,7 @@
   "dependencies": {
     "@slack/client": "^5.0.0",
     "@slack/events-api": "^2.2.0",
+    "@slack/interactive-messages": "^1.1.1",
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "express-session": "^1.15.6",

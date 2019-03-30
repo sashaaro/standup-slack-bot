@@ -20,8 +20,8 @@ import {
 } from "./model/InteractiveResponse";
 import {logError} from "../services/logError";
 
-const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
-const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
+export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
+export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
 
 @Service()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
@@ -423,6 +423,67 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     }
   }
 
+  async handleInteractiveAnswers(response: InteractiveResponse) {
+    const user = await this.connection.getRepository(User).findOne(response.user);
+
+    if (!user) {
+      throw new Error(`User ${response.user} is not found`)
+    }
+
+
+    const selectedActions = response.actions.map(a => a.value)
+
+    if (selectedActions.includes("start")) {
+      this.agreeToStartSubject.next(user)
+      return
+    } else if (!selectedActions.includes("dialog")) {
+      throw new Error("No corresponded actions")
+    }
+
+    const openDialogRequest = {
+      "trigger_id": response.trigger_id,
+      //"token": this.webClient.token,
+      "dialog": {
+        "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
+        "title": "Standup", // for my_privat...
+        "submit_label": "Submit",
+        "notify_on_cancel": true,
+        "state": "Limo",
+        "elements": []
+      }
+    }
+
+    const questions = await this.connection.getRepository(Question)
+      .createQueryBuilder('q')
+      .orderBy('q.index', 'ASC')
+      .getMany()
+
+    for(const question of questions) {
+      openDialogRequest.dialog.elements.push({
+        "type": "text",
+        "label": question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
+        "placeholder": question.text,
+        "name": question.index
+      })
+    }
+
+    // TODO already submit
+
+    if (!this.findProgressByUser(user)) {
+      await this.sendMessage(user, `I will remind you when your next standup is up`)
+      return;
+    }
+
+    try {
+      const result = await this.webClient.apiCall('dialog.open', openDialogRequest)
+      //console.log(result)
+      //await this.rtm.send('dialog.open', openDialogRequest)
+    } catch (e) {
+      logError(e.message)
+      logError(e.data.response_metadata.messages)
+      throw new Error(e.message)
+    }
+  }
 
   async handleInteractiveResponse(response: InteractiveResponse) {
     const user = await this.connection.getRepository(User).findOne(response.user);
@@ -432,88 +493,41 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     }
 
     if (response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
-
-      const selectedActions = response.actions.map(a => a.value)
-      if (selectedActions.includes("dialog")) {
-        const openDialogRequest = {
-          "trigger_id": response.trigger_id,
-          //"token": this.webClient.token,
-          "dialog": {
-            "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
-            "title": "Standup", // for my_privat...
-            "submit_label": "Submit",
-            "notify_on_cancel": true,
-            "state": "Limo",
-            "elements": []
-          }
-        }
-
-        const questions = await this.connection.getRepository(Question)
-          .createQueryBuilder('q')
-          .orderBy('q.index', 'ASC')
-          .getMany()
-
-        for(const question of questions) {
-          openDialogRequest.dialog.elements.push({
-            "type": "text",
-            "label": question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
-            "placeholder": question.text,
-            "name": question.index
-          })
-        }
-
-        // TODO already submit
-
-        if (!this.findProgressByUser(user)) {
-          await this.sendMessage(user, `I will remind you when your next standup is up`)
-          return;
-        }
-
-        try {
-          const result = await this.webClient.apiCall('dialog.open', openDialogRequest)
-          //console.log(result)
-          //await this.rtm.send('dialog.open', openDialogRequest)
-        } catch (e) {
-          logError(e.message)
-          logError(e.data.response_metadata.messages)
-          throw new Error(e.message)
-        }
-      } else if (selectedActions.includes("start")) {
-        this.agreeToStartSubject.next(user)
-      } else {
-        throw new Error("No corresponded actions")
-      }
-
+      await this.handleInteractiveAnswers(response)
     } else {
       logError(`There is no handler for callback ${response.callback_id}`);
     }
   }
 
 
+  async handleInteractiveDialogSubmission(response: InteractiveDialogSubmissionResponse) {
+    const user = await this.connection.getRepository(User).findOne(response.user);
+
+    if (!user) {
+      throw new Error(`User ${response.user} is not found`)
+    }
+
+    const channelTeam = user.team.channels.filter((channel) => (channel.id === response.channel.id)).pop()
+    if (!user) {
+      throw new Error(`Channel team ${response.channel.id} is not found`)
+    }
+
+    const messages: IMessage[] = []
+    for (const index of Object.keys(response.submission).sort((current, next) => current > next ? 1 : -1)) {
+      const text = response.submission[index]
+      messages.push({
+        team: channelTeam,
+        text: text,
+        user: user
+      } as IMessage)
+    }
+
+    this.messagesSubject.next(messages)
+  }
+
   async handleInteractiveDialogSubmissionResponse(response: InteractiveDialogSubmissionResponse) {
     if (response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
-      const user = await this.connection.getRepository(User).findOne(response.user);
-
-      if (!user) {
-        throw new Error(`User ${response.user} is not found`)
-      }
-
-      const channelTeam = user.team.channels.filter((channel) => (channel.id === response.channel.id)).pop()
-      if (!user) {
-        throw new Error(`Channel team ${response.channel.id} is not found`)
-      }
-
-      const messages: IMessage[] = []
-      for (const index of Object.keys(response.submission).sort((current, next) => current > next ? 1 : -1)) {
-        const text = response.submission[index]
-        messages.push({
-          team: channelTeam,
-          text: text,
-          user: user
-        } as IMessage)
-      }
-
-      this.messagesSubject.next(messages)
+      await this.handleInteractiveDialogSubmission(response)
     } else {
       logError(`There is no handler for callback ${response.callback_id}`);
     }
