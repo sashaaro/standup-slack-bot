@@ -125,6 +125,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         ch.id = channel.id
       }
 
+      ch.name = channel.name
       ch.isArchived = channel.is_archived
       ch.isEnabled = true
 
@@ -138,6 +139,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         ch.id = channel.id
       }
 
+      ch.name = channel.name
       ch.isArchived = channel.is_archived
       ch.isEnabled = false
 
@@ -152,6 +154,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         ch.isEnabled = false
       }
 
+      ch.name = channel.name
       ch.isArchived = true
 
       await channelRepository.save(ch);
@@ -165,6 +168,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         ch.isEnabled = false
       }
 
+      ch.name = channel.name
       ch.isArchived = false
 
       await channelRepository.save(ch);

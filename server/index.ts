@@ -49,6 +49,7 @@ const run = async () => {
     await connection.query("CREATE DATABASE standup");
   }
   await connection.close()
+
   connection = await createConnection({
     type: "postgres",
     //host: "localhost",
