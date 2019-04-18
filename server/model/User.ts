@@ -45,7 +45,8 @@ class User implements IUser {
   team: Team;
 
   @Column({
-    length: 10
+    length: 10,
+    nullable: true,
   })
   im: string;
 

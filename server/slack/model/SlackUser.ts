@@ -25,7 +25,8 @@ export interface SlackUserProfile
     // fields:
 }
 
-export interface SlackMember
+// https://api.slack.com/types/user
+export interface ISlackUser
 {
     id: 'USLACKBOT',
     team_id: 'T6GQB7CSF',
@@ -37,12 +38,15 @@ export interface SlackMember
     tz_label: 'Pacific Daylight Time',
     tz_offset: -25200,
     profile: SlackUserProfile,
-    is_admin: false,
-    is_owner: false,
-    is_primary_owner: false,
-    is_restricted: false,
-    is_ultra_restricted: false,
-    is_bot: false,
-    is_app_user: false,
-    updated: 0
+    "is_admin": true,
+    "is_owner": false,
+    "is_primary_owner": false,
+    "is_restricted": false,
+    "is_ultra_restricted": false,
+    "is_bot": false,
+    "is_stranger": false,
+    "updated": 1502138686,
+    "is_app_user": false,
+    "has_2fa": false,
+    "locale": "en-US"
 }

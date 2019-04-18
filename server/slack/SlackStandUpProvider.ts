@@ -7,18 +7,18 @@ import User from "../model/User";
 import {RTMMessageResponse} from "./model/rtm/RTMMessageResponse";
 import Team from "../model/Team";
 import {RTMAuthenticatedResponse, SlackIm} from "./model/rtm/RTMAuthenticatedResponse";
-import {SlackMember} from "./model/SlackUser";
 import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
 import Question from "../model/Question";
 import {IMessage, IStandUpProvider, ITeam, ITransport, IUser} from "../StandUpBotService";
-import {SlackChannel, SlackGroup} from "./model/SlackChannel";
+import {SlackChannel, SlackConversation, SlackGroup} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
 import {
   InteractiveDialogSubmissionResponse,
   InteractiveResponse
 } from "./model/InteractiveResponse";
 import {logError} from "../services/logError";
+import {IUsersResponse} from "./model/response";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
@@ -329,79 +329,100 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   private async updateUsers(team: Team) {
     const userRepository = this.connection.getRepository(User);
 
-    const usersResult = await this.webClient.users.list();
-    if (!usersResult.ok) {
-      // throw..
-      logError(usersResult.error)
-      return;
-    }
+    /* https://api.slack.com/methods/users.list */
+    let usersResponse: IUsersResponse;
 
-    const ims = <SlackIm[]>(await this.webClient.im.list() as any).ims;
-    const members = <SlackMember[]>(usersResult as any).members;
-
-    for (const member of members.filter(u => !u.is_bot && !u.deleted)) {
-      let user = await userRepository.findOne(member.id);
-      if (!user) {
-        user = new User();
-        user.id = member.id
+    do {
+      let cursor = undefined;
+      if (usersResponse) {
+        cursor = usersResponse.response_metadata.next_cursor
       }
-      user.name = member.name;
-      user.profile = member.profile;
-
-      if (member.team_id !== team.id) {
-        throw new Error(`Team #${team.id} is not equal to member.team_id as ${member.team_id}`)
+      usersResponse = await this.webClient.users.list({limit: 200, cursor}) as IUsersResponse;
+      if (!usersResponse.ok) {
+        // throw..
+        logError(usersResponse.error)
+        return;
       }
 
-      user.team = team //await teamRepository.findOne(member.team_id);
+      for (const member of usersResponse.members.filter(u => !u.is_bot && !u.deleted && !u.is_app_user)) {
+        let user = await userRepository.findOne(member.id);
+        if (!user) {
+          user = new User();
+          user.id = member.id
+        }
+        user.name = member.name;
+        user.profile = member.profile;
 
-      const im = ims.filter(im => (im.user === user.id && !im.is_user_deleted)).pop();
+        if (member.team_id !== team.id) {
+          throw new Error(`Team #${team.id} is not equal to member.team_id as ${member.team_id}`)
+        }
 
-      if (!im) {
-        logError('im not found');
-        continue;
+        user.team = team //await teamRepository.findOne(member.team_id);
+
+        await userRepository.save(user)
       }
 
-      user.im = im.id;
+    } while (usersResponse.response_metadata.next_cursor)
 
-      await userRepository.save(user)
-    }
+
+    do {
+      const response = await this.webClient.conversations.list({types: 'im'}) as any;
+      if (!response.ok) {
+        throw new Error(response.error);
+      }
+      const conversations = (response as any).channels as SlackIm[]
+
+      for (const conversation of conversations.filter(c => c.is_im)) {
+        const user = await userRepository.findOne(conversation.user)
+        if (user) {
+          user.im = conversation.id
+          await userRepository.save(user);
+        }
+      }
+
+    } while (false); // TODO cursor
   }
 
   private async updateChannels(team: Team) {
     // TODO fix update private channel where bot invited already
     const userRepository = this.connection.getRepository(User);
+    //let channels: SlackConversation[]|SlackChannel[] = [];
 
-    let response = await this.webClient.channels.list();
+    /*let response = await this.webClient.channels.list();
     if (!response.ok) {
       throw new Error(response.error);
     }
-    let channels = (response as any).channels as SlackChannel[]
+    channels = (response as any).channels as SlackChannel[]
+    */
+    /*response = await this.webClient.channels.list();
+    if (!response.ok) {
+      throw new Error(response.error);
+    }*/
+    // let privateChannels = ((response as any).groups as SlackGroup[])
+    // channels = channels.concat(privateChannel as any)
+    // channels = channels.concat(conversations as any)
 
-    response = await this.webClient.groups.list();
+    let response = await this.webClient.conversations.list({types: 'public_channel,private_channel'});
     if (!response.ok) {
       throw new Error(response.error);
     }
-    let privateChannel = ((response as any).groups as SlackGroup[])
+    const conversations = (response as any).channels as SlackConversation[]
 
-
-    channels = channels.concat(privateChannel as any)
     const channelRepository = this.connection.getRepository(Channel)
-
     await this.connection.createQueryBuilder()
       .update(Channel)
       .where({team: team.id})
       .set({isArchived: true})
       .execute()
 
-    for (const channel of channels) {
-      // channel.is_channel
+    for (const channel of conversations) {
       let ch = await channelRepository.findOne(channel.id)
       if (!ch) {
         ch = new Channel()
         ch.id = channel.id;
-        ch.isEnabled = false;
       }
 
+      ch.isEnabled = channel.is_member;
       ch.isArchived = channel.is_archived;
       ch.createdBy = await userRepository.findOne(channel.creator)
       if (!ch.createdBy) {
@@ -418,7 +439,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       ch.nameNormalized = channel.name_normalized
       await channelRepository.save(ch);
 
-      ch.users = await userRepository.createQueryBuilder('u').whereInIds(channel.members).getMany()
+      let membersResponse = await this.webClient.conversations.members({channel: channel.id}) as {ok: boolean, members?: string[], error?:string};
+      if (!membersResponse.ok) {
+        throw new Error(membersResponse.error);
+      }
+
+      ch.users = await userRepository.createQueryBuilder('u').whereInIds(membersResponse.members).getMany()
       await channelRepository.save(ch);
     }
   }

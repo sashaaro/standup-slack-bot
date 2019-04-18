@@ -1,4 +1,3 @@
-import { SlackTeam } from "../SlackTeam";
 
 export interface SlackIm
 {

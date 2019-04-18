@@ -39,6 +39,7 @@ const config = Object.assign(parameters, localParameters) as IAppConfig;
 export interface IAppConfig {
   slackClientID: string,
   slackSecret: string,
+  slackSigningSecret: string,
   slackVerificationToken: string,
   botUserOAuthAccessToken: string,
   host: string,
@@ -137,7 +138,7 @@ const run = async () => {
   const app = createExpressApp()
 
   Container.set(SLACK_INTERACTIONS_ADAPTER, createMessageAdapter(config.slackSecret));
-  const slackInteractions = Container.get(SLACK_INTERACTIONS_ADAPTER);
+  const slackInteractions = Container.get(SLACK_INTERACTIONS_ADAPTER) as any;
 
   slackInteractions.action({type: InteractiveResponseTypeEnum.interactive_message, callbackId: CALLBACK_PREFIX_STANDUP_INVITE},
     async (response) => {
@@ -149,7 +150,7 @@ const run = async () => {
     await this.handleInteractiveDialogSubmission(response)
   })
 
-  app.use('/api/slack/interactive', Container.get(SLACK_INTERACTIONS_ADAPTER).expressMiddleware());
+  app.use('/api/slack/interactive', slackInteractions.expressMiddleware());
 
   //const apiSlackInteractiveAction = Container.get(ApiSlackInteractive) as ApiSlackInteractive
   //app.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
@@ -177,5 +178,6 @@ const run = async () => {
 }
 
 run().then(() => {}).catch(error => {
+  throw error;
   logError(error)
 });
