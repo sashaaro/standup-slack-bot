@@ -13,8 +13,7 @@ import {UpdateChannelAction} from "./controller/updateChannel";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
-export const createExpressApp = () => {
-  const app = express()
+export const useBodyParserAndSession = (app: express.Express|express.Router) => {
   app.use(bodyParser.urlencoded({extended: false}));
   app.use(bodyParser.json());
   app.use(session({
@@ -24,10 +23,19 @@ export const createExpressApp = () => {
     store: new RedisConnectStore({host: 'redis'})
     //cookie: { secure: true }
   }))
+}
 
+export const useStaticPublicFolder = (app: express.Express) => {
   app.use(express.static('./resources/public'));
+}
 
-  app.get('/', (req, res) => {
+export const dashboardExpressMiddleware = () => {
+  const router = express.Router()
+
+
+  //useBodyParserAndSession(router);
+
+  router.get('/', (req, res) => {
     const session = req.session;
     const user = session.user;
 
@@ -42,8 +50,8 @@ export const createExpressApp = () => {
 
   const authAction = Container.get(AuthAction)
 
-  app.get('/auth', authAction.handle.bind(authAction));
-  app.get('/logout', (req, res) => {
+  router.get('/auth', authAction.handle.bind(authAction));
+  router.get('/logout', (req, res) => {
     const session = req.session as any;
     session.destroy()
     res.redirect('/auth');
@@ -51,13 +59,13 @@ export const createExpressApp = () => {
   });
 
   const settingAction = Container.get(SettingsAction)
-  app.all('/settings', settingAction.handle.bind(settingAction));
+  router.all('/settings', settingAction.handle.bind(settingAction));
 
   const syncAction = Container.get(SyncAction)
-  app.get('/sync', syncAction.handle.bind(syncAction));
+  router.get('/sync', syncAction.handle.bind(syncAction));
 
   const setChannelAction = Container.get(SetChannelAction)
-  app.post('/channel/selected', setChannelAction.handle.bind(setChannelAction));
+  router.post('/channel/selected', setChannelAction.handle.bind(setChannelAction));
 
   //const channelsAction = Container.get(ChannelsAction)
   //app.get('/channels', channelsAction.handle.bind(channelsAction));
@@ -66,5 +74,6 @@ export const createExpressApp = () => {
   //app.post('/channel', updateChannelAction.handle.bind(updateChannelAction));
 
 
-  return app;
+
+  return router;
 }

@@ -10,7 +10,11 @@ import StandUpBotService, {
   STAND_UP_BOT_STAND_UP_PROVIDER,
   STAND_UP_BOT_TRANSPORT
 } from './StandUpBotService'
-import {createExpressApp} from "./http/createExpressApp";
+import {
+  dashboardExpressMiddleware,
+  useBodyParserAndSession,
+  useStaticPublicFolder
+} from "./http/dashboardExpressMiddleware";
 import AnswerRequest from "./model/AnswerRequest";
 import StandUp from "./model/StandUp";
 import {Container} from "typedi";
@@ -25,13 +29,13 @@ import {getTimezoneList} from "./services/timezones";
 import * as http from "http";
 import * as https from "https";
 import * as fs from "fs";
-import {ApiSlackInteractive} from "./http/controller/apiSlackInteractive";
 import { createMessageAdapter } from "@slack/interactive-messages";
 
 import parameters from './parameters';
 import localParameters from './parameters.local'
 import {logError} from "./services/logError";
 import {InteractiveResponseTypeEnum} from "./slack/model/InteractiveResponse";
+import * as express from "express";
 
 const config = Object.assign(parameters, localParameters) as IAppConfig;
 
@@ -135,12 +139,10 @@ const run = async () => {
     slackProvider.rtm.sendMessage('Report!!!!!', standUp.channel.id)
   });
 
-  const app = createExpressApp()
-
-  Container.set(SLACK_INTERACTIONS_ADAPTER, createMessageAdapter(config.slackSecret));
+  Container.set(SLACK_INTERACTIONS_ADAPTER, createMessageAdapter(config.slackSigningSecret));
   const slackInteractions = Container.get(SLACK_INTERACTIONS_ADAPTER) as any;
 
-  slackInteractions.action({type: InteractiveResponseTypeEnum.interactive_message, callbackId: CALLBACK_PREFIX_STANDUP_INVITE},
+  slackInteractions.action({within: InteractiveResponseTypeEnum.interactive_message, callbackId: CALLBACK_PREFIX_STANDUP_INVITE},
     async (response) => {
       await slackProvider.handleInteractiveAnswers(response)
     }
@@ -150,10 +152,38 @@ const run = async () => {
     await this.handleInteractiveDialogSubmission(response)
   })
 
-  app.use('/api/slack/interactive', slackInteractions.expressMiddleware());
+  const expressApp = express()
+
+
+  expressApp.use((req, res, next) => {
+    console.log(`${req.originalUrl} ${req.method}`);
+    if (req.method === "POST") {
+      console.log(`${req.body}`);
+    }
+
+    res.on('finish', () => {
+      console.info(`${res.statusCode} ${res.statusMessage}; ${res.get('Content-Length') || 0}b sent`)
+    })
+
+    next()
+  })
+
+  useStaticPublicFolder(expressApp);
+
+  /*const router = express.Router();
+  router.get('/', (req, res) => {
+    console.log(req.session)
+
+    return res.send('1');
+  })*/
+
+  expressApp.use('/api/slack/interactive', slackInteractions.expressMiddleware());
+  // expressApp.use('/sss', router);
+  useBodyParserAndSession(expressApp);
+  expressApp.use('/', dashboardExpressMiddleware());
 
   //const apiSlackInteractiveAction = Container.get(ApiSlackInteractive) as ApiSlackInteractive
-  //app.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
+  //expressApp.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
 
 
 
@@ -171,9 +201,9 @@ const run = async () => {
       ca: fs.readFileSync(ca),
     }
 
-    https.createServer(options, app).listen(443);
+    https.createServer(options, expressApp).listen(443);
   } else {
-    http.createServer(app).listen(3000);
+    http.createServer(expressApp).listen(3000);
   }
 }
 

@@ -1,8 +1,8 @@
 import Team from "./model/Team";
 import AnswerRequest from "./model/AnswerRequest";
 import {Inject, Service, Token} from "typedi";
-import {Observable, of, Subject, timer} from "rxjs";
-import {delay, filter, map, take, takeUntil} from "rxjs/operators";
+import {interval, Observable, of, Subject, timer} from "rxjs";
+import {delay, filter, first, map, share, take, takeUntil, takeWhile} from "rxjs/operators";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -157,27 +157,28 @@ export default class StandUpBotService {
     }
   }
 
+  private isMeetingTime(team: ITeam, date: Date) {
+    const timezoneShift = parseFloat(team.timezone as string);
+    const timeString = this.getTimeString(date, timezoneShift);
+    return team.start === timeString;
+  }
+
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
     let standUps: IStandUp[] = [];
     const teams = await this.standUpProvider.findTeams();
 
-    for (const team of teams) {
-      const timezoneShift = parseFloat(team.timezone as string);
-      const timeString = this.getTimeString(date, timezoneShift);
-      const inTime = team.start === timeString;
+    console.log(`startTeamStandUpByDate ${date}`);
 
-      console.log(`team.start ${team.start}, timeString ${timeString}`)
+    for (const team of teams.filter((team) => this.isMeetingTime(team, date))) {
+      console.log(`Send questions to ${team.id} ${(team as any).name}`)
+      const standUp = this.standUpProvider.createStandUp();
+      standUp.team = team;
+      standUp.end = new Date();
+      standUp.end.setSeconds(0, 0);
+      standUp.end.setTime(standUp.end.getTime() + team.duration * 60 * 1000)
 
-      if (inTime) {
-        const standUp = this.standUpProvider.createStandUp();
-        standUp.team = team;
-        standUp.end = new Date();
-        standUp.end.setSeconds(0, 0);
-        standUp.end.setTime(standUp.end.getTime() + team.duration * 60 * 1000)
-
-        await this.standUpProvider.insertStandUp(standUp);
-        standUps.push(standUp);
-      }
+      await this.standUpProvider.insertStandUp(standUp);
+      standUps.push(standUp);
     }
 
     return standUps;
@@ -400,3 +401,20 @@ export default class StandUpBotService {
     this.stopInterval()
   }
 }
+
+/*
+let live = true;
+const interval$ = interval( 1000).pipe(takeWhile(() => live))
+const sub = interval$.subscribe({
+  next: (n) => {
+    console.log(n)
+  },
+  complete: () => {
+    console.log('complete')
+  }
+})
+
+setTimeout(() => {
+  live = false
+}, 3000)
+*/

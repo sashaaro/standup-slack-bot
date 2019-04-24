@@ -90,11 +90,42 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       console.log('Slack RTM connected')
     });
 
-    this.message$ = Observable.create((observer) => {
+    this.message$ = new Observable((observer) => {
       const userRepository = this.connection.getRepository(User);
 
+
+      /*const botMessageExample =  { type: 'message',
+        subtype: 'bot_message',
+        text: 'Hello, it\'s time to start your daily standup',
+        suppress_notification: false,
+        username: 'Standup Bot',
+        bot_id: 'B6GQCM4P5',
+        team: 'T6GQB7CSF',
+        attachments:
+          [ { callback_id: 'standup_invite',
+            text: 'Choose start asking in char or open dialog window',
+            id: 1,
+            actions: [Array],
+            fallback: 'Choose start asking in char or open dialog window' } ],
+        channel: 'D6HVDGXSB',
+        event_ts: '1556085305.003000',
+        ts: '1556085305.003000' }*/
+
+      /*const userMessageExample = {
+        client_msg_id: '9946389c-f9fb-491d-b717-3f2b82baf810',
+        suppress_notification: false,
+        type: 'message',
+        text: 'фывафывафыв!!!!!!!!!!!!!!!',
+        user: 'U6GSG49R8',
+        team: 'T6GQB7CSF',
+        channel: 'D6HVDGXSB',
+        event_ts: '1556085558.003300',
+        ts: '1556085558.003300'
+      }*/
+
+
       this.rtm.on('message', async (messageResponse: RTMMessageResponse) => {
-        if (messageResponse.type !== "message") {
+        if (messageResponse.type !== "message" || !messageResponse.client_msg_id) {
           return;
         }
         // be sure it is direct answerMessage to bot
@@ -439,7 +470,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       ch.nameNormalized = channel.name_normalized
       await channelRepository.save(ch);
 
-      let membersResponse = await this.webClient.conversations.members({channel: channel.id}) as {ok: boolean, members?: string[], error?:string};
+      let membersResponse = await this.webClient.conversations.members({channel: channel.id}) as { ok: boolean, members?: string[], error?: string };
       if (!membersResponse.ok) {
         throw new Error(membersResponse.error);
       }
@@ -484,7 +515,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .orderBy('q.index', 'ASC')
       .getMany()
 
-    for(const question of questions) {
+    for (const question of questions) {
       openDialogRequest.dialog.elements.push({
         "type": "text",
         "label": question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
