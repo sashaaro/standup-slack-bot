@@ -10,8 +10,8 @@ import {RTMAuthenticatedResponse, SlackIm} from "./model/rtm/RTMAuthenticatedRes
 import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
 import Question from "../model/Question";
-import {IMessage, IStandUpProvider, ITeam, ITransport, IUser} from "../StandUpBotService";
-import {SlackChannel, SlackConversation, SlackGroup} from "./model/SlackChannel";
+import {IMessage, IStandUpProvider, ITransport, IUser} from "../StandUpBotService";
+import {SlackChannel, SlackConversation} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
 import {
   InteractiveDialogSubmissionResponse,
@@ -19,9 +19,14 @@ import {
 } from "./model/InteractiveResponse";
 import {logError} from "../services/logError";
 import {IUsersResponse} from "./model/response";
+import ChannelRepository from "../repository/ChannelRepository";
+import QuestionRepository from "../repository/QuestionRepository";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
+
+export const ACTION_START = 'start'
+export const ACTION_OPEN_DIALOG = 'dialog'
 
 @Service()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
@@ -51,13 +56,13 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
               "name": "start",
               "text": "Start",
               "type": "button",
-              "value": "start"
+              "value": ACTION_START
             },
             {
               "name": "dialog",
               "text": "Open dialog",
               "type": "button",
-              "value": "dialog"
+              "value": ACTION_OPEN_DIALOG
             },
             // TODO I'm late?!
             /*{
@@ -151,9 +156,10 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       });
     });
 
-    const channelRepository = this.connection.getRepository(Channel);
+    const channelRepository = this.connection.getCustomRepository(ChannelRepository);
     const joinSlackChannel = async (channel: SlackChannel) => {
       let ch = await channelRepository.findOne(channel.id);
+      const isNew = !ch;
       if (!ch) {
         ch = new Channel();
         ch.id = channel.id
@@ -163,7 +169,11 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       ch.isArchived = channel.is_archived
       ch.isEnabled = true
 
-      await channelRepository.save(ch);
+      if (isNew) {
+        await channelRepository.addNewChannel(ch)
+      } else {
+        await channelRepository.save(ch);
+      }
     }
 
     const leftSlackChannel = async (channel: SlackChannel) => {
@@ -300,10 +310,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return await standUpRepository.createQueryBuilder('st')
       .innerJoinAndSelect('st.channel', 'channel')
       .innerJoinAndSelect('channel.users', 'users')
+      .innerJoinAndSelect('channel.questions', 'questions') // TODO only activated
       .where('users.id = :user', {user: user.id})
       .andWhere('CURRENT_TIMESTAMP <= st.end')
       .andWhere('channel.isArchived = false')
       .andWhere('channel.isEnabled = true')
+      .andWhere('questions.isEnabled = true')
       .orderBy('st.start', "DESC")
       .getOne();
   }
@@ -340,14 +352,15 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .where('date_trunc(\'minute\', st.end) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
       .andWhere('channel.isArchived = false')
       .andWhere('channel.isEnabled = true')
+      .orderBy("question.index", "ASC")
       .getMany()
   }
 
-  findOneQuestion(team: ITeam, index): Promise<Question> {
+  findOneQuestion(channel: Channel, index): Promise<Question> {
     return this.connection.getRepository(Question).findOne({
       where: {
         index: index,
-        team: team
+        channel: channel
       }
     })
   }
@@ -439,7 +452,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     }
     const conversations = (response as any).channels as SlackConversation[]
 
-    const channelRepository = this.connection.getRepository(Channel)
+    const channelRepository = this.connection.getCustomRepository(ChannelRepository)
     await this.connection.createQueryBuilder()
       .update(Channel)
       .where({team: team.id})
@@ -447,7 +460,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .execute()
 
     for (const channel of conversations) {
-      let ch = await channelRepository.findOne(channel.id)
+      let ch = await channelRepository.findOne(channel.id, {relations: ['questions']})
+      const isNewCh = !ch
       if (!ch) {
         ch = new Channel()
         ch.id = channel.id;
@@ -470,6 +484,17 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       ch.nameNormalized = channel.name_normalized
       await channelRepository.save(ch);
 
+      if (isNewCh) {
+        await channelRepository.addNewChannel(ch)
+      } else {
+        if (ch.questions.length === 0) {
+          ch = await this.connection.manager.getCustomRepository(QuestionRepository).setupDefaultQuestionsToChannel(ch);
+        }
+
+        await channelRepository.save(ch);
+      }
+
+
       let membersResponse = await this.webClient.conversations.members({channel: channel.id}) as { ok: boolean, members?: string[], error?: string };
       if (!membersResponse.ok) {
         throw new Error(membersResponse.error);
@@ -486,14 +511,22 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     if (!user) {
       throw new Error(`User ${response.user} is not found`)
     }
-
-
     const selectedActions = response.actions.map(a => a.value)
 
-    if (selectedActions.includes("start")) {
+    // TODO already submit
+
+    const standUp = await this.findProgressByUser(user);
+
+    if (!standUp) {
+      // TODO open alert?!
+      await this.sendMessage(user, `I will remind you when your next standup is up`)
+      return;
+    }
+
+    if (selectedActions.includes(ACTION_START)) {
       this.agreeToStartSubject.next(user)
       return
-    } else if (!selectedActions.includes("dialog")) {
+    } else if (!selectedActions.includes(ACTION_OPEN_DIALOG)) {
       throw new Error("No corresponded actions")
     }
 
@@ -503,9 +536,9 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       "dialog": {
         "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
         "title": "Standup", // for my_privat...
-        "submit_label": "Submit",
+        "submit_label": false ? "Update" : "Submit", //standUp.answers.length
         "notify_on_cancel": true,
-        "state": "Limo",
+        "state": `${user.id}`,
         "elements": []
       }
     }
@@ -516,19 +549,18 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .getMany()
 
     for (const question of questions) {
-      openDialogRequest.dialog.elements.push({
-        "type": "text",
-        "label": question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
-        "placeholder": question.text,
-        "name": question.index
-      })
-    }
+      const element: any = {
+        type: "textarea", // https://api.slack.com/dialogs#textarea_elements
+        label: question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
+        placeholder: question.text,
+        name: question.index,
+      }
+      const answer = null; // standUp.answers[questions.indexOf(question)];
+      if (answer) {
+        element.value = answer.answerMessage;
+      }
 
-    // TODO already submit
-
-    if (!this.findProgressByUser(user)) {
-      await this.sendMessage(user, `I will remind you when your next standup is up`)
-      return;
+      openDialogRequest.dialog.elements.push(element);
     }
 
     try {
@@ -558,7 +590,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
 
   async handleInteractiveDialogSubmission(response: InteractiveDialogSubmissionResponse) {
-    const user = await this.connection.getRepository(User).findOne(response.user);
+    const user = await this.connection.getRepository(User).findOne(response.user.id);
 
     if (!user) {
       throw new Error(`User ${response.user} is not found`)

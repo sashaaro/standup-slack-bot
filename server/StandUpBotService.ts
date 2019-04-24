@@ -3,6 +3,7 @@ import AnswerRequest from "./model/AnswerRequest";
 import {Inject, Service, Token} from "typedi";
 import {interval, Observable, of, Subject, timer} from "rxjs";
 import {delay, filter, first, map, share, take, takeUntil, takeWhile} from "rxjs/operators";
+import Question from "./model/Question";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -30,15 +31,16 @@ export interface IUser {
 export interface ITeam extends IStandUpSettings{
   id: string | number;
   users: IUser[]
+  questions: IQuestion[];
 }
 
 export interface IQuestion {
   id: string | number;
   index: number;
   text: string;
-  //disabled: boolean;
+  //isEnabled: boolean;
   createdAt: Date;
-  team: Team;
+  team: ITeam;
 }
 
 export interface IMessage {
@@ -226,9 +228,10 @@ export default class StandUpBotService {
 
     const progressStandUp = await this.standUpProvider.findProgressByUser(user);
     for(const [i, message] of messages.entries()) {
-      const question = await this.standUpProvider.findOneQuestion(progressStandUp.team, i)
+      const question = progressStandUp.team.questions[i]
       if (!question) {
-        throw new Error(`Question #${i} in standup #${progressStandUp.id}`)
+        console.warn(`No question #${i} in standup #${progressStandUp.id} team #${progressStandUp.team.id}`)
+        break;
       }
       // TODO try catch
       await this.answerByStandUp(message, progressStandUp, question)

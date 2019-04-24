@@ -14,7 +14,7 @@ import {UpdateChannelAction} from "./controller/updateChannel";
 const RedisConnectStore = createRedisConnectStore(session);
 
 export const useBodyParserAndSession = (app: express.Express|express.Router) => {
-  app.use(bodyParser.urlencoded({extended: false}));
+  app.use(bodyParser.urlencoded({extended: true}));
   app.use(bodyParser.json());
   app.use(session({
     secret: 'keyboard cat',

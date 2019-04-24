@@ -53,7 +53,6 @@ export class StandUpsAction implements IHttpAction {
 
     const standUpList = [];
     for (let standUp of standUps) {
-      //standUp = await standUpRepository.preload(standUp)
       const userAnswers = [];
       for (const u of standUp.channel.users) {
         userAnswers.push({

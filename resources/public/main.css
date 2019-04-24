@@ -1,6 +1,6 @@
 .content {
-    margin-top: 75px;
     width: 1127px;
+    margin-top: 10px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -16,6 +16,8 @@
     /* https://www.flaticon.com/free-icon/robot_270137 */
     background-image: url("/robot.png");
     width: 50px;
+
+    margin-left: 5px;
 }
 
 .logo.active {
@@ -124,11 +126,12 @@
     margin-left: 15px;
 }
 
-.menu .item:hover > .icon {
-    animation: icon-loading 2s linear infinite;
-}
+
 .menu .item.active > .icon {
-    animation: icon-loading .5s linear infinite;
+    animation: icon-loading 8s linear infinite;
+}
+.menu .item:hover > .icon {
+    animation: icon-loading 8s linear infinite;
 }
 
 

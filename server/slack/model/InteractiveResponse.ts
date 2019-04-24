@@ -33,7 +33,7 @@ export interface InteractiveResponse {
 
 export interface InteractiveDialogSubmissionResponse {
   type: 'dialog_submission',
-  token: 'Eeo49Ou9MDuvXEdFmnEZrRFB',
+  token: 'sdfjalsdlf',
   action_ts: '1549718276.192685',
   team: { id: 'T6GQB7CSF', domain: 'sashaaro' },
   user: { id: 'U6GSG49R8', name: 'sashaaro' },
@@ -41,8 +41,8 @@ export interface InteractiveDialogSubmissionResponse {
   submission: { [key: string]: string},
   callback_id: 'send_answers',
   response_url:
-    'https://hooks.slack.com/app/T6GQB7CSF/546930635013/J9cESTDMkRkgwazXoIccQsR2',
-  state: 'Limo'
+    'https://hooks.slack.com/app/T6GQG4CSF/asdf/dsfasdf',
+  state: 'some data'
 }
 
 

@@ -1,31 +1,32 @@
 extends main
 
 block content
-    .ui.large.top.fixed.hidden.menu
-        .ui.container
-            a.logo(href="/" class= {'active': activeMenu === 'reports'})
-            a.item.menu-title(href="/" class= {'active': activeMenu === 'reports'})
-                div
-                    |Standups
-                    .menu-title__sign= 'for ' + team.domain + '.slack.com'
-                //a.item(href="/channels" class= {'active': activeMenu === 'channels'})
-                    | Channels
-
-            .right.menu
-                if channel && team.enableChannels.length
-                    form.item.ui.mini.form(action="/channel/selected", method="POST")
-                        select.dropdown#selectChannel(name="id", placeholder="Select channel")
-                            each ch in team.enableChannels
-                                option(value=ch.id, selected=ch.id === channel.id)= ch.name
-                    a.item(href="/settings" class= {'active': activeMenu === 'settings'})
-                        i.icon.cog
-                        |Settings
-                a.item#sync-link(href="/sync")
-                    i.icon.sync
-                    |Sync data from slack api
-                .item
-                    a.ui.button(href="/logout") Log out
     .content
+        .ui.large.menu
+            .ui.container
+                a.logo(href="/" class= {'active': activeMenu === 'reports'})
+                a.item.menu-title(href="/" class= {'active': activeMenu === 'reports'})
+                    div
+                        | Standups
+                        .menu-title__sign= 'for ' + team.domain + '.slack.com'
+                    //a.item(href="/channels" class= {'active': activeMenu === 'channels'})
+                        | Channels
+
+                .right.menu
+                    if channel && team.enableChannels.length
+                        form.item.ui.mini.form(action="/channel/selected", method="POST")
+                            select.dropdown#selectChannel(name="id", placeholder="Select channel")
+                                each ch in team.enableChannels
+                                    option(value=ch.id, selected=ch.id === channel.id)= ch.name
+                        a.item(href="/settings" class= {'active': activeMenu === 'settings'})
+                            i.icon.cog
+                            | Settings
+                    a.item#sync-link(href="/sync")
+                        i.icon.sync
+                        | Sync data from slack api
+                    .item
+                        a.ui.button(href="/logout") Log out
+
         block authorized_content
     //.ui.inverted.vertical.footer.segment
         .ui.container

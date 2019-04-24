@@ -1,6 +1,7 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, BeforeUpdate} from "typeorm";
 import Team from "./Team";
 import {IQuestion} from "../StandUpBotService";
+import {Channel} from "./Channel";
 
 @Entity()
 class Question implements IQuestion
@@ -15,17 +16,21 @@ class Question implements IQuestion
     text: string;
 
     @Column()
-    disabled: boolean;
+    isEnabled: boolean = true;
 
     @Column()
     createdAt: Date;
 
-    // TODO @ManyToOne(type => Team)
-    team: Team;
+    @ManyToOne(type => Channel)
+    channel: Channel;
 
     @BeforeInsert()
     setupCreatedAt() {
         this.createdAt = new Date();
+    }
+
+    get team() { // IQuestion interface
+        return this.channel
     }
 }
 

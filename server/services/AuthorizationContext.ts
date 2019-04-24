@@ -40,11 +40,16 @@ export default class AuthorizationContext {
       return null
     }
 
-    const channel = await this.connection.getRepository(Channel).findOne(req.session.channel)
-
-    if (channel.isArchived || !channel.isEnabled) {
-      return null
-    }
+    const channel = await this.connection
+      .getRepository(Channel)
+      .createQueryBuilder('ch')
+      .leftJoinAndSelect('ch.questions', 'questions')
+      .where({id: req.session.channel})
+      .andWhere('ch.isArchived = false')
+      .andWhere('ch.isEnabled = true')
+      .andWhere('questions.isEnabled = true')
+      .orderBy("questions.index", "ASC")
+      .getOne();
 
     return channel
   }

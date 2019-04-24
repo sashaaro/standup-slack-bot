@@ -7,6 +7,7 @@ import {Connection} from "typeorm";
 import {TIMEZONES_TOKEN} from "../../services/token";
 import {Channel} from "../../model/Channel";
 import AuthorizationContext from "../../services/AuthorizationContext";
+import QuestionRepository from "../../repository/QuestionRepository";
 
 @Service()
 export class SettingsAction implements IHttpAction {
@@ -41,9 +42,16 @@ export class SettingsAction implements IHttpAction {
 
     if (req.method == "POST") { // TODO check if standup in progress then not dave
       // todo validate
-      const settings = <IStandUpSettings>req.body
-      Object.assign(channel, settings)
-      await channelRepository.save(channel)
+      const formData = req.body as any
+      if (formData.duration) {
+        Object.assign(channel, formData as IStandUpSettings)
+        await channelRepository.save(channel)
+      }
+      if (formData.questions) {
+        await this.connection.getCustomRepository(QuestionRepository).updateForChannel(formData.questions, channel)
+      }
+
+      return res.redirect('/settings');
     }
 
     res.send(pug.compileFile(`${templateDirPath}/settings.pug`)({

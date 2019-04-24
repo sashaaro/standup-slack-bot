@@ -1,20 +1,68 @@
 extends layout/authorized_main
 
 block authorized_content
-    .row
-        .col
-            form.ui.form(method='post')
-                .field
-                    label= 'Locale timezone'
-                    select.form-control(name="timezone")
-                        each timezone, index in timezoneList
-                            - var selected = channel.timezone == timezone.utc_offset.hours
-                            option(value=timezone.utc_offset.hours, selected=selected)= timezone.name
+    .ui.grid
+        .two.column.large.screen.only.row
+            .column
+                h3.ui.header= "Stan-up settings"
+                form.ui.form(method='post')
+                    .field
+                        label= 'Days'
+                        div
+                            .ui.checkbox
+                                input(type="checkbox")
+                                label= "Sun"
+                            .ui.checkbox
+                                input(type="checkbox")
+                                label= "Mon"
+                            .ui.checkbox
+                                input(type="checkbox")
+                                label= "Tue"
+                            .ui.checkbox
+                                input(type="checkbox")
+                                label= "Wed"
+                    .field
+                        label= 'Locale timezone'
+                        select.form-control(name="timezone")
+                            each timezone, index in timezoneList
+                                - var selected = channel.timezone == timezone.utc_offset.hours
+                                option(value=timezone.utc_offset.hours, selected=selected)= timezone.name
+                    .field
+                        label= 'Start meeting (locale time)'
+                        input.form-control(name="start", type="time", step="60", value=channel.start)
+                    .field
+                        label= 'Duration'
+                        input.form-control(name="duration", type="number", step="5", value= channel.duration)
+                    button.ui.button.fluid.positive(type="submit")= 'Save'
+            .column
+                h3.ui.header= "Questions"
+                form#question.ui.form(method='post')
+                    .field(v-for="(question, index) in questions")
+                        label= "#{{ index + 1 }}"
+                        .ui.icon.input
+                            input.form-control(v-bind:name="'questions[' + index + ']'", type="text", v-model="question.text", required, minlength=2)
+                            i.inverted.circular.trash.link.icon(v-on:click="remote(question)")
+                    .ui.buttons
+                        a.ui.button.fluid(href="#", v-on:click="add")= 'Add question'
+                        button.ui.button.fluid.positive(type="submit", v-bind:disabled="questions.length === 0")= 'Save'
 
-                .field
-                    label= 'Start meeting (locale time)'
-                    input.form-control(name="start", type="time", step="60", value=channel.start)
-                .field
-                    label= 'Duration'
-                    input.form-control(name="duration", type="number", step="5", value= channel.duration)
-                button.ui.button.fluid.positive(type="submit")= 'Save'
+block append scripts
+    script.
+        var vm = new Vue({
+            el: '#question',
+            data: {
+                questions: !{JSON.stringify(channel.questions)}
+            },
+            created: function () {
+                // `this` указывает на экземпляр vm
+                console.log(this.questions)
+            },
+            methods: {
+                add() {
+                    this.questions.push({text: ""})
+                },
+                remote(question) {
+                    this.questions.splice(this.questions.indexOf(question), 1)
+                }
+            }
+        })

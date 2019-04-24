@@ -87,24 +87,6 @@ const run = async () => {
     logging: config.debug
   })
 
-  const questions = [
-    'What I worked on yesterday?',
-    'What I working on today?',
-    'Is anything standing in your way?'
-  ]
-
-  if (!await connection.getRepository(Question).count()) {
-    let index = 0
-    for (const q of questions) {
-      const qu = new Question()
-      qu.text = q
-      qu.index = index
-      qu.disabled = false
-      await connection.getRepository(Question).insert(qu)
-      ++index;
-    }
-  }
-
   const rtmClient = new RTMClient(config.botUserOAuthAccessToken, {
     logLevel: config.debug ? LogLevel.DEBUG : undefined
   })
@@ -142,14 +124,38 @@ const run = async () => {
   Container.set(SLACK_INTERACTIONS_ADAPTER, createMessageAdapter(config.slackSigningSecret));
   const slackInteractions = Container.get(SLACK_INTERACTIONS_ADAPTER) as any;
 
-  slackInteractions.action({within: InteractiveResponseTypeEnum.interactive_message, callbackId: CALLBACK_PREFIX_STANDUP_INVITE},
-    async (response) => {
-      await slackProvider.handleInteractiveAnswers(response)
+  slackInteractions.action({
+      within: InteractiveResponseTypeEnum.interactive_message,
+      callbackId: CALLBACK_PREFIX_STANDUP_INVITE
+    }, async (response) => {
+      try {
+        await slackProvider.handleInteractiveAnswers(response)
+      } catch (e) {
+        logError(e.message)
+      }
     }
   )
 
-  slackInteractions.action({type: InteractiveResponseTypeEnum.dialog_submission, callbackId: CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}, async (response) => {
-    await this.handleInteractiveDialogSubmission(response)
+  slackInteractions.action({
+    within: 'dialog',
+    type: InteractiveResponseTypeEnum.dialog_submission,
+    callbackId: CALLBACK_PREFIX_SEND_STANDUP_ANSWERS
+  }, async (response, respond) => {
+    try {
+      await slackProvider.handleInteractiveDialogSubmission(response)
+    } catch (e) {
+      // TODO if (e instanceof Validation)
+      //respond({errors: {}})
+
+      /*res.sendStatus(400);
+      res.send();*/
+      logError(e.message)
+      return;
+    }
+
+    //res.sendStatus(200);
+
+    // respond({text: 'Thanks for submission'})
   })
 
   const expressApp = express()
