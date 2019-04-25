@@ -23,7 +23,7 @@ block authorized_content
                                 label= "Wed"
                     .field
                         label= 'Locale timezone'
-                        select.form-control(name="timezone")
+                        select.dropdown.form-control(name="timezone")
                             each timezone, index in timezoneList
                                 - var selected = channel.timezone == timezone.utc_offset.hours
                                 option(value=timezone.utc_offset.hours, selected=selected)= timezone.name

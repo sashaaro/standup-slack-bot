@@ -310,12 +310,15 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return await standUpRepository.createQueryBuilder('st')
       .innerJoinAndSelect('st.channel', 'channel')
       .innerJoinAndSelect('channel.users', 'users')
-      .innerJoinAndSelect('channel.questions', 'questions') // TODO only activated
+      .innerJoinAndSelect('channel.questions', 'questions')
+      .leftJoinAndSelect('st.answers', 'answers')
+      .leftJoinAndSelect('answers.user', 'user')
       .where('users.id = :user', {user: user.id})
       .andWhere('CURRENT_TIMESTAMP <= st.end')
       .andWhere('channel.isArchived = false')
       .andWhere('channel.isEnabled = true')
       .andWhere('questions.isEnabled = true')
+      .andWhere('user.id = :answerAuthorID or user.id IS NULL', {answerAuthorID: user.id})
       .orderBy('st.start', "DESC")
       .getOne();
   }
@@ -530,32 +533,29 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       throw new Error("No corresponded actions")
     }
 
+    const answers = standUp.answers.filter(a => a.user.id === user.id);
     const openDialogRequest = {
-      "trigger_id": response.trigger_id,
+      trigger_id: response.trigger_id,
       //"token": this.webClient.token,
-      "dialog": {
-        "callback_id": `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
-        "title": "Standup", // for my_privat...
-        "submit_label": false ? "Update" : "Submit", //standUp.answers.length
-        "notify_on_cancel": true,
-        "state": `${user.id}`,
-        "elements": []
+      dialog: {
+        callback_id: `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
+        title: `Standup #${standUp.team.name}`,
+        submit_label: answers.length > 0 ? "Update" : "Submit",
+        notify_on_cancel: true,
+        state: `${user.id}`,
+        elements: []
       }
     }
 
-    const questions = await this.connection.getRepository(Question)
-      .createQueryBuilder('q')
-      .orderBy('q.index', 'ASC')
-      .getMany()
-
-    for (const question of questions) {
+    for (const question of standUp.team.questions) {
       const element: any = {
         type: "textarea", // https://api.slack.com/dialogs#textarea_elements
         label: question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
         placeholder: question.text,
         name: question.index,
       }
-      const answer = null; // standUp.answers[questions.indexOf(question)];
+
+      const answer = answers[question.index];
       if (answer) {
         element.value = answer.answerMessage;
       }

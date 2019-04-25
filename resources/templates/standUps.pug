@@ -1,15 +1,43 @@
 extends layout/authorized_main
 
 block authorized_content
-    each standUp in standUpList
-        .ui.items.stand-up
-            .stand-up__date=standUp.standUp.start.toLocaleDateString("en-US", { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })
-            each userAnswers in standUp.answers
-                .item.stand-up-item
-                    img.stand-up-item__image(src=userAnswers.user.profile.image_48).img-thumbnail
-                    .stand-up-item__content
-                        .stand-up-item__name= userAnswers.user.profile.real_name + ' (' + userAnswers.user.name + ')'
-                        each answer, index in userAnswers.answers
-                            .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
-                                .stand-up-item__question= answer.question.text
-                                .stand-up-item__answer= answer.answerMessage
+    #list
+        each standUp in standUpList
+            .ui.items.stand-up
+                .stand-up__date=standUp.standUp.start.toLocaleDateString("en-US", { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })
+                each userAnswers in standUp.answers
+                    .item.stand-up-item
+                        img.stand-up-item__image(src=userAnswers.user.profile.image_48).img-thumbnail
+                        .stand-up-item__content
+                            .stand-up-item__name= userAnswers.user.profile.real_name + ' (' + userAnswers.user.name + ')'
+                            each answer, index in userAnswers.answers
+                                .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
+                                    .stand-up-item__question= answer.question.text
+                                    .stand-up-item__answer= answer.answerMessage
+    #pagination
+        paginate(
+        v-model="page",
+        :page-count="pageCount",
+        :click-handler="handler",
+        :prev-text="'Prev'",
+        :next-text="'Next'",
+        :container-class="'ui pagination menu'",
+        :page-class="'item'",
+        :prev-class="'item'",
+        :next-class="'item'",
+        )
+block append scripts
+    script.
+        var recordsPerPage = #{ recordsPerPage };
+        var vm = new Vue({
+            el: '#pagination',
+            data: {
+                pageCount: Math.ceil(#{ standUpsTotal } % recordsPerPage),
+                page: 1,
+            },
+            methods: {
+                handler: function (page) {
+                    location.href = location.href + '?page=' + page
+                }
+            }
+        })

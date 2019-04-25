@@ -39,7 +39,7 @@ export class StandUpsAction implements IHttpAction {
     }
 
     const standUpRepository = this.connection.getRepository(StandUp);
-    const standUps = await standUpRepository
+    const qb = standUpRepository
       .createQueryBuilder('st')
       .innerJoinAndSelect('st.channel', 'channel')
       .leftJoinAndSelect('channel.users', 'user')
@@ -47,9 +47,16 @@ export class StandUpsAction implements IHttpAction {
       .leftJoinAndSelect('answers.user', 'answersUser')
       .leftJoinAndSelect('answers.question', 'answersQuestion')
       .orderBy('st.end', 'DESC')
+      //.andWhere('st.end <= CURRENT_TIMESTAMP')
       .where('channel.id = :channelID', {channelID: channel.id})
-      .andWhere('st.end <= CURRENT_TIMESTAMP')
+
+    const recordsPerPage = 10
+    const standUps = await qb
+      .skip(0)
+      .limit(recordsPerPage)
       .getMany();
+
+    const standUpsTotal = await qb.getCount();
 
     const standUpList = [];
     for (let standUp of standUps) {
@@ -71,7 +78,9 @@ export class StandUpsAction implements IHttpAction {
       team,
       channel,
       standUpList,
-      activeMenu: 'reports'
+      activeMenu: 'reports',
+      standUpsTotal,
+      recordsPerPage
     }))
   }
 }

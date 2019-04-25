@@ -54,7 +54,7 @@
     border-bottom: #cfd5da solid 1px;
 }
 .stand-up:last-child {
-    border-bottom: none;
+    border-bottom: initial;
 }
 
 .stand-up__date {
@@ -62,7 +62,6 @@
     font-weight: 700;
     font-size: 18px;
 }
-
 
 .stand-up-item {
     display: flex;
@@ -76,7 +75,7 @@
 .stand-up-item__image {
     width: 48px;
     height: 48px;
-    border-radius: 12px;
+    border-radius: 8px;
 }
 
 .stand-up-item__content {
@@ -133,6 +132,16 @@
 .menu .item:hover > .icon {
     animation: icon-loading 8s linear infinite;
 }
+
+#pagination {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 20px 0;
+}
+#pagination ul {
+    padding: 0;
+}
+
 
 
 
