@@ -34,7 +34,7 @@ export class ApiSlackInteractive implements IHttpAction {
     res.sendStatus(200)
   }
 
-  async handleResponse(response: object)
+  async handleResponse(response: any)
   {
     if (response.type === InteractiveResponseTypeEnum.interactive_message) {
       await this.slackStandUpProvider.handleInteractiveResponse(response as InteractiveResponse)

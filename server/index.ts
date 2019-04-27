@@ -111,9 +111,6 @@ const run = async () => {
   standUpBot.start()
 
   standUpBot.finishStandUp$.subscribe((standUp: StandUp) => {
-
-    console.log(standUp)
-
     /*if (!standUp instanceof StandUp) {
       console.log('Slack reporter is not supported')
       return;

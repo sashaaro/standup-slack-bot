@@ -35,29 +35,29 @@ export interface ITeam extends IStandUpSettings{
 }
 
 export interface IQuestion {
-  id: string | number;
-  index: number;
-  text: string;
+  id: string | number
+  index: number
+  text: string
   //isEnabled: boolean;
-  createdAt: Date;
-  team: ITeam;
+  createdAt: Date
+  team: ITeam
 }
 
 export interface IMessage {
-  user: IUser,
-  text: string,
+  user: IUser
+  text: string
   team?: ITeam
 }
 
 
 export interface IAnswerRequest {
-  id: string | number
-  user: IUser;
-  standUp: IStandUp;
+  id: string | number | any
+  user: IUser
+  standUp: IStandUp
   question: IQuestion
   answerMessage: string
   answerCreatedAt: Date
-  createdAt: Date;
+  createdAt: Date
 }
 
 export interface IStandUp {
@@ -217,7 +217,7 @@ export default class StandUpBotService {
   }
 
 
-  async answersAndFinish(messages: IMessage[]) {
+  async answersAndFinish(messages: IMessage[], standUp?: IStandUp) {
     if (messages.length === 0) {
       throw new Error('Invalid argument messages is empty array')
     }
@@ -226,18 +226,21 @@ export default class StandUpBotService {
 
     const user = messages[0].user;
 
-    const progressStandUp = await this.standUpProvider.findProgressByUser(user);
+    let standUpInProgress = true;
+
+    standUp = standUp || await this.standUpProvider.findProgressByUser(user);
+
     for(const [i, message] of messages.entries()) {
-      const question = progressStandUp.team.questions[i]
+      const question = standUp.team.questions[i]
       if (!question) {
-        console.warn(`No question #${i} in standup #${progressStandUp.id} team #${progressStandUp.team.id}`)
+        console.warn(`No question #${i} in standup #${standUp.id} team #${standUp.team.id}`)
         break;
       }
       // TODO try catch
-      await this.answerByStandUp(message, progressStandUp, question)
+      await this.answerByStandUp(message, standUp, question)
     }
 
-    await this.afterStandUp(user, progressStandUp);
+    await this.afterStandUp(user, standUp);
   }
 
   /**

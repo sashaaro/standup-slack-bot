@@ -10,7 +10,7 @@ import {RTMAuthenticatedResponse, SlackIm} from "./model/rtm/RTMAuthenticatedRes
 import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
 import Question from "../model/Question";
-import {IMessage, IStandUpProvider, ITransport, IUser} from "../StandUpBotService";
+import {IMessage, IStandUp, IStandUpProvider, ITransport, IUser} from "../StandUpBotService";
 import {SlackChannel, SlackConversation} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
 import {
@@ -348,7 +348,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   }
 
   private qbActiveQuestions(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
-    return qb.andWhere('questions.isEnabled = true');
+    qb.andWhere('questions.isEnabled = true');
+    return qb.orderBy("question.index", "ASC");
   }
 
   private qbActiveChannels(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
@@ -541,6 +542,23 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     }
   }
 
+  async standUpByIdAndUser(user: IUser, standUpId: any): Promise<StandUp>
+  {
+    const standUpRepository = this.connection.getRepository(StandUp);
+    const qb = standUpRepository.createQueryBuilder('standup');
+
+    this.qbStandUpJoins(qb)
+
+    qb.andWhere('users.id = :user AND standup.id = :standup', {user: user.id, standup: standUpId})
+    this.qbActiveQuestions(qb);
+    this.qbActiveChannels(qb)
+    this.qbAuthorAnswers(qb, user);
+
+    return await qb
+    //.orderBy('st.start', "DESC")
+      .getOne();
+  }
+
   async handleInteractiveAnswers(response: InteractiveResponse) {
     const user = await this.connection.getRepository(User).findOne(response.user);
 
@@ -562,19 +580,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     // TODO already submit
     // const standUp = await this.findProgressByUser(user);
 
-    const standUpRepository = this.connection.getRepository(StandUp);
-    const qb = standUpRepository.createQueryBuilder('standup');
 
-    this.qbStandUpJoins(qb)
-
-    qb.andWhere('users.id = :user AND standup.id = :standup', {user: user.id, standup: standUpId})
-    this.qbActiveQuestions(qb);
-    this.qbActiveChannels(qb)
-    this.qbAuthorAnswers(qb, user);
-
-    const standUp = await qb
-    //.orderBy('st.start', "DESC")
-      .getOne();
+    const standUp = await this.standUpByIdAndUser(user, standUpId);
 
     if (!standUp) {
       // TODO open alert?!
@@ -659,6 +666,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       throw new Error(`User ${response.user} is not found`)
     }
 
+
     const channelTeam = user.team.channels.filter((channel) => (channel.id === response.channel.id)).pop()
     if (!user) {
       throw new Error(`Channel team ${response.channel.id} is not found`)
@@ -674,7 +682,57 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       } as IMessage)
     }
 
-    this.messagesSubject.next(messages)
+    const dialogState = JSON.parse(response.state)
+
+    if (typeof dialogState !== 'object' && !dialogState.standup) {
+      throw new Error(`Dialog state "${response.state}" is wrong format`)
+    }
+
+    const standUp = await this.standUpByIdAndUser(user, dialogState.standup);
+
+    if (!standUp) {
+      // TODO open alert?!
+      await this.sendMessage(user, `I will remind you when your next standup is up`)
+      return;
+    }
+
+    const inProgress = standUp.end.getTime() < new Date().getTime()
+
+    if (inProgress && standUp.answers.length === 0) {
+      this.messagesSubject.next(messages)
+    } else {
+      if (standUp.team.questions.length === 0) {
+        throw new Error('Team have not any questions');
+      }
+
+      if (standUp.answers.filter(a => a.user.id === user.id).length !== standUp.answers.length) {
+        throw new Error('Standup should contains current user answers only');
+      }
+
+      await this.updateStandUpAnswers(messages.map(m => m.text), user, standUp)
+    }
+  }
+
+
+  async updateStandUpAnswers(messages: string[], user: IUser, standUp: IStandUp)
+  {
+    await this.connection.transaction(async (em) => {
+      const repo = em.getRepository(AnswerRequest);
+
+      for(const q of standUp.team.questions) { // sort asc by index
+        const index = q.index -1
+        let answer = standUp.answers[index];
+        if (!answer) {
+          answer = new AnswerRequest()
+          answer.user = user
+          answer.question = q
+          answer.standUp = standUp;
+        }
+        answer.answerMessage = messages[index]
+
+        await repo.save(answer as any)
+      }
+    })
   }
 
   async handleInteractiveDialogSubmissionResponse(response: InteractiveDialogSubmissionResponse) {
