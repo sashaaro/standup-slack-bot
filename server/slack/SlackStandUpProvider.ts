@@ -2,7 +2,7 @@ import {Service} from "typedi";
 import {Observable, Subject} from "rxjs";
 import {RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
-import {Connection} from "typeorm";
+import {Connection, QueryBuilder, SelectQueryBuilder} from "typeorm";
 import User from "../model/User";
 import {RTMMessageResponse} from "./model/rtm/RTMMessageResponse";
 import Team from "../model/Team";
@@ -43,44 +43,47 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     private connection: Connection) {
   }
 
-  async sendGreetingMessage(user: User) {
+  async sendGreetingMessage(user: User, standUp: StandUp) {
+    const callbackId = `${CALLBACK_PREFIX_STANDUP_INVITE}.${standUp.id}`;
+
+    const buttonsAttachment: any = {
+      "text": "Choose start poll in chat or open dialog window",
+      "callback_id": callbackId,
+      "actions": [
+        {
+          "name": "start",
+          "text": "Start",
+          "type": "button",
+          "value": ACTION_START
+        },
+        {
+          "name": "dialog",
+          "text": "Open dialog",
+          "type": "button",
+          "value": ACTION_OPEN_DIALOG
+        }
+      ]
+    }
+    // TODO I'm late?!
+    /*attachmentBtns.actions.push(
+      {
+        "name": "skip",
+        "text": "I skip",
+        "type": "button",
+        "value": "skip",
+        "style": "danger",
+        "confirm": {
+          "title": "Are you sure?",
+          "text": "Wouldn't you prefer to skip standup today?",
+          "ok_text": "Yes",
+          "dismiss_text": "No"
+        }
+      })*/
+
     const result = await this.webClient.chat.postMessage({
       "channel": user.im,
       "text": "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
-      "attachments": [
-        {
-          "text": "Choose start asking in char or open dialog window",
-          "callback_id": `${CALLBACK_PREFIX_STANDUP_INVITE}`,// save standup channel id if have multi standups
-          "actions": [
-            {
-              "name": "start",
-              "text": "Start",
-              "type": "button",
-              "value": ACTION_START
-            },
-            {
-              "name": "dialog",
-              "text": "Open dialog",
-              "type": "button",
-              "value": ACTION_OPEN_DIALOG
-            },
-            // TODO I'm late?!
-            /*{
-              "name": "skip",
-              "text": "I skip",
-              "type": "button",
-              "value": "skip",
-              "style": "danger",
-              "confirm": {
-                "title": "Are you sure?",
-                "text": "Wouldn't you prefer to skip standup today?",
-                "ok_text": "Yes",
-                "dismiss_text": "No"
-              }
-            }*/
-          ]
-        }
-      ]
+      "attachments": [buttonsAttachment]
     })
 
     // result.response_metadata.
@@ -307,22 +310,52 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
   async findProgressByUser(user: IUser): Promise<StandUp> {
     const standUpRepository = this.connection.getRepository(StandUp);
-    return await standUpRepository.createQueryBuilder('st')
-      .innerJoinAndSelect('st.channel', 'channel')
-      .innerJoinAndSelect('channel.users', 'users')
-      .innerJoinAndSelect('channel.questions', 'questions')
-      .leftJoinAndSelect('st.answers', 'answers')
-      .leftJoinAndSelect('answers.user', 'user')
-      .where('users.id = :user', {user: user.id})
-      .andWhere('CURRENT_TIMESTAMP <= st.end')
-      .andWhere('channel.isArchived = false')
-      .andWhere('channel.isEnabled = true')
-      .andWhere('questions.isEnabled = true')
-      .andWhere('user.id = :answerAuthorID or user.id IS NULL', {answerAuthorID: user.id})
-      .orderBy('st.start', "DESC")
+    const qb = standUpRepository.createQueryBuilder('standup');
+
+    this.qbStandUpJoins(qb)
+    this.qbActualStandUpInProgressWithAuthorAnswers(qb, user);
+
+    return await qb
+      .orderBy('standup.start', "DESC")
+      // TODO limit only for standup
       .getOne();
   }
 
+  public qbActualStandUpInProgressWithAuthorAnswers(qb: SelectQueryBuilder<StandUp>, user: IUser): SelectQueryBuilder<StandUp> {
+    qb.andWhere('users.id = :user', {user: user.id})
+    this.qbStandUpInProgress(qb);
+    this.qbActiveQuestions(qb);
+    this.qbActiveChannels(qb)
+    return this.qbAuthorAnswers(qb, user);
+  }
+
+  // TODO move to repository
+  // with channel channelUsers questions answers answerAuthor
+  private qbStandUpJoins(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
+    return qb.innerJoinAndSelect('standup.channel', 'channel')
+      .innerJoinAndSelect('channel.users', 'users') // TODO remove / reanme channelUsers
+      .innerJoinAndSelect('channel.questions', 'questions')
+      .leftJoinAndSelect('standup.answers', 'answers')
+      .leftJoinAndSelect('answers.user', 'answerAuthor')
+  }
+
+  public qbStandUpInProgress(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
+    return qb.andWhere('CURRENT_TIMESTAMP <= standup.end');
+  }
+
+  private qbAuthorAnswers(qb: SelectQueryBuilder<StandUp>, user: IUser): SelectQueryBuilder<StandUp> {
+    return qb.andWhere('answerAuthor.id = :answerAuthorID or answerAuthor.id IS NULL', {answerAuthorID: user.id})
+  }
+
+  private qbActiveQuestions(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
+    return qb.andWhere('questions.isEnabled = true');
+  }
+
+  private qbActiveChannels(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
+    return qb
+      .andWhere('channel.isArchived = false')
+      .andWhere('channel.isEnabled = true')
+  }
 
   async findLastNoReplyAnswerRequest(standUp: StandUp, user: User): Promise<AnswerRequest> {
     const answerRepository = this.connection.getRepository(AnswerRequest);
@@ -511,20 +544,50 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   async handleInteractiveAnswers(response: InteractiveResponse) {
     const user = await this.connection.getRepository(User).findOne(response.user);
 
+    if (!response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
+      throw new Error('Wrong response');
+    }
+
     if (!user) {
       throw new Error(`User ${response.user} is not found`)
     }
-    const selectedActions = response.actions.map(a => a.value)
+
+    const standUpId = response.callback_id.split('.', 2)[1];
+
+
+    if (!standUpId) {
+      throw new Error(`Standup standUpId is not defined`)
+    }
 
     // TODO already submit
+    // const standUp = await this.findProgressByUser(user);
 
-    const standUp = await this.findProgressByUser(user);
+    const standUpRepository = this.connection.getRepository(StandUp);
+    const qb = standUpRepository.createQueryBuilder('standup');
+
+    this.qbStandUpJoins(qb)
+
+    qb.andWhere('users.id = :user AND standup.id = :standup', {user: user.id, standup: standUpId})
+    this.qbActiveQuestions(qb);
+    this.qbActiveChannels(qb)
+    this.qbAuthorAnswers(qb, user);
+
+    const standUp = await qb
+    //.orderBy('st.start', "DESC")
+      .getOne();
 
     if (!standUp) {
       // TODO open alert?!
       await this.sendMessage(user, `I will remind you when your next standup is up`)
       return;
     }
+
+
+    if (!standUp) {
+      throw new Error(`Standup #${standUpId} is not found`)
+    }
+
+    const selectedActions = response.actions.map(a => a.value)
 
     if (selectedActions.includes(ACTION_START)) {
       this.agreeToStartSubject.next(user)
@@ -542,7 +605,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         title: `Standup #${standUp.team.name}`,
         submit_label: answers.length > 0 ? "Update" : "Submit",
         notify_on_cancel: true,
-        state: `${user.id}`,
+        state: JSON.stringify({standup: standUp.id}),
         elements: []
       }
     }

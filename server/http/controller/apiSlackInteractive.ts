@@ -2,6 +2,7 @@ import {IHttpAction} from "./index";
 import {Inject, Service} from "typedi";
 import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
+import * as express from 'express'
 import {SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
 import {
   InteractiveDialogSubmissionResponse,
@@ -19,7 +20,7 @@ export class ApiSlackInteractive implements IHttpAction {
   ) {
   }
 
-  async handle(req, res) {
+  async handle(req, res: express.Response) {
     const response = JSON.parse(req.body.payload) as any
 
     if (!response.type || !Object.values(InteractiveResponseTypeEnum).includes(response.type)) {
@@ -28,12 +29,17 @@ export class ApiSlackInteractive implements IHttpAction {
       return res.send('', )
     }
 
+    await this.handleResponse(response);
+
+    res.sendStatus(200)
+  }
+
+  async handleResponse(response: object)
+  {
     if (response.type === InteractiveResponseTypeEnum.interactive_message) {
       await this.slackStandUpProvider.handleInteractiveResponse(response as InteractiveResponse)
     } else if (response.type === InteractiveResponseTypeEnum.dialog_submission) {
       await this.slackStandUpProvider.handleInteractiveDialogSubmissionResponse(response as InteractiveDialogSubmissionResponse)
     }
-
-    return res.send('')
   }
 }

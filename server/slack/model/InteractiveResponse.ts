@@ -1,6 +1,19 @@
-export enum InteractiveResponseTypeEnum {
+// see https://slack.dev/node-slack-sdk/interactive-messages#constraints
+export enum InteractiveResponseWithinEnum {
+  block_actions = 'block_actions',
   interactive_message = 'interactive_message',
+  dialog = 'dialog'
+}
+
+export enum InteractiveResponseTypeEnum {
+  message_action = 'message_action',
   dialog_submission = 'dialog_submission',
+  button = 'button',
+  select = 'select',
+
+  // wtf?!
+  interactive_message = 'interactive_message',
+
   dialog_cancellation = 'dialog_cancellation'
 }
 

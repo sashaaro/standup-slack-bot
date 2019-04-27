@@ -34,8 +34,9 @@ import { createMessageAdapter } from "@slack/interactive-messages";
 import parameters from './parameters';
 import localParameters from './parameters.local'
 import {logError} from "./services/logError";
-import {InteractiveResponseTypeEnum} from "./slack/model/InteractiveResponse";
+import {InteractiveResponseTypeEnum, InteractiveResponseWithinEnum} from "./slack/model/InteractiveResponse";
 import * as express from "express";
+import {ApiSlackInteractive} from "./http/controller/apiSlackInteractive";
 
 const config = Object.assign(parameters, localParameters) as IAppConfig;
 
@@ -124,9 +125,13 @@ const run = async () => {
   Container.set(SLACK_INTERACTIONS_ADAPTER, createMessageAdapter(config.slackSigningSecret));
   const slackInteractions = Container.get(SLACK_INTERACTIONS_ADAPTER) as any;
 
-  slackInteractions.action({
-      within: InteractiveResponseTypeEnum.interactive_message,
-      callbackId: CALLBACK_PREFIX_STANDUP_INVITE
+  slackInteractions.action({},  async (response) => {
+    await Container.get(ApiSlackInteractive).handleResponse(response);
+  })
+
+  /*slackInteractions.options({
+      //type: InteractiveResponseTypeEnum.message_action
+      within: InteractiveResponseWithinEnum.interactive_message
     }, async (response) => {
       try {
         await slackProvider.handleInteractiveAnswers(response)
@@ -134,12 +139,11 @@ const run = async () => {
         logError(e.message)
       }
     }
-  )
+  )*/
 
-  slackInteractions.action({
-    within: 'dialog',
+  /*slackInteractions.action({
     type: InteractiveResponseTypeEnum.dialog_submission,
-    callbackId: CALLBACK_PREFIX_SEND_STANDUP_ANSWERS
+    //type: InteractiveResponseTypeEnum.dialog_submission
   }, async (response, respond) => {
     try {
       await slackProvider.handleInteractiveDialogSubmission(response)
@@ -147,8 +151,8 @@ const run = async () => {
       // TODO if (e instanceof Validation)
       //respond({errors: {}})
 
-      /*res.sendStatus(400);
-      res.send();*/
+      //res.sendStatus(400);
+      //res.send();
       logError(e.message)
       return;
     }
@@ -156,7 +160,7 @@ const run = async () => {
     //res.sendStatus(200);
 
     // respond({text: 'Thanks for submission'})
-  })
+  })*/
 
   const expressApp = express()
 

@@ -71,7 +71,7 @@ export interface IStandUp {
 
 export interface IStandUpProvider {
   agreeToStart$: Observable<IUser>
-  sendGreetingMessage?(user: IUser);
+  sendGreetingMessage?(user: IUser, standUp: IStandUp);
   // TODO startTeamStandUpByDate(): Promise<IStandUp[]>
   createStandUp(): IStandUp
   insertStandUp(standUp: IStandUp): Promise<any>
@@ -344,7 +344,7 @@ export default class StandUpBotService {
    */
   private async beforeStandUp(user: IUser, standUp: IStandUp): Promise<Observable<boolean>> {
     if (this.standUpProvider.sendGreetingMessage) {
-      await this.standUpProvider.sendGreetingMessage(user)
+      await this.standUpProvider.sendGreetingMessage(user, standUp)
     } else {
       await this.send(user, standUpGreeting);
     }
