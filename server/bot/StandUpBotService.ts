@@ -1,4 +1,4 @@
-import {Inject, Service, Token} from "typedi";
+import { Injectable, Inject, InjectionToken } from 'injection-js';
 import {Observable, of, Subject, timer} from "rxjs";
 import {filter, take, takeUntil} from "rxjs/operators";
 import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITeam, ITransport, IUser} from "./models";
@@ -7,8 +7,8 @@ const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TOD
 const standUpGoodBye = 'Have good day. Good bye.';
 
 
-export const STAND_UP_BOT_STAND_UP_PROVIDER = new Token();
-export const STAND_UP_BOT_TRANSPORT = new Token();
+export const STAND_UP_BOT_STAND_UP_PROVIDER = new InjectionToken<IStandUpProvider>('stand_up_provider');
+export const STAND_UP_BOT_TRANSPORT = new InjectionToken<ITransport>('transport');
 
 
 class InProgressStandUpNotFoundError extends Error {
@@ -28,7 +28,7 @@ class AlreadySubmittedStandUpError extends Error {
   }
 }
 
-@Service()
+@Injectable()
 export default class StandUpBotService {
   protected everyMinutesIntervalID: number | any;
   protected finishStandUp = new Subject<IStandUp>()

@@ -1,11 +1,11 @@
 import {IHttpAction} from "./index";
-import {Inject, Service} from "typedi";
 import {Connection} from "typeorm";
 import Team from "../../model/Team";
 import {Channel} from "../../model/Channel";
 import AuthorizationContext from "../../services/AuthorizationContext";
+import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
 
-@Service()
+@Injectable()
 export class UpdateChannelAction implements IHttpAction {
   constructor(
     private connection: Connection,

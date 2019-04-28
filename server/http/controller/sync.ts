@@ -1,5 +1,4 @@
 import {IHttpAction} from "./index";
-import {Inject, Service} from "typedi";
 import {STAND_UP_BOT_STAND_UP_PROVIDER} from "../../bot/StandUpBotService";
 import {Connection} from "typeorm";
 import {IAppConfig} from "../../index";
@@ -8,8 +7,9 @@ import {SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
 import Team from "../../model/Team";
 import AuthorizationContext from "../../services/AuthorizationContext";
 import {IStandUpProvider} from "../../bot/models";
+import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
 
-@Service()
+@Injectable()
 export class SyncAction implements IHttpAction {
   standUpProvider: SlackStandUpProvider
   constructor(

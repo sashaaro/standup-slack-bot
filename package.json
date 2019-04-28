@@ -16,6 +16,7 @@
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "express-session": "^1.15.6",
+    "injection-js": "^2.2.1",
     "lodash.groupby": "^4.6.0",
     "pg": "^7.9.0",
     "pug": "^2.0.3",
@@ -23,7 +24,6 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "rxjs": "^6.4.0",
-    "typedi": "^0.8.0",
     "typeorm": "^0.2.16"
   },
   "devDependencies": {

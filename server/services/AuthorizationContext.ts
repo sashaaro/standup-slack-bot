@@ -1,7 +1,7 @@
 import {Request} from "express";
-import {Service} from "typedi";
 import {Connection} from "typeorm";
 import {Channel} from "../model/Channel";
+import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
 
 export interface IAuthUser {
   access_token: string,
@@ -12,7 +12,7 @@ export interface IAuthUser {
   bot: any,
 }
 
-@Service()
+@Injectable()
 export default class AuthorizationContext {
   constructor(private connection: Connection) {
   }

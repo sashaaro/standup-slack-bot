@@ -1,4 +1,4 @@
-import {Service} from "typedi";
+import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
 import {Observable, Subject} from "rxjs";
 import {RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
@@ -31,7 +31,7 @@ export const ACTION_OPEN_DIALOG = 'dialog'
 
 const standUpFinishedAlreadyMsg =`Stand up has already ended\nI will remind you when your next standup is up`; // TODO link to report
 
-@Service()
+@Injectable()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   private messagesSubject = new Subject<IMessage[]>();
   private agreeToStartSubject = new Subject<User>();

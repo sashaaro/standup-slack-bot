@@ -1,12 +1,12 @@
 import * as pug from 'pug'
 import {IHttpAction, templateDirPath} from "./index";
 import StandUp from "../../model/StandUp";
-import {Service} from "typedi";
+import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
 import Team from "../../model/Team";
 import AuthorizationContext from "../../services/AuthorizationContext";
 
-@Service()
+@Injectable()
 export class StandUpsAction implements IHttpAction {
   constructor(
     private connection: Connection,

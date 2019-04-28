@@ -1,13 +1,13 @@
 import * as request from 'request-promise'
 import * as pug from 'pug'
 import {IHttpAction, templateDirPath} from "./index";
-import {Inject, Service} from "typedi";
+import { Injectable, Inject } from 'injection-js';
 import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
 import AuthorizationContext, {IAuthUser} from "../../services/AuthorizationContext";
 import {logError} from "../../services/logError";
 
-@Service()
+@Injectable()
 export class AuthAction implements IHttpAction {
   constructor(@Inject(CONFIG_TOKEN) private config: IAppConfig,
               private authorizationContext: AuthorizationContext) {

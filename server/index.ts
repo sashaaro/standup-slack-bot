@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import {Connection} from "typeorm";
+import {Provider, ReflectiveInjector} from 'injection-js';
 
 import {LogLevel, RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
@@ -9,12 +10,10 @@ import StandUpBotService, {
 } from './bot/StandUpBotService'
 
 import StandUp from "./model/StandUp";
-import {Container} from "typedi";
 import {
   SlackStandUpProvider
 } from "./slack/SlackStandUpProvider";
 import {CONFIG_TOKEN, TIMEZONES_TOKEN} from "./services/token";
-import {Channel} from "./model/Channel";
 import {getTimezoneList} from "./services/timezones";
 import * as http from "http";
 import * as https from "https";
@@ -25,6 +24,9 @@ import localParameters from './parameters.local'
 import {logError} from "./services/logError";
 import {createExpress} from "./http/createExpress";
 import {createTypeORMConnection} from "./services/createTypeORMConnection";
+import actions from "./http/controller";
+import {AuthAction} from "./http/controller/auth";
+import AuthorizationContext from "./services/AuthorizationContext";
 
 const config = Object.assign(parameters, localParameters) as IAppConfig;
 
@@ -40,28 +42,50 @@ export interface IAppConfig {
 }
 
 const run = async () => {
-  const rtmClient = new RTMClient(config.botUserOAuthAccessToken, {
-    logLevel: config.debug ? LogLevel.DEBUG : undefined
-  })
-  const webClient = new WebClient(config.botUserOAuthAccessToken, {
-    logLevel: config.debug ? LogLevel.DEBUG : undefined
-  })
-
   const connection = await createTypeORMConnection(config);
+  const rtmClient = new RTMClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
+  const webClient = new WebClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
 
-  Container.set(RTMClient, rtmClient);
-  Container.set(WebClient, webClient);
-  Container.set(Connection, connection);
-  Container.set(CONFIG_TOKEN, config);
-  Container.set(TIMEZONES_TOKEN, getTimezoneList());
+  const providers: Provider[] = [
+    {
+      provide: CONFIG_TOKEN,
+      useValue: config
+    },
+    {
+      provide: TIMEZONES_TOKEN,
+      useValue: await getTimezoneList()
+    },
+    {
+      provide: Connection,
+      useValue: connection
+    },
+    {
+      provide: RTMClient,
+      useValue: rtmClient
+    },
+    {
+      provide: WebClient,
+      useValue: webClient
+    },
+    SlackStandUpProvider,
+    {
+      provide: STAND_UP_BOT_STAND_UP_PROVIDER,
+      useExisting: SlackStandUpProvider
+    },
+    {
+      provide: STAND_UP_BOT_TRANSPORT,
+      useExisting: SlackStandUpProvider
+    },
+    StandUpBotService,
+    AuthAction, // TODO remove
+    AuthorizationContext
+  ].concat(actions)
 
-  const slackProvider = Container.get(SlackStandUpProvider)
+  const injector = ReflectiveInjector.resolveAndCreate(providers);
 
-  Container.set(STAND_UP_BOT_STAND_UP_PROVIDER, slackProvider);
-  Container.set(STAND_UP_BOT_TRANSPORT, slackProvider);
-
+  const slackProvider: SlackStandUpProvider = injector.get(SlackStandUpProvider);
   await slackProvider.init();
-  const standUpBot = Container.get(StandUpBotService)
+  const standUpBot: StandUpBotService = injector.get(StandUpBotService)
   standUpBot.start()
 
 
@@ -78,7 +102,7 @@ const run = async () => {
   }, 5000)
 
 
-  const expressApp = createExpress()
+  const expressApp = createExpress(injector)
 
   const certFolder = './cert';
   const privateKey = certFolder + '/privkey.pem';
@@ -100,6 +124,6 @@ const run = async () => {
 }
 
 run().then(() => {}).catch(error => {
-  throw error;
   logError(error)
+  throw error;
 });

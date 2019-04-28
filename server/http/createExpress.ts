@@ -1,12 +1,12 @@
 import * as express from 'express'
 import {dashboardExpressMiddleware, useBodyParserAndSession, useStaticPublicFolder} from "./dashboardExpressMiddleware";
-import {Container} from "typedi";
 import {ApiSlackInteractive} from "./controller/apiSlackInteractive";
 import {logError} from "../services/logError";
 import { createMessageAdapter } from "@slack/interactive-messages";
 import {CONFIG_TOKEN} from "../services/token";
+import {ReflectiveInjector} from "injection-js";
 
-export const createExpress = () => {
+export const createExpress = (injector: ReflectiveInjector) => {
   const expressApp = express()
 
   /*slackInteractions.options({
@@ -67,10 +67,10 @@ export const createExpress = () => {
   })*/
 
   ;
-  const slackInteractions = createMessageAdapter(Container.get(CONFIG_TOKEN).slackSigningSecret);
+  const slackInteractions = createMessageAdapter(injector.get(CONFIG_TOKEN).slackSigningSecret);
   slackInteractions.action({},  async (response) => {
     try {
-      await Container.get(ApiSlackInteractive).handleResponse(response);
+      await injector.get(ApiSlackInteractive).handleResponse(response);
     } catch (e) {
       logError(e);
     }
@@ -78,7 +78,7 @@ export const createExpress = () => {
 
   expressApp.use('/api/slack/interactive', slackInteractions.expressMiddleware());
   useBodyParserAndSession(expressApp);
-  expressApp.use('/', dashboardExpressMiddleware());
+  expressApp.use('/', dashboardExpressMiddleware(injector));
 
   return expressApp;
 }

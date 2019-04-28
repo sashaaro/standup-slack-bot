@@ -2,7 +2,7 @@ import * as bodyParser from 'body-parser'
 import * as express from 'express'
 import * as session from 'express-session'
 import * as createRedisConnectStore from 'connect-redis';
-import {Container} from "typedi";
+import {Injector} from "injection-js";
 import {AuthAction} from "./controller/auth";
 import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
@@ -27,7 +27,7 @@ export const useStaticPublicFolder = (app: express.Express) => {
   app.use(express.static('./resources/public'));
 }
 
-export const dashboardExpressMiddleware = () => {
+export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
 
 
@@ -42,11 +42,11 @@ export const dashboardExpressMiddleware = () => {
       return;
     }
 
-    const standUpsAction = Container.get(StandUpsAction)
+    const standUpsAction = injector.get(StandUpsAction)
     return standUpsAction.handle(req, res)
   });
 
-  const authAction = Container.get(AuthAction)
+  const authAction = injector.get(AuthAction)
 
   router.get('/auth', authAction.handle.bind(authAction));
   router.get('/logout', (req, res) => {
@@ -56,13 +56,13 @@ export const dashboardExpressMiddleware = () => {
     return;
   });
 
-  const settingAction = Container.get(SettingsAction)
+  const settingAction = injector.get(SettingsAction)
   router.all('/settings', settingAction.handle.bind(settingAction));
 
-  const syncAction = Container.get(SyncAction)
+  const syncAction = injector.get(SyncAction)
   router.get('/sync', syncAction.handle.bind(syncAction));
 
-  const setChannelAction = Container.get(SetChannelAction)
+  const setChannelAction = injector.get(SetChannelAction)
   router.post('/channel/selected', setChannelAction.handle.bind(setChannelAction));
 
   //const channelsAction = Container.get(ChannelsAction)

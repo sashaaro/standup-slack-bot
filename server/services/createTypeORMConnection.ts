@@ -16,9 +16,9 @@ export const createTypeORMConnection = async (config: IAppConfig): Promise<Conne
 
   let connection = await createConnection(options);
 
-  const isDatabaseExist = ((await connection.query("SELECT datname FROM pg_database WHERE datname = 'standup' LIMIT 1")) as any[]).length === 1;
+  const isDatabaseExist = ((await connection.query(`SELECT datname FROM pg_database WHERE datname = '${databaseName}' LIMIT 1`)) as any[]).length === 1;
   if (!isDatabaseExist) {
-    await connection.query("CREATE DATABASE standup");
+    await connection.query(`CREATE DATABASE ${databaseName} IF NOT EXISTS`);
   }
   await connection.close()
   connection = await createConnection({...options,

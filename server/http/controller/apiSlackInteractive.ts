@@ -1,5 +1,5 @@
 import {IHttpAction} from "./index";
-import {Inject, Service} from "typedi";
+import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
 import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
 import * as express from 'express'
@@ -12,7 +12,7 @@ import {
 import {logError} from "../../services/logError";
 
 // TODO remove
-@Service()
+@Injectable()
 export class ApiSlackInteractive implements IHttpAction {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
