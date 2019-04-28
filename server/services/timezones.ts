@@ -1,5 +1,5 @@
 import {Connection} from "typeorm";
-import {ITimezone, ITimezoneProvider} from "../StandUpBotService";
+import {ITimezone, ITimezoneProvider} from "../bot/StandUpBotService";
 import {timezone} from "../dictionary/timezone";
 
 const getPgTimezoneList = (connection: Connection): ITimezoneProvider => (

@@ -8,8 +8,6 @@ import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
 import {SyncAction} from "./controller/sync";
 import {SetChannelAction} from "./controller/setChannel";
-import {ChannelsAction} from "./controller/channels";
-import {UpdateChannelAction} from "./controller/updateChannel";
 
 const RedisConnectStore = createRedisConnectStore(session);
 

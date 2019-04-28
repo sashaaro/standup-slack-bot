@@ -2,7 +2,7 @@ import Team from "../../model/Team";
 import * as pug from 'pug'
 import {IHttpAction, templateDirPath} from "./index";
 import {Inject, Service} from "typedi";
-import {IStandUpSettings, ITimezone} from "../../StandUpBotService";
+import {IStandUpSettings, ITimezone} from "../../bot/StandUpBotService";
 import {Connection} from "typeorm";
 import {TIMEZONES_TOKEN} from "../../services/token";
 import {Channel} from "../../model/Channel";

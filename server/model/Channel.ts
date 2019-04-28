@@ -1,7 +1,7 @@
 import {Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryColumn} from "typeorm";
 import User from "./User";
 import Team from "./Team";
-import {ITeam} from "../StandUpBotService";
+import {ITeam} from "../bot/StandUpBotService";
 import Question from "./Question";
 
 @Entity()

@@ -1,6 +1,6 @@
 import {IHttpAction} from "./index";
 import {Inject, Service} from "typedi";
-import {IStandUpProvider, STAND_UP_BOT_STAND_UP_PROVIDER} from "../../StandUpBotService";
+import {IStandUpProvider, STAND_UP_BOT_STAND_UP_PROVIDER} from "../../bot/StandUpBotService";
 import {Connection} from "typeorm";
 import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";

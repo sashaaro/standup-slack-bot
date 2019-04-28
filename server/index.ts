@@ -6,21 +6,14 @@ import User from "./model/User";
 import {LogLevel, RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
 import StandUpBotService, {
-  SLACK_INTERACTIONS_ADAPTER,
   STAND_UP_BOT_STAND_UP_PROVIDER,
   STAND_UP_BOT_TRANSPORT
-} from './StandUpBotService'
-import {
-  dashboardExpressMiddleware,
-  useBodyParserAndSession,
-  useStaticPublicFolder
-} from "./http/dashboardExpressMiddleware";
+} from './bot/StandUpBotService'
+
 import AnswerRequest from "./model/AnswerRequest";
 import StandUp from "./model/StandUp";
 import {Container} from "typedi";
 import {
-  CALLBACK_PREFIX_SEND_STANDUP_ANSWERS,
-  CALLBACK_PREFIX_STANDUP_INVITE,
   SlackStandUpProvider
 } from "./slack/SlackStandUpProvider";
 import {CONFIG_TOKEN, TIMEZONES_TOKEN} from "./services/token";
@@ -29,14 +22,11 @@ import {getTimezoneList} from "./services/timezones";
 import * as http from "http";
 import * as https from "https";
 import * as fs from "fs";
-import { createMessageAdapter } from "@slack/interactive-messages";
 
 import parameters from './parameters';
 import localParameters from './parameters.local'
 import {logError} from "./services/logError";
-import {InteractiveResponseTypeEnum, InteractiveResponseWithinEnum} from "./slack/model/InteractiveResponse";
-import * as express from "express";
-import {ApiSlackInteractive} from "./http/controller/apiSlackInteractive";
+import {createExpress} from "./http/createExpress";
 
 const config = Object.assign(parameters, localParameters) as IAppConfig;
 
@@ -110,89 +100,21 @@ const run = async () => {
   const standUpBot = Container.get(StandUpBotService)
   standUpBot.start()
 
-  standUpBot.finishStandUp$.subscribe((standUp: StandUp) => {
-    /*if (!standUp instanceof StandUp) {
-      console.log('Slack reporter is not supported')
-      return;
-    }*/
 
-    slackProvider.rtm.sendMessage('Report!!!!!', standUp.channel.id)
-  });
+  standUpBot.finishStandUp$.subscribe(slackProvider.sendReport.bind(slackProvider));
 
-  Container.set(SLACK_INTERACTIONS_ADAPTER, createMessageAdapter(config.slackSigningSecret));
-  const slackInteractions = Container.get(SLACK_INTERACTIONS_ADAPTER) as any;
-
-  slackInteractions.action({},  async (response) => {
-    await Container.get(ApiSlackInteractive).handleResponse(response);
-  })
-
-  /*slackInteractions.options({
-      //type: InteractiveResponseTypeEnum.message_action
-      within: InteractiveResponseWithinEnum.interactive_message
-    }, async (response) => {
-      try {
-        await slackProvider.handleInteractiveAnswers(response)
-      } catch (e) {
-        logError(e.message)
-      }
-    }
-  )*/
-
-  /*slackInteractions.action({
-    type: InteractiveResponseTypeEnum.dialog_submission,
-    //type: InteractiveResponseTypeEnum.dialog_submission
-  }, async (response, respond) => {
-    try {
-      await slackProvider.handleInteractiveDialogSubmission(response)
-    } catch (e) {
-      // TODO if (e instanceof Validation)
-      //respond({errors: {}})
-
-      //res.sendStatus(400);
-      //res.send();
-      logError(e.message)
-      return;
-    }
-
-    //res.sendStatus(200);
-
-    // respond({text: 'Thanks for submission'})
-  })*/
-
-  const expressApp = express()
+  setTimeout(async () => {
+    standUpBot['finishStandUp'].next(await connection.getRepository(StandUp).findOne(undefined, {
+      relations: [
+        'channel',
+        'answers',
+        'answers.user',
+        'answers.question',
+      ]}))
+  }, 5000)
 
 
-  expressApp.use((req, res, next) => {
-    console.log(`${req.originalUrl} ${req.method}`);
-    if (req.method === "POST") {
-      console.log(`${req.body}`);
-    }
-
-    res.on('finish', () => {
-      console.info(`${res.statusCode} ${res.statusMessage}; ${res.get('Content-Length') || 0}b sent`)
-    })
-
-    next()
-  })
-
-  useStaticPublicFolder(expressApp);
-
-  /*const router = express.Router();
-  router.get('/', (req, res) => {
-    console.log(req.session)
-
-    return res.send('1');
-  })*/
-
-  expressApp.use('/api/slack/interactive', slackInteractions.expressMiddleware());
-  // expressApp.use('/sss', router);
-  useBodyParserAndSession(expressApp);
-  expressApp.use('/', dashboardExpressMiddleware());
-
-  //const apiSlackInteractiveAction = Container.get(ApiSlackInteractive) as ApiSlackInteractive
-  //expressApp.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
-
-
+  const expressApp = createExpress()
 
   const certFolder = './cert';
   const privateKey = certFolder + '/privkey.pem';
@@ -201,17 +123,16 @@ const run = async () => {
 
   const hasSSL = fs.existsSync(privateKey) && fs.existsSync(certificate)
   console.log(`SSL ${hasSSL ? 'enabled': 'disabled'}`)
-  if (hasSSL) {
-    const options = {
-      key: fs.readFileSync(privateKey),
-      cert: fs.readFileSync(certificate),
-      ca: fs.readFileSync(ca),
-    }
 
-    https.createServer(options, expressApp).listen(443);
-  } else {
-    http.createServer(expressApp).listen(3000);
-  }
+
+  const serverCreator = hasSSL ? https : http
+  const options = hasSSL ? {
+    key: fs.readFileSync(privateKey),
+    cert: fs.readFileSync(certificate),
+    ca: fs.readFileSync(ca),
+  } : {}
+  const port = hasSSL ? 443 : 3000
+  serverCreator.createServer(options, expressApp).listen(port);
 }
 
 run().then(() => {}).catch(error => {

@@ -1,9 +1,7 @@
-import Team from "./model/Team";
-import AnswerRequest from "./model/AnswerRequest";
+import AnswerRequest from "../model/AnswerRequest";
 import {Inject, Service, Token} from "typedi";
-import {interval, Observable, of, Subject, timer} from "rxjs";
-import {delay, filter, first, map, share, take, takeUntil, takeWhile} from "rxjs/operators";
-import Question from "./model/Question";
+import {Observable, of, Subject, timer} from "rxjs";
+import {filter, take, takeUntil} from "rxjs/operators";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -167,7 +165,7 @@ export default class StandUpBotService {
 
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
     let standUps: IStandUp[] = [];
-    const teams = await this.standUpProvider.findTeams();
+    const teams = await this.standUpProvider.findTeams(); // findByStartTime
 
     console.log(`startTeamStandUpByDate ${date}`);
 

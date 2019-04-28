@@ -2,7 +2,7 @@ import {Service} from "typedi";
 import {Observable, Subject} from "rxjs";
 import {RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
-import {Connection, QueryBuilder, SelectQueryBuilder} from "typeorm";
+import {Connection, SelectQueryBuilder} from "typeorm";
 import User from "../model/User";
 import {RTMMessageResponse} from "./model/rtm/RTMMessageResponse";
 import Team from "../model/Team";
@@ -10,7 +10,7 @@ import {RTMAuthenticatedResponse, SlackIm} from "./model/rtm/RTMAuthenticatedRes
 import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
 import Question from "../model/Question";
-import {IMessage, IStandUp, IStandUpProvider, ITransport, IUser} from "../StandUpBotService";
+import {IMessage, IStandUp, IStandUpProvider, ITransport, IUser} from "../bot/StandUpBotService";
 import {SlackChannel, SlackConversation} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
 import {
@@ -21,12 +21,15 @@ import {logError} from "../services/logError";
 import {IUsersResponse} from "./model/response";
 import ChannelRepository from "../repository/ChannelRepository";
 import QuestionRepository from "../repository/QuestionRepository";
+import * as groupBy from "lodash.groupby";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
 
 export const ACTION_START = 'start'
 export const ACTION_OPEN_DIALOG = 'dialog'
+
+const standUpFinishedAlreadyMsg =`Stand up has already ended\nI will remind you when your next standup is up`; // TODO link to report
 
 @Service()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
@@ -39,7 +42,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
   constructor(
     public readonly rtm: RTMClient,
-    private webClient: WebClient,
+    private readonly webClient: WebClient,
     private connection: Connection) {
   }
 
@@ -93,6 +96,41 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return this.rtm.sendMessage(message, user.im);
   }
 
+  async sendReport(standUp: StandUp)
+  {
+      /*if (!standUp instanceof StandUp) {
+        console.log('Slack reporter is not supported')
+        return;
+      }*/
+      const attachments = []
+
+      const userAnswers = groupBy(standUp.answers, 'user.id')
+      for(const userID in userAnswers) {
+        const answers: AnswerRequest[] = userAnswers[userID]
+        if (answers.length === 0) {
+          // TODO skip message
+          continue;
+        }
+
+        const text = answers
+          .map(a => `*${a.question.text}*\n${a.answerMessage}`)
+          .join('\n')
+
+
+        attachments.push({
+          author_name: answers[0].user.name,
+          author_icon: answers[0].user.profile.image_24,
+          text
+        })
+      }
+
+      await this.webClient.chat.postMessage({
+        channel: standUp.channel.id,
+        text: `Standup report`,
+        attachments
+      })
+  }
+
   async init(): Promise<any> {
     this.rtm.on('connected', () => {
       console.log('Slack RTM connected')
@@ -111,10 +149,10 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
         team: 'T6GQB7CSF',
         attachments:
           [ { callback_id: 'standup_invite',
-            text: 'Choose start asking in char or open dialog window',
+            text: 'Choose start asking in chat or open dialog window',
             id: 1,
             actions: [Array],
-            fallback: 'Choose start asking in char or open dialog window' } ],
+            fallback: 'Choose start asking in chat or open dialog window' } ],
         channel: 'D6HVDGXSB',
         event_ts: '1556085305.003000',
         ts: '1556085305.003000' }*/
@@ -349,7 +387,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
   private qbActiveQuestions(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
     qb.andWhere('questions.isEnabled = true');
-    return qb.orderBy("question.index", "ASC");
+    return qb.orderBy("questions.index", "ASC");
   }
 
   private qbActiveChannels(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
@@ -584,14 +622,14 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     const standUp = await this.standUpByIdAndUser(user, standUpId);
 
     if (!standUp) {
-      // TODO open alert?!
-      await this.sendMessage(user, `I will remind you when your next standup is up`)
-      return;
+      throw new Error(`Standup #${standUpId} is not found`)
     }
 
+    const inProgress = isInProgress(standUp)
 
-    if (!standUp) {
-      throw new Error(`Standup #${standUpId} is not found`)
+    if (!inProgress) { // in progress only..
+      await this.sendMessage(user, standUpFinishedAlreadyMsg)
+      return;
     }
 
     const selectedActions = response.actions.map(a => a.value)
@@ -689,6 +727,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     }
 
     const standUp = await this.standUpByIdAndUser(user, dialogState.standup);
+    const inProgress = isInProgress(standUp)
+
+    if (!inProgress) { // in progress only..
+      await this.sendMessage(user, standUpFinishedAlreadyMsg)
+      return;
+    }
 
     if (!standUp) {
       // TODO open alert?!
@@ -696,9 +740,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       return;
     }
 
-    const inProgress = standUp.end.getTime() < new Date().getTime()
 
-    if (inProgress && standUp.answers.length === 0) {
+    if (standUp.answers.length === 0) {
       this.messagesSubject.next(messages)
     } else {
       if (standUp.team.questions.length === 0) {
@@ -720,15 +763,15 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       const repo = em.getRepository(AnswerRequest);
 
       for(const q of standUp.team.questions) { // sort asc by index
-        const index = q.index -1
-        let answer = standUp.answers[index];
+        let answer = standUp.answers[q.index];
         if (!answer) {
           answer = new AnswerRequest()
           answer.user = user
           answer.question = q
           answer.standUp = standUp;
         }
-        answer.answerMessage = messages[index]
+        answer.answerMessage = messages[q.index]
+        answer.answerCreatedAt = new Date();
 
         await repo.save(answer as any)
       }
@@ -742,4 +785,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       logError(`There is no handler for callback ${response.callback_id}`);
     }
   }
+}
+
+const isInProgress = (standUp: IStandUp) => {
+  return new Date().getTime() < standUp.end.getTime()
 }
