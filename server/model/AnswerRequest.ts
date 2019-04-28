@@ -2,7 +2,7 @@ import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn} from "t
 import Question from "./Question";
 import StandUp from "./StandUp";
 import User from "./User";
-import {IAnswerRequest} from "../bot/StandUpBotService";
+import {IAnswerRequest} from "../bot/models";
 
 @Entity()
 class AnswerRequest implements IAnswerRequest {

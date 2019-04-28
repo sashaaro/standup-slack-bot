@@ -10,7 +10,6 @@ import {RTMAuthenticatedResponse, SlackIm} from "./model/rtm/RTMAuthenticatedRes
 import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
 import Question from "../model/Question";
-import {IMessage, IStandUp, IStandUpProvider, ITransport, IUser} from "../bot/StandUpBotService";
 import {SlackChannel, SlackConversation} from "./model/SlackChannel";
 import {Channel} from "../model/Channel";
 import {
@@ -22,6 +21,7 @@ import {IUsersResponse} from "./model/response";
 import ChannelRepository from "../repository/ChannelRepository";
 import QuestionRepository from "../repository/QuestionRepository";
 import * as groupBy from "lodash.groupby";
+import {IMessage, IStandUp, IStandUpProvider, ITransport, IUser} from "../bot/models";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'

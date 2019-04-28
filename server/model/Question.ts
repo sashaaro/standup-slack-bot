@@ -1,7 +1,7 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, BeforeUpdate} from "typeorm";
 import Team from "./Team";
-import {IQuestion} from "../bot/StandUpBotService";
 import {Channel} from "./Channel";
+import {IQuestion} from "../bot/models";
 
 @Entity()
 class Question implements IQuestion

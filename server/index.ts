@@ -1,8 +1,6 @@
 import "reflect-metadata";
-import {Connection, createConnection} from "typeorm";
-import Question from "./model/Question";
-import Team from "./model/Team";
-import User from "./model/User";
+import {Connection} from "typeorm";
+
 import {LogLevel, RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
 import StandUpBotService, {
@@ -10,7 +8,6 @@ import StandUpBotService, {
   STAND_UP_BOT_TRANSPORT
 } from './bot/StandUpBotService'
 
-import AnswerRequest from "./model/AnswerRequest";
 import StandUp from "./model/StandUp";
 import {Container} from "typedi";
 import {
@@ -27,6 +24,7 @@ import parameters from './parameters';
 import localParameters from './parameters.local'
 import {logError} from "./services/logError";
 import {createExpress} from "./http/createExpress";
+import {createTypeORMConnection} from "./services/createTypeORMConnection";
 
 const config = Object.assign(parameters, localParameters) as IAppConfig;
 
@@ -42,48 +40,14 @@ export interface IAppConfig {
 }
 
 const run = async () => {
-   let connection = await createConnection({
-    type: "postgres",
-    host: "postgres",
-    port: 5432,
-    username: "postgres",
-    password: "postgres",
-    database: "postgres"
-  })
-
-  const isExist = ((await connection.query("SELECT datname FROM pg_database WHERE datname = 'standup' LIMIT 1")) as any[]).length === 1;
-  if (!isExist) {
-    await connection.query("CREATE DATABASE standup");
-  }
-  await connection.close()
-
-  connection = await createConnection({
-    type: "postgres",
-    //host: "localhost",
-    host: "postgres",
-    //host: "172.17.0.1",
-    port: 5432,
-    username: "postgres",
-    password: "postgres",
-    database: "standup",
-    entities: [
-      Question,
-      Team,
-      User,
-      AnswerRequest,
-      StandUp,
-      Channel
-    ],
-    synchronize: true,
-    logging: config.debug
-  })
-
   const rtmClient = new RTMClient(config.botUserOAuthAccessToken, {
     logLevel: config.debug ? LogLevel.DEBUG : undefined
   })
   const webClient = new WebClient(config.botUserOAuthAccessToken, {
     logLevel: config.debug ? LogLevel.DEBUG : undefined
   })
+
+  const connection = await createTypeORMConnection(config);
 
   Container.set(RTMClient, rtmClient);
   Container.set(WebClient, webClient);

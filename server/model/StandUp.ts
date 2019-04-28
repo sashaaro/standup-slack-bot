@@ -1,7 +1,7 @@
 import {Entity, Column, BeforeInsert, ManyToOne, PrimaryGeneratedColumn, OneToMany} from "typeorm";
 import AnswerRequest from "./AnswerRequest";
-import {IStandUp} from "../bot/StandUpBotService";
 import {Channel} from "./Channel";
+import {IStandUp} from "../bot/models";
 
 @Entity()
 class StandUp implements IStandUp

@@ -1,6 +1,6 @@
 import {Connection} from "typeorm";
-import {ITimezone, ITimezoneProvider} from "../bot/StandUpBotService";
 import {timezone} from "../dictionary/timezone";
+import {ITimezone, ITimezoneProvider} from "../bot/models";
 
 const getPgTimezoneList = (connection: Connection): ITimezoneProvider => (
   (() => (connection.query('select * from pg_timezone_names LIMIT 10') as Promise<ITimezone[]>)) as ITimezoneProvider
