@@ -4,6 +4,7 @@ import User from "./User";
 import AnswerRequest from "./AnswerRequest";
 import StandUp from "./StandUp";
 import {Channel} from "./Channel";
+import Timezone from "./Timezone";
 
 export default [
   Question,
@@ -11,5 +12,6 @@ export default [
   User,
   AnswerRequest,
   StandUp,
-  Channel
+  Channel,
+  Timezone,
 ]

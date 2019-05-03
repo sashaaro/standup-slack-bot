@@ -1,13 +1,14 @@
 import Team from "../../model/Team";
 import * as pug from 'pug'
 import {IHttpAction, templateDirPath} from "./index";
-import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
+import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
 import {TIMEZONES_TOKEN} from "../../services/token";
 import {Channel} from "../../model/Channel";
 import AuthorizationContext from "../../services/AuthorizationContext";
 import QuestionRepository from "../../repository/QuestionRepository";
 import {IStandUpSettings, ITimezone} from "../../bot/models";
+import Timezone from "../../model/Timezone";
 
 @Injectable()
 export class SettingsAction implements IHttpAction {
@@ -40,11 +41,19 @@ export class SettingsAction implements IHttpAction {
       throw new Error('Channel is not found');
     }
 
+    const timezones = await this.timezoneList
+
     if (req.method == "POST") { // TODO check if standup in progress then not dave
       // todo validate
-      const formData = req.body as any
+      const formData = req.body as {timezone: number, duration: number, questions: string[], start: string}
+      if (formData.timezone) {
+        const timezone = timezones.filter((t: any) => t.id.toString() === formData.timezone).pop() as Timezone;
+        if (timezone) {
+          channel.timezone = timezone;
+        }
+      }
       if (formData.duration) {
-        Object.assign(channel, formData as IStandUpSettings)
+        Object.assign(channel, formData as any)
         await channelRepository.save(channel)
       }
       if (formData.questions) {
@@ -54,10 +63,12 @@ export class SettingsAction implements IHttpAction {
       return res.redirect('/settings');
     }
 
+    console.log(channel)
+
     res.send(pug.compileFile(`${templateDirPath}/settings.pug`)({
-      team: team,
-      channel: channel,
-      timezoneList: await this.timezoneList,
+      team,
+      channel,
+      timezones,
       activeMenu: 'settings'
     }))
   }

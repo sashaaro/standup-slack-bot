@@ -14,7 +14,6 @@ import {
   SlackStandUpProvider
 } from "./slack/SlackStandUpProvider";
 import {CONFIG_TOKEN, TIMEZONES_TOKEN} from "./services/token";
-import {getTimezoneList} from "./services/timezones";
 import * as http from "http";
 import * as https from "https";
 import * as fs from "fs";
@@ -27,6 +26,9 @@ import {createTypeORMConnection} from "./services/createTypeORMConnection";
 import actions from "./http/controller";
 import {AuthAction} from "./http/controller/auth";
 import AuthorizationContext from "./services/AuthorizationContext";
+import Team from "./model/Team";
+import {Channel} from "./model/Channel";
+import Timezone from "./model/Timezone";
 
 const config = Object.assign(parameters, localParameters) as IAppConfig;
 
@@ -53,7 +55,10 @@ const run = async () => {
     },
     {
       provide: TIMEZONES_TOKEN,
-      useValue: await getTimezoneList()
+      useFactory: (connection: Connection) => {
+        return connection.getRepository(Timezone).find()
+      },
+      deps: [Connection],
     },
     {
       provide: Connection,
@@ -79,7 +84,7 @@ const run = async () => {
     StandUpBotService,
     AuthAction, // TODO remove
     AuthorizationContext
-  ].concat(actions)
+  ].concat(actions as any)
 
   const injector = ReflectiveInjector.resolveAndCreate(providers);
 
@@ -89,18 +94,15 @@ const run = async () => {
   standUpBot.start()
 
 
-  standUpBot.finishStandUp$.subscribe(slackProvider.sendReport.bind(slackProvider));
+  standUpBot.finishStandUp$.subscribe((standUp: StandUp) => {
+    slackProvider.sendReport(standUp)
+  });
 
-  setTimeout(async () => {
-    standUpBot['finishStandUp'].next(await connection.getRepository(StandUp).findOne(undefined, {
-      relations: [
-        'channel',
-        'answers',
-        'answers.user',
-        'answers.question',
-      ]}))
-  }, 5000)
-
+  //console.log(await connection.getRepository(Channel)
+  /*.createQueryBuilder('c')
+  //.innerJoinAndSelect('t')
+  .where('c.start = to_char(CURRENT_TIMESTAMP, \'HH:MI\')')
+  .getMany())   */
 
   const expressApp = createExpress(injector)
 

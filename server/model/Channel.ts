@@ -3,6 +3,7 @@ import User from "./User";
 import Team from "./Team";
 import Question from "./Question";
 import {ITeam} from "../bot/models";
+import Timezone from "./Timezone";
 
 @Entity()
 export class Channel implements ITeam {
@@ -37,8 +38,11 @@ export class Channel implements ITeam {
   @OneToMany(type => Question, question => question.channel, {nullable: false})
   questions: Question[];
 
-  @Column({default: '3'})
-  timezone: string
+  @ManyToOne(type => Timezone, null, {
+    eager: true
+  })
+  timezone: Timezone;
+
   @Column({default: '11:00'})
   start: string
   @Column({default: 30})

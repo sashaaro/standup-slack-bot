@@ -1,5 +1,5 @@
 import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
-import {Observable, Subject} from "rxjs";
+import {interval, Observable, Subject} from "rxjs";
 import {RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
 import {Connection, SelectQueryBuilder} from "typeorm";
@@ -325,6 +325,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       .leftJoinAndSelect('channel.users', 'users')
       .andWhere('channel.isArchived = false')
       .andWhere('channel.isEnabled = true')
+      .andWhere('channel.timezone IS NOT NULL')
       .getMany();
   }
 
@@ -790,3 +791,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 const isInProgress = (standUp: IStandUp) => {
   return new Date().getTime() < standUp.end.getTime()
 }
+
+
+const interval$ = interval(1000);
+interval$.pipe()

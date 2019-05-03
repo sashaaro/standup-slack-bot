@@ -1,7 +1,7 @@
 import {Request} from "express";
 import {Connection} from "typeorm";
 import {Channel} from "../model/Channel";
-import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
+import { Injectable } from 'injection-js';
 
 export interface IAuthUser {
   access_token: string,
@@ -43,6 +43,7 @@ export default class AuthorizationContext {
     const channel = await this.connection
       .getRepository(Channel)
       .createQueryBuilder('ch')
+      .leftJoinAndSelect('ch.timezone', 'timezone')
       .leftJoinAndSelect('ch.questions', 'questions')
       .where({id: req.session.channel})
       .andWhere('ch.isArchived = false')

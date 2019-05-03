@@ -1,6 +1,6 @@
 import { Injectable, Inject, InjectionToken } from 'injection-js';
-import {Observable, of, Subject, timer} from "rxjs";
-import {filter, take, takeUntil} from "rxjs/operators";
+import {interval, Observable, of, Subject, timer} from "rxjs";
+import {delay, filter, startWith, take, takeUntil} from "rxjs/operators";
 import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITeam, ITransport, IUser} from "./models";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
@@ -28,12 +28,26 @@ class AlreadySubmittedStandUpError extends Error {
   }
 }
 
+
+const getTimeString = (date: Date, timezoneShift: number) => {
+  const minutes = date.getUTCMinutes();
+  const hours = date.getUTCHours();
+  return ('0' + (hours + parseInt(timezoneShift.toFixed(0)))).slice(-2) + ':' + ('0' + minutes).slice(-2) // TODO shift minutes
+}
+
+const isMeetingTime = (team: ITeam, date: Date) => {
+  const timezoneShift = team.timezone.utc_offset as number;
+  const timeString = getTimeString(date, timezoneShift);
+  return team.start === timeString;
+}
+
 @Injectable()
 export default class StandUpBotService {
-  protected everyMinutesIntervalID: number | any;
   protected finishStandUp = new Subject<IStandUp>()
 
   finishStandUp$ = this.finishStandUp.asObservable()
+
+  private end$ = new Subject();
 
   constructor(
     @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) protected standUpProvider: IStandUpProvider,
@@ -42,17 +56,11 @@ export default class StandUpBotService {
 
 
   start() {
-    const now = new Date();
-    const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds();
-    let millisecondsDelay = 60 * 1000 - milliseconds;
-    millisecondsDelay += 5 * 1000; // 5 seconds delay
+    this.startStandUpInterval();
+    this.listenMessages();
+  }
 
-    console.log('Wait delay ' + millisecondsDelay + ' milliseconds for run loop');
-    setTimeout(() => {
-      console.log('StandUp interval starting');
-      this.startStandUpInterval();
-    }, millisecondsDelay)
-
+  private listenMessages() {
     if (this.transport.message$) {
       this.transport.message$.subscribe(async (message: IMessage) => {
         await this.answerAndSendNext(message)
@@ -65,11 +73,6 @@ export default class StandUpBotService {
     }
   }
 
-  private isMeetingTime(team: ITeam, date: Date) {
-    const timezoneShift = parseFloat(team.timezone as string);
-    const timeString = this.getTimeString(date, timezoneShift);
-    return team.start === timeString;
-  }
 
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
     let standUps: IStandUp[] = [];
@@ -77,7 +80,7 @@ export default class StandUpBotService {
 
     console.log(`startTeamStandUpByDate ${date}`);
 
-    for (const team of teams.filter((team) => this.isMeetingTime(team, date))) {
+    for (const team of teams.filter((team) => isMeetingTime(team, date))) {
       console.log(`Send questions to ${team.id} ${(team as any).name}`)
       const standUp = this.standUpProvider.createStandUp();
       standUp.team = team;
@@ -90,12 +93,6 @@ export default class StandUpBotService {
     }
 
     return standUps;
-  }
-
-  private getTimeString(date: Date, timezoneShift: number) {
-    const minutes = date.getUTCMinutes();
-    const hours = date.getUTCHours();
-    return ('0' + (hours + parseInt(timezoneShift.toFixed(0)))).slice(-2) + ':' + ('0' + minutes).slice(-2) // TODO shift minutes
   }
 
   async answerAndSendNext(message: IMessage): Promise<IAnswerRequest> {
@@ -195,15 +192,24 @@ export default class StandUpBotService {
     return this.standUpProvider.updateAnswer(answerRequest)
   }
 
-  async standUpForNow() {
+  private startStandUpInterval() {
     const now = new Date();
-    this.startDailyMeetUpByDate(now).then()
-    this.checkStandUpEndByDate(now).then()
-  }
+    const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds();
+    const millisecondsDelay = 60 * 1000 - milliseconds;
 
-  startStandUpInterval() {
-    this.standUpForNow().then();
-    this.everyMinutesIntervalID = setInterval(this.standUpForNow.bind(this), 60 * 1000) // every minutes
+    console.log('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop');
+
+    interval(10 * 1000) // every minutes
+      .pipe(
+        delay(millisecondsDelay),
+        takeUntil(this.end$),
+      ).subscribe(() => {
+      const now = new Date();
+      of(now).pipe(delay(5 * 1000)).subscribe(() => {
+        this.startDailyMeetUpByDate(now)
+        this.checkStandUpEndByDate(now)
+      }) // 5 seconds delay
+    })
   }
 
   async startDailyMeetUpByDate(date) {
@@ -219,7 +225,6 @@ export default class StandUpBotService {
 
   async checkStandUpEndByDate(date) {
     const endedStandUps = await this.standUpProvider.findStandUpsEndNowByDate(date);
-
     for (const endedStandUp of endedStandUps) {
       this.finishStandUp.next(endedStandUp);
     }
@@ -228,12 +233,11 @@ export default class StandUpBotService {
   async startAsk(user: IUser, standUp: IStandUp) {
     const question = await this.standUpProvider.findOneQuestion(standUp.team, 0);
     if (!question) {
-      console.log('No questions');
+      console.log(`No questions in standup #${standUp.id}`);
       return;
     }
 
-    const canStart$ = await this.beforeStandUp(user, standUp)
-    canStart$.subscribe(async (canStart) => {
+    this.beforeStandUp(user, standUp).subscribe(async (canStart) => {
       if (canStart) {
         await this.askQuestion(user, question, standUp)
       } else {
@@ -249,18 +253,19 @@ export default class StandUpBotService {
    * @param user
    * @param standUp
    */
-  private async beforeStandUp(user: IUser, standUp: IStandUp): Promise<Observable<boolean>> {
-    if (this.standUpProvider.sendGreetingMessage) {
-      await this.standUpProvider.sendGreetingMessage(user, standUp)
-    } else {
-      await this.send(user, standUpGreeting);
-    }
+  private beforeStandUp(user: IUser, standUp: IStandUp): Observable<boolean> {
+    return new Observable(async (observer) => {
+      if (this.standUpProvider.sendGreetingMessage) {
+        await this.standUpProvider.sendGreetingMessage(user, standUp)
+      } else {
+        await this.send(user, standUpGreeting);
+      }
 
-    if (!this.standUpProvider.agreeToStart$) {
-      return of(true);
-    }
+      if (!this.standUpProvider.agreeToStart$) {
+        observer.next(true)
+        observer.complete();
+      }
 
-    return Observable.create((observer) => {
       const now = new Date();
       const delayTime = standUp.end.getTime() - now.getTime()
       if (delayTime < 1) {
@@ -303,12 +308,12 @@ export default class StandUpBotService {
   }
 
   stopInterval() {
-    clearInterval(this.everyMinutesIntervalID);
-    this.everyMinutesIntervalID = null
+    this.end$.next();
+    this.end$.complete();
+    this.end$ = new Subject()
   }
 
   stop() {
     this.stopInterval()
   }
 }
-

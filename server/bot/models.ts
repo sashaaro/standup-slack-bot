@@ -2,14 +2,12 @@ import {Observable} from "rxjs";
 import AnswerRequest from "../model/AnswerRequest";
 
 export interface ITimezone {
-  name: 'Pacific/Kosrae',
-  abbrev: '+11',
-  utc_offset: { hours: 11 },
-  is_dst?: false
+  label: string,
+  utc_offset: any,
 }
 
 export interface IStandUpSettings {
-  timezone: string | number
+  timezone: ITimezone
   start: string
   duration: number
 }
