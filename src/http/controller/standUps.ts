@@ -1,7 +1,7 @@
 import * as pug from 'pug'
 import {IHttpAction, templateDirPath} from "./index";
 import StandUp from "../../model/StandUp";
-import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
+import { Injectable } from 'injection-js';
 import {Connection} from "typeorm";
 import Team from "../../model/Team";
 import AuthorizationContext from "../../services/AuthorizationContext";
@@ -50,13 +50,17 @@ export class StandUpsAction implements IHttpAction {
       //.andWhere('st.end <= CURRENT_TIMESTAMP')
       .where('channel.id = :channelID', {channelID: channel.id})
 
-    const recordsPerPage = 10
-    const standUps = await qb
-      .skip(0)
-      .limit(recordsPerPage)
-      .getMany();
+    const recordsPerPage = 5
+    const page = parseInt(req.query.page) || 1;
 
     const standUpsTotal = await qb.getCount();
+
+    console.log(standUpsTotal)
+
+    const standUps = await qb
+      .skip((page - 1) * recordsPerPage) // use offset method?!
+      .take(recordsPerPage) // use limit method?!
+      .getMany();
 
     const standUpList = [];
     for (let standUp of standUps) {
@@ -74,13 +78,14 @@ export class StandUpsAction implements IHttpAction {
       })
     }
 
+    const pageCount = Math.ceil(standUpsTotal / recordsPerPage)
+
     res.send(pug.compileFile(`${templateDirPath}/standUps.pug`)({
       team,
       channel,
       standUpList,
       activeMenu: 'reports',
-      standUpsTotal,
-      recordsPerPage
+      pageCount
     }))
   }
 }

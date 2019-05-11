@@ -1,6 +1,6 @@
 import entities from "../model";
 import {Connection, ConnectionOptions, createConnection} from "typeorm";
-import {IAppConfig} from "../index";
+import {IAppConfig} from "./providers";
 
 const databaseName = 'standup';
 

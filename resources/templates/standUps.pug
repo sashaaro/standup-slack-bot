@@ -28,16 +28,19 @@ block authorized_content
         )
 block append scripts
     script.
-        var recordsPerPage = #{ recordsPerPage };
+        var url = new URL(location.href);
+        let page = parseInt(url.searchParams.get('page')) || 1
+
         var vm = new Vue({
             el: '#pagination',
             data: {
-                pageCount: Math.ceil(#{ standUpsTotal } % recordsPerPage),
-                page: 1,
+                pageCount: #{ pageCount },
+                page: page,
             },
             methods: {
                 handler: function (page) {
-                    location.href = location.href + '?page=' + page
+                    url.searchParams.has('page') ? url.searchParams.set('page', page) : url.searchParams.append('page', page);
+                    location.href = url.href
                 }
             }
         })
