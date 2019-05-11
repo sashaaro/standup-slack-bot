@@ -1,6 +1,5 @@
 import {IHttpAction} from "./index";
 import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
-import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
 import * as express from 'express'
 import {SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
@@ -10,6 +9,7 @@ import {
   InteractiveResponseTypeEnum
 } from "../../slack/model/InteractiveResponse";
 import {logError} from "../../services/logError";
+import {IAppConfig} from "../../services/providers";
 
 // TODO remove
 @Injectable()

@@ -2,10 +2,10 @@ import * as request from 'request-promise'
 import * as pug from 'pug'
 import {IHttpAction, templateDirPath} from "./index";
 import { Injectable, Inject } from 'injection-js';
-import {IAppConfig} from "../../index";
 import {CONFIG_TOKEN} from "../../services/token";
 import AuthorizationContext, {IAuthUser} from "../../services/AuthorizationContext";
 import {logError} from "../../services/logError";
+import {IAppConfig} from "../../services/providers";
 
 @Injectable()
 export class AuthAction implements IHttpAction {
