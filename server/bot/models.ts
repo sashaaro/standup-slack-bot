@@ -74,8 +74,7 @@ export interface IStandUpProvider {
 
   updateAnswer(answer: IAnswerRequest): Promise<AnswerRequest>
 
-
-  findTeams(): Promise<ITeam[]>
+  findTeamsByStartNow(): Promise<ITeam[]>
 
   findProgressByUser(user: IUser): Promise<IStandUp>
 

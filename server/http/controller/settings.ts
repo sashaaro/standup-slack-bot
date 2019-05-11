@@ -63,8 +63,6 @@ export class SettingsAction implements IHttpAction {
       return res.redirect('/settings');
     }
 
-    console.log(channel)
-
     res.send(pug.compileFile(`${templateDirPath}/settings.pug`)({
       team,
       channel,

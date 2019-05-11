@@ -19,7 +19,7 @@ export interface IPostgresInterval {
 @Entity()
 class Timezone implements ITimezone{
   @PrimaryColumn()
-  id: string;
+  id: number;
 
   @Column("interval")
   utc_offset: any|IPostgresInterval;

@@ -35,12 +35,6 @@ const getTimeString = (date: Date, timezoneShift: number) => {
   return ('0' + (hours + parseInt(timezoneShift.toFixed(0)))).slice(-2) + ':' + ('0' + minutes).slice(-2) // TODO shift minutes
 }
 
-const isMeetingTime = (team: ITeam, date: Date) => {
-  const timezoneShift = team.timezone.utc_offset as number;
-  const timeString = getTimeString(date, timezoneShift);
-  return team.start === timeString;
-}
-
 @Injectable()
 export default class StandUpBotService {
   protected finishStandUp = new Subject<IStandUp>()
@@ -76,11 +70,11 @@ export default class StandUpBotService {
 
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
     let standUps: IStandUp[] = [];
-    const teams = await this.standUpProvider.findTeams(); // findByStartTime
+    const teams = await this.standUpProvider.findTeamsByStartNow(); // TODO use passed date
 
-    console.log(`startTeamStandUpByDate ${date}`);
+    //console.log(`Start stand up ${date.toLocaleTimeString('ru')} ${teams.length ? `for teams ${teams.map(t => `#${t.id}`).join(', ')}` : `no teams`}`);
 
-    for (const team of teams.filter((team) => isMeetingTime(team, date))) {
+    for (const team of teams) {
       console.log(`Send questions to ${team.id} ${(team as any).name}`)
       const standUp = this.standUpProvider.createStandUp();
       standUp.team = team;
@@ -171,7 +165,7 @@ export default class StandUpBotService {
     let answerRequest: IAnswerRequest;
     if (!question) {
       answerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(standUp, message.user);
-      
+
       if (!answerRequest) {
         const error = new AlreadySubmittedStandUpError()
         error.standUp = standUp
@@ -199,7 +193,7 @@ export default class StandUpBotService {
 
     console.log('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop');
 
-    interval(10 * 1000) // every minutes
+    interval(60 * 1000) // every minutes
       .pipe(
         delay(millisecondsDelay),
         takeUntil(this.end$),
@@ -254,7 +248,7 @@ export default class StandUpBotService {
    * @param standUp
    */
   private beforeStandUp(user: IUser, standUp: IStandUp): Observable<boolean> {
-    return new Observable(async (observer) => {
+    return new Observable<boolean>(async (observer) => {
       if (this.standUpProvider.sendGreetingMessage) {
         await this.standUpProvider.sendGreetingMessage(user, standUp)
       } else {

@@ -8,7 +8,7 @@ CREATE TABLE timezones (
 */
 
 INSERT INTO timezone ("id", "utc_offset", "label") VALUES
-    (1,     make_interval(0,0,0,0,-12,0),   '(GMT -12:00) Eniwetok, Kwajalein'),
+    (1,     make_interval(0,0,0,0,-12,0),    '(GMT -12:00) Eniwetok, Kwajalein'),
     (2,     make_interval(0,0,0,0,-11,00),   '(GMT -11:00) Midway Island, Samoa'),
     (3,     make_interval(0,0,0,0,-10,00),   '(GMT -10:00) Hawaii'),
     (4,     make_interval(0,0,0,0,-09,50),   '(GMT -9:30) Taiohae'),

@@ -319,10 +319,14 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return;
   }
 
-  findTeams(): Promise<Channel[]> {
+  findTeamsByStartNow(): Promise<Channel[]> {
+    const currentTimeInTimestampSql = "to_char(CURRENT_TIMESTAMP at time zone to_char(timezone.utc_offset * -1, 'HH24:MI'), 'HH24:MI')"
+
     return this.connection.getRepository(Channel)
       .createQueryBuilder('channel')
       .leftJoinAndSelect('channel.users', 'users')
+      .innerJoinAndSelect('channel.timezone', 'timezone')
+      .where(`channel.start = ${currentTimeInTimestampSql}`)
       .andWhere('channel.isArchived = false')
       .andWhere('channel.isEnabled = true')
       .andWhere('channel.timezone IS NOT NULL')

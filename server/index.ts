@@ -98,12 +98,6 @@ const run = async () => {
     slackProvider.sendReport(standUp)
   });
 
-  //console.log(await connection.getRepository(Channel)
-  /*.createQueryBuilder('c')
-  //.innerJoinAndSelect('t')
-  .where('c.start = to_char(CURRENT_TIMESTAMP, \'HH:MI\')')
-  .getMany())   */
-
   const expressApp = createExpress(injector)
 
   const certFolder = './cert';
