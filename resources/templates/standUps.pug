@@ -1,7 +1,10 @@
 extends layout/authorized_main
 
 block authorized_content
-    #list
+    if standUpList.length === 0
+        .no-meetings No meetings 🐥
+    else
+        #list
         each standUp in standUpList
             .ui.items.stand-up
                 .stand-up__date=standUp.standUp.start.toLocaleDateString("en-US", { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })
@@ -14,18 +17,18 @@ block authorized_content
                                 .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
                                     .stand-up-item__question= answer.question.text
                                     .stand-up-item__answer= answer.answerMessage
-    #pagination
-        paginate(
-        v-model="page",
-        :page-count="pageCount",
-        :click-handler="handler",
-        :prev-text="'Prev'",
-        :next-text="'Next'",
-        :container-class="'ui pagination menu'",
-        :page-class="'item'",
-        :prev-class="'item'",
-        :next-class="'item'",
-        )
+        #pagination
+            paginate(
+            v-model="page",
+            :page-count="pageCount",
+            :click-handler="handler",
+            :prev-text="'Prev'",
+            :next-text="'Next'",
+            :container-class="'ui pagination menu'",
+            :page-class="'item'",
+            :prev-class="'item'",
+            :next-class="'item'",
+            )
 block append scripts
     script.
         var url = new URL(location.href);

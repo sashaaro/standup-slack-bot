@@ -143,6 +143,12 @@
     animation: icon-loading 18s linear infinite;
 }
 
+.no-meetings {
+    text-align: center;
+    font-size: 22px;
+    /*font-weight: 600;*/
+}
+
 #pagination {
     display: flex;
     justify-content: center;
