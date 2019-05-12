@@ -1,16 +1,20 @@
 extends layout/authorized_main
 
 block authorized_content
+    .alert.alert--primary.activate-bot-block
+        div= "Activate bot for your meeting channel"
+        code
+            | /invite
+            a= " @daily_standup"
+
     if team.enableChannels.length
         form.row.auth-block.field(action="/channel/selected", method="POST")
            select#selectChannel(name="id")
                each channel in team.enableChannels
                    option(value=channel.id)= channel.name
     else
-        div
-            | No meeting channel
-        div
-            | Use "/invite @daily_standup" for your meeting channel
+        .no-meetings No meeting channel 🐥
+
 block append scripts
     script.
       $('#selectChannel').dropdown({

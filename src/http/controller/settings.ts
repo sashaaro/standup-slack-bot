@@ -63,11 +63,16 @@ export class SettingsAction implements IHttpAction {
       return res.redirect('/settings');
     }
 
+    const weekDays = [
+      'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
+    ];
+
     res.send(pug.compileFile(`${templateDirPath}/settings.pug`)({
       team,
       channel,
       timezones,
-      activeMenu: 'settings'
+      activeMenu: 'settings',
+      weekDays
     }))
   }
 }

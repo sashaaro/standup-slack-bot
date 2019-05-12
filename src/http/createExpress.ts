@@ -66,7 +66,6 @@ export const createExpress = (injector: ReflectiveInjector) => {
     return res.send('1');
   })*/
 
-  ;
   const slackInteractions = createMessageAdapter(injector.get(CONFIG_TOKEN).slackSigningSecret);
   slackInteractions.action({},  async (response) => {
     try {

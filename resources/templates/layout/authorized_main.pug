@@ -11,7 +11,9 @@ block content
                         .menu-title__sign= 'for ' + team.domain + '.slack.com'
                     //a.item(href="/channels" class= {'active': activeMenu === 'channels'})
                         | Channels
-
+                a.item#sync-link(href="/sync")
+                    i.icon.sync.alternate
+                    | Sync from slack api
                 .right.menu
                     if channel && team.enableChannels.length
                         form.item.ui.mini.form(action="/channel/selected", method="POST")
@@ -21,34 +23,12 @@ block content
                         a.item(href="/settings" class= {'active': activeMenu === 'settings'})
                             i.icon.cog
                             | Settings
-                    a.item#sync-link(href="/sync")
-                        i.icon.sync
-                        | Sync data from slack api
-                    .item
-                        a.ui.button(href="/logout") Log out
+                    a.item(href="/logout")
+                        i.icon.sign-out
+                        | Log out
 
         block authorized_content
-    //.ui.inverted.vertical.footer.segment
-        .ui.container
-            .ui.stackable.inverted.divided.equal.height.stackable.grid
-                .three.wide.column
-                    h4.ui.inverted.header About
-                    .ui.inverted.link.list
-                        a.item(href='#') Sitemap
-                        a.item(href='#') Contact Us
-                        a.item(href='#') Religious Ceremonies
-                        a.item(href='#') Gazebo Plans
-                .three.wide.column
-                    h4.ui.inverted.header Services
-                    .ui.inverted.link.list
-                        a.item(href='#') Banana Pre-Order
-                        a.item(href='#') DNA FAQ
-                        a.item(href='#') How To Access
-                        a.item(href='#') Favorite X-Men
-                .seven.wide.column
-                    h4.ui.inverted.header Footer Header
-                    p
-                        | Extra space for a call to action inside the footer that could help re-engage users.
+
 block append scripts
     script.
       $('#selectChannel').on('change', function () {

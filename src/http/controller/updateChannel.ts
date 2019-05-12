@@ -44,6 +44,5 @@ export class UpdateChannelAction implements IHttpAction {
     }
 
     return res.send(channel)
-    return res.redirect('/')
   }
 }

@@ -22,7 +22,7 @@ class Team {
   channels: Channel[]
 
   get enableChannels() {
-    return this.channels.filter((ch) => ch.isEnabled && !ch.isArchived)
+    return this.channels.filter((ch) => ch.isEnabled && !ch.isArchived && ch.nameNormalized !== 'general')
   }
 }
 

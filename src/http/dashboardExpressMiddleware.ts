@@ -11,14 +11,14 @@ import {SetChannelAction} from "./controller/setChannel";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
-export const useBodyParserAndSession = (app: express.Express|express.Router) => {
+export const useBodyParserAndSession = (app: express.Express | express.Router) => {
   app.use(bodyParser.urlencoded({extended: true}));
   app.use(bodyParser.json());
   app.use(session({
     secret: 'keyboard cat',
     resave: true,
     saveUninitialized: true,
-    store: new RedisConnectStore({host: 'redis'})
+    store: new RedisConnectStore({host: 'redis'}),
     //cookie: { secure: true }
   }))
 }
@@ -29,9 +29,6 @@ export const useStaticPublicFolder = (app: express.Express) => {
 
 export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
-
-
-  //useBodyParserAndSession(router);
 
   router.get('/', (req, res) => {
     const session = req.session;
@@ -53,7 +50,6 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
     const session = req.session as any;
     session.destroy()
     res.redirect('/auth');
-    return;
   });
 
   const settingAction = injector.get(SettingsAction)
@@ -70,7 +66,6 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
 
   //const updateChannelAction = Container.get(UpdateChannelAction)
   //app.post('/channel', updateChannelAction.handle.bind(updateChannelAction));
-
 
 
   return router;
