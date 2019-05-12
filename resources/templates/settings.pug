@@ -37,11 +37,15 @@ block authorized_content
             .column
                 h3.ui.header= "Questions"
                 form#question.ui.form(method='post')
-                    .field(v-for="(question, index) in questions")
-                        label= "#{{ index + 1 }}"
-                        .ui.icon.input
-                            input.form-control(v-bind:name="'questions[' + index + ']'", type="text", v-model="question.text", required, minlength=2)
-                            i.inverted.circular.trash.link.icon(v-on:click="remote(question)")
+                    draggable(:list="questions", v-bind="dragOptions", handle=".icon.movable")
+                        .field(v-for="(question, index) in questions")
+                            label= "#{{ index + 1 }}"
+                            .movable-input
+                                .ui.icon.input
+                                    input.form-control(v-bind:name="'questions[' + index + ']'", type="text", v-model="question.text", required, minlength=2)
+                                    i.inverted.circular.trash.link.icon(v-on:click="remote(question)")
+                                i(class="icon expand arrows alternate movable")
+                        div
                     .ui.buttons
                         a.ui.button.fluid(href="#", v-on:click="add")= 'Add question'
                         button.ui.button.fluid.positive(type="submit", v-bind:disabled="questions.length === 0")= 'Save'
@@ -51,7 +55,10 @@ block append scripts
         var vm = new Vue({
             el: '#question',
             data: {
-                questions: !{JSON.stringify(channel.questions)}
+                questions: !{JSON.stringify(channel.questions)},
+                dragOptions: {
+                    animation: 200,
+                }
             },
             created: function () {
                 // `this` указывает на экземпляр vm

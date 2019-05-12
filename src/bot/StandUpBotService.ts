@@ -1,6 +1,6 @@
 import { Injectable, Inject, InjectionToken } from 'injection-js';
 import {interval, Observable, of, Subject, timer} from "rxjs";
-import {delay, filter, startWith, take, takeUntil} from "rxjs/operators";
+import {delay, filter, take, takeUntil} from "rxjs/operators";
 import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITeam, ITransport, IUser} from "./models";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
@@ -52,6 +52,18 @@ export default class StandUpBotService {
   start() {
     this.startStandUpInterval();
     this.listenMessages();
+
+    if (this.standUpProvider) {
+      this.standUpProvider.agreeToStart$.subscribe(async (user: IUser) => {
+        const standUp = await this.standUpProvider.findProgressByUser(user);
+
+        if (standUp) {
+          await this.askFirstQuestion(user, standUp);
+        } else {
+          // you standup not started yet
+        }
+      })
+    }
   }
 
   private listenMessages() {
@@ -212,7 +224,10 @@ export default class StandUpBotService {
 
     for (const standUp of standUps) {
       for (const user of standUp.team.users) {
-        await this.startAsk(user, standUp)
+        const canStart = await this.beforeStandUp(user, standUp);
+        if (canStart) {
+          await this.askFirstQuestion(user, standUp);
+        }
       }
     }
   }
@@ -224,22 +239,15 @@ export default class StandUpBotService {
     }
   }
 
-  async startAsk(user: IUser, standUp: IStandUp) {
+  private async askFirstQuestion(user: IUser, standUp: IStandUp)
+  {
     const question = await this.standUpProvider.findOneQuestion(standUp.team, 0);
     if (!question) {
       console.log(`No questions in standup #${standUp.id}`);
       return;
     }
+    await this.askQuestion(user, question, standUp)
 
-    this.beforeStandUp(user, standUp).subscribe(async (canStart) => {
-      if (canStart) {
-        await this.askQuestion(user, question, standUp)
-      } else {
-        // cancel?!
-      }
-    }, (e) => {
-      console.error(e)
-    })
   }
 
   /**
@@ -247,37 +255,14 @@ export default class StandUpBotService {
    * @param user
    * @param standUp
    */
-  private beforeStandUp(user: IUser, standUp: IStandUp): Observable<boolean> {
-    return new Observable<boolean>(async (observer) => {
-      if (this.standUpProvider.sendGreetingMessage) {
-        await this.standUpProvider.sendGreetingMessage(user, standUp)
-      } else {
-        await this.send(user, standUpGreeting);
-      }
+  private async beforeStandUp(user: IUser, standUp: IStandUp): Promise<boolean> {
+    if (this.standUpProvider.sendGreetingMessage) {
+      await this.standUpProvider.sendGreetingMessage(user, standUp)
+    } else {
+      await this.send(user, standUpGreeting);
+    }
 
-      if (!this.standUpProvider.agreeToStart$) {
-        observer.next(true)
-        observer.complete();
-      }
-
-      const now = new Date();
-      const delayTime = standUp.end.getTime() - now.getTime()
-      if (delayTime < 1) {
-        observer.error('WTF')
-        return;
-      }
-      if (delayTime > 1000 * 100) {
-        // wtf?!
-      }
-      this.standUpProvider.agreeToStart$.pipe(
-          filter((u) => u.id === user.id),
-          take(1),
-          takeUntil(timer(delayTime))
-        ).subscribe((u) => {
-          observer.next(true)
-          observer.complete();
-      });
-    })
+    return !this.standUpProvider.agreeToStart$ // true if no agree option
   }
 
   private async afterStandUp(user: IUser, standUp: IStandUp) {

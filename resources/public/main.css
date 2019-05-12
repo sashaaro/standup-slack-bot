@@ -9,6 +9,19 @@
     padding: 0;
 }
 
+.movable {
+    cursor: move;
+}
+
+.movable-input {
+    display: flex;
+    align-items: center;
+}
+
+.movable-input .movable {
+    margin-left: 5px;
+}
+
 .logo {
     background-size: contain;
     background-repeat: no-repeat;
@@ -127,10 +140,7 @@
 
 
 .menu .item.active > .icon {
-    animation: icon-loading 8s linear infinite;
-}
-.menu .item:hover > .icon {
-    animation: icon-loading 8s linear infinite;
+    animation: icon-loading 18s linear infinite;
 }
 
 #pagination {

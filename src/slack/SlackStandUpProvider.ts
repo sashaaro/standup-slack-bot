@@ -2,7 +2,7 @@ import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
 import {interval, Observable, Subject} from "rxjs";
 import {RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
-import {Connection, SelectQueryBuilder} from "typeorm";
+import {Brackets, Connection, SelectQueryBuilder} from "typeorm";
 import User from "../model/User";
 import {RTMMessageResponse} from "./model/rtm/RTMMessageResponse";
 import Team from "../model/Team";
@@ -359,8 +359,9 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     this.qbActualStandUpInProgressWithAuthorAnswers(qb, user);
 
     return await qb
-      .orderBy('standup.start', "DESC")
-      // TODO limit only for standup
+      .where('CURRENT_TIMESTAMP >= standup.start')
+      .orderBy('standup.start', "ASC")
+      .take(1)
       .getOne();
   }
 
@@ -387,7 +388,12 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   }
 
   private qbAuthorAnswers(qb: SelectQueryBuilder<StandUp>, user: IUser): SelectQueryBuilder<StandUp> {
-    return qb.andWhere('answerAuthor.id = :answerAuthorID or answerAuthor.id IS NULL', {answerAuthorID: user.id})
+    return qb.andWhere(
+      new Brackets(qb => {
+        qb.where('answerAuthor.id = :answerAuthorID', {answerAuthorID: user.id})
+        qb.orWhere('answerAuthor.id IS NULL')
+      })
+    )
   }
 
   private qbActiveQuestions(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
@@ -592,12 +598,13 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
     this.qbStandUpJoins(qb)
 
-    qb.andWhere('users.id = :user AND standup.id = :standup', {user: user.id, standup: standUpId})
+    qb.andWhere('users.id = :user AND standup.id = :standupID', {user: user.id, standupID: standUpId})
     this.qbActiveQuestions(qb);
     this.qbActiveChannels(qb)
     this.qbAuthorAnswers(qb, user);
 
     return await qb
+      .take(1)
     //.orderBy('st.start', "DESC")
       .getOne();
   }
@@ -795,7 +802,3 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 const isInProgress = (standUp: IStandUp) => {
   return new Date().getTime() < standUp.end.getTime()
 }
-
-
-const interval$ = interval(1000);
-interval$.pipe()
