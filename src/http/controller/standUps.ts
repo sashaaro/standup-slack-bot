@@ -55,8 +55,6 @@ export class StandUpsAction implements IHttpAction {
 
     const standUpsTotal = await qb.getCount();
 
-    console.log(standUpsTotal)
-
     const standUps = await qb
       .skip((page - 1) * recordsPerPage) // use offset method?!
       .take(recordsPerPage) // use limit method?!

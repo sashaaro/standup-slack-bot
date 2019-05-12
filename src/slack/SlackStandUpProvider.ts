@@ -1,4 +1,4 @@
-import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
+import {ReflectiveInjector, Injectable, Inject} from 'injection-js';
 import {interval, Observable, Subject} from "rxjs";
 import {RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
@@ -29,7 +29,7 @@ export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
 export const ACTION_START = 'start'
 export const ACTION_OPEN_DIALOG = 'dialog'
 
-const standUpFinishedAlreadyMsg =`Stand up has already ended\nI will remind you when your next standup is up`; // TODO link to report
+const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next standup is up`; // TODO link to report
 
 @Injectable()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
@@ -96,39 +96,38 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return this.rtm.sendMessage(message, user.im);
   }
 
-  async sendReport(standUp: StandUp)
-  {
-      /*if (!standUp instanceof StandUp) {
-        console.log('Slack reporter is not supported')
-        return;
-      }*/
-      const attachments = []
+  async sendReport(standUp: StandUp) {
+    const attachments = []
 
-      const userAnswers = groupBy(standUp.answers, 'user.id')
-      for(const userID in userAnswers) {
-        const answers: AnswerRequest[] = userAnswers[userID]
-        if (answers.length === 0) {
-          // TODO skip message
-          continue;
-        }
-
-        const text = answers
-          .map(a => `*${a.question.text}*\n${a.answerMessage}`)
-          .join('\n')
-
-
-        attachments.push({
-          author_name: answers[0].user.name,
-          author_icon: answers[0].user.profile.image_24,
-          text
-        })
+    const userAnswers = groupBy(standUp.answers, 'user.id')
+    for (const userID in userAnswers) {
+      const answers: AnswerRequest[] = userAnswers[userID]
+      if (answers.length === 0) {
+        // TODO skip message
+        continue;
       }
 
-      await this.webClient.chat.postMessage({
-        channel: standUp.channel.id,
-        text: `Standup report`,
-        attachments
+      const text = answers
+        .map(a => `*${a.question.text}*\n${a.answerMessage}`)
+        .join('\n')
+
+      attachments.push({
+        author_name: answers[0].user.name,
+        author_icon: answers[0].user.profile.image_24,
+        text
       })
+    }
+
+    let text = `Standup report`
+    // TODO link
+    if (attachments.length === 0) {
+      text += ' Nobody sent answers 🐥'
+    }
+    await this.webClient.chat.postMessage({
+      channel: standUp.channel.id,
+      text,
+      attachments
+    })
   }
 
   async init(): Promise<any> {
@@ -591,8 +590,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     }
   }
 
-  async standUpByIdAndUser(user: IUser, standUpId: any): Promise<StandUp>
-  {
+  async standUpByIdAndUser(user: IUser, standUpId: any): Promise<StandUp> {
     const standUpRepository = this.connection.getRepository(StandUp);
     const qb = standUpRepository.createQueryBuilder('standup');
 
@@ -605,7 +603,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
     return await qb
       .take(1)
-    //.orderBy('st.start', "DESC")
+      //.orderBy('st.start', "DESC")
       .getOne();
   }
 
@@ -769,12 +767,11 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   }
 
 
-  async updateStandUpAnswers(messages: string[], user: IUser, standUp: IStandUp)
-  {
+  async updateStandUpAnswers(messages: string[], user: IUser, standUp: IStandUp) {
     await this.connection.transaction(async (em) => {
       const repo = em.getRepository(AnswerRequest);
 
-      for(const q of standUp.team.questions) { // sort asc by index
+      for (const q of standUp.team.questions) { // sort asc by index
         let answer = standUp.answers[q.index];
         if (!answer) {
           answer = new AnswerRequest()

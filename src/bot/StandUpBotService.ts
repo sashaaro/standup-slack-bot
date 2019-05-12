@@ -72,7 +72,7 @@ export default class StandUpBotService {
         await this.answerAndSendNext(message)
       })
     }
-    if (this.transport.messages$) {
+    if (this.transport.messages$) { // receive batch of messages
       this.transport.messages$.subscribe(async (messages: IMessage[]) => {
         await this.answersAndFinish(messages)
       })
@@ -137,6 +137,8 @@ export default class StandUpBotService {
 
     standUp = standUp || await this.standUpProvider.findProgressByUser(user);
 
+
+    const now = new Date()
     for(const [i, message] of messages.entries()) {
       const question = standUp.team.questions[i]
       if (!question) {
@@ -144,7 +146,15 @@ export default class StandUpBotService {
         break;
       }
       // TODO try catch
-      await this.answerByStandUp(message, standUp, question)
+      const answerRequest = this.standUpProvider.createAnswer()
+      answerRequest.standUp = standUp;
+      answerRequest.user = message.user
+      answerRequest.question = question
+      answerRequest.createdAt = now;
+
+      answerRequest.answerMessage = message.text;
+      answerRequest.answerCreatedAt = new Date();
+      answerRequest.answerCreatedAt.setTime(now.getTime() + (i * 100) ); // for save correct order. TODO create order index question ?!
     }
 
     await this.afterStandUp(user, standUp);
@@ -164,33 +174,14 @@ export default class StandUpBotService {
       throw error;
     }
 
-    return this.answerByStandUp(message, progressStandUp);
-  }
+    const answerRequest: IAnswerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(progressStandUp, message.user);
 
-  /**
-   * @throws AlreadySubmittedStandUpError
-   * @param message
-   * @param standUp
-   * @param question
-   */
-  private async answerByStandUp(message: IMessage, standUp: IStandUp, question?: IQuestion): Promise<IAnswerRequest> {
-    let answerRequest: IAnswerRequest;
-    if (!question) {
-      answerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(standUp, message.user);
-
-      if (!answerRequest) {
-        const error = new AlreadySubmittedStandUpError()
-        error.standUp = standUp
-        error.answerMessage = message
-        throw error
-        // throw new Error(`Last no reply answerRequest is not found for standup ${standUp.id} and message ${message.text}`)
-      }
-    } else {
-      answerRequest = this.standUpProvider.createAnswer()
-      answerRequest.standUp = standUp;
-      answerRequest.user = message.user
-      answerRequest.question = question
-      answerRequest.createdAt = new Date();
+    if (!answerRequest) {
+      const error = new AlreadySubmittedStandUpError()
+      error.standUp = progressStandUp
+      error.answerMessage = message
+      throw error
+      // throw new Error(`Last no reply answerRequest is not found for standup ${standUp.id} and message ${message.text}`)
     }
 
     answerRequest.answerMessage = message.text;
