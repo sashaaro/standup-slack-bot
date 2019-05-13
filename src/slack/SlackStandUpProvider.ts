@@ -1,5 +1,5 @@
-import {ReflectiveInjector, Injectable, Inject} from 'injection-js';
-import {interval, Observable, Subject} from "rxjs";
+import {Injectable} from 'injection-js';
+import {Observable, Subject} from "rxjs";
 import {RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
 import {Brackets, Connection, DeepPartial, SelectQueryBuilder} from "typeorm";
@@ -23,6 +23,7 @@ import QuestionRepository from "../repository/QuestionRepository";
 import * as groupBy from "lodash.groupby";
 import {IMessage, IStandUp, IStandUpProvider, ITransport, IUser} from "../bot/models";
 import {SlackTeam} from "./model/SlackTeam";
+import SyncService from "../services/SyncServcie";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
@@ -31,6 +32,10 @@ export const ACTION_START = 'start'
 export const ACTION_OPEN_DIALOG = 'dialog'
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next standup is up`; // TODO link to report
+
+
+export const getSyncSlackTeamKey = (teamId) => 'update-slack-' + teamId
+
 
 @Injectable()
 export class SlackStandUpProvider implements IStandUpProvider, ITransport {
@@ -44,7 +49,9 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   constructor(
     public readonly rtm: RTMClient,
     private readonly webClient: WebClient,
-    private connection: Connection) {
+    private connection: Connection,
+    private syncService: SyncService,
+  ) {
   }
 
   async sendGreetingMessage(user: User, standUp: StandUp) {
@@ -287,7 +294,8 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
       team.domain = rtmStartData.team.domain
 
       await teamRepository.save(team);
-      await this.updateData(team);
+
+      this.syncService.exec(getSyncSlackTeamKey(team.id), this.updateData(team));
     })
 
     await this.rtm.start();

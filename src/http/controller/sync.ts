@@ -2,7 +2,7 @@ import {IHttpAction} from "./index";
 import {STAND_UP_BOT_STAND_UP_PROVIDER} from "../../bot/StandUpBotService";
 import {Connection} from "typeorm";
 import {CONFIG_TOKEN} from "../../services/token";
-import {SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
+import {getSyncSlackTeamKey, SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
 import Team from "../../model/Team";
 import AuthorizationContext from "../../services/AuthorizationContext";
 import {IStandUpProvider} from "../../bot/models";
@@ -42,9 +42,8 @@ export class SyncAction implements IHttpAction {
     }
 
 
-    const syncKey = 'update-slack-'+team.id
-    if (!this.syncService.inProgress(syncKey)) {
-      this.syncService.exec(syncKey, this.standUpProvider.updateData(team))
+    if (!this.syncService.inProgress(getSyncSlackTeamKey(team.id))) {
+      this.syncService.exec(getSyncSlackTeamKey(team.id), this.standUpProvider.updateData(team))
     } else {
       // flash message
     }
