@@ -8,6 +8,10 @@ import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
 import {SyncAction} from "./controller/sync";
 import {SetChannelAction} from "./controller/setChannel";
+import {Connection} from "typeorm";
+import SyncService from "../services/SyncServcie";
+import AuthorizationContext from "../services/AuthorizationContext";
+import {CONFIG_TOKEN} from "../services/token";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -27,8 +31,22 @@ export const useStaticPublicFolder = (app: express.Express) => {
   app.use(express.static('./resources/public'));
 }
 
+
+export const dashboardContext = (injector: Injector) => {
+  const connection = injector.get(Connection)
+  const syncService = injector.get(SyncService)
+  const config = injector.get(CONFIG_TOKEN)
+
+  return (req: express.Request | express.Router | any, res, next) => {
+    req.context = new AuthorizationContext(req, connection, syncService, config);
+
+    next()
+  }
+}
+
 export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
+  router.use(dashboardContext(injector));
 
   router.get('/', (req, res) => {
     const session = req.session;
@@ -66,7 +84,6 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
 
   //const updateChannelAction = Container.get(UpdateChannelAction)
   //app.post('/channel', updateChannelAction.handle.bind(updateChannelAction));
-
 
   return router;
 }

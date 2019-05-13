@@ -8,12 +8,18 @@ block content
                 a.item.menu-title(href="/" class= {'active': activeMenu === 'reports'})
                     div
                         | Standups
-                        .menu-title__sign= 'for ' + team.domain + '.slack.com'
+                        .menu-title__sign
+                            if team.slackData && team.slackData.icon.image_34
+                                img(src= team.slackData.icon.image_34)
+                            = 'for ' + team.domain + '.slack.com'
                     //a.item(href="/channels" class= {'active': activeMenu === 'channels'})
                         | Channels
-                a.item#sync-link(href="/sync")
+                a.item#sync-link(href="/sync", class=syncInProgress ? 'disabled' : '')
                     i.icon.sync.alternate
-                    | Sync from slack api
+                    if syncInProgress
+                        | Sync slack api in progress
+                    else
+                        | Sync from slack api
                 .right.menu
                     if channel && team.enableChannels.length
                         form.item.ui.mini.form(action="/channel/selected", method="POST")
@@ -39,3 +45,8 @@ block append scripts
       $('#sync-link').click(function () {
         this.classList.add('active')
       })
+
+      var syncInProgress = !{ syncInProgress }
+      if (syncInProgress) {
+        // interval update
+      }

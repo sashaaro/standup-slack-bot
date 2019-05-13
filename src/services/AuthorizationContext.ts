@@ -1,7 +1,11 @@
-import {Request} from "express";
+import * as express from 'express'
 import {Connection} from "typeorm";
 import {Channel} from "../model/Channel";
-import { Injectable } from 'injection-js';
+import {Inject, Injectable} from 'injection-js';
+import SyncService from "./SyncServcie";
+import Team from "../model/Team";
+import {IAppConfig} from "./providers";
+import {CONFIG_TOKEN} from "./token";
 
 export interface IAuthUser {
   access_token: string,
@@ -14,29 +18,34 @@ export interface IAuthUser {
 
 @Injectable()
 export default class AuthorizationContext {
-  constructor(private connection: Connection) {
+  constructor(
+    private req: express.Request,
+    private connection: Connection,
+    private syncService: SyncService,
+    @Inject(CONFIG_TOKEN) private config: IAppConfig
+  ) {
   }
 
-  setUser(req: Request, user: IAuthUser) {
-    req.session.user = user
+  setUser(user: IAuthUser) {
+    this.req.session.user = user
   }
 
-  getUser(req: Request): IAuthUser|null {
-    return req.session.user
+  getUser(): IAuthUser|null {
+    return this.req.session.user
   }
 
-  setSelectedChannel(req: Request, channel: Channel) {
-    req.session.channel = channel.id
+  setSelectedChannel(channel: Channel) {
+    this.req.session.channel = channel.id
   }
 
-  async getSelectedChannel(req: Request) {
-    const user = this.getUser(req)
+  async getSelectedChannel() {
+    const user = this.getUser()
 
     if (!user) {
       return null
     }
 
-    if (!req.session.channel) {
+    if (!this.req.session.channel) {
       return null
     }
 
@@ -45,7 +54,7 @@ export default class AuthorizationContext {
       .createQueryBuilder('ch')
       .leftJoinAndSelect('ch.timezone', 'timezone')
       .leftJoinAndSelect('ch.questions', 'questions')
-      .where({id: req.session.channel})
+      .where({id: this.req.session.channel})
       .andWhere('ch.isArchived = false')
       .andWhere('ch.isEnabled = true')
       .andWhere('questions.isEnabled = true')
@@ -53,5 +62,19 @@ export default class AuthorizationContext {
       .getOne();
 
     return channel
+  }
+
+  async getGlobalParams() // TODO move
+  {
+    const user = this.getUser();
+    const teamRepository = this.connection.getRepository(Team)
+    const team = await teamRepository.findOne(user.team_id)
+    return {
+      user,
+      team,
+      debug: this.config.debug,
+      channel: await this.getSelectedChannel(),
+      syncInProgress: user ? this.syncService.inProgress('update-slack-' + user.team_id) : false
+    }
   }
 }

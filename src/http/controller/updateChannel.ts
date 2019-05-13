@@ -2,18 +2,17 @@ import {IHttpAction} from "./index";
 import {Connection} from "typeorm";
 import Team from "../../model/Team";
 import {Channel} from "../../model/Channel";
+import {Injectable} from 'injection-js';
 import AuthorizationContext from "../../services/AuthorizationContext";
-import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
 
 @Injectable()
 export class UpdateChannelAction implements IHttpAction {
   constructor(
     private connection: Connection,
-    private authorizationContext: AuthorizationContext
   ) {
   }
   async handle(req, res) {
-    const user = this.authorizationContext.getUser(req)
+    const user = (req.context as AuthorizationContext).getUser()
     if (!user) {
       res.send('Access deny') // TODO 403
       return;
@@ -43,6 +42,6 @@ export class UpdateChannelAction implements IHttpAction {
       await channelRepository.save(channel)
     }
 
-    return res.send(channel)
+    res.send(channel);
   }
 }

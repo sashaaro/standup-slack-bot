@@ -1,6 +1,6 @@
 .content {
     width: 1127px;
-    margin-top: 10px;
+    padding-top: 10px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -52,13 +52,23 @@
     margin: 0 auto 10px auto;
 }
 
-.menu-title {
-    padding: 12px;
+.ui.menu .item.menu-title {
+    padding: 5px 10px;
 }
 .menu-title__sign {
     color: #919193;
     font-weight: 500;
     font-size: 13px;
+}
+
+.menu-title__sign img {
+    display: inline;
+    vertical-align: sub;
+    width: 1.4em;
+    height: 1.4em;
+    border-radius: 4px;
+    border: 1px solid #b3b3b3;
+    margin-right: 3px;
 }
 
 

@@ -6,17 +6,19 @@ import {SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
 import Team from "../../model/Team";
 import AuthorizationContext from "../../services/AuthorizationContext";
 import {IStandUpProvider} from "../../bot/models";
-import { ReflectiveInjector, Injectable, Inject } from 'injection-js';
+import { Injectable, Inject } from 'injection-js';
 import {IAppConfig} from "../../services/providers";
+import SyncService from "../../services/SyncServcie";
 
 @Injectable()
 export class SyncAction implements IHttpAction {
   standUpProvider: SlackStandUpProvider
+
   constructor(
     private connection: Connection,
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) standUpProvider: IStandUpProvider,
-    private authorizationContext: AuthorizationContext
+    private syncService: SyncService
   ) {
     if (standUpProvider instanceof SlackStandUpProvider) {
       this.standUpProvider = standUpProvider;
@@ -24,8 +26,9 @@ export class SyncAction implements IHttpAction {
       throw new Error('IStandUpProvider is not supported by UI')
     }
   }
+
   async handle(req, res) {
-    const user = this.authorizationContext.getUser(req)
+    const user = (req.context as AuthorizationContext).getUser()
     if (!user) {
       res.send('Access deny') // TODO 403
       return;
@@ -38,8 +41,14 @@ export class SyncAction implements IHttpAction {
       return;
     }
 
-    await this.standUpProvider.updateData(team)
 
-    return res.redirect('/')
+    const syncKey = 'update-slack-'+team.id
+    if (!this.syncService.inProgress(syncKey)) {
+      this.syncService.exec(syncKey, this.standUpProvider.updateData(team))
+    } else {
+      // flash message
+    }
+
+    res.redirect('/');
   }
 }

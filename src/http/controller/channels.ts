@@ -1,17 +1,17 @@
-import Team from "../../model/Team";
-import * as pug from 'pug'
-import {IHttpAction, templateDirPath} from "./index";
+import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
-import {TIMEZONES_TOKEN} from "../../services/token";
-import {Channel} from "../../model/Channel";
+import {RENDER_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
 import {IStandUpSettings, ITimezone} from "../../bot/models";
+import AuthorizationContext from "../../services/AuthorizationContext";
+import ChannelRepository from "../../repository/ChannelRepository";
 
 @Injectable()
 export class ChannelsAction implements IHttpAction {
   constructor(
     private connection: Connection,
-    @Inject(TIMEZONES_TOKEN) private timezoneList: Promise<ITimezone[]>
+    @Inject(TIMEZONES_TOKEN) private timezoneList: Promise<ITimezone[]>,
+    @Inject(RENDER_TOKEN) private render: Function
   ) {
   }
 
@@ -21,34 +21,27 @@ export class ChannelsAction implements IHttpAction {
       res.send('Access deny') // TODO 403
       return;
     }
-    const user = session.user;
+    const context = req.context as AuthorizationContext;
+    const {team, channel} = await context.getGlobalParams()
 
-    const teamRepository = this.connection.getRepository(Team)
-    const channelRepository = this.connection.getRepository(Channel)
-    let team = await teamRepository.findOne({id: user.team_id})
-    if (!team) {
-      // TODO 404
+    if (!team) { // TODO 404
       throw new Error('team is not found');
     }
-
-    const channel = await channelRepository.findOne(session.channel)
-    if (!channel) {
-      // TODO 404
-      throw new Error('team is not found');
+    if (!channel) { // TODO 404
+      throw new Error('Channel is not found');
     }
 
     if (req.method == "POST") {
       // todo validate
       const settings = <IStandUpSettings>req.body
       Object.assign(channel, settings)
-      await channelRepository.save(channel)
+      await this.connection.getRepository(ChannelRepository).save(channel)
     }
 
-    res.send(pug.compileFile(`${templateDirPath}/channels.pug`)({
+    res.send(this.render('channels', {
       team: team,
-      channel: channel,
       timezoneList: await this.timezoneList,
       activeMenu: 'channels'
-    }))
+    }));
   }
 }

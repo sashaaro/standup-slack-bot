@@ -1,41 +1,40 @@
-import * as pug from 'pug'
-import {IHttpAction, templateDirPath} from "./index";
+import {IHttpAction} from "./index";
 import StandUp from "../../model/StandUp";
-import { Injectable } from 'injection-js';
+import {Inject, Injectable} from 'injection-js';
 import {Connection} from "typeorm";
-import Team from "../../model/Team";
 import AuthorizationContext from "../../services/AuthorizationContext";
+import {RENDER_TOKEN} from "../../services/token";
 
 @Injectable()
 export class StandUpsAction implements IHttpAction {
   constructor(
     private connection: Connection,
-    private authorizationContext: AuthorizationContext
+    @Inject(RENDER_TOKEN) private render: Function
   ) {
 
   }
   async handle(req, res) {
-    const user = this.authorizationContext.getUser(req);
+    const context = req.context as AuthorizationContext;
+    const user = context.getUser()
 
     if (!user) {
       res.send('Access deny');
       return;
     }
 
-    const teamRepository = this.connection.getRepository(Team);
 
-    let team = await teamRepository.findOne({where: {id: user.team_id}})
+    const globalParams = await context.getGlobalParams()
+    const {team, channel} = globalParams
+
+
     if (!team) {
       // TODO 404
       throw new Error('team is not found');
     }
 
-    const channel = await this.authorizationContext.getSelectedChannel(req);
-
     if (!channel) {
-      return res.send(pug.compileFile(`${templateDirPath}/setChannel.pug`)({
-        team: team,
-      }))
+      res.send(this.render('setChannel', globalParams));
+      return;
     }
 
     const standUpRepository = this.connection.getRepository(StandUp);
@@ -78,12 +77,10 @@ export class StandUpsAction implements IHttpAction {
 
     const pageCount = Math.ceil(standUpsTotal / recordsPerPage)
 
-    res.send(pug.compileFile(`${templateDirPath}/standUps.pug`)({
-      team,
-      channel,
+    res.send(this.render('standUps', Object.assign({
       standUpList,
       activeMenu: 'reports',
       pageCount
-    }))
+    }, globalParams)));
   }
 }

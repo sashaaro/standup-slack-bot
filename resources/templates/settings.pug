@@ -67,10 +67,7 @@ block append scripts
                     animation: 200,
                 }
             },
-            created: function () {
-                // `this` указывает на экземпляр vm
-                console.log(this.questions)
-            },
+            created: function () {},
             methods: {
                 add() {
                     this.questions.push({text: ""})

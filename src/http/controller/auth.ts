@@ -1,20 +1,22 @@
 import * as request from 'request-promise'
-import * as pug from 'pug'
-import {IHttpAction, templateDirPath} from "./index";
+import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
-import {CONFIG_TOKEN} from "../../services/token";
+import {CONFIG_TOKEN, RENDER_TOKEN} from "../../services/token";
 import AuthorizationContext, {IAuthUser} from "../../services/AuthorizationContext";
 import {logError} from "../../services/logError";
 import {IAppConfig} from "../../services/providers";
 
 @Injectable()
 export class AuthAction implements IHttpAction {
-  constructor(@Inject(CONFIG_TOKEN) private config: IAppConfig,
-              private authorizationContext: AuthorizationContext) {
+  constructor(
+    @Inject(CONFIG_TOKEN) private config: IAppConfig,
+    @Inject(RENDER_TOKEN) private render: Function
+  ) {
   }
 
   async handle(req, res) {
-    const user = this.authorizationContext.getUser(req)
+    const context = req.context as AuthorizationContext;
+    const user = context.getUser();
 
     if (user) {
       res.redirect('/');
@@ -23,14 +25,11 @@ export class AuthAction implements IHttpAction {
 
     const redirectUri = `${this.config.host}/auth`
     if (!req.query.code) {
-      const scopes = ['bot', 'channels:read', 'team:read', 'groups:read'//, 'im:history'
-      ]
+      const scopes = ['bot', 'channels:read', 'team:read', 'groups:read']; //, 'im:history'
       const authLink = `https://slack.com/oauth/authorize?&client_id=${this.config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${redirectUri}`
 
-      res.send(pug.compileFile(`${templateDirPath}/auth.pug`)({
-        authLink: authLink
-      }))
-      return;
+      res.send(this.render('auth', {authLink, debug: this.config.debug}));
+      return
     }
 
     // https://api.slack.com/methods/oauth.access
@@ -54,7 +53,7 @@ export class AuthAction implements IHttpAction {
       throw new Error(data)
     }
 
-    this.authorizationContext.setUser(req, {
+    (req.context as AuthorizationContext).setUser({
       access_token: data.access_token,
       scope: data.scope,
       user_id: data.user_id,

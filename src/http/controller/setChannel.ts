@@ -1,5 +1,5 @@
 import {IHttpAction} from "./index";
-import { ReflectiveInjector, Injectable, Inject } from 'injection-js';import {Connection} from "typeorm";
+import {Injectable} from 'injection-js';import {Connection} from "typeorm";
 import Team from "../../model/Team";
 import {Channel} from "../../model/Channel";
 import AuthorizationContext from "../../services/AuthorizationContext";
@@ -8,25 +8,24 @@ import AuthorizationContext from "../../services/AuthorizationContext";
 export class SetChannelAction implements IHttpAction {
   constructor(
     private connection: Connection,
-    private authorizationContext: AuthorizationContext
   ) {
   }
   async handle(req, res) {
-    const user = this.authorizationContext.getUser(req)
+    const context = req.context as AuthorizationContext;
+    const user = context.getUser()
     if (!user) {
       res.send('Access deny') // TODO 403
       return;
     }
 
-    const teamRepository = this.connection.getRepository(Team)
-    let team = await teamRepository.findOne({id: user.team_id})
+    const {team} = await context.getGlobalParams()
+
     if (!team) {
       res.send('Team is not found') // TODO 403
       return;
     }
 
     const channelRepository = this.connection.getRepository(Channel)
-
     let channel: Channel;
 
     if (req.body.id) {
@@ -38,8 +37,7 @@ export class SetChannelAction implements IHttpAction {
       return;
     }
 
-    this.authorizationContext.setSelectedChannel(req, channel)
-
-    return res.redirect('/')
+    context.setSelectedChannel(channel)
+    res.redirect('/')
   }
 }

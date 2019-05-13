@@ -19,6 +19,8 @@ export class Channel implements ITeam {
   @Column({default: false})
   isEnabled: boolean;
 
+  // TODO isPrivate: boolean;
+
   @Column()
   nameNormalized: string;
 

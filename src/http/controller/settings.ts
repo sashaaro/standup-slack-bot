@@ -1,43 +1,40 @@
-import Team from "../../model/Team";
-import * as pug from 'pug'
-import {IHttpAction, templateDirPath} from "./index";
+import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
-import {TIMEZONES_TOKEN} from "../../services/token";
+import {RENDER_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
 import {Channel} from "../../model/Channel";
-import AuthorizationContext from "../../services/AuthorizationContext";
 import QuestionRepository from "../../repository/QuestionRepository";
-import {IStandUpSettings, ITimezone} from "../../bot/models";
+import {ITimezone} from "../../bot/models";
 import Timezone from "../../model/Timezone";
+import AuthorizationContext from "../../services/AuthorizationContext";
 
 @Injectable()
 export class SettingsAction implements IHttpAction {
   constructor(
     private connection: Connection,
     @Inject(TIMEZONES_TOKEN) private timezoneList: Promise<ITimezone[]>,
-    private authorizationContext: AuthorizationContext
+    @Inject(RENDER_TOKEN) private render: Function
   ) {
   }
 
   async handle(req, res) {
-    const user = this.authorizationContext.getUser(req)
+    const context = req.context as AuthorizationContext;
+    const user = context.getUser()
     if (!user) {
       res.send('Access deny') // TODO 403
       return;
     }
 
-    const teamRepository = this.connection.getRepository(Team)
     const channelRepository = this.connection.getRepository(Channel)
 
-    let team = await teamRepository.findOne(user.team_id)
-    if (!team) {
-      // TODO 404
+    const globalParams = await context.getGlobalParams()
+    const {team, channel} = globalParams
+
+    if (!team) { // TODO 404
       throw new Error('Team is not found');
     }
 
-    const channel = await this.authorizationContext.getSelectedChannel(req)
-    if (!channel) {
-      // TODO 404
+    if (!channel) { // TODO 404
       throw new Error('Channel is not found');
     }
 
@@ -60,19 +57,20 @@ export class SettingsAction implements IHttpAction {
         await this.connection.getCustomRepository(QuestionRepository).updateForChannel(formData.questions, channel)
       }
 
-      return res.redirect('/settings');
+      res.redirect('/settings');
+      return;
     }
 
     const weekDays = [
       'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
     ];
 
-    res.send(pug.compileFile(`${templateDirPath}/settings.pug`)({
+    res.send(this.render('settings', Object.assign({
       team,
       channel,
       timezones,
       activeMenu: 'settings',
       weekDays
-    }))
+    }, globalParams)))
   }
 }

@@ -1,6 +1,6 @@
 import { SlackPrefs } from "./SlackPrefs";
 
-export interface  Icon {
+export interface  SlackTeamIcons {
     image_34: string;
     image_44: string;
     image_68: string;
@@ -13,16 +13,11 @@ export interface  Icon {
 
 export interface SlackTeam
 {
-    id: string;
-    name: string;
-    email_domain: string;
-    domain: string;
-    msg_edit_window_mins: number;
-    prefs: SlackPrefs;
-    icon: Icon;
-    over_storage_limit: boolean;
-    messages_count: number;
-    plan: string;
-    avatar_base_url: string;
-    over_integrations_limit: boolean;
+    "id": "T12345",
+    "name": "My Team",
+    "domain": "example",
+    "email_domain": "example.com",
+    "icon": SlackTeamIcons,
+    "enterprise_id": "E1234A12AB",
+    "enterprise_name": "Umbrella Corporation"
 }

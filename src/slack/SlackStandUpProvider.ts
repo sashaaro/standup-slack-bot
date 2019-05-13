@@ -2,7 +2,7 @@ import {ReflectiveInjector, Injectable, Inject} from 'injection-js';
 import {interval, Observable, Subject} from "rxjs";
 import {RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
-import {Brackets, Connection, SelectQueryBuilder} from "typeorm";
+import {Brackets, Connection, DeepPartial, SelectQueryBuilder} from "typeorm";
 import User from "../model/User";
 import {RTMMessageResponse} from "./model/rtm/RTMMessageResponse";
 import Team from "../model/Team";
@@ -22,6 +22,7 @@ import ChannelRepository from "../repository/ChannelRepository";
 import QuestionRepository from "../repository/QuestionRepository";
 import * as groupBy from "lodash.groupby";
 import {IMessage, IStandUp, IStandUpProvider, ITransport, IUser} from "../bot/models";
+import {SlackTeam} from "./model/SlackTeam";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
@@ -197,104 +198,79 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     });
 
     const channelRepository = this.connection.getCustomRepository(ChannelRepository);
-    const joinSlackChannel = async (channel: SlackChannel) => {
-      let ch = await channelRepository.findOne(channel.id);
-      const isNew = !ch;
-      if (!ch) {
-        ch = new Channel();
-        ch.id = channel.id
+    
+    const findOrCreateChannel = async (channelID: string): Promise<{channel: Channel, isNew: boolean}> => {
+      let channel = await channelRepository.findOne(channelID);
+      const isNew = !channel;
+      if (isNew) {
+        channel = new Channel();
+        channel.id = channelID
+        channel.isEnabled = false
       }
 
-      ch.name = channel.name
-      ch.isArchived = channel.is_archived
-      ch.isEnabled = true
+      return {channel, isNew};
+    }
+
+    const findOrCreateAndUpdate = async (channelID: string, data: DeepPartial<Channel>): Promise<{channel: Channel, isNew: boolean}> => {
+      const {channel, isNew} = await findOrCreateChannel(channelID)
+      Object.assign(channel, data);
+      await channelRepository.save(channel);
+
+      return {channel, isNew}
+    }
+
+    const joinSlackChannel = async (channelID: string, data?: DeepPartial<Channel>) => {
+      const {channel, isNew} = await findOrCreateChannel(channelID)
+
+      channel.isArchived = false
+      channel.isEnabled = true
+      if (data) {
+        Object.assign(channel, data);
+      }
 
       if (isNew) {
-        await channelRepository.addNewChannel(ch)
+        await channelRepository.addNewChannel(channel)
       } else {
-        await channelRepository.save(ch);
+        await channelRepository.save(channel);
       }
-    }
-
-    const leftSlackChannel = async (channel: SlackChannel) => {
-      let ch = await channelRepository.findOne(channel.id);
-      if (!ch) {
-        ch = new Channel();
-        ch.id = channel.id
-      }
-
-      ch.name = channel.name
-      ch.isArchived = channel.is_archived
-      ch.isEnabled = false
-
-      await channelRepository.save(ch);
-    }
-
-    const archiveSlackChannel = async (channel: SlackChannel) => {
-      let ch = await channelRepository.findOne(channel.id);
-      if (!ch) {
-        ch = new Channel();
-        ch.id = channel.id
-        ch.isEnabled = false
-      }
-
-      ch.name = channel.name
-      ch.isArchived = true
-
-      await channelRepository.save(ch);
-    }
-
-    const unArchiveSlackChannel = async (channel: SlackChannel) => {
-      let ch = await channelRepository.findOne(channel.id);
-      if (!ch) {
-        ch = new Channel();
-        ch.id = channel.id
-        ch.isEnabled = false
-      }
-
-      ch.name = channel.name
-      ch.isArchived = false
-
-      await channelRepository.save(ch);
     }
 
     this.rtm.on('channel_joined', async (response) => {
       const channel = response.channel as SlackChannel
-      await joinSlackChannel(channel)
+      await joinSlackChannel(channel.id, {isArchived: channel.is_archived, name: channel.name, nameNormalized: channel.name_normalized})
     })
-
     this.rtm.on('group_joined', async (response) => {
       const channel = response.channel as SlackChannel
-      await joinSlackChannel(channel)
+      await joinSlackChannel(channel.id, {isArchived: channel.is_archived, name: channel.name, nameNormalized: channel.name_normalized})
     })
 
     this.rtm.on('channel_left', async (response) => {
-      const channel = response.channel as SlackChannel
-      await leftSlackChannel(channel)
+      const channel: string = response.channel
+      await findOrCreateAndUpdate(channel, {isEnabled: false})
     })
-
     this.rtm.on('group_left', async (response) => {
-      const channel = response.channel as SlackChannel
-      await leftSlackChannel(channel)
+      const channel: string = response.channel
+      await findOrCreateAndUpdate(channel, {isEnabled: false})
     })
 
 
-    this.rtm.on('channel_archive', async (response) => {
-      const channel = response.channel as SlackChannel
-      await archiveSlackChannel(channel)
+    this.rtm.on('channel_archive', async (response: {type: string, channel: string, user: string}) => {
+      const channel: string = response.channel
+      await findOrCreateAndUpdate(channel, {isArchived: true})
     })
-    this.rtm.on('channel_unarchived', async (response) => {
-      const channel = response.channel as SlackChannel
-      await unArchiveSlackChannel(channel)
-    })
-
     this.rtm.on('group_archive', async (response) => {
-      const channel = response.channel as SlackChannel
-      await archiveSlackChannel(channel)
+      const channel: string = response.channel
+      await findOrCreateAndUpdate(channel, {isArchived: true})
     })
-    this.rtm.on('group_unarchived', async (response) => {
-      const channel = response.channel as SlackChannel
-      await unArchiveSlackChannel(channel)
+
+
+    this.rtm.on('channel_unarchive', async (response) => {
+      const channel: string = response.channel
+      await findOrCreateAndUpdate(channel, {isArchived: false})
+    })
+    this.rtm.on('group_unarchive', async (response) => {
+      const channel: string = response.channel
+      await findOrCreateAndUpdate(channel, {isArchived: false})
     })
 
 
@@ -451,6 +427,15 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   }
 
   async updateData(team: Team) {
+    const teamResponse: {team: SlackTeam} = await this.webClient.team.info() as any
+
+    if (team.id !== teamResponse.team.id) {
+      throw new Error(`Wrong team id #${teamResponse.team.id}. Should ${team.id}`)
+    }
+    team.slackData = teamResponse.team
+    const teamRepository = this.connection.getRepository(Team);
+    team = await teamRepository.save(team)
+
     await this.updateUsers(team)
     await this.updateChannels(team)
   }
