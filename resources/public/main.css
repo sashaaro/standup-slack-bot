@@ -55,6 +55,12 @@
 .ui.menu .item.menu-title {
     padding: 5px 10px;
 }
+
+.ui.menu .item.select-channel-item {
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
 .menu-title__sign {
     color: #919193;
     font-weight: 500;

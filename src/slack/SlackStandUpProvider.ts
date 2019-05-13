@@ -198,7 +198,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     });
 
     const channelRepository = this.connection.getCustomRepository(ChannelRepository);
-    
+
     const findOrCreateChannel = async (channelID: string): Promise<{channel: Channel, isNew: boolean}> => {
       let channel = await channelRepository.findOne(channelID);
       const isNew = !channel;
