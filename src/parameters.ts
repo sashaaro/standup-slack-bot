@@ -5,5 +5,10 @@ export default {
   slackVerificationToken: '',
   botUserOAuthAccessToken: '',
   host: 'http://localhost:3000',
-  debug: false
+  debug: false,
+  db: {
+    database: 'postgres',
+    username: 'postgres',
+    password: 'postgres',
+  }
 }

@@ -21,7 +21,12 @@ export interface IAppConfig {
   slackVerificationToken: string,
   botUserOAuthAccessToken: string,
   host: string,
-  debug: false
+  debug: false,
+  db: {
+    database: string,
+    username: string,
+    password: string,
+  }
 }
 
 const config = Object.assign(parameters, localParameters) as IAppConfig;
@@ -29,54 +34,64 @@ const config = Object.assign(parameters, localParameters) as IAppConfig;
 // TODO move
 
 
-export const createProvider = async (): Promise<Provider[]> => {
-  const connection = await createTypeORMConnection(config);
-  const rtmClient = new RTMClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
-  const webClient = new WebClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
-
-  return [
+export const createProvider = async (context?: string): Promise<Provider[]> => {
+  let providers = [
     {
       provide: CONFIG_TOKEN,
       useValue: config
-    },
-    {
-      provide: RENDER_TOKEN,
-      useFactory: (config: IAppConfig) =>  {
-        const renderEngine = new RenderEngine(!config.debug);
-        return renderEngine.render.bind(renderEngine)
+    }
+  ]
+
+  if (context !== 'cli') {
+    const connection = await createTypeORMConnection(config);
+    const rtmClient = new RTMClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
+    const webClient = new WebClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
+
+    providers = providers.concat([
+      {
+        provide: RENDER_TOKEN,
+        useFactory: (config: IAppConfig) =>  {
+          const renderEngine = new RenderEngine(!config.debug);
+          return renderEngine.render.bind(renderEngine)
+        },
+        deps: [CONFIG_TOKEN]
       },
-      deps: [CONFIG_TOKEN]
-    },
-    {
-      provide: TIMEZONES_TOKEN,
-      useFactory: (connection: Connection) => {
-        return connection.getRepository(Timezone).find()
+      {
+        provide: TIMEZONES_TOKEN,
+        useFactory: (connection: Connection) => {
+          return connection.getRepository(Timezone).find()
+        },
+        deps: [Connection],
       },
-      deps: [Connection],
-    },
-    {
-      provide: Connection,
-      useValue: connection
-    },
-    {
-      provide: RTMClient,
-      useValue: rtmClient
-    },
-    {
-      provide: WebClient,
-      useValue: webClient
-    },
-    SlackStandUpProvider,
-    {
-      provide: STAND_UP_BOT_STAND_UP_PROVIDER,
-      useExisting: SlackStandUpProvider
-    },
-    {
-      provide: STAND_UP_BOT_TRANSPORT,
-      useExisting: SlackStandUpProvider
-    },
-    StandUpBotService,
-    AuthAction, // TODO remove
-    SyncService
-  ].concat(actions as any)
+      {
+        provide: Connection,
+        useValue: connection
+      },
+      {
+        provide: RTMClient,
+        useValue: rtmClient
+      },
+      {
+        provide: WebClient,
+        useValue: webClient
+      },
+      SlackStandUpProvider,
+      {
+        provide: STAND_UP_BOT_STAND_UP_PROVIDER,
+        useExisting: SlackStandUpProvider
+      },
+      {
+        provide: STAND_UP_BOT_TRANSPORT,
+        useExisting: SlackStandUpProvider
+      },
+      StandUpBotService,
+      AuthAction, // TODO remove
+      SyncService
+    ])
+
+    providers = providers.concat(actions as any)
+  }
+
+
+  return providers;
 }

@@ -1,1 +1,14 @@
-export default {}
+export default {
+  slackClientID: '',
+  slackSecret: '',
+  slackSigningSecret: '',
+  slackVerificationToken: '',
+  host: '',
+  botUserOAuthAccessToken: '',
+  debug: false,
+  db: {
+    database: 'standup',
+    username: 'standupbot',
+    password: 'asdfio23j921kjlssl',
+  }
+}

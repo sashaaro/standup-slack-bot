@@ -1,0 +1,13 @@
+{
+    "type": "postgres",
+    "host": "postgres",
+    "port": 5432,
+    "database": "standup",
+    "username": "standupbot",
+    "password": "asdfio23j921kjlssl",
+    "entities": ["dist/model/*.js"],
+    "migrations": ["dist/migration/*.js"],
+    "cli": {
+        "migrationsDir": "src/migration"
+    }
+}

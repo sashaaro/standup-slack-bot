@@ -30,7 +30,11 @@ const run = async () => {
   const certificate = certFolder + '/cert.pem';
   const ca = certFolder + '/chain.pem';
 
-  const hasSSL = fs.existsSync(privateKey) && fs.existsSync(certificate)
+  const argv = process.argv.slice(2)
+
+  console.log(argv.includes('--ssl'))
+
+  const hasSSL = argv.includes('--ssl') && fs.existsSync(privateKey) && fs.existsSync(certificate)
   console.log(`SSL ${hasSSL ? 'enabled': 'disabled'}`)
 
 
