@@ -13,18 +13,18 @@
     "@slack/client": "^5.0.1",
     "@slack/events-api": "^2.2.0",
     "@slack/interactive-messages": "^1.1.1",
-    "body-parser": "^1.18.3",
+    "body-parser": "^1.19.0",
     "express": "^4.16.4",
     "express-session": "^1.15.6",
     "injection-js": "^2.2.1",
     "lodash.groupby": "^4.6.0",
-    "pg": "^7.9.0",
+    "pg": "^7.11.0",
     "pug": "^2.0.3",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
-    "rxjs": "^6.4.0",
-    "typeorm": "^0.2.16"
+    "rxjs": "^6.5.2",
+    "typeorm": "^0.2.17"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -32,7 +32,7 @@
     "@types/express-session": "^1.15.12",
     "concurrently": "^4.1.0",
     "connect-redis": "^3.4.1",
-    "nodemon": "^1.18.10",
+    "nodemon": "^1.19.0",
     "typescript": "3.4.1"
   }
 }
