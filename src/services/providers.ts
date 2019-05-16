@@ -35,7 +35,7 @@ const config = Object.assign(parameters, localParameters) as IAppConfig;
 
 
 export const createProvider = async (context?: string): Promise<Provider[]> => {
-  let providers = [
+  let providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,
       useValue: config

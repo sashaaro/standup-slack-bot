@@ -5,6 +5,7 @@ import {RENDER_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
 import {IStandUpSettings, ITimezone} from "../../bot/models";
 import AuthorizationContext from "../../services/AuthorizationContext";
 import ChannelRepository from "../../repository/ChannelRepository";
+import {Channel} from "../../model/Channel";
 
 @Injectable()
 export class ChannelsAction implements IHttpAction {
@@ -35,7 +36,7 @@ export class ChannelsAction implements IHttpAction {
       // todo validate
       const settings = <IStandUpSettings>req.body
       Object.assign(channel, settings)
-      await this.connection.getRepository(ChannelRepository).save(channel)
+      await this.connection.getRepository(Channel).save(channel)
     }
 
     res.send(this.render('channels', {
