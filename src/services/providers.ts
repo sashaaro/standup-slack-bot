@@ -87,7 +87,7 @@ export const createProvider = async (context?: string): Promise<Provider[]> => {
       StandUpBotService,
       AuthAction, // TODO remove
       SyncService
-    ])
+    ] as any)
 
     providers = providers.concat(actions as any)
   }

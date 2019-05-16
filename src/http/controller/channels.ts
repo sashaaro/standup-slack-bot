@@ -34,7 +34,7 @@ export class ChannelsAction implements IHttpAction {
 
     if (req.method == "POST") {
       // todo validate
-      const settings = <IStandUpSettings>req.body
+      const settings = <IStandUpSettings|any>req.body
       Object.assign(channel, settings)
       await this.connection.getRepository(Channel).save(channel)
     }
