@@ -745,7 +745,7 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
 
     if (!standUp) {
       // TODO open alert?!
-      await this.sendMessage(user, `I will remind you when your next standup is up`)
+      await this.sendMessage(user, `I will remind you when your next standup is up!`)
       return;
     }
 
