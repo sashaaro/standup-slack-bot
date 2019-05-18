@@ -345,8 +345,6 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     const qb = standUpRepository.createQueryBuilder('standup');
 
     qb
-      .where('CURRENT_TIMESTAMP >= standup.start')
-      .andWhere('CURRENT_TIMESTAMP <= standup.end')
       .orderBy('standup.start', "ASC")
 
     this.qbStandUpJoins(qb)
@@ -376,7 +374,9 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
   }
 
   public qbStandUpInProgress(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
-    return qb.andWhere('CURRENT_TIMESTAMP <= standup.end');
+    return qb
+      .andWhere('CURRENT_TIMESTAMP >= standup.start')
+      .andWhere('CURRENT_TIMESTAMP <= standup.end');
   }
 
   private qbAuthorAnswers(qb: SelectQueryBuilder<StandUp>, user: IUser): SelectQueryBuilder<StandUp> {
