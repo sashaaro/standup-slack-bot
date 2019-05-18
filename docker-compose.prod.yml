@@ -9,7 +9,7 @@ services:
     entrypoint: ["sh", "-c", "npm install && ./node_modules/.bin/tsc && node dist/index.js"]
     user: 1000:1000
     ports:
-      - "443:443"
+      - "3000:3000"
     volumes:
       - .:/opt/app
     working_dir: /opt/app
