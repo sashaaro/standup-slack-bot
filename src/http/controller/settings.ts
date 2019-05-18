@@ -7,6 +7,7 @@ import QuestionRepository from "../../repository/QuestionRepository";
 import {ITimezone} from "../../bot/models";
 import Timezone from "../../model/Timezone";
 import AuthorizationContext from "../../services/AuthorizationContext";
+import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
 export class SettingsAction implements IHttpAction {
@@ -21,8 +22,7 @@ export class SettingsAction implements IHttpAction {
     const context = req.context as AuthorizationContext;
     const user = context.getUser()
     if (!user) {
-      res.send('Access deny') // TODO 403
-      return;
+      throw new AccessDenyError();
     }
 
     const channelRepository = this.connection.getRepository(Channel)

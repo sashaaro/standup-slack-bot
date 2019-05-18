@@ -11,8 +11,9 @@ import {createExpress} from "./http/createExpress";
 import {createProvider, IAppConfig} from "./services/providers";
 import * as Rollbar from "rollbar";
 import {CONFIG_TOKEN} from "./services/token";
+import 'express-async-errors';
 
-const run = async () => {
+const main = async () => {
   const injector = ReflectiveInjector.resolveAndCreate(await createProvider());
 
   const config: IAppConfig = injector.get(CONFIG_TOKEN)
@@ -58,7 +59,7 @@ const run = async () => {
   serverCreator.createServer(options, expressApp).listen(port);
 }
 
-run()
+main()
   .catch(error => {
     logError(error)
     throw error;

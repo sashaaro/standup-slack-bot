@@ -11,7 +11,7 @@ import {SetChannelAction} from "./controller/setChannel";
 import {Connection} from "typeorm";
 import SyncService from "../services/SyncServcie";
 import AuthorizationContext from "../services/AuthorizationContext";
-import {CONFIG_TOKEN} from "../services/token";
+import {CONFIG_TOKEN, RENDER_TOKEN} from "../services/token";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -43,6 +43,11 @@ export const dashboardContext = (injector: Injector) => {
     next()
   }
 }
+
+export class AccessDenyError extends Error {
+
+}
+
 
 export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
@@ -78,6 +83,32 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
 
   const setChannelAction = injector.get(SetChannelAction)
   router.post('/channel/selected', setChannelAction.handle.bind(setChannelAction));
+
+
+  router.use((req: express.Request, res: express.Response, next) => {
+    res.status(404);
+
+    if (req.accepts('html')) {
+      res.send(injector.get(RENDER_TOKEN)('404'));
+      return;
+    }
+
+    res.type('txt').send('Not found');
+  })
+
+
+  router.use((err, req, res, next) => {
+    console.log(err)
+    if (err instanceof AccessDenyError) {
+      res.status(403);
+
+      if (req.accepts('html')) {
+        res.send(injector.get(RENDER_TOKEN)('403'));
+        return;
+      }
+    }
+  })
+
 
   //const channelsAction = Container.get(ChannelsAction)
   //app.get('/channels', channelsAction.handle.bind(channelsAction));

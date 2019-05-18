@@ -4,6 +4,7 @@ import Team from "../../model/Team";
 import {Channel} from "../../model/Channel";
 import {Injectable} from 'injection-js';
 import AuthorizationContext from "../../services/AuthorizationContext";
+import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
 export class UpdateChannelAction implements IHttpAction {
@@ -14,8 +15,7 @@ export class UpdateChannelAction implements IHttpAction {
   async handle(req, res) {
     const user = (req.context as AuthorizationContext).getUser()
     if (!user) {
-      res.send('Access deny') // TODO 403
-      return;
+      throw new AccessDenyError();
     }
 
     const teamRepository = this.connection.getRepository(Team)

@@ -3,6 +3,7 @@ import {Injectable} from 'injection-js';import {Connection} from "typeorm";
 import Team from "../../model/Team";
 import {Channel} from "../../model/Channel";
 import AuthorizationContext from "../../services/AuthorizationContext";
+import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
 export class SetChannelAction implements IHttpAction {
@@ -14,8 +15,7 @@ export class SetChannelAction implements IHttpAction {
     const context = req.context as AuthorizationContext;
     const user = context.getUser()
     if (!user) {
-      res.send('Access deny') // TODO 403
-      return;
+      throw new AccessDenyError();
     }
 
     const {team} = await context.getGlobalParams()

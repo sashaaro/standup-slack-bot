@@ -5,6 +5,7 @@ import {logError} from "../services/logError";
 import { createMessageAdapter } from "@slack/interactive-messages";
 import {CONFIG_TOKEN} from "../services/token";
 import {ReflectiveInjector} from "injection-js";
+import {IAppConfig} from "../services/providers";
 
 export const createExpress = (injector: ReflectiveInjector) => {
   const expressApp = express()
@@ -46,16 +47,18 @@ export const createExpress = (injector: ReflectiveInjector) => {
   //expressApp.post('/api/slack/interactive', apiSlackInteractiveAction.handle.bind(apiSlackInteractiveAction));
 
 
+  const config: IAppConfig = injector.get(CONFIG_TOKEN)
+  if (config.debug) {
+    expressApp.use((req, res, next) => {
+      console.log(`${req.originalUrl} ${req.method}`);
 
-  expressApp.use((req, res, next) => {
-    console.log(`${req.originalUrl} ${req.method}`);
+      res.on('finish', () => {
+        console.info(`${res.statusCode} ${res.statusMessage}; ${res.get('Content-Length') || 0}b sent`)
+      })
 
-    res.on('finish', () => {
-      console.info(`${res.statusCode} ${res.statusMessage}; ${res.get('Content-Length') || 0}b sent`)
+      next()
     })
-
-    next()
-  })
+  }
 
   useStaticPublicFolder(expressApp);
 
@@ -66,7 +69,7 @@ export const createExpress = (injector: ReflectiveInjector) => {
     return res.send('1');
   })*/
 
-  const slackInteractions = createMessageAdapter(injector.get(CONFIG_TOKEN).slackSigningSecret);
+  const slackInteractions = createMessageAdapter(config.slackSigningSecret);
   slackInteractions.action({},  async (response) => {
     try {
       await injector.get(ApiSlackInteractive).handleResponse(response);
@@ -76,7 +79,7 @@ export const createExpress = (injector: ReflectiveInjector) => {
   })
 
   expressApp.use('/api/slack/interactive', slackInteractions.expressMiddleware());
-  useBodyParserAndSession(expressApp);
+  useBodyParserAndSession(expressApp); // TODO move to dashboardExpressMiddleware?!
   expressApp.use('/', dashboardExpressMiddleware(injector));
 
   return expressApp;

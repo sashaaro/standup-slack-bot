@@ -9,6 +9,7 @@ import {IStandUpProvider} from "../../bot/models";
 import { Injectable, Inject } from 'injection-js';
 import {IAppConfig} from "../../services/providers";
 import SyncService from "../../services/SyncServcie";
+import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
 export class SyncAction implements IHttpAction {
@@ -30,8 +31,7 @@ export class SyncAction implements IHttpAction {
   async handle(req, res) {
     const user = (req.context as AuthorizationContext).getUser()
     if (!user) {
-      res.send('Access deny') // TODO 403
-      return;
+      throw new AccessDenyError();
     }
 
     const teamRepository = this.connection.getRepository(Team)

@@ -4,6 +4,7 @@ import {Inject, Injectable} from 'injection-js';
 import {Connection} from "typeorm";
 import AuthorizationContext from "../../services/AuthorizationContext";
 import {RENDER_TOKEN} from "../../services/token";
+import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
 export class StandUpsAction implements IHttpAction {
@@ -18,10 +19,8 @@ export class StandUpsAction implements IHttpAction {
     const user = context.getUser()
 
     if (!user) {
-      res.send('Access deny');
-      return;
+      throw new AccessDenyError();
     }
-
 
     const globalParams = await context.getGlobalParams()
     const {team, channel} = globalParams

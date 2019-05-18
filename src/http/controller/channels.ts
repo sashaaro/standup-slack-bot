@@ -6,6 +6,7 @@ import {IStandUpSettings, ITimezone} from "../../bot/models";
 import AuthorizationContext from "../../services/AuthorizationContext";
 import ChannelRepository from "../../repository/ChannelRepository";
 import {Channel} from "../../model/Channel";
+import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
 export class ChannelsAction implements IHttpAction {
@@ -19,8 +20,7 @@ export class ChannelsAction implements IHttpAction {
   async handle(req, res) {
     const session = req.session
     if (!session.user) {
-      res.send('Access deny') // TODO 403
-      return;
+      throw new AccessDenyError();
     }
     const context = req.context as AuthorizationContext;
     const {team, channel} = await context.getGlobalParams()
