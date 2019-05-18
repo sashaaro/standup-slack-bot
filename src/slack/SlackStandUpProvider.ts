@@ -344,12 +344,15 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     const standUpRepository = this.connection.getRepository(StandUp);
     const qb = standUpRepository.createQueryBuilder('standup');
 
+    qb
+      .where('CURRENT_TIMESTAMP >= standup.start')
+      .andWhere('CURRENT_TIMESTAMP <= standup.end')
+      .orderBy('standup.start', "ASC")
+
     this.qbStandUpJoins(qb)
     this.qbActualStandUpInProgressWithAuthorAnswers(qb, user);
 
-    return await qb
-      .where('CURRENT_TIMESTAMP >= standup.start')
-      .orderBy('standup.start', "ASC")
+    return qb
       .take(1)
       .getOne();
   }

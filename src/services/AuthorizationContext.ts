@@ -27,7 +27,7 @@ export default class AuthorizationContext {
   }
 
   setUser(user: IAuthUser) {
-    this.req.session.user = user
+    this.req.session.user = user // TODO save id only
   }
 
   getUser(): IAuthUser|null {
