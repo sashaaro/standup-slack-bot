@@ -26,6 +26,10 @@ class Timezone implements ITimezone{
 
   @Column()
   label: string;
+
+  get friendlyLabel() {
+    return '(GMT ' + this.utc_offset.hours + ':' + (Math.abs(this.utc_offset.minutes || 0)).toString().padStart(2, '0') + ') ' + this.label
+  }
 }
 
 export default Timezone;

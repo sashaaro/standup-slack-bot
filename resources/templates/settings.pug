@@ -24,10 +24,10 @@ block authorized_content
                                     label= weekDay
                     .field
                         label= 'Locale timezone'
-                        select.dropdown.form-control(name="timezone")
+                        select.dropdown.search.form-control(name="timezone")
                             each timezone, index in timezones
                                 - var selected = channel.timezone && channel.timezone.id == timezone.id
-                                option(value=timezone.id, selected=selected)= timezone.label
+                                option(value=timezone.id, selected=selected)= timezone.friendlyLabel
                     .field
                         label= 'Start meeting (locale time)'
                         input.form-control(name="start", type="time", step="60", value=channel.start)

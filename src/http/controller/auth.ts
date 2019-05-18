@@ -1,17 +1,27 @@
 import * as request from 'request-promise'
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
-import {CONFIG_TOKEN, RENDER_TOKEN} from "../../services/token";
+import {CONFIG_TOKEN, RENDER_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
 import AuthorizationContext, {IAuthUser} from "../../services/AuthorizationContext";
 import {logError} from "../../services/logError";
 import {IAppConfig} from "../../services/providers";
+import Timezone from "../../model/Timezone";
 
 @Injectable()
 export class AuthAction implements IHttpAction {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
+    @Inject(TIMEZONES_TOKEN) private timezone,
     @Inject(RENDER_TOKEN) private render: Function
   ) {
+
+    timezone.then((s) => {
+      s.forEach((t: Timezone) => {
+        console.log(t.utc_offset)
+        console.log(t.utc_offset.hours)
+        console.log(t.utc_offset.minutes)
+      })
+    })
   }
 
   async handle(req, res) {
