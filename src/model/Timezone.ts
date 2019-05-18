@@ -28,7 +28,7 @@ class Timezone implements ITimezone{
   label: string;
 
   get friendlyLabel() {
-    return '(GMT ' + this.utc_offset.hours + ':' + (Math.abs(this.utc_offset.minutes || 0)).toString().padStart(2, '0') + ') ' + this.label
+    return '(GMT ' + (this.utc_offset.hours || '00') + ':' + (Math.abs(this.utc_offset.minutes || 0)).toString().padStart(2, '0') + ') ' + this.label
   }
 }
 

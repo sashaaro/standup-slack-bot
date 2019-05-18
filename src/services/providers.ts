@@ -22,6 +22,7 @@ export interface IAppConfig {
   botUserOAuthAccessToken: string,
   host: string,
   debug: false,
+  rollBarAccessToken?: string,
   db: {
     database: string,
     username: string,

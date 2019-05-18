@@ -23,6 +23,7 @@
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
+    "rollbar": "^2.7.0",
     "rxjs": "^6.5.2",
     "typeorm": "^0.2.17"
   },

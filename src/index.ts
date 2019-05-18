@@ -8,11 +8,23 @@ import * as https from "https";
 import * as fs from "fs";
 import {logError} from "./services/logError";
 import {createExpress} from "./http/createExpress";
-import {createProvider} from "./services/providers";
-
+import {createProvider, IAppConfig} from "./services/providers";
+import * as Rollbar from "rollbar";
+import {CONFIG_TOKEN} from "./services/token";
 
 const run = async () => {
   const injector = ReflectiveInjector.resolveAndCreate(await createProvider());
+
+  const config: IAppConfig = injector.get(CONFIG_TOKEN)
+
+
+  if (config.rollBarAccessToken) {
+    const rollbar = new Rollbar({
+      accessToken: config.rollBarAccessToken,
+      captureUncaught: true,
+      captureUnhandledRejections: true
+    });
+  }
 
   const slackProvider: SlackStandUpProvider = injector.get(SlackStandUpProvider);
   await slackProvider.init();
@@ -22,6 +34,7 @@ const run = async () => {
   standUpBot.finishStandUp$.subscribe((standUp: StandUp) => {
     slackProvider.sendReport(standUp)
   });
+
 
   const expressApp = createExpress(injector)
 
@@ -45,7 +58,8 @@ const run = async () => {
   serverCreator.createServer(options, expressApp).listen(port);
 }
 
-run().then(() => {}).catch(error => {
-  logError(error)
-  throw error;
-});
+run()
+  .catch(error => {
+    logError(error)
+    throw error;
+  });
