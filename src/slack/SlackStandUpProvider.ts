@@ -302,9 +302,14 @@ export class SlackStandUpProvider implements IStandUpProvider, ITransport {
     return;
   }
 
+
   findTeamsByStartNow(): Promise<Channel[]> {
-    // const currentTimeInTimestampSql = "to_char(CURRENT_TIMESTAMP at time zone to_char(- timezone.utc_offset, 'HH24:MI'), 'HH24:MI')"
-    const currentTimeInTimestampSql = "CONCAT(to_char(- timezone.utc_offset, 'HH24:'), RPAD(abs(EXTRACT(MINUTE FROM timezone.utc_offset))::text, 2, '0'))"
+    // SELECT label,
+    // to_char(CURRENT_TIMESTAMP at time zone CONCAT(to_char(- timezone.utc_offset, 'HH24:'), RPAD(abs(EXTRACT(MINUTE FROM timezone.utc_offset))::text, 2, '0')), 'HH24:MI')
+    // as local_time FROM timezone;
+
+    const atTimeZone = "CONCAT(to_char(- timezone.utc_offset, 'HH24:'), RPAD(abs(EXTRACT(MINUTE FROM timezone.utc_offset))::text, 2, '0'))"; // to_char(- timezone.utc_offset, 'HH24:MI')
+    const currentTimeInTimestampSql = `to_char(CURRENT_TIMESTAMP at time zone ${atTimeZone}, 'HH24:MI')`
 
     return this.connection.getRepository(Channel)
       .createQueryBuilder('channel')
