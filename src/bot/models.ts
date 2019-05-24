@@ -59,10 +59,6 @@ export interface IStandUp {
 }
 
 export interface IStandUpProvider {
-  agreeToStart$: Observable<IUser>
-
-  sendGreetingMessage?(user: IUser, standUp: IStandUp);
-
   // TODO startTeamStandUpByDate(): Promise<IStandUp[]>
   createStandUp(): IStandUp
 
@@ -86,8 +82,10 @@ export interface IStandUpProvider {
 }
 
 export interface ITransport {
+  sendGreetingMessage?(user: IUser, standUp: IStandUp);
   sendMessage(user: IUser, message: string): Promise<any>
 
+  agreeToStart$: Observable<IUser>
   message$?: Observable<IMessage>
   messages$?: Observable<IMessage[]> // should correct order
 }

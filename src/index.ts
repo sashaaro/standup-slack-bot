@@ -12,6 +12,7 @@ import {createProvider, IAppConfig} from "./services/providers";
 import * as Rollbar from "rollbar";
 import {CONFIG_TOKEN} from "./services/token";
 import 'express-async-errors';
+import {SlackTransport} from "./slack/SlackTransport";
 
 const main = async () => {
   const injector = ReflectiveInjector.resolveAndCreate(await createProvider());
@@ -27,13 +28,13 @@ const main = async () => {
     });
   }
 
-  const slackProvider: SlackStandUpProvider = injector.get(SlackStandUpProvider);
-  await slackProvider.init();
+  const slackTransport: SlackTransport = injector.get(SlackTransport);
+  await slackTransport.init();
   const standUpBot: StandUpBotService = injector.get(StandUpBotService)
   standUpBot.start()
 
   standUpBot.finishStandUp$.subscribe((standUp: StandUp) => {
-    slackProvider.sendReport(standUp)
+    slackTransport.sendReport(standUp)
   });
 
 

@@ -10,13 +10,14 @@ import {
 } from "../../slack/model/InteractiveResponse";
 import {logError} from "../../services/logError";
 import {IAppConfig} from "../../services/providers";
+import {SlackTransport} from "../../slack/SlackTransport";
 
 // TODO remove
 @Injectable()
 export class ApiSlackInteractive implements IHttpAction {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
-    private slackStandUpProvider: SlackStandUpProvider
+    private slackTransport: SlackTransport
   ) {
   }
 
@@ -37,9 +38,9 @@ export class ApiSlackInteractive implements IHttpAction {
   async handleResponse(response: any)
   {
     if (response.type === InteractiveResponseTypeEnum.interactive_message) {
-      await this.slackStandUpProvider.handleInteractiveResponse(response as InteractiveResponse)
+      await this.slackTransport.handleInteractiveResponse(response as InteractiveResponse)
     } else if (response.type === InteractiveResponseTypeEnum.dialog_submission) {
-      await this.slackStandUpProvider.handleInteractiveDialogSubmissionResponse(response as InteractiveDialogSubmissionResponse)
+      await this.slackTransport.handleInteractiveDialogSubmissionResponse(response as InteractiveDialogSubmissionResponse)
     }
   }
 }

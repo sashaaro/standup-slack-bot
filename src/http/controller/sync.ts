@@ -1,28 +1,29 @@
 import {IHttpAction} from "./index";
-import {STAND_UP_BOT_STAND_UP_PROVIDER} from "../../bot/StandUpBotService";
+import {STAND_UP_BOT_TRANSPORT} from "../../bot/StandUpBotService";
 import {Connection} from "typeorm";
 import {CONFIG_TOKEN} from "../../services/token";
-import {getSyncSlackTeamKey, SlackStandUpProvider} from "../../slack/SlackStandUpProvider";
+import {getSyncSlackTeamKey} from "../../slack/SlackStandUpProvider";
 import Team from "../../model/Team";
 import AuthorizationContext from "../../services/AuthorizationContext";
-import {IStandUpProvider} from "../../bot/models";
+import {ITransport} from "../../bot/models";
 import { Injectable, Inject } from 'injection-js';
 import {IAppConfig} from "../../services/providers";
 import SyncService from "../../services/SyncServcie";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
+import {SlackTransport} from "../../slack/SlackTransport";
 
 @Injectable()
 export class SyncAction implements IHttpAction {
-  standUpProvider: SlackStandUpProvider
+  transport: SlackTransport
 
   constructor(
     private connection: Connection,
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
-    @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) standUpProvider: IStandUpProvider,
+    @Inject(STAND_UP_BOT_TRANSPORT) transport: ITransport,
     private syncService: SyncService
   ) {
-    if (standUpProvider instanceof SlackStandUpProvider) {
-      this.standUpProvider = standUpProvider;
+    if (transport instanceof SlackTransport) {
+      this.transport = transport;
     } else {
       throw new Error('IStandUpProvider is not supported by UI')
     }
@@ -43,7 +44,7 @@ export class SyncAction implements IHttpAction {
 
 
     if (!this.syncService.inProgress(getSyncSlackTeamKey(team.id))) {
-      this.syncService.exec(getSyncSlackTeamKey(team.id), this.standUpProvider.updateData(team))
+      this.syncService.exec(getSyncSlackTeamKey(team.id), this.transport.updateData(team))
     } else {
       // flash message
     }

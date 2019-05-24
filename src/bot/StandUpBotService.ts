@@ -53,8 +53,8 @@ export default class StandUpBotService {
     this.startStandUpInterval();
     this.listenMessages();
 
-    if (this.standUpProvider) {
-      this.standUpProvider.agreeToStart$.subscribe(async (user: IUser) => {
+    if (this.transport.agreeToStart$) {
+      this.transport.agreeToStart$.subscribe(async (user: IUser) => {
         const standUp = await this.standUpProvider.findProgressByUser(user);
 
         if (standUp) {
@@ -247,13 +247,13 @@ export default class StandUpBotService {
    * @param standUp
    */
   private async beforeStandUp(user: IUser, standUp: IStandUp): Promise<boolean> {
-    if (this.standUpProvider.sendGreetingMessage) {
-      await this.standUpProvider.sendGreetingMessage(user, standUp)
+    if (this.transport.sendGreetingMessage) {
+      await this.transport.sendGreetingMessage(user, standUp)
     } else {
       await this.send(user, standUpGreeting);
     }
 
-    return !this.standUpProvider.agreeToStart$ // true if no agree option
+    return !this.transport.agreeToStart$ // true if no agree option
   }
 
   private async afterStandUp(user: IUser, standUp: IStandUp) {

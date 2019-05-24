@@ -13,6 +13,7 @@ import localParameters from "../parameters.local";
 import {LogLevel, RTMClient} from '@slack/rtm-api'
 import SyncService from "./SyncServcie";
 import {RenderEngine} from "./RenderEngine";
+import {SlackTransport} from "../slack/SlackTransport";
 
 export interface IAppConfig {
   slackClientID: string,
@@ -81,9 +82,10 @@ export const createProvider = async (context?: string): Promise<Provider[]> => {
         provide: STAND_UP_BOT_STAND_UP_PROVIDER,
         useExisting: SlackStandUpProvider
       },
+      SlackTransport,
       {
         provide: STAND_UP_BOT_TRANSPORT,
-        useExisting: SlackStandUpProvider
+        useExisting: SlackTransport
       },
       StandUpBotService,
       AuthAction, // TODO remove
