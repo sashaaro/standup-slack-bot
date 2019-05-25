@@ -20,10 +20,10 @@ const main = async () => {
     env = envParam.split('=')[1]
   }
 
+  console.log(`Environment: ${env}`)
+
   const injector = ReflectiveInjector.resolveAndCreate(await createProvider('app', env));
-
   const config: IAppConfig = injector.get(CONFIG_TOKEN)
-
 
   if (config.rollBarAccessToken) {
     const rollbar = new Rollbar({
@@ -52,7 +52,6 @@ const main = async () => {
   const argv = process.argv.slice(2)
 
   const hasSSL = argv.includes('--ssl') && fs.existsSync(privateKey) && fs.existsSync(certificate)
-  console.log(`Environment: ${env}`)
   console.log(`SSL ${hasSSL ? 'enabled': 'disabled'}`)
 
 
