@@ -1,11 +1,10 @@
 import {Request, Response} from "express";
 import {AuthAction} from "./auth";
 import {ChannelsAction} from "./channels";
-import {SetChannelAction} from "./setChannel";
+import {UpdateChannelAction} from "./UpdateChannelAction";
 import {SettingsAction} from "./settings";
 import {StandUpsAction} from "./standUps";
 import {SyncAction} from "./sync";
-import {UpdateChannelAction} from "./updateChannel";
 import {ApiSlackInteractive} from "./apiSlackInteractive";
 
 export const templateDirPath = './resources/templates'
@@ -18,11 +17,10 @@ const actions = [
   ApiSlackInteractive,
   AuthAction,
   ChannelsAction,
-  SetChannelAction,
+  UpdateChannelAction,
   SettingsAction,
   StandUpsAction,
-  SyncAction,
-  UpdateChannelAction
+  SyncAction
 ]
 
 export default actions.filter((a) => !!a)

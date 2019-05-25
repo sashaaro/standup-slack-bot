@@ -1,11 +1,12 @@
 extends layout/authorized_main
 
 block authorized_content
-    .alert.alert--primary.activate-bot-block
-        div= "Activate bot for your meeting channel"
-        code
-            | /invite
-            a= " @daily_standup"
+    .activate-bot-block
+        .alert.alert--primary
+            div= "Activate bot for your meeting channel"
+            code
+                | /invite
+                a= " @daily_standup"
 
     if team.enableChannels.length
         form.row.auth-block.field(action="/channel/selected", method="POST")
@@ -19,7 +20,7 @@ block append scripts
     script.
       $('#selectChannel').dropdown({
         clearable: true,
-        placeholder: 'Select channel'
+        placeholder: 'Select activated channel'
       }).dropdown('clear')
       $('#sync-link').click(function () {
         this.classList.add('active')

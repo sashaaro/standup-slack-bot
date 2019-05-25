@@ -6,7 +6,7 @@ import AuthorizationContext from "../../services/AuthorizationContext";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
-export class SetChannelAction implements IHttpAction {
+export class UpdateChannelAction implements IHttpAction {
   constructor(
     private connection: Connection,
   ) {

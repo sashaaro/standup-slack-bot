@@ -416,7 +416,7 @@ export class SlackTransport implements ITransport {
       trigger_id: response.trigger_id,
       //"token": this.webClient.token,
       dialog: {
-        callback_id: `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // TODO multi standups
+        callback_id: `${CALLBACK_PREFIX_SEND_STANDUP_ANSWERS}`, // .${standUp.id}. see state
         title: `Standup #${standUp.team.name}`,
         submit_label: answers.length > 0 ? "Update" : "Submit",
         notify_on_cancel: true,
@@ -470,10 +470,16 @@ export class SlackTransport implements ITransport {
   async handleInteractiveDialogSubmission(response: InteractiveDialogSubmissionResponse) {
     const user = await this.connection.getRepository(User).findOne(response.user.id);
 
+
+    if (!response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
+      throw new Error('Wrong response');
+    }
+
     if (!user) {
       throw new Error(`User ${response.user} is not found`)
     }
 
+    // const standUpId = response.callback_id.split('.', 2)[1];
 
     const channelTeam = user.team.channels.filter((channel) => (channel.id === response.channel.id)).pop()
     if (!user) {

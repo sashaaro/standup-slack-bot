@@ -33,7 +33,7 @@ export class StandUpsAction implements IHttpAction {
     }
 
     if (!channel) {
-      res.send(this.render('setChannel', globalParams));
+      res.send(this.render('editChannel', globalParams));
       return;
     }
 

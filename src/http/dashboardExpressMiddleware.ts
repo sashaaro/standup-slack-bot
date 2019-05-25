@@ -7,7 +7,7 @@ import {AuthAction} from "./controller/auth";
 import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
 import {SyncAction} from "./controller/sync";
-import {SetChannelAction} from "./controller/setChannel";
+import {UpdateChannelAction} from "./controller/UpdateChannelAction";
 import {Connection} from "typeorm";
 import SyncService from "../services/SyncServcie";
 import AuthorizationContext from "../services/AuthorizationContext";
@@ -81,7 +81,7 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
   const syncAction = injector.get(SyncAction)
   router.get('/sync', syncAction.handle.bind(syncAction));
 
-  const setChannelAction = injector.get(SetChannelAction)
+  const setChannelAction = injector.get(UpdateChannelAction)
   router.post('/channel/selected', setChannelAction.handle.bind(setChannelAction));
 
 
