@@ -29,9 +29,11 @@ const formatMsg = async (team: Team, userRepository: Repository<User>, text) => 
     newText = text.replace(new RegExp('<'+link+'>'), '<a target="_blank" href="$1">$1</a>')
   } while (newText !== text)
 
+
+  // channel link
   do {
     text = newText
-    newText = text.replace(new RegExp('<#([A-Z0-9]+)\\|([#a-zA-Z0-9]+)>'),
+    newText = text.replace(new RegExp('<#([A-Z0-9]+)\\|([#a-zA-Z0-9\-]+)>'),
       `<a target="_blank" href="https://${team.domain}.slack.com/messages/$1/details/">#$2</a>`
     )
   } while (newText !== text)
@@ -47,9 +49,8 @@ const formatMsg = async (team: Team, userRepository: Repository<User>, text) => 
     if (user) {
       newText = text.substring(0, match.index) + text.slice(match.index).replace(`<@${match[1]}>`,
         `<a target="_blank" href="https://${team.domain}.slack.com/messages/${match[1]}/details/">@${user.name}</a>`)
-      break;
     } else {
-      break;
+      newText = text.substring(0, match.index) + text.slice(match.index).replace(`<@${match[1]}>`, `<.@${match[1]}>`)
     }
 
   } while (true)
