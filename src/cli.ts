@@ -19,7 +19,14 @@ const options: ConnectionOptions = {
 
 const run = async () => {
   if (process.argv.includes('db')) {
-    const injector = ReflectiveInjector.resolveAndCreate(await createProvider('cli'))
+
+    const envParam = process.argv.filter((param) => param.startsWith(`--env=`)).pop();
+    let env = 'local';
+    if (envParam) {
+      env = envParam.split('=')[1]
+    }
+
+    const injector = ReflectiveInjector.resolveAndCreate(await createProvider('cli', env))
     const config: IAppConfig = injector.get(CONFIG_TOKEN)
     const db = config.db;
 

@@ -9,7 +9,7 @@ import actions from "../http/controller";
 import {createTypeORMConnection} from "./createTypeORMConnection";
 import {WebClient} from '@slack/web-api'
 import parameters from "../parameters";
-import localParameters from "../parameters.local";
+//import envParameters from "../parameters.local";
 import {LogLevel, RTMClient} from '@slack/rtm-api'
 import SyncService from "./SyncServcie";
 import {RenderEngine} from "./RenderEngine";
@@ -31,12 +31,16 @@ export interface IAppConfig {
   }
 }
 
-const config = Object.assign(parameters, localParameters) as IAppConfig;
 
 // TODO move
 
 
-export const createProvider = async (context?: string): Promise<Provider[]> => {
+export const createProvider = async (context?: string, env = 'local'): Promise<Provider[]> => {
+  const envParameters = require(`../parameters.${env}.js`).default
+
+  const config = Object.assign(parameters, envParameters) as IAppConfig;
+
+
   let providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,

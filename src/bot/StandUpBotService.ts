@@ -28,13 +28,6 @@ class AlreadySubmittedStandUpError extends Error {
   }
 }
 
-
-const getTimeString = (date: Date, timezoneShift: number) => {
-  const minutes = date.getUTCMinutes();
-  const hours = date.getUTCHours();
-  return ('0' + (hours + parseInt(timezoneShift.toFixed(0)))).slice(-2) + ':' + ('0' + minutes).slice(-2) // TODO shift minutes
-}
-
 @Injectable()
 export default class StandUpBotService {
   protected finishStandUp = new Subject<IStandUp>()
