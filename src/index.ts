@@ -15,7 +15,13 @@ import 'express-async-errors';
 import {SlackTransport} from "./slack/SlackTransport";
 
 const main = async () => {
-  const injector = ReflectiveInjector.resolveAndCreate(await createProvider());
+  const envParam = process.argv.filter((param) => param.startsWith(`--env=`)).pop();
+  let env = 'local';
+  if (envParam) {
+    env = envParam.split('=')[1]
+  }
+
+  const injector = ReflectiveInjector.resolveAndCreate(await createProvider('app', env));
 
   const config: IAppConfig = injector.get(CONFIG_TOKEN)
 
