@@ -79,15 +79,17 @@
 
 
 .stand-up {
-    padding-bottom: 20px;
+    padding-bottom: 1.5em;
     border-bottom: #cfd5da solid 1px;
 }
 .stand-up:last-child {
-    border-bottom: initial;
+    border-bottom: none;
 }
 
 .stand-up__date {
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-weight: 700;
     font-size: 18px;
 }
@@ -115,7 +117,7 @@
     font-weight: bold;
     font-size: 16px;
 
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .stand-up-item__question-answer {

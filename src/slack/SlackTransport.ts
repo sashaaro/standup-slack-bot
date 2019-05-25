@@ -27,10 +27,10 @@ import * as groupBy from "lodash.groupby";
 import {RTMClient} from '@slack/rtm-api'
 import {WebClient} from '@slack/web-api'
 
-const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next standup is up`; // TODO link to report
+const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
 
-const isInProgress = (standUp: IStandUp) => {
+export const isInProgress = (standUp: IStandUp) => {
   return new Date().getTime() < standUp.end.getTime()
 }
 
@@ -114,7 +114,7 @@ export class SlackTransport implements ITransport {
 
       this.rtm.on('error', async (message) => {
         logError(message)
-        observer.complete();
+        observer.error(message);
       });
     });
 

@@ -2,4 +2,4 @@ node_modules
 .idea
 dist
 cert
-src/parameters.local.ts
+src/parameters.*.ts

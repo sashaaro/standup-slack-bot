@@ -16,6 +16,7 @@ import {RenderEngine} from "./RenderEngine";
 import {SlackTransport} from "../slack/SlackTransport";
 
 export interface IAppConfig {
+  env: string,
   slackClientID: string,
   slackSecret: string,
   slackSigningSecret: string,
@@ -35,11 +36,11 @@ export interface IAppConfig {
 // TODO move
 
 
-export const createProvider = async (context?: string, env = 'local'): Promise<Provider[]> => {
+export const createProvider = async (context?: string, env = 'dev'): Promise<Provider[]> => {
   const envParameters = require(`../parameters.${env}.js`).default
 
   const config = Object.assign(parameters, envParameters) as IAppConfig;
-
+  config.env = env
 
   let providers: Provider[] = [
     {
@@ -57,7 +58,7 @@ export const createProvider = async (context?: string, env = 'local'): Promise<P
       {
         provide: RENDER_TOKEN,
         useFactory: (config: IAppConfig) =>  {
-          const renderEngine = new RenderEngine(!config.debug);
+          const renderEngine = new RenderEngine(config.env === 'prod');
           return renderEngine.render.bind(renderEngine)
         },
         deps: [CONFIG_TOKEN]

@@ -5,6 +5,7 @@ import {Connection} from "typeorm";
 import AuthorizationContext from "../../services/AuthorizationContext";
 import {RENDER_TOKEN} from "../../services/token";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
+import {isInProgress} from "../../slack/SlackTransport";
 
 @Injectable()
 export class StandUpsAction implements IHttpAction {
@@ -79,7 +80,8 @@ export class StandUpsAction implements IHttpAction {
     res.send(this.render('standUps', Object.assign({
       standUpList,
       activeMenu: 'reports',
-      pageCount
+      pageCount,
+      isInProgress
     }, globalParams)));
   }
 }

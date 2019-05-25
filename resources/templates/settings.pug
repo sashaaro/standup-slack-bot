@@ -15,7 +15,7 @@ block authorized_content
             .column
                 h3.ui.header= "Stan-up settings"
                 form.ui.form(method='post')
-                    .field
+                    // TODO .field
                         label= 'Days'
                         div
                             each weekDay in weekDays
@@ -33,7 +33,7 @@ block authorized_content
                         input.form-control(name="start", type="time", step="60", value=channel.start)
                     .field
                         label= 'Duration'
-                        input.form-control(name="duration", type="number", step="5", value= channel.duration)
+                        input.form-control(name="duration", type="number", step="1", value= channel.duration)
                     button.ui.button.fluid.positive(type="submit")
                         i.save.icon
                         | Save settings

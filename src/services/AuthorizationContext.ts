@@ -18,12 +18,16 @@ export interface IAuthUser {
 
 @Injectable()
 export default class AuthorizationContext {
+  intl: Intl.DateTimeFormat;
+
   constructor(
     private req: express.Request,
     private connection: Connection,
     private syncService: SyncService,
     @Inject(CONFIG_TOKEN) private config: IAppConfig
   ) {
+    const locale = 'en';
+    this.intl = new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric', weekday: 'long' });
   }
 
   setUser(user: IAuthUser) {
@@ -74,7 +78,8 @@ export default class AuthorizationContext {
       team,
       debug: this.config.debug,
       channel: await this.getSelectedChannel(),
-      syncInProgress: user ? this.syncService.inProgress('update-slack-' + user.team_id) : false
+      syncInProgress: user ? this.syncService.inProgress('update-slack-' + user.team_id) : false,
+      intl: this.intl
     }
   }
 }

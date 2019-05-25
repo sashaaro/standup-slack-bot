@@ -5,18 +5,23 @@ block authorized_content
         .no-meetings No meetings 🐥
     else
         #list
-        each standUp in standUpList
-            .ui.items.stand-up
-                .stand-up__date=standUp.standUp.start.toLocaleDateString("en-US", { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })
-                each userAnswers in standUp.answers
-                    .item.stand-up-item
-                        img.stand-up-item__image(src=userAnswers.user.profile.image_48).img-thumbnail
-                        .stand-up-item__content
-                            .stand-up-item__name= userAnswers.user.profile.real_name + ' (' + userAnswers.user.name + ')'
-                            each answer, index in userAnswers.answers
-                                .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
-                                    .stand-up-item__question= answer.question.text
-                                    .stand-up-item__answer= answer.answerMessage
+            each standUp in standUpList
+                .ui.items.stand-up
+                    .stand-up__date
+                        div= intl.format(standUp.standUp.start)
+                        if isInProgress(standUp.standUp)
+                            a.ui.teal.label= 'In progress'
+                    each userAnswers in standUp.answers
+                        .item.stand-up-item
+                            img.stand-up-item__image(src=userAnswers.user.profile.image_48).img-thumbnail
+                            .stand-up-item__content
+                                .stand-up-item__name= userAnswers.user.profile.real_name + ' (' + userAnswers.user.name + ')'
+                                if userAnswers.answers.length === 0
+                                    div= 'No answers 🐥'
+                                each answer, index in userAnswers.answers
+                                    .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
+                                        .stand-up-item__question= answer.question.text
+                                        .stand-up-item__answer= answer.answerMessage
         #pagination
             paginate(
             v-model="page",
