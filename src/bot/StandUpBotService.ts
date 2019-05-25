@@ -100,7 +100,8 @@ export default class StandUpBotService {
       repliedAnswer = await this.answer(message);
     } catch (e) {
       if (e instanceof InProgressStandUpNotFoundError) {
-        await this.send(message.user, `I will remind you when your next standup is up`)
+        console.log(e)
+        await this.send(message.user, `I will remind you when your next standup is up..`)
       }
       if (e instanceof AlreadySubmittedStandUpError) {
         await this.send(message.user, `You've already submitted your standup for today.`)

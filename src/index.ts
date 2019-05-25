@@ -2,7 +2,6 @@ import "reflect-metadata";
 import {ReflectiveInjector} from 'injection-js';
 import StandUpBotService from './bot/StandUpBotService'
 import StandUp from "./model/StandUp";
-import {SlackStandUpProvider} from "./slack/SlackStandUpProvider";
 import * as http from "http";
 import * as https from "https";
 import * as fs from "fs";
@@ -16,7 +15,7 @@ import {SlackTransport} from "./slack/SlackTransport";
 
 const main = async () => {
   const envParam = process.argv.filter((param) => param.startsWith(`--env=`)).pop();
-  let env = 'local';
+  let env = 'dev';
   if (envParam) {
     env = envParam.split('=')[1]
   }
@@ -53,6 +52,7 @@ const main = async () => {
   const argv = process.argv.slice(2)
 
   const hasSSL = argv.includes('--ssl') && fs.existsSync(privateKey) && fs.existsSync(certificate)
+  console.log(`Environment: ${env}`)
   console.log(`SSL ${hasSSL ? 'enabled': 'disabled'}`)
 
 

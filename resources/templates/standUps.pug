@@ -21,7 +21,8 @@ block authorized_content
                                 each answer, index in userAnswers.answers
                                     .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
                                         .stand-up-item__question= answer.question.text
-                                        .stand-up-item__answer= answer.answerMessage
+                                        if answer.answerMessage
+                                            .stand-up-item__answer !{ answer.formatAnswerMessage }
         #pagination
             paginate(
             v-model="page",
@@ -35,6 +36,7 @@ block authorized_content
             :next-class="'item'",
             )
 block append scripts
+    link(rel='stylesheet' href='https://afeld.github.io/emoji-css/emoji.css')
     script.
         var url = new URL(location.href);
         let page = parseInt(url.searchParams.get('page')) || 1
