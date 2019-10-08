@@ -25,6 +25,9 @@ class Team {
   @Column("simple-json", {nullable: true})
   slackData: SlackTeam
 
+  //@Column("string", {nullable: true})
+  //accessToken: string;
+
   get enableChannels() {
     return this.channels.filter((ch) => ch.isEnabled && !ch.isArchived && ch.nameNormalized !== 'general')
   }

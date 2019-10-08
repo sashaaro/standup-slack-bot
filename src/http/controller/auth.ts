@@ -5,6 +5,7 @@ import {CONFIG_TOKEN, RENDER_TOKEN} from "../../services/token";
 import AuthorizationContext, {IAuthUser} from "../../services/AuthorizationContext";
 import {logError} from "../../services/logError";
 import {IAppConfig} from "../../services/providers";
+import Team from "../../model/Team";
 
 @Injectable()
 export class AuthAction implements IHttpAction {
@@ -47,11 +48,31 @@ export class AuthAction implements IHttpAction {
       logError(e)
       throw new Error(e)
     }
-    const data = JSON.parse(response);
+    const data = JSON.parse(response) as {
+      ok?: string,
+      user_id?: string,
+      "access_token": "xoxp-XXXXXXXX-XXXXXXXX-XXXXX",
+      "scope": "incoming-webhook,commands,bot",
+      "team_name": "Team Installing Your Hook",
+      "team_id": "TXXXXXXXXX",
+      "incoming_webhook": {
+        "url": "https://hooks.slack.com/TXXXXX/BXXXXX/XXXXXXXXXX",
+        "channel": "#channel-it-will-post-to",
+        "configuration_url": "https://teamname.slack.com/services/BXXXXX"
+      },
+      "bot": {
+        "bot_user_id": "UTTTTTTTTTTR",
+        "bot_access_token": "xoxb-XXXXXXXXXXXX-TTTTTTTTTTTTTT"
+      }
+    };
     if (!data.ok) {
       logError(data);
-      throw new Error(data)
+      throw new Error(data as any)
     }
+
+
+    const team = new Team();
+    console.log(data);
 
     (req.context as AuthorizationContext).setUser({
       access_token: data.access_token,

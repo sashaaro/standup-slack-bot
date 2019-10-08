@@ -628,7 +628,7 @@ export class SlackTransport implements ITransport {
       })
     }
 
-    let text = `Standup report`
+    let text = `Standup complete `
     // TODO link
     if (attachments.length === 0) {
       text += ' Nobody sent answers 🐥'

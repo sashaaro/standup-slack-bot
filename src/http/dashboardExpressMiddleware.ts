@@ -2,6 +2,7 @@ import * as bodyParser from 'body-parser'
 import * as express from 'express'
 import * as session from 'express-session'
 import * as createRedisConnectStore from 'connect-redis';
+import * as redis from 'redis';
 import {Injector} from "injection-js";
 import {AuthAction} from "./controller/auth";
 import {StandUpsAction} from "./controller/standUps";
@@ -14,6 +15,7 @@ import AuthorizationContext from "../services/AuthorizationContext";
 import {CONFIG_TOKEN, RENDER_TOKEN} from "../services/token";
 
 const RedisConnectStore = createRedisConnectStore(session);
+let client = redis.createClient({host: 'redis'})
 
 export const useBodyParserAndSession = (app: express.Express | express.Router) => {
   app.use(bodyParser.urlencoded({extended: true}));
@@ -22,7 +24,7 @@ export const useBodyParserAndSession = (app: express.Express | express.Router) =
     secret: 'keyboard cat',
     resave: true,
     saveUninitialized: true,
-    store: new RedisConnectStore({host: 'redis'}),
+    store: new RedisConnectStore({client}),
     //cookie: { secure: true }
   }))
 }
