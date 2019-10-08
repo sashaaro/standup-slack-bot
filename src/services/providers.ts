@@ -30,7 +30,8 @@ export interface IAppConfig {
     database: string,
     username: string,
     password: string,
-  }
+  },
+  env: string,
 }
 
 
@@ -38,12 +39,12 @@ export interface IAppConfig {
 
 
 export const createProvider = async (context?: string, env = 'dev'): Promise<Provider[]> => {
-  let config = parameters
+  let config: IAppConfig = parameters as any
 
-  if (fs.existsSync(`../parameters.${env}.js`)) {
-    const envParameters = require(`../parameters.${env}.js`).default
-    config = Object.assign(config, envParameters) as IAppConfig;
-  }
+  //if (fs.existsSync(`../parameters.${env}.js`)) {
+  const envParameters = require(`../parameters.${env}.js`).default
+  config = Object.assign(config, envParameters) as IAppConfig;
+  //}
 
   config.env = env
 
