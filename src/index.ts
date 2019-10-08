@@ -8,7 +8,7 @@ import * as fs from "fs";
 import {logError} from "./services/logError";
 import {createExpress} from "./http/createExpress";
 import {createProvider, IAppConfig} from "./services/providers";
-import * as Rollbar from "rollbar";
+import Rollbar from "rollbar";
 import {CONFIG_TOKEN} from "./services/token";
 import 'express-async-errors';
 import {SlackTransport} from "./slack/SlackTransport";
