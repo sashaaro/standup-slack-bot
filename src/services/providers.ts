@@ -9,6 +9,7 @@ import actions from "../http/controller";
 import {createTypeORMConnection} from "./createTypeORMConnection";
 import {WebClient} from '@slack/web-api'
 import parameters from "../parameters";
+import fs from "fs";
 //import envParameters from "../parameters.local";
 import {LogLevel, RTMClient} from '@slack/rtm-api'
 import SyncService from "./SyncServcie";
@@ -37,9 +38,13 @@ export interface IAppConfig {
 
 
 export const createProvider = async (context?: string, env = 'dev'): Promise<Provider[]> => {
-  const envParameters = require(`../parameters.${env}.js`).default
+  let config = parameters
 
-  const config = Object.assign(parameters, envParameters) as IAppConfig;
+  if (fs.existsSync(`../parameters.${env}.js`)) {
+    const envParameters = require(`../parameters.${env}.js`).default
+    config = Object.assign(config, envParameters) as IAppConfig;
+  }
+
   config.env = env
 
   let providers: Provider[] = [
