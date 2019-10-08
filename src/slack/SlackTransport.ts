@@ -18,7 +18,6 @@ import {
 } from "./SlackStandUpProvider";
 import SyncService from "../services/SyncServcie";
 import {SlackTeam} from "./model/SlackTeam";
-import {IUsersResponse} from "./model/response";
 import QuestionRepository from "../repository/QuestionRepository";
 import {InteractiveDialogSubmissionResponse, InteractiveResponse} from "./model/InteractiveResponse";
 import AnswerRequest from "../model/AnswerRequest";
@@ -26,6 +25,7 @@ import StandUp from "../model/StandUp";
 import * as groupBy from "lodash.groupby";
 import {RTMClient} from '@slack/rtm-api'
 import {MessageAttachment, WebClient} from '@slack/web-api'
+import {ISlackUser} from "./model/SlackUser";
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -235,21 +235,22 @@ export class SlackTransport implements ITransport {
     const userRepository = this.connection.getRepository(User);
 
     /* https://api.slack.com/methods/users.list */
-    let usersResponse: IUsersResponse;
+    let usersResponse;
 
     do {
       let cursor = undefined;
       if (usersResponse) {
         cursor = usersResponse.response_metadata.next_cursor
       }
-      usersResponse = await this.webClient.users.list({limit: 200, cursor}) as IUsersResponse;
+      usersResponse = await this.webClient.users.list({limit: 200, cursor});
       if (!usersResponse.ok) {
         // throw..
         logError(usersResponse.error)
         return;
       }
 
-      for (const member of usersResponse.members.filter(u => !u.is_bot && !u.deleted && !u.is_app_user)) {
+
+      for (const member of (usersResponse.members as ISlackUser[]).filter(u => !u.is_bot && !u.deleted && !u.is_app_user)) {
         let user = await userRepository.findOne(member.id);
         if (!user) {
           user = new User();

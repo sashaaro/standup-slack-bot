@@ -1,8 +1,8 @@
-import * as bodyParser from 'body-parser'
-import * as express from 'express'
-import * as session from 'express-session'
-import * as createRedisConnectStore from 'connect-redis';
-import * as redis from 'redis';
+import bodyParser from 'body-parser'
+import express from 'express'
+import session from 'express-session'
+import createRedisConnectStore from 'connect-redis';
+import redis from 'redis';
 import {Injector} from "injection-js";
 import {AuthAction} from "./controller/auth";
 import {StandUpsAction} from "./controller/standUps";

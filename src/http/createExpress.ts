@@ -1,4 +1,4 @@
-import * as express from 'express'
+import express from 'express'
 import {dashboardExpressMiddleware, useBodyParserAndSession, useStaticPublicFolder} from "./dashboardExpressMiddleware";
 import {ApiSlackInteractive} from "./controller/apiSlackInteractive";
 import {logError} from "../services/logError";

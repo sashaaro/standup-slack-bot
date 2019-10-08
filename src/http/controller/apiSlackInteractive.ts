@@ -29,14 +29,18 @@ export class ApiSlackInteractive implements IHttpAction {
       res.sendStatus(400);
       return res.send('', )
     }
-
-    await this.handleResponse(response);
+    try {
+      await this.handleResponse(response);
+    } catch (e) {
+      this.slackTransport.sendMessage(response.user, "Something happened wrong. We know about it already and gonna fix")
+      res.sendStatus(500)
+      throw e;
+    }
 
     res.sendStatus(200)
   }
 
-  async handleResponse(response: any)
-  {
+  async handleResponse(response: any) {
     if (response.type === InteractiveResponseTypeEnum.interactive_message) {
       await this.slackTransport.handleInteractiveResponse(response as InteractiveResponse)
     } else if (response.type === InteractiveResponseTypeEnum.dialog_submission) {
