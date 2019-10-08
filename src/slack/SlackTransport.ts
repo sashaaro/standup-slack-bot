@@ -25,7 +25,7 @@ import AnswerRequest from "../model/AnswerRequest";
 import StandUp from "../model/StandUp";
 import * as groupBy from "lodash.groupby";
 import {RTMClient} from '@slack/rtm-api'
-import {WebClient} from '@slack/web-api'
+import {MessageAttachment, WebClient} from '@slack/web-api'
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -563,21 +563,21 @@ export class SlackTransport implements ITransport {
   async sendGreetingMessage(user: User, standUp: StandUp) {
     const callbackId = `${CALLBACK_PREFIX_STANDUP_INVITE}.${standUp.id}`;
 
-    const buttonsAttachment: any = {
-      "text": "Choose start poll in chat or open dialog window",
-      "callback_id": callbackId,
-      "actions": [
+    const buttonsAttachment: MessageAttachment = {
+      text: "Choose start poll in chat or open dialog window",
+      callback_id: callbackId,
+      actions: [
         {
-          "name": "start",
-          "text": "Start",
-          "type": "button",
-          "value": ACTION_START
+          name: "start",
+          text: "Start",
+          type: "button",
+          value: ACTION_START
         },
         {
-          "name": "dialog",
-          "text": "Open dialog",
-          "type": "button",
-          "value": ACTION_OPEN_DIALOG
+          name: "dialog",
+          text: "Open dialog",
+          type: "button",
+          value: ACTION_OPEN_DIALOG
         }
       ]
     }
