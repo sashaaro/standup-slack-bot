@@ -2,7 +2,7 @@ import { Injectable } from 'injection-js';
 import {logError} from "./logError";
 
 @Injectable()
-export default class SyncService {
+export default class SyncLocker {
   inProgressPromises = {}
 
   inProgress(id): boolean {
@@ -24,3 +24,4 @@ export default class SyncService {
     })
   }
 }
+

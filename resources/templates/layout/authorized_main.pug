@@ -14,7 +14,7 @@ block content
                             = 'for ' + team.domain + '.slack.com'
                     //a.item(href="/channels" class= {'active': activeMenu === 'channels'})
                         | Channels
-                a.item#sync-link(href="/sync", class=syncInProgress ? 'disabled' : '')
+                //a.item#sync-link(href="/sync", class=syncInProgress ? 'disabled' : '')
                     i.icon.sync.alternate
                     if syncInProgress
                         | Sync slack api in progress

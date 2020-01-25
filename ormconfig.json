@@ -3,8 +3,8 @@
     "host": "postgres",
     "port": 5432,
     "database": "standup",
-    "username": "standupbot",
-    "password": "asdfio23j921kjlssl",
+    "username": "postgres",
+    "password": "postgres",
     "entities": ["dist/model/*.js"],
     "migrations": ["dist/migration/*.js"],
     "cli": {

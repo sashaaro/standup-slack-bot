@@ -1,5 +1,5 @@
 import {Request, Response} from "express";
-import {AuthAction} from "./auth";
+import {MainAction} from "./auth";
 import {ChannelsAction} from "./channels";
 import {UpdateChannelAction} from "./UpdateChannelAction";
 import {SettingsAction} from "./settings";
@@ -15,7 +15,7 @@ export interface IHttpAction {
 
 const actions = [
   ApiSlackInteractive,
-  AuthAction,
+  MainAction,
   ChannelsAction,
   UpdateChannelAction,
   SettingsAction,

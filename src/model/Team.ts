@@ -22,7 +22,7 @@ class Team {
   })
   channels: Channel[]
 
-  @Column("simple-json", {nullable: true})
+  @Column("json", {nullable: true})
   slackData: SlackTeam
 
   //@Column("string", {nullable: true})

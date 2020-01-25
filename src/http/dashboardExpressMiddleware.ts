@@ -4,13 +4,13 @@ import session from 'express-session'
 import createRedisConnectStore from 'connect-redis';
 import redis from 'redis';
 import {Injector} from "injection-js";
-import {AuthAction} from "./controller/auth";
+import {MainAction} from "./controller/main";
 import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
 import {SyncAction} from "./controller/sync";
 import {UpdateChannelAction} from "./controller/UpdateChannelAction";
 import {Connection} from "typeorm";
-import SyncService from "../services/SyncServcie";
+import SyncLocker from "../services/SyncServcie";
 import AuthorizationContext from "../services/AuthorizationContext";
 import {CONFIG_TOKEN, RENDER_TOKEN} from "../services/token";
 
@@ -36,7 +36,7 @@ export const useStaticPublicFolder = (app: express.Express) => {
 
 export const dashboardContext = (injector: Injector) => {
   const connection = injector.get(Connection)
-  const syncService = injector.get(SyncService)
+  const syncService = injector.get(SyncLocker)
   const config = injector.get(CONFIG_TOKEN)
 
   return (req: express.Request | express.Router | any, res, next) => {
@@ -55,22 +55,20 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
   router.use(dashboardContext(injector));
 
+  const mainAction = injector.get(MainAction)
   router.get('/', (req, res) => {
-    const session = req.session;
-    const user = session.user;
-
-    if (!user) {
-      res.redirect('/auth');
-      return;
+    if (req.session.user) {
+      const standUpsAction = injector.get(StandUpsAction)
+      return standUpsAction.handle(req, res)
+    } else {
+      return res.redirect(mainAction.authLink());
     }
-
-    const standUpsAction = injector.get(StandUpsAction)
-    return standUpsAction.handle(req, res)
   });
 
-  const authAction = injector.get(AuthAction)
+  router.get('/auth', (req, res) => {
+    return res.redirect(req.session.user ? '/' : mainAction.authLink());
+  });
 
-  router.get('/auth', authAction.handle.bind(authAction));
   router.get('/logout', (req, res) => {
     const session = req.session as any;
     session.destroy()

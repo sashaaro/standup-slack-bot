@@ -8,7 +8,7 @@ import AuthorizationContext from "../../services/AuthorizationContext";
 import {ITransport} from "../../bot/models";
 import { Injectable, Inject } from 'injection-js';
 import {IAppConfig} from "../../services/providers";
-import SyncService from "../../services/SyncServcie";
+import SyncLocker from "../../services/SyncServcie";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
 import {SlackTransport} from "../../slack/SlackTransport";
 
@@ -20,7 +20,7 @@ export class SyncAction implements IHttpAction {
     private connection: Connection,
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     @Inject(STAND_UP_BOT_TRANSPORT) transport: ITransport,
-    private syncService: SyncService
+    private syncService: SyncLocker
   ) {
     if (transport instanceof SlackTransport) {
       this.transport = transport;
@@ -44,7 +44,7 @@ export class SyncAction implements IHttpAction {
 
 
     if (!this.syncService.inProgress(getSyncSlackTeamKey(team.id))) {
-      this.syncService.exec(getSyncSlackTeamKey(team.id), this.transport.updateData(team))
+      this.syncService.exec(getSyncSlackTeamKey(team.id), this.transport.syncData(team))
     } else {
       // flash message
     }

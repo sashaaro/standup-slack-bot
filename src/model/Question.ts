@@ -15,7 +15,7 @@ class Question implements IQuestion
     @Column()
     text: string;
 
-    @Column()
+    @Column({default: true})
     isEnabled: boolean = true;
 
     @Column()

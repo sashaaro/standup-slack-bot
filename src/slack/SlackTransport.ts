@@ -16,7 +16,7 @@ import {
   CALLBACK_PREFIX_STANDUP_INVITE,
   getSyncSlackTeamKey, SlackStandUpProvider
 } from "./SlackStandUpProvider";
-import SyncService from "../services/SyncServcie";
+import SyncLocker from "../services/SyncServcie";
 import {SlackTeam} from "./model/SlackTeam";
 import QuestionRepository from "../repository/QuestionRepository";
 import {InteractiveDialogSubmissionResponse, InteractiveResponse} from "./model/InteractiveResponse";
@@ -47,7 +47,7 @@ export class SlackTransport implements ITransport {
     private readonly rtm: RTMClient,
     private readonly webClient: WebClient,
     private connection: Connection,
-    private syncService: SyncService,
+    private syncLocker: SyncLocker,
     private slackStandUpProvider: SlackStandUpProvider,
   ) {
   }
@@ -209,15 +209,14 @@ export class SlackTransport implements ITransport {
 
       await teamRepository.save(team);
 
-      this.syncService.exec(getSyncSlackTeamKey(team.id), this.updateData(team));
+      // TODO move to cmd this.syncService.exec(getSyncSlackTeamKey(team.id), this.syncData(team));
     })
 
     await this.rtm.start();
-    return;
   }
 
 
-  async updateData(team: Team) {
+  async syncData(team: Team) {
     const teamResponse: {team: SlackTeam} = await this.webClient.team.info() as any
 
     if (team.id !== teamResponse.team.id) {

@@ -4,7 +4,7 @@ import {Connection} from "typeorm";
 import Timezone from "../model/Timezone";
 import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
 import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
-import {AuthAction} from "../http/controller/auth";
+import {MainAction} from "../http/controller/main";
 import actions from "../http/controller";
 import {createTypeORMConnection} from "./createTypeORMConnection";
 import {WebClient} from '@slack/web-api'
@@ -12,7 +12,7 @@ import parameters from "../parameters";
 import fs from "fs";
 //import envParameters from "../parameters.local";
 import {LogLevel, RTMClient} from '@slack/rtm-api'
-import SyncService from "./SyncServcie";
+import SyncLocker from "./SyncServcie";
 import {RenderEngine} from "./RenderEngine";
 import {SlackTransport} from "../slack/SlackTransport";
 
@@ -31,7 +31,6 @@ export interface IAppConfig {
     username: string,
     password: string,
   },
-  env: string,
 }
 
 
@@ -99,8 +98,8 @@ export const createProvider = async (context?: string, env = 'dev'): Promise<Pro
         useExisting: SlackTransport
       },
       StandUpBotService,
-      AuthAction, // TODO remove
-      SyncService
+      MainAction, // TODO remove
+      SyncLocker
     ] as any)
 
     providers = providers.concat(actions as any)

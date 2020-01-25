@@ -2,7 +2,7 @@ import * as express from 'express'
 import {Connection} from "typeorm";
 import {Channel} from "../model/Channel";
 import {Inject, Injectable} from 'injection-js';
-import SyncService from "./SyncServcie";
+import SyncLocker from "./SyncServcie";
 import Team from "../model/Team";
 import {IAppConfig} from "./providers";
 import {CONFIG_TOKEN} from "./token";
@@ -23,7 +23,7 @@ export default class AuthorizationContext {
   constructor(
     private req: express.Request,
     private connection: Connection,
-    private syncService: SyncService,
+    private syncService: SyncLocker,
     @Inject(CONFIG_TOKEN) private config: IAppConfig
   ) {
     const locale = 'en';

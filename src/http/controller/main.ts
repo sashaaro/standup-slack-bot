@@ -1,4 +1,4 @@
-import * as request from 'request-promise'
+import request from 'request-promise'
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {CONFIG_TOKEN, RENDER_TOKEN} from "../../services/token";
@@ -8,11 +8,31 @@ import {IAppConfig} from "../../services/providers";
 import Team from "../../model/Team";
 
 @Injectable()
-export class AuthAction implements IHttpAction {
+export class MainAction implements IHttpAction {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     @Inject(RENDER_TOKEN) private render: Function
   ) {
+  }
+
+  authLink() {
+    const scopes = [
+      'team:read',
+      'channels:read',
+
+      'chat:write',
+      'users:read',
+      'users:write',
+      'groups:read',
+      'im:read',
+      'im:write',
+      'im:history',
+      'pins:write',
+      'reactions:read',
+      //'reactions:write',
+    ]; //, 'im:history'
+
+    return `https://slack.com/oauth/v2/authorize?&client_id=${this.config.slackClientID}&scope=${scopes.join(',')}`
   }
 
   async handle(req, res) {
@@ -24,26 +44,23 @@ export class AuthAction implements IHttpAction {
       return;
     }
 
-    const redirectUri = `${this.config.host}/auth`
     if (!req.query.code) {
-      const scopes = ['bot', 'channels:read', 'team:read', 'groups:read']; //, 'im:history'
-      const authLink = `https://slack.com/oauth/authorize?&client_id=${this.config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${redirectUri}`
-
-      res.send(this.render('auth', {authLink, debug: this.config.debug}));
+      res.send(this.render('auth', {authLink: this.authLink(), debug: this.config.debug}));
       return
-    }
-
-    // https://api.slack.com/methods/oauth.access
-    const link = 'https://slack.com/api/oauth.access';
-    const query = `code=${req.query.code}&client_id=${this.config.slackClientID}&client_secret=${this.config.slackSecret}&redirect_uri=${redirectUri}`
-    const options = {
-      uri: `${link}?${query}`,
-      method: 'GET'
     }
 
     let response
     try {
-      response = await request(options)
+      // https://api.slack.com/methods/oauth.access
+      const link = 'https://slack.com/api/oauth.access';
+      // req.headers.host
+      const redirectUri = `${this.config.host}/auth`
+      const query = `code=${req.query.code}&client_id=${this.config.slackClientID}&client_secret=${this.config.slackSecret}&redirect_uri=${redirectUri}`
+
+      response = await request({
+        uri: `${link}?${query}`,
+        method: 'GET'
+      })
     } catch (e) {
       logError(e)
       throw new Error(e)
