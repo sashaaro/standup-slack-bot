@@ -11,8 +11,11 @@ import {SyncAction} from "./controller/sync";
 import {UpdateChannelAction} from "./controller/UpdateChannelAction";
 import {Connection} from "typeorm";
 import SyncLocker from "../services/SyncServcie";
-import AuthorizationContext from "../services/AuthorizationContext";
+import AuthorizationContext, {IAuthUser} from "../services/AuthorizationContext";
 import {CONFIG_TOKEN, RENDER_TOKEN} from "../services/token";
+import {logError} from "../services/logError";
+import Team from "../model/Team";
+import {OauthAuthrize} from "./controller/oauth-authrize";
 
 const RedisConnectStore = createRedisConnectStore(session);
 let client = redis.createClient({host: 'redis'})
@@ -61,10 +64,12 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
       const standUpsAction = injector.get(StandUpsAction)
       return standUpsAction.handle(req, res)
     } else {
-      return res.redirect(mainAction.authLink());
+      return mainAction.handle(req, res);
     }
   });
 
+  const authrizeAction = injector.get(OauthAuthrize)
+  router.get('/oauth/authorize', authrizeAction.handle.bind(authrizeAction))
   router.get('/auth', (req, res) => {
     return res.redirect(req.session.user ? '/' : mainAction.authLink());
   });
