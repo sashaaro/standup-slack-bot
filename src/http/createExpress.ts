@@ -6,6 +6,8 @@ import { createMessageAdapter } from "@slack/interactive-messages";
 import {CONFIG_TOKEN} from "../services/token";
 import {ReflectiveInjector} from "injection-js";
 import {IAppConfig} from "../services/providers";
+import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
+import {createEventAdapter} from "@slack/events-api";
 
 export const createExpress = (injector: ReflectiveInjector) => {
   const expressApp = express()
@@ -79,6 +81,9 @@ export const createExpress = (injector: ReflectiveInjector) => {
   })
 
   expressApp.use('/api/slack/interactive', slackInteractions.expressMiddleware());
+
+  expressApp.use('/api/slack/events', injector.get(SlackEventAdapter).expressMiddleware());
+
   useBodyParserAndSession(expressApp); // TODO move to dashboardExpressMiddleware?!
   expressApp.use('/', dashboardExpressMiddleware(injector));
 

@@ -1,20 +1,25 @@
 import request from 'request-promise'
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
-import {CONFIG_TOKEN, RENDER_TOKEN} from "../../services/token";
+import {CONFIG_TOKEN, SLACK_WEB_CLIENT_FACTORY_TOKEN} from "../../services/token";
 import AuthorizationContext, {IAuthUser} from "../../services/AuthorizationContext";
 import {logError} from "../../services/logError";
-import {IAppConfig} from "../../services/providers";
+import {IAppConfig, SlackWebClientFactoryFn} from "../../services/providers";
+import {WebClient} from "@slack/web-api";
 
 @Injectable()
-export class OauthAuthrize implements IHttpAction {
+export class OauthAuthorize implements IHttpAction {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
-    @Inject(RENDER_TOKEN) private render: Function
   ) {
   }
 
   async handle(req, res) {
+    if (req.session.user) {
+      res.redirect('/');
+      return;
+    }
+
     if (!req.query.code) {
       res.status(404);
       return;
@@ -23,19 +28,28 @@ export class OauthAuthrize implements IHttpAction {
     let response
     try {
       // https://api.slack.com/methods/oauth.access
-      const link = 'https://slack.com/api/oauth.access';
+      //const link = 'https://slack.com/api/oauth.v2.access';
       // req.headers.host
-      const query = `code=${req.query.code}&client_id=${this.config.slackClientID}&client_secret=${this.config.slackSecret}&redirect_uri=${this.config.host}`
+      /*const query = `code=${req.query.code}&client_id=${this.config.slackClientID}&client_secret=${this.config.slackSecret}&redirect_uri=${this.config.host}/auth`
 
       response = await request({
         uri: `${link}?${query}`,
         method: 'GET'
+      })*/
+
+      // https://api.slack.com/methods/oauth.v2.access
+      response = await new WebClient().oauth.v2.access({
+        client_id: this.config.slackClientID,
+        client_secret: this.config.slackSecret,
+        code: req.query.code,
+        redirect_uri: `${this.config.host}/auth`
       })
     } catch (e) {
       logError(e)
       throw new Error(e)
     }
-    const data = JSON.parse(response) as {
+    const data = response
+    /*const data = JSON.parse(response) as {
       ok?: string,
       user_id?: string,
       "access_token": "xoxp-XXXXXXXX-XXXXXXXX-XXXXX",
@@ -51,7 +65,7 @@ export class OauthAuthrize implements IHttpAction {
         "bot_user_id": "UTTTTTTTTTTR",
         "bot_access_token": "xoxb-XXXXXXXXXXXX-TTTTTTTTTTTTTT"
       }
-    };
+    };*/
     if (!data.ok) {
       logError(data);
       throw new Error(data as any)

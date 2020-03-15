@@ -4,18 +4,15 @@ import session from 'express-session'
 import createRedisConnectStore from 'connect-redis';
 import redis from 'redis';
 import {Injector} from "injection-js";
-import {MainAction} from "./controller/main";
 import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
 import {SyncAction} from "./controller/sync";
 import {UpdateChannelAction} from "./controller/UpdateChannelAction";
 import {Connection} from "typeorm";
 import SyncLocker from "../services/SyncServcie";
-import AuthorizationContext, {IAuthUser} from "../services/AuthorizationContext";
+import AuthorizationContext from "../services/AuthorizationContext";
 import {CONFIG_TOKEN, RENDER_TOKEN} from "../services/token";
-import {logError} from "../services/logError";
-import Team from "../model/Team";
-import {OauthAuthrize} from "./controller/oauth-authrize";
+import {OauthAuthorize} from "./controller/oauth-authorize";
 
 const RedisConnectStore = createRedisConnectStore(session);
 let client = redis.createClient({host: 'redis'})
@@ -54,25 +51,42 @@ export class AccessDenyError extends Error {
 }
 
 
+const scopes = [
+  'team:read',
+  'channels:read',
+  'chat:write',
+  'users:read',
+  'users:write',
+  'groups:read',
+  'im:read',
+  'im:write',
+  'im:history',
+  'pins:write',
+  'reactions:read',
+  //'reactions:write',
+]; //, 'im:history'
+
 export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
   router.use(dashboardContext(injector));
 
-  const mainAction = injector.get(MainAction)
+
+
+  const config = injector.get(CONFIG_TOKEN)
+  const authLink = `https://slack.com/oauth/v2/authorize?client_id=${config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${config.host}/auth`
+
+
   router.get('/', (req, res) => {
     if (req.session.user) {
       const standUpsAction = injector.get(StandUpsAction)
       return standUpsAction.handle(req, res)
     } else {
-      return mainAction.handle(req, res);
+      res.send(injector.get(RENDER_TOKEN)('welcome', {authLink, debug: config.debug}));
     }
   });
 
-  const authrizeAction = injector.get(OauthAuthrize)
-  router.get('/oauth/authorize', authrizeAction.handle.bind(authrizeAction))
-  router.get('/auth', (req, res) => {
-    return res.redirect(req.session.user ? '/' : mainAction.authLink());
-  });
+  const oauthAuthorize = injector.get(OauthAuthorize)
+  router.get('/auth', oauthAuthorize.handle.bind(oauthAuthorize));
 
   router.get('/logout', (req, res) => {
     const session = req.session as any;

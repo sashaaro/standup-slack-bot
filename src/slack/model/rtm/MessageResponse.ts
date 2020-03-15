@@ -1,4 +1,5 @@
-export interface RTMMessageResponse
+// https://api.slack.com/events/message
+export interface MessageResponse
 {
     type: string,
     user: string,

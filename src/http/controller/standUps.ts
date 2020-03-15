@@ -82,7 +82,6 @@ export class StandUpsAction implements IHttpAction {
     const globalParams = await context.getGlobalParams()
     const {team, channel} = globalParams
 
-
     if (!team) {
       // TODO 404
       throw new Error('team is not found');

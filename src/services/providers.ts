@@ -1,27 +1,25 @@
 import {Provider} from "injection-js";
-import {CONFIG_TOKEN, RENDER_TOKEN, TIMEZONES_TOKEN} from "./token";
+import {CONFIG_TOKEN, RENDER_TOKEN, SLACK_WEB_CLIENT_FACTORY_TOKEN, TIMEZONES_TOKEN} from "./token";
 import {Connection} from "typeorm";
 import Timezone from "../model/Timezone";
 import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
 import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
-import {MainAction} from "../http/controller/main";
 import actions from "../http/controller";
 import {createTypeORMConnection} from "./createTypeORMConnection";
-import {WebClient} from '@slack/web-api'
+import {WebClient, LogLevel} from '@slack/web-api'
 import parameters from "../parameters";
-import fs from "fs";
 //import envParameters from "../parameters.local";
-import {LogLevel, RTMClient} from '@slack/rtm-api'
 import SyncLocker from "./SyncServcie";
 import {RenderEngine} from "./RenderEngine";
 import {SlackTransport} from "../slack/SlackTransport";
+import {createEventAdapter} from "@slack/events-api";
+import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 
 export interface IAppConfig {
   env: string,
   slackClientID: string,
   slackSecret: string,
   slackSigningSecret: string,
-  slackVerificationToken: string,
   botUserOAuthAccessToken: string,
   host: string,
   debug: false,
@@ -34,18 +32,15 @@ export interface IAppConfig {
 }
 
 
-// TODO move
-
+export type SlackWebClientFactoryFn = (teamToken: string) => WebClient;
 
 export const createProvider = async (context?: string, env = 'dev'): Promise<Provider[]> => {
-  let config: IAppConfig = parameters as any
-
   //if (fs.existsSync(`../parameters.${env}.js`)) {
   const envParameters = require(`../parameters.${env}.js`).default
-  config = Object.assign(config, envParameters) as IAppConfig;
+  const config = Object.assign(parameters, envParameters) as IAppConfig;
   //}
 
-  config.env = env
+  config.env = env;
 
   let providers: Provider[] = [
     {
@@ -54,10 +49,18 @@ export const createProvider = async (context?: string, env = 'dev'): Promise<Pro
     }
   ]
 
+  const clients = {};
+  let slackWebClientFactory: SlackWebClientFactoryFn = (teamToken :string) => {
+    if (!clients[teamToken]) {
+      clients[teamToken] = new WebClient(teamToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
+    }
+
+    return clients[teamToken];
+  }
+
   if (context !== 'cli') {
     const connection = await createTypeORMConnection(config);
-    const rtmClient = new RTMClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
-    const webClient = new WebClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
+    const slackEvents = createEventAdapter(config.slackSigningSecret) as SlackEventAdapter;
 
     providers = providers.concat([
       {
@@ -80,12 +83,12 @@ export const createProvider = async (context?: string, env = 'dev'): Promise<Pro
         useValue: connection
       },
       {
-        provide: RTMClient,
-        useValue: rtmClient
+        provide: SLACK_WEB_CLIENT_FACTORY_TOKEN,
+        useValue: slackWebClientFactory,
       },
       {
-        provide: WebClient,
-        useValue: webClient
+        provide: SlackEventAdapter,
+        useValue: slackEvents
       },
       SlackStandUpProvider,
       {
@@ -98,7 +101,6 @@ export const createProvider = async (context?: string, env = 'dev'): Promise<Pro
         useExisting: SlackTransport
       },
       StandUpBotService,
-      MainAction, // TODO remove
       SyncLocker
     ] as any)
 

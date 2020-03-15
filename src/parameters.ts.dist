@@ -2,7 +2,6 @@ export default {
   slackClientID: '',
   slackSecret: '',
   slackSigningSecret: '',
-  slackVerificationToken: '',
   host: '',
   botUserOAuthAccessToken: '',
   debug: false,
