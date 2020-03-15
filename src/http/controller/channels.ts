@@ -3,7 +3,7 @@ import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
 import {RENDER_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
 import {IStandUpSettings, ITimezone} from "../../bot/models";
-import AuthorizationContext from "../../services/AuthorizationContext";
+import DashboardContext from "../../services/DashboardContext";
 import ChannelRepository from "../../repository/ChannelRepository";
 import {Channel} from "../../model/Channel";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
@@ -18,29 +18,22 @@ export class ChannelsAction implements IHttpAction {
   }
 
   async handle(req, res) {
-    const session = req.session
-    if (!session.user) {
+    const context = req.context as DashboardContext;
+    if (!context.user) {
       throw new AccessDenyError();
     }
-    const context = req.context as AuthorizationContext;
-    const {team, channel} = await context.getGlobalParams()
-
-    if (!team) { // TODO 404
-      throw new Error('team is not found');
-    }
-    if (!channel) { // TODO 404
+    if (!context.channel) { // TODO 404
       throw new Error('Channel is not found');
     }
 
     if (req.method == "POST") {
       // todo validate
       const settings = <IStandUpSettings|any>req.body
-      Object.assign(channel, settings)
-      await this.connection.getRepository(Channel).save(channel)
+      Object.assign(context.channel, settings)
+      await this.connection.getRepository(Channel).save(context.channel)
     }
 
     res.send(this.render('channels', {
-      team: team,
       timezoneList: await this.timezoneList,
       activeMenu: 'channels'
     }));

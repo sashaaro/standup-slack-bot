@@ -25,9 +25,6 @@ class Team {
   @Column("json", {nullable: true})
   slackData: SlackTeam
 
-  @Column()
-  token: string;
-
   //@Column("string", {nullable: true})
   //accessToken: string;
 

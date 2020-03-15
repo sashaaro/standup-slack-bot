@@ -9,9 +9,9 @@ block content
                     div
                         | Standups
                         .menu-title__sign
-                            if team.slackData && team.slackData.icon.image_34
-                                img(src= team.slackData.icon.image_34)
-                            = 'for ' + team.domain + '.slack.com'
+                            if user.team.slackData && user.team.slackData.icon.image_34
+                                img(src= user.team.slackData.icon.image_34)
+                            = 'for ' + user.team.domain + '.slack.com'
                     //a.item(href="/channels" class= {'active': activeMenu === 'channels'})
                         | Channels
                 //a.item#sync-link(href="/sync", class=syncInProgress ? 'disabled' : '')
@@ -21,10 +21,10 @@ block content
                     else
                         | Sync from slack api
                 .right.menu
-                    if channel && team.enableChannels.length
+                    if channel && user.team.enableChannels.length
                         form.item.ui.mini.form.select-channel-item(action="/channel/selected", method="POST")
                             select.dropdown#selectChannel(name="id", placeholder="Select channel")
-                                each ch in team.enableChannels
+                                each ch in user.team.enableChannels
                                     option(value=ch.id, selected=ch.id === channel.id)= ch.name
                         a.item(href="/settings" class= {'active': activeMenu === 'settings'})
                             i.icon.cog

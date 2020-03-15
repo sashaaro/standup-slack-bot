@@ -1,5 +1,5 @@
 import {Provider} from "injection-js";
-import {CONFIG_TOKEN, RENDER_TOKEN, SLACK_WEB_CLIENT_FACTORY_TOKEN, TIMEZONES_TOKEN} from "./token";
+import {CONFIG_TOKEN, RENDER_TOKEN, TIMEZONES_TOKEN} from "./token";
 import {Connection} from "typeorm";
 import Timezone from "../model/Timezone";
 import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
@@ -31,8 +31,7 @@ export interface IAppConfig {
   },
 }
 
-
-export type SlackWebClientFactoryFn = (teamToken: string) => WebClient;
+export type RenderFn = (templateName: string, params?: object) => string;
 
 export const createProvider = async (context?: string, env = 'dev'): Promise<Provider[]> => {
   //if (fs.existsSync(`../parameters.${env}.js`)) {
@@ -49,14 +48,7 @@ export const createProvider = async (context?: string, env = 'dev'): Promise<Pro
     }
   ]
 
-  const clients = {};
-  let slackWebClientFactory: SlackWebClientFactoryFn = (teamToken :string) => {
-    if (!clients[teamToken]) {
-      clients[teamToken] = new WebClient(teamToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
-    }
-
-    return clients[teamToken];
-  }
+  const webClient = new WebClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined});
 
   if (context !== 'cli') {
     const connection = await createTypeORMConnection(config);
@@ -64,12 +56,16 @@ export const createProvider = async (context?: string, env = 'dev'): Promise<Pro
 
     providers = providers.concat([
       {
+        provide: RenderEngine,
+        useFactory: (config) => new RenderEngine(config.env === 'prod'),
+        deps: [CONFIG_TOKEN]
+      },
+      {
         provide: RENDER_TOKEN,
-        useFactory: (config: IAppConfig) =>  {
-          const renderEngine = new RenderEngine(config.env === 'prod');
+        useFactory: (renderEngine: RenderEngine) =>  {
           return renderEngine.render.bind(renderEngine)
         },
-        deps: [CONFIG_TOKEN]
+        deps: [RenderEngine]
       },
       {
         provide: TIMEZONES_TOKEN,
@@ -83,8 +79,8 @@ export const createProvider = async (context?: string, env = 'dev'): Promise<Pro
         useValue: connection
       },
       {
-        provide: SLACK_WEB_CLIENT_FACTORY_TOKEN,
-        useValue: slackWebClientFactory,
+        provide: WebClient,
+        useValue: webClient,
       },
       {
         provide: SlackEventAdapter,

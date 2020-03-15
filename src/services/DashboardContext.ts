@@ -1,0 +1,53 @@
+import {Connection} from "typeorm";
+import {Channel} from "../model/Channel";
+import {Inject, Injectable} from 'injection-js';
+import User from "../model/User";
+
+export interface IAuthUser {
+  "id": "U1234",
+  "scope": "chat:write",
+  "access_token": "xoxp-1234",
+  "token_type": "user"
+}
+
+@Injectable()
+export default class DashboardContext {
+  user: User;
+  channel: Channel;
+
+  constructor(
+    private session: Express.Session,
+    private connection: Connection
+  ) {}
+
+  async init() {
+    const authedUser = this.session.user as IAuthUser;
+    if (authedUser) {
+      const userRepository = this.connection.getRepository(User);
+      this.user = await userRepository.findOne(authedUser.id);
+    }
+    if (this.user && this.session.channel) {
+      this.channel = await this.connection
+        .getRepository(Channel)
+        .createQueryBuilder('ch')
+        .leftJoinAndSelect('ch.timezone', 'timezone')
+        .leftJoinAndSelect('ch.questions', 'questions')
+        .where({id: this.session.channel})
+        .andWhere('ch.isArchived = false')
+        .andWhere('ch.isEnabled = true')
+        .andWhere('questions.isEnabled = true')
+        .orderBy("questions.index", "ASC")
+        .getOne();
+    }
+  }
+
+  authenticate(authedUser: IAuthUser, user: User) {
+    this.session.user = authedUser // TODO save id only
+    this.user = user;
+  }
+
+  selectChannel(channel: Channel) {
+    this.channel = channel;
+    this.session.channel = this.channel.id
+  }
+}

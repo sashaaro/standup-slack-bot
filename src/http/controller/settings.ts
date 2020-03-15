@@ -6,7 +6,7 @@ import {Channel} from "../../model/Channel";
 import QuestionRepository from "../../repository/QuestionRepository";
 import {ITimezone} from "../../bot/models";
 import Timezone from "../../model/Timezone";
-import AuthorizationContext from "../../services/AuthorizationContext";
+import DashboardContext from "../../services/DashboardContext";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
@@ -19,22 +19,14 @@ export class SettingsAction implements IHttpAction {
   }
 
   async handle(req, res) {
-    const context = req.context as AuthorizationContext;
-    const user = context.getUser()
-    if (!user) {
+    const context = req.context as DashboardContext;
+    const channelRepository = this.connection.getRepository(Channel)
+
+    if (context.user) {
       throw new AccessDenyError();
     }
 
-    const channelRepository = this.connection.getRepository(Channel)
-
-    const globalParams = await context.getGlobalParams()
-    const {team, channel} = globalParams
-
-    if (!team) { // TODO 404
-      throw new Error('Team is not found');
-    }
-
-    if (!channel) { // TODO 404
+    if (context.channel) { // TODO 404
       throw new Error('Channel is not found');
     }
 
@@ -46,15 +38,15 @@ export class SettingsAction implements IHttpAction {
       if (formData.timezone) {
         const timezone = timezones.filter((t: any) => t.id.toString() === formData.timezone).pop() as Timezone;
         if (timezone) {
-          channel.timezone = timezone;
+          context.channel.timezone = timezone;
         }
       }
       if (formData.duration) {
-        Object.assign(channel, formData as any)
-        await channelRepository.save(channel)
+        Object.assign(context.channel, formData as any)
+        await channelRepository.save(context.channel)
       }
       if (formData.questions) {
-        await this.connection.getCustomRepository(QuestionRepository).updateForChannel(formData.questions, channel)
+        await this.connection.getCustomRepository(QuestionRepository).updateForChannel(formData.questions, context.channel)
       }
 
       res.redirect('/settings');
@@ -65,12 +57,10 @@ export class SettingsAction implements IHttpAction {
       'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
     ];
 
-    res.send(this.render('settings', Object.assign({
-      team,
-      channel,
+    res.send(this.render('settings', {
       timezones,
       activeMenu: 'settings',
       weekDays
-    }, globalParams)))
+    }))
   }
 }

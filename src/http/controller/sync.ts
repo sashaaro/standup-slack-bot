@@ -4,7 +4,7 @@ import {Connection} from "typeorm";
 import {CONFIG_TOKEN} from "../../services/token";
 import {getSyncSlackTeamKey} from "../../slack/SlackStandUpProvider";
 import Team from "../../model/Team";
-import AuthorizationContext from "../../services/AuthorizationContext";
+import DashboardContext from "../../services/DashboardContext";
 import {ITransport} from "../../bot/models";
 import { Injectable, Inject } from 'injection-js';
 import {IAppConfig} from "../../services/providers";
@@ -14,7 +14,7 @@ import {SlackTransport} from "../../slack/SlackTransport";
 
 @Injectable()
 export class SyncAction implements IHttpAction {
-  transport: SlackTransport
+  transport: SlackTransport;
 
   constructor(
     private connection: Connection,
@@ -30,13 +30,14 @@ export class SyncAction implements IHttpAction {
   }
 
   async handle(req, res) {
-    const user = (req.context as AuthorizationContext).getUser()
-    if (!user) {
+    const context = req.context as DashboardContext;
+
+    if (!context.user) {
       throw new AccessDenyError();
     }
 
     const teamRepository = this.connection.getRepository(Team)
-    let team = await teamRepository.findOne({id: user.team_id})
+    let team = await teamRepository.findOne({id: context.user.team.id})
     if (!team) {
       res.send('Team is not found') // TODO 403
       return;

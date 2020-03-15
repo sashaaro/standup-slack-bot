@@ -2,7 +2,8 @@ import {templateDirPath} from "../http/controller";
 import * as pug from 'pug'
 
 export class RenderEngine {
-  compiledTemplates = {}
+  compiledTemplates = {};
+  globalParams = {};
 
   constructor(private enableCache = false) {
 
@@ -27,7 +28,7 @@ export class RenderEngine {
     return compiledTemplate;
   }
 
-  render(templateName: string, params): string {
-    return this.compileTemplate(templateName)(params)
+  render(templateName: string, params?: object): string {
+    return this.compileTemplate(templateName)(params ? {...this.globalParams, ...params} : this.globalParams)
   }
 }

@@ -8,7 +8,7 @@ block authorized_content
                 th= "Archived"
                 th= "Enable stand up"
         tbody
-            each ch in team.channels.sort((item, next) => next.isEnabled === true ? 1 : -1)
+            each ch in user.team.channels.sort((item, next) => next.isEnabled === true ? 1 : -1)
                 tr
                     td= ch.name
                     td

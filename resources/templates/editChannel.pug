@@ -8,10 +8,10 @@ block authorized_content
                 | /invite
                 a= " @daily_standup"
 
-    if team.enableChannels.length
+    if user.team.enableChannels.length
         form.row.auth-block.field(action="/channel/selected", method="POST")
            select#selectChannel(name="id")
-               each channel in team.enableChannels
+               each channel in user.team.enableChannels
                    option(value=channel.id)= channel.name
     else
         .no-meetings No meeting channel 🐥

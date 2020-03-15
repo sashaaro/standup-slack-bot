@@ -2,13 +2,13 @@ import {Inject, Injectable} from "injection-js";
 import {Observable, Subject} from "rxjs";
 import {IMessage, IStandUp, ITransport, IUser} from "../bot/models";
 import User from "../model/User";
-import {MessageResponse} from "./model/rtm/MessageResponse";
+import {MessageResponse} from "./model/MessageResponse";
 import {logError} from "../services/logError";
 import ChannelRepository from "../repository/ChannelRepository";
 import {Channel} from "../model/Channel";
 import {Connection, DeepPartial} from "typeorm";
 import {SlackChannel, SlackConversation} from "./model/SlackChannel";
-import {ScopeGranted, SlackIm, SlackTeamInfo} from "./model/rtm/ScopeGranted";
+import {ScopeGranted, SlackIm, SlackTeamInfo} from "./model/ScopeGranted";
 import Team from "../model/Team";
 import {
   ACTION_OPEN_DIALOG,
@@ -23,11 +23,9 @@ import {InteractiveDialogSubmissionResponse, InteractiveResponse} from "./model/
 import AnswerRequest from "../model/AnswerRequest";
 import StandUp from "../model/StandUp";
 import * as groupBy from "lodash.groupby";
-import {MessageAttachment, WebClient} from '@slack/web-api'
+import {DialogOpenArguments, MessageAttachment, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
-import {SLACK_WEB_CLIENT_FACTORY_TOKEN} from "../services/token";
-import {SlackWebClientFactoryFn} from "../services/providers";
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -47,7 +45,7 @@ export class SlackTransport implements ITransport {
 
   constructor(
     private readonly slackEvents: SlackEventAdapter,
-    @Inject(SLACK_WEB_CLIENT_FACTORY_TOKEN) private readonly webClientFactory: SlackWebClientFactoryFn,
+    private readonly webClient: WebClient,
     private connection: Connection,
     private syncLocker: SyncLocker,
     private slackStandUpProvider: SlackStandUpProvider,
@@ -107,11 +105,11 @@ export class SlackTransport implements ITransport {
         } as IMessage;
 
         observer.next(message)
-      })
+      });
 
 
       this.slackEvents.on('error', async (message) => {
-        logError(message)
+        logError(message);
         observer.error(message);
       });
     });
@@ -123,26 +121,26 @@ export class SlackTransport implements ITransport {
       const isNew = !channel;
       if (isNew) {
         channel = new Channel();
-        channel.id = channelID
+        channel.id = channelID;
         channel.isEnabled = false
       }
 
       return {channel, isNew};
-    }
+    };
 
     const findOrCreateAndUpdate = async (channelID: string, data: DeepPartial<Channel>): Promise<{channel: Channel, isNew: boolean}> => {
-      const {channel, isNew} = await findOrCreateChannel(channelID)
+      const {channel, isNew} = await findOrCreateChannel(channelID);
       Object.assign(channel, data);
       await channelRepository.save(channel);
 
       return {channel, isNew}
-    }
+    };
 
     const joinSlackChannel = async (channelID: string, data?: DeepPartial<Channel>) => {
-      const {channel, isNew} = await findOrCreateChannel(channelID)
+      const {channel, isNew} = await findOrCreateChannel(channelID);
 
-      channel.isArchived = false
-      channel.isEnabled = true
+      channel.isArchived = false;
+      channel.isEnabled = true;
       if (data) {
         Object.assign(channel, data);
       }
@@ -152,45 +150,45 @@ export class SlackTransport implements ITransport {
       } else {
         await channelRepository.save(channel);
       }
-    }
+    };
 
     this.slackEvents.on('channel_joined', async (response) => {
-      const channel = response.channel as SlackChannel
+      const channel = response.channel as SlackChannel;
       await joinSlackChannel(channel.id, {isArchived: channel.is_archived, name: channel.name, nameNormalized: channel.name_normalized})
-    })
+    });
     this.slackEvents.on('group_joined', async (response) => {
-      const channel = response.channel as SlackChannel
+      const channel = response.channel as SlackChannel;
       await joinSlackChannel(channel.id, {isArchived: channel.is_archived, name: channel.name, nameNormalized: channel.name_normalized})
-    })
+    });
 
     this.slackEvents.on('channel_left', async (response) => {
-      const channel: string = response.channel
+      const channel: string = response.channel;
       await findOrCreateAndUpdate(channel, {isEnabled: false})
-    })
+    });
     this.slackEvents.on('group_left', async (response) => {
-      const channel: string = response.channel
+      const channel: string = response.channel;
       await findOrCreateAndUpdate(channel, {isEnabled: false})
-    })
+    });
 
 
     this.slackEvents.on('channel_archive', async (response: {type: string, channel: string, user: string}) => {
-      const channel: string = response.channel
+      const channel: string = response.channel;
       await findOrCreateAndUpdate(channel, {isArchived: true})
-    })
+    });
     this.slackEvents.on('group_archive', async (response) => {
-      const channel: string = response.channel
+      const channel: string = response.channel;
       await findOrCreateAndUpdate(channel, {isArchived: true})
-    })
+    });
 
 
     this.slackEvents.on('channel_unarchive', async (response) => {
-      const channel: string = response.channel
+      const channel: string = response.channel;
       await findOrCreateAndUpdate(channel, {isArchived: false})
-    })
+    });
     this.slackEvents.on('group_unarchive', async (response) => {
-      const channel: string = response.channel
+      const channel: string = response.channel;
       await findOrCreateAndUpdate(channel, {isArchived: false})
-    })
+    });
 
 
     // https://api.slack.com/events/scope_granted
@@ -201,15 +199,13 @@ export class SlackTransport implements ITransport {
       let team = await teamRepository.findOne(scopeGranted.team_id);
       if (!team) {
         team = new Team();
-        team.id = scopeGranted.team_id
+        team.id = scopeGranted.team_id;
         // https://api.slack.com/methods/team.info
-        const teamInfo: SlackTeamInfo = (await this.webClientFactory(scopeGranted.team_id).team.info()) as any
-        team.name = teamInfo.team.name
+        const teamInfo: SlackTeamInfo = (await this.webClient.team.info()) as any;
+        team.name = teamInfo.team.name;
         team.domain = teamInfo.team.domain
+        await teamRepository.save(team);
       }
-      team.token = scopeGranted.team_id;
-
-      await teamRepository.save(team);
 
       // TODO move to cmd this.syncService.exec(getSyncSlackTeamKey(team.id), this.syncData(team));
     })
@@ -217,17 +213,17 @@ export class SlackTransport implements ITransport {
 
 
   async syncData(team: Team) {
-    const teamResponse: {team: SlackTeam} = await this.webClientFactory(team.token).team.info() as any
+    const teamResponse: {team: SlackTeam} = await this.webClient.team.info() as any;
 
     if (team.id !== teamResponse.team.id) {
-      throw new Error(`Wrong team id #${teamResponse.team.id}. Should ${team.id}`)
+      throw new Error(`Wrong team id #${teamResponse.team.id}. Should ${team.id}`);
     }
-    team.slackData = teamResponse.team
+    team.slackData = teamResponse.team;
     const teamRepository = this.connection.getRepository(Team);
-    team = await teamRepository.save(team)
+    team = await teamRepository.save(team);
 
-    await this.updateUsers(team)
-    await this.updateChannels(team)
+    await this.updateUsers(team);
+    await this.updateChannels(team);
   }
 
   private async updateUsers(team: Team) {
@@ -235,13 +231,10 @@ export class SlackTransport implements ITransport {
 
     /* https://api.slack.com/methods/users.list */
     let usersResponse;
-
+    let cursor = null;
     do {
-      let cursor = undefined;
-      if (usersResponse) {
-        cursor = usersResponse.response_metadata.next_cursor
-      }
-      usersResponse = await this.webClientFactory(team.token).users.list({limit: 200, cursor});
+      cursor = usersResponse?.response_metadata?.next_cursor;
+      usersResponse = await this.webClient.users.list({limit: 200, cursor});
       if (!usersResponse.ok) {
         // throw..
         logError(usersResponse.error)
@@ -262,30 +255,32 @@ export class SlackTransport implements ITransport {
           throw new Error(`Team #${team.id} is not equal to member.team_id as ${member.team_id}`)
         }
 
-        user.team = team //await teamRepository.findOne(member.team_id);
+        user.team = team; //await teamRepository.findOne(member.team_id);
 
         await userRepository.save(user)
       }
 
-    } while (usersResponse.response_metadata.next_cursor)
+    } while (usersResponse.response_metadata.next_cursor);
 
 
+    let conversationsResponse;
+    cursor = null;
     do {
-      const response = await this.webClientFactory(team.token).conversations.list({types: 'im'}) as any;
-      if (!response.ok) {
-        throw new Error(response.error);
+      cursor = conversationsResponse?.response_metadata?.next_cursor;
+      conversationsResponse = await this.webClient.conversations.list({types: 'im', limit: 200, cursor});
+      if (!conversationsResponse.ok) {
+        throw new Error(conversationsResponse.error);
       }
-      const conversations = (response as any).channels as SlackIm[]
+      const conversations = conversationsResponse['channels'] as SlackIm[];
 
       for (const conversation of conversations.filter(c => c.is_im)) {
-        const user = await userRepository.findOne(conversation.user)
+        const user = await userRepository.findOne(conversation.user);
         if (user) {
-          user.im = conversation.id
+          user.im = conversation.id;
           await userRepository.save(user);
         }
       }
-
-    } while (false); // TODO cursor
+    } while (conversationsResponse.response_metadata.next_cursor);
   }
 
   private async updateChannels(team: Team) {
@@ -307,13 +302,13 @@ export class SlackTransport implements ITransport {
     // channels = channels.concat(privateChannel as any)
     // channels = channels.concat(conversations as any)
 
-    let response = await this.webClientFactory(team.token).conversations.list({types: 'public_channel,private_channel'});
+    let response = await this.webClient.conversations.list({types: 'public_channel,private_channel'});
     if (!response.ok) {
       throw new Error(response.error);
     }
-    const conversations = (response as any).channels as SlackConversation[]
+    const conversations = (response as any).channels as SlackConversation[];
 
-    const channelRepository = this.connection.getCustomRepository(ChannelRepository)
+    const channelRepository = this.connection.getCustomRepository(ChannelRepository);
     await this.connection.createQueryBuilder()
       .update(Channel)
       .where({team: team.id})
@@ -321,7 +316,7 @@ export class SlackTransport implements ITransport {
       .execute()
 
     for (const channel of conversations) {
-      let ch = await channelRepository.findOne(channel.id, {relations: ['questions']})
+      let ch = await channelRepository.findOne(channel.id, {relations: ['questions']});
       const isNewCh = !ch
       if (!ch) {
         ch = new Channel()
@@ -330,14 +325,14 @@ export class SlackTransport implements ITransport {
 
       ch.isEnabled = channel.is_member;
       ch.isArchived = channel.is_archived;
-      ch.createdBy = await userRepository.findOne(channel.creator)
+      ch.createdBy = await userRepository.findOne(channel.creator);
       if (!ch.createdBy) {
-        logError('Created by is not found')
+        logError('Created by is not found');
         continue;
       }
       ch.team = team
       if (!ch.team) {
-        logError('Created by is not found')
+        logError('Created by is not found');
         continue;
       }
 
@@ -356,12 +351,12 @@ export class SlackTransport implements ITransport {
       }
 
 
-      let membersResponse = await this.webClientFactory(team.token).conversations.members({channel: channel.id}) as { ok: boolean, members?: string[], error?: string };
+      let membersResponse = await this.webClient.conversations.members({channel: channel.id}) as { ok: boolean, members?: string[], error?: string };
       if (!membersResponse.ok) {
         throw new Error(membersResponse.error);
       }
 
-      ch.users = await userRepository.createQueryBuilder('u').whereInIds(membersResponse.members).getMany()
+      ch.users = await userRepository.createQueryBuilder('u').whereInIds(membersResponse.members).getMany();
       await channelRepository.save(ch);
     }
   }
@@ -395,24 +390,24 @@ export class SlackTransport implements ITransport {
       throw new Error(`Standup #${standUpId} is not found`)
     }
 
-    const inProgress = isInProgress(standUp)
+    const inProgress = isInProgress(standUp);
 
     if (!inProgress) { // in progress only..
-      await this.sendMessage(user, standUpFinishedAlreadyMsg)
+      await this.sendMessage(user, standUpFinishedAlreadyMsg);
       return;
     }
 
-    const selectedActions = response.actions.map(a => a.value)
+    const selectedActions = response.actions.map(a => a.value);
 
     if (selectedActions.includes(ACTION_START)) {
-      this.agreeToStartSubject.next(user)
+      this.agreeToStartSubject.next(user);
       return
     } else if (!selectedActions.includes(ACTION_OPEN_DIALOG)) {
       throw new Error("No corresponded actions")
     }
 
     const answers = standUp.answers.filter(a => a.user.id === user.id);
-    const openDialogRequest = {
+    const openDialogRequest: DialogOpenArguments = {
       trigger_id: response.trigger_id,
       //"token": this.webClient.token,
       dialog: {
@@ -442,7 +437,7 @@ export class SlackTransport implements ITransport {
     }
 
     try {
-      const result = await this.webClientFactory(user.team.token).apiCall('dialog.open', openDialogRequest)
+      await this.webClient.dialog.open(openDialogRequest)
       //console.log(result)
       //await this.rtm.send('dialog.open', openDialogRequest)
     } catch (e) {
@@ -470,7 +465,6 @@ export class SlackTransport implements ITransport {
   async handleInteractiveDialogSubmission(response: InteractiveDialogSubmissionResponse) {
     const user = await this.connection.getRepository(User).findOne(response.user.id);
 
-
     if (!response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
       throw new Error('Wrong response');
     }
@@ -481,7 +475,7 @@ export class SlackTransport implements ITransport {
 
     // const standUpId = response.callback_id.split('.', 2)[1];
 
-    const channelTeam = user.team.channels.filter((channel) => (channel.id === response.channel.id)).pop()
+    const channelTeam = user.team.channels.filter((channel) => (channel.id === response.channel.id)).pop();
     if (!user) {
       throw new Error(`Channel team ${response.channel.id} is not found`)
     }
@@ -512,7 +506,7 @@ export class SlackTransport implements ITransport {
 
     if (!standUp) {
       // TODO open alert?!
-      await this.sendMessage(user, `I will remind you when your next standup is up!!!`)
+      await this.sendMessage(user, `I will remind you when your next standup is up!!!`);
       return;
     }
 
@@ -597,7 +591,7 @@ export class SlackTransport implements ITransport {
         }
       })*/
 
-    const result = await this.webClientFactory(user.team.token).chat.postMessage({
+    const result = await this.webClient.chat.postMessage({
       "channel": user.im,
       "text": "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
       "attachments": [buttonsAttachment]
@@ -609,9 +603,9 @@ export class SlackTransport implements ITransport {
   async sendReport(standUp: StandUp) {
     const attachments = []
 
-    const userAnswers = groupBy(standUp.answers, 'user.id')
+    const userAnswers = groupBy(standUp.answers, 'user.id');
     for (const userID in userAnswers) {
-      const answers: AnswerRequest[] = userAnswers[userID]
+      const answers: AnswerRequest[] = userAnswers[userID];
       if (answers.length === 0) {
         // TODO skip message
         continue;
@@ -633,7 +627,7 @@ export class SlackTransport implements ITransport {
     if (attachments.length === 0) {
       text += ' Nobody sent answers 🐥'
     }
-    await this.webClientFactory(standUp.team.team.token).chat.postMessage({
+    await this.webClient.chat.postMessage({
       channel: standUp.channel.id,
       text,
       attachments
@@ -641,6 +635,6 @@ export class SlackTransport implements ITransport {
   }
 
   async sendMessage(user: User, message: string): Promise<any> {
-    return this.webClientFactory(user.team.token).chat.postMessage({text: message, channel: user.im});
+    return this.webClient.chat.postMessage({text: message, channel: user.im});
   }
 }

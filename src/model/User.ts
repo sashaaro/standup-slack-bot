@@ -51,7 +51,7 @@ class User implements IUser {
   im: string;
 
   @Column('json', {default: new Profile()})
-  profile: Profile;
+  profile: SlackUserProfile;
 
   @ManyToMany(type => Channel, channel => channel.users, {
     eager: true

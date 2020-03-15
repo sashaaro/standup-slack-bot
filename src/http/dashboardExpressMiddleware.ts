@@ -10,9 +10,10 @@ import {SyncAction} from "./controller/sync";
 import {UpdateChannelAction} from "./controller/UpdateChannelAction";
 import {Connection} from "typeorm";
 import SyncLocker from "../services/SyncServcie";
-import AuthorizationContext from "../services/AuthorizationContext";
+import DashboardContext from "../services/DashboardContext";
 import {CONFIG_TOKEN, RENDER_TOKEN} from "../services/token";
 import {OauthAuthorize} from "./controller/oauth-authorize";
+import {RenderEngine} from "../services/RenderEngine";
 
 const RedisConnectStore = createRedisConnectStore(session);
 let client = redis.createClient({host: 'redis'})
@@ -33,14 +34,27 @@ export const useStaticPublicFolder = (app: express.Express) => {
   app.use(express.static('./resources/public'));
 }
 
+const locale = 'en';
+const intl = new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric', weekday: 'long' });
 
-export const dashboardContext = (injector: Injector) => {
+export const createDashboardContext = (injector: Injector) => {
   const connection = injector.get(Connection)
   const syncService = injector.get(SyncLocker)
+  const renderEngine = injector.get(RenderEngine)
   const config = injector.get(CONFIG_TOKEN)
 
-  return (req: express.Request | express.Router | any, res, next) => {
-    req.context = new AuthorizationContext(req, connection, syncService, config);
+  return async (req: express.Request | express.Router | any, res, next) => {
+    const context = new DashboardContext(req.session, connection);
+    await context.init();
+    req.context = context;
+
+    renderEngine.globalParams = {
+      debug: config.debug,
+      user: context.user,
+      channel: context.channel,
+      syncInProgress: context.user ? syncService.inProgress('update-slack-' + this.user.team.id) : false,
+      intl
+    }
 
     next()
   }
@@ -68,7 +82,7 @@ const scopes = [
 
 export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
-  router.use(dashboardContext(injector));
+  router.use(createDashboardContext(injector));
 
 
 
@@ -77,11 +91,11 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
 
 
   router.get('/', (req, res) => {
-    if (req.session.user) {
-      const standUpsAction = injector.get(StandUpsAction)
-      return standUpsAction.handle(req, res)
+    const context = req['context'] as DashboardContext
+    if (context.user) {
+      return injector.get(StandUpsAction).handle(req, res)
     } else {
-      res.send(injector.get(RENDER_TOKEN)('welcome', {authLink, debug: config.debug}));
+      res.send(injector.get(RENDER_TOKEN)('welcome', {authLink}));
     }
   });
 

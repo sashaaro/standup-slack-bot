@@ -5,7 +5,7 @@ block authorized_content
         .alert.alert--gray.deactivate-bot-block
             div
                 | Deactivate bot for
-                a(href='https://' + team.domain + '.slack.com/messages/' + channel.id + '/details' target="blank")= " #" + channel.name
+                a(href='https://' + user.team.domain + '.slack.com/messages/' + channel.id + '/details' target="blank")= " #" + channel.name
                 |  channel
             code
                 span= "/kick "
