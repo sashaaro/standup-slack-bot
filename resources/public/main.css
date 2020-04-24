@@ -243,3 +243,8 @@ code {
 #selectChannel {
     width: 350px;
 }
+
+.auth-block {
+    text-align: center;
+    margin-top: 50px;
+}

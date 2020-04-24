@@ -10,6 +10,8 @@ import Team from "../../model/Team";
 import {OauthAccessResponse} from "../../slack/model/ScopeGranted";
 import User from "../../model/User";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
+import {ResourceNotFoundError} from "../dashboardExpressMiddleware";
+import {SlackTeam} from "../../slack/model/SlackTeam";
 
 @Injectable()
 export class OauthAuthorize implements IHttpAction {
@@ -28,18 +30,17 @@ export class OauthAuthorize implements IHttpAction {
     }
 
     if (!req.query.code) {
-      res.status(404);
-      return;
+      throw new ResourceNotFoundError()
     }
 
     let response: OauthAccessResponse;
     try {
       // https://api.slack.com/methods/oauth.v2.access
-      response = await this.webClient.oauth.v2.access({
+      response = await new WebClient().oauth.v2.access({
         client_id: this.config.slackClientID,
         client_secret: this.config.slackSecret,
         code: req.query.code,
-        redirect_uri: `${this.config.host}/auth`,
+        //redirect_uri: `${this.config.host}/auth`,
       }) as any
     } catch (e) {
       logError(e)
@@ -57,6 +58,9 @@ export class OauthAuthorize implements IHttpAction {
     if (!team) {
       team = new Team()
       team.id = response.team.id;
+      team.name = response.team.name
+      const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({team: team.id})) as any;
+      team.domain = teamInfo.team.domain;
       team = await teamRepository.save(team);
     }
 

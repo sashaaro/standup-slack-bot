@@ -1,3 +1,4 @@
+import {WebAPICallResult} from "@slack/web-api/dist/WebClient";
 
 export interface SlackIm
 {
@@ -27,27 +28,6 @@ export interface ScopeGranted {
   "authed_teams": [],
   "event_id": "Ev74V2J98E",
   "event_time": 1505519097
-}
-
-export interface SlackTeamInfo
-{
-  "team": {
-    "id": "T12345",
-    "name": "My Team",
-    "domain": "example",
-    "email_domain": "example.com",
-    "icon": {
-      "image_34": "https://...",
-      "image_44": "https://...",
-      "image_68": "https://...",
-      "image_88": "https://...",
-      "image_102": "https://...",
-      "image_132": "https://...",
-      "image_default": true
-    },
-    "enterprise_id": "E1234A12AB",
-    "enterprise_name": "Umbrella Corporation"
-  }
 }
 
 export interface OauthAccessResponse {

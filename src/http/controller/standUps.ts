@@ -5,7 +5,6 @@ import {Connection, Repository} from "typeorm";
 import DashboardContext from "../../services/DashboardContext";
 import {RENDER_TOKEN} from "../../services/token";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
-import {isInProgress} from "../../slack/SlackTransport";
 import Team from "../../model/Team";
 import User from "../../model/User";
 import {RenderFn} from "../../services/providers";

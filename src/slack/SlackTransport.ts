@@ -8,7 +8,7 @@ import ChannelRepository from "../repository/ChannelRepository";
 import {Channel} from "../model/Channel";
 import {Connection, DeepPartial} from "typeorm";
 import {SlackChannel, SlackConversation} from "./model/SlackChannel";
-import {ScopeGranted, SlackIm, SlackTeamInfo} from "./model/ScopeGranted";
+import {ScopeGranted, SlackIm} from "./model/ScopeGranted";
 import Team from "../model/Team";
 import {
   ACTION_OPEN_DIALOG,
@@ -201,8 +201,8 @@ export class SlackTransport implements ITransport {
         team = new Team();
         team.id = scopeGranted.team_id;
         // https://api.slack.com/methods/team.info
-        const teamInfo: SlackTeamInfo = (await this.webClient.team.info()) as any;
-        team.name = teamInfo.team.name;
+        const teamInfo: {team: SlackTeam} = (await this.webClient.team.info()) as any;
+        team.name = teamInfo.team.name;``
         team.domain = teamInfo.team.domain
         await teamRepository.save(team);
       }

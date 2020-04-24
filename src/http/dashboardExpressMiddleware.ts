@@ -61,7 +61,9 @@ export const createDashboardContext = (injector: Injector) => {
 }
 
 export class AccessDenyError extends Error {
+}
 
+export class ResourceNotFoundError extends Error {
 }
 
 
@@ -84,16 +86,15 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
   router.use(createDashboardContext(injector));
 
-
-
   const config = injector.get(CONFIG_TOKEN)
   const authLink = `https://slack.com/oauth/v2/authorize?client_id=${config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${config.host}/auth`
 
 
-  router.get('/', (req, res) => {
+  router.get('/', async (req, res) => {
+    console.log('user! ')
     const context = req['context'] as DashboardContext
     if (context.user) {
-      return injector.get(StandUpsAction).handle(req, res)
+      return await injector.get(StandUpsAction).handle(req, res)
     } else {
       res.send(injector.get(RENDER_TOKEN)('welcome', {authLink}));
     }
@@ -131,14 +132,24 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
 
 
   router.use((err, req, res, next) => {
-    console.log(err)
     if (err instanceof AccessDenyError) {
       res.status(403);
 
       if (req.accepts('html')) {
         res.send(injector.get(RENDER_TOKEN)('403'));
-        return;
+      } else {
+        res.send("")
       }
+    } else if (err instanceof ResourceNotFoundError) {
+      res.status(404);
+
+      if (req.accepts('html')) {
+        res.send(injector.get(RENDER_TOKEN)('404'));
+      } else {
+        res.send("")
+      }
+    } else {
+      // TODO log
     }
   })
 

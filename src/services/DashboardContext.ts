@@ -1,6 +1,6 @@
 import {Connection} from "typeorm";
 import {Channel} from "../model/Channel";
-import {Inject, Injectable} from 'injection-js';
+import {Injectable} from 'injection-js';
 import User from "../model/User";
 
 export interface IAuthUser {
