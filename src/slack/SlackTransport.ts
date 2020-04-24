@@ -152,13 +152,10 @@ export class SlackTransport implements ITransport {
       }
     };
 
-    this.slackEvents.on('channel_joined', async (response) => {
+    this.slackEvents.on('member_joined_channel', async (response) => {
       const channel = response.channel as SlackChannel;
-      await joinSlackChannel(channel.id, {isArchived: channel.is_archived, name: channel.name, nameNormalized: channel.name_normalized})
-    });
-    this.slackEvents.on('group_joined', async (response) => {
-      const channel = response.channel as SlackChannel;
-      await joinSlackChannel(channel.id, {isArchived: channel.is_archived, name: channel.name, nameNormalized: channel.name_normalized})
+      console.log(response)
+      // await joinSlackChannel(channel.id, {isArchived: channel.is_archived, name: channel.name, nameNormalized: channel.name_normalized})
     });
 
     this.slackEvents.on('channel_left', async (response) => {

@@ -14,6 +14,7 @@ import DashboardContext from "../services/DashboardContext";
 import {CONFIG_TOKEN, RENDER_TOKEN} from "../services/token";
 import {OauthAuthorize} from "./controller/oauth-authorize";
 import {RenderEngine} from "../services/RenderEngine";
+import http from "http";
 
 const RedisConnectStore = createRedisConnectStore(session);
 let client = redis.createClient({host: 'redis'})
@@ -43,7 +44,7 @@ export const createDashboardContext = (injector: Injector) => {
   const renderEngine = injector.get(RenderEngine)
   const config = injector.get(CONFIG_TOKEN)
 
-  return async (req: express.Request | express.Router | any, res, next) => {
+  return async (req: http.IncomingMessage | express.Request | express.Router | any, res, next) => {
     const context = new DashboardContext(req.session, connection);
     await context.init();
     req.context = context;
@@ -52,7 +53,7 @@ export const createDashboardContext = (injector: Injector) => {
       debug: config.debug,
       user: context.user,
       channel: context.channel,
-      syncInProgress: context.user ? syncService.inProgress('update-slack-' + this.user.team.id) : false,
+      syncInProgress: context.user ? syncService.inProgress('update-slack-' + context.user.team.id) : false,
       intl
     }
 
@@ -84,6 +85,7 @@ const scopes = [
 
 export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
+  useBodyParserAndSession(router);
   router.use(createDashboardContext(injector));
 
   const config = injector.get(CONFIG_TOKEN)
@@ -91,7 +93,6 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
 
 
   router.get('/', async (req, res) => {
-    console.log('user! ')
     const context = req['context'] as DashboardContext
     if (context.user) {
       return await injector.get(StandUpsAction).handle(req, res)
@@ -106,7 +107,7 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
   router.get('/logout', (req, res) => {
     const session = req.session as any;
     session.destroy()
-    res.redirect('/auth');
+    res.redirect('/');
   });
 
   const settingAction = injector.get(SettingsAction)
@@ -149,7 +150,7 @@ export const dashboardExpressMiddleware = (injector: Injector) => {
         res.send("")
       }
     } else {
-      // TODO log
+      console.log(err)
     }
   })
 

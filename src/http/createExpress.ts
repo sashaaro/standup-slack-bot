@@ -1,5 +1,5 @@
 import express from 'express'
-import {dashboardExpressMiddleware, useBodyParserAndSession, useStaticPublicFolder} from "./dashboardExpressMiddleware";
+import {dashboardExpressMiddleware, useStaticPublicFolder} from "./dashboardExpressMiddleware";
 import {ApiSlackInteractive} from "./controller/apiSlackInteractive";
 import {logError} from "../services/logError";
 import { createMessageAdapter } from "@slack/interactive-messages";
@@ -7,7 +7,15 @@ import {CONFIG_TOKEN} from "../services/token";
 import {ReflectiveInjector} from "injection-js";
 import {IAppConfig} from "../services/providers";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
-import {createEventAdapter} from "@slack/events-api";
+
+const consoleLoggerMiddleware = (req, res, next) => {
+  console.info(`${req.originalUrl} ${req.method}`);
+  res.on('finish', () => {
+    console.info(`${res.statusCode} ${res.statusMessage}; ${res.get('Content-Length') || 0}b sent`)
+  })
+
+  next()
+}
 
 export const createExpress = (injector: ReflectiveInjector) => {
   const expressApp = express()
@@ -50,26 +58,15 @@ export const createExpress = (injector: ReflectiveInjector) => {
 
 
   const config: IAppConfig = injector.get(CONFIG_TOKEN)
-  if (config.debug) {
-    expressApp.use((req, res, next) => {
-      console.log(`${req.originalUrl} ${req.method}`);
 
-      res.on('finish', () => {
-        console.info(`${res.statusCode} ${res.statusMessage}; ${res.get('Content-Length') || 0}b sent`)
-      })
-
-      next()
-    })
+  if (
+    config.debug ||
+    true
+  ) {
+    expressApp.use(consoleLoggerMiddleware)
   }
 
   useStaticPublicFolder(expressApp);
-
-  /*const router = express.Router();
-  router.get('/', (req, res) => {
-    console.log(req.session)
-
-    return res.send('1');
-  })*/
 
   const slackInteractions = createMessageAdapter(config.slackSigningSecret);
   slackInteractions.action({},  async (response) => {
@@ -81,10 +78,7 @@ export const createExpress = (injector: ReflectiveInjector) => {
   })
 
   expressApp.use('/api/slack/interactive', slackInteractions.expressMiddleware());
-
   expressApp.use('/api/slack/events', injector.get(SlackEventAdapter).expressMiddleware());
-
-  useBodyParserAndSession(expressApp); // TODO move to dashboardExpressMiddleware?!
   expressApp.use('/', dashboardExpressMiddleware(injector));
 
   return expressApp;
