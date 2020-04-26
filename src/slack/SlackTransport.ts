@@ -7,7 +7,7 @@ import {logError} from "../services/logError";
 import ChannelRepository from "../repository/ChannelRepository";
 import {Channel} from "../model/Channel";
 import {Connection, DeepPartial} from "typeorm";
-import {SlackChannel, SlackConversation} from "./model/SlackChannel";
+import {ChannelLeft, MemberJoinedChannel, SlackChannel, SlackConversation} from "./model/SlackChannel";
 import {ScopeGranted, SlackIm} from "./model/ScopeGranted";
 import Team from "../model/Team";
 import {
@@ -114,77 +114,64 @@ export class SlackTransport implements ITransport {
       });
     });
 
-    const channelRepository = this.connection.getCustomRepository(ChannelRepository);
+    this.slackEvents.on('member_left_channel', async (response: MemberJoinedChannel) => {
+      console.log('member_left_channel', response)
+    })
+    this.slackEvents.on('member_joined_channel', async (response: MemberJoinedChannel) => {
+      console.log('member_joined_channel', response)
+      await this.joinSlackChannel(response.channel);
+    })
 
-    const findOrCreateChannel = async (channelID: string): Promise<{channel: Channel, isNew: boolean}> => {
-      let channel = await channelRepository.findOne(channelID);
-      const isNew = !channel;
-      if (isNew) {
-        channel = new Channel();
-        channel.id = channelID;
-        channel.isEnabled = false
-      }
+    this.slackEvents.on('channel_joined', async (response) => {
+      console.log('channel_joined', response);
 
-      return {channel, isNew};
-    };
-
-    const findOrCreateAndUpdate = async (channelID: string, data: DeepPartial<Channel>): Promise<{channel: Channel, isNew: boolean}> => {
-      const {channel, isNew} = await findOrCreateChannel(channelID);
-      Object.assign(channel, data);
-      await channelRepository.save(channel);
-
-      return {channel, isNew}
-    };
-
-    const joinSlackChannel = async (channelID: string, data?: DeepPartial<Channel>) => {
-      const {channel, isNew} = await findOrCreateChannel(channelID);
-
-      channel.isArchived = false;
-      channel.isEnabled = true;
-      if (data) {
-        Object.assign(channel, data);
-      }
-
-      if (isNew) {
-        await channelRepository.addNewChannel(channel)
-      } else {
-        await channelRepository.save(channel);
-      }
-    };
-
-    this.slackEvents.on('member_joined_channel', async (response) => {
       const channel = response.channel as SlackChannel;
-      console.log(response)
-      // await joinSlackChannel(channel.id, {isArchived: channel.is_archived, name: channel.name, nameNormalized: channel.name_normalized})
+      await this.joinSlackChannel(channel.id, {
+        isArchived: channel.is_archived,
+        name: channel.name,
+        nameNormalized: channel.name_normalized
+      })
+    });
+    this.slackEvents.on('group_joined', async (response) => {
+      console.log('group_joined', response);
+      const channel = response.channel as SlackChannel;
+      await this.joinSlackChannel(channel.id, {
+        isArchived: channel.is_archived,
+        name: channel.name,
+        nameNormalized: channel.name_normalized
+      })
     });
 
-    this.slackEvents.on('channel_left', async (response) => {
-      const channel: string = response.channel;
-      await findOrCreateAndUpdate(channel, {isEnabled: false})
+    this.slackEvents.on('channel_left', async (response: ChannelLeft) => {
+      console.log('channel_left', response);
+
+      await this.findOrCreateAndUpdate(response.channel, {isEnabled: false})
     });
     this.slackEvents.on('group_left', async (response) => {
+      console.log('group_left', response);
+
       const channel: string = response.channel;
-      await findOrCreateAndUpdate(channel, {isEnabled: false})
+      await this.findOrCreateAndUpdate(channel, {isEnabled: false})
     });
 
 
     this.slackEvents.on('channel_archive', async (response: {type: string, channel: string, user: string}) => {
       const channel: string = response.channel;
-      await findOrCreateAndUpdate(channel, {isArchived: true})
+      await this.findOrCreateAndUpdate(channel, {isArchived: true})
     });
     this.slackEvents.on('group_archive', async (response) => {
       const channel: string = response.channel;
-      await findOrCreateAndUpdate(channel, {isArchived: true})
+      await this.findOrCreateAndUpdate(channel, {isArchived: true})
     });
 
 
     this.slackEvents.on('channel_unarchive', async (response) => {
       const channel: string = response.channel;
-      await findOrCreateAndUpdate(channel, {isArchived: false})
+      await this.findOrCreateAndUpdate(channel, {isArchived: false})
     });
     this.slackEvents.on('group_unarchive', async (response) => {
       const channel: string = response.channel;
-      await findOrCreateAndUpdate(channel, {isArchived: false})
+      await this.findOrCreateAndUpdate(channel, {isArchived: false})
     });
 
 
@@ -208,6 +195,53 @@ export class SlackTransport implements ITransport {
     })
   }
 
+  public async findOrCreateAndUpdate(channelID: string, data: DeepPartial<Channel>): Promise<{channel: Channel, isNew: boolean}> {
+    const {channel, isNew} = await this.findOrCreateChannel(channelID);
+    Object.assign(channel, data);
+    if (isNew) {
+      const channelInfo = (await this.webClient.conversations.info({channel: channel.id})).channel as SlackConversation
+
+      channel.name = channelInfo.name;
+      channel.nameNormalized = channelInfo.name_normalized;
+    }
+    const channelRepository = this.connection.getCustomRepository(ChannelRepository);
+    await channelRepository.save(channel);
+
+    return {channel, isNew}
+  };
+
+  private async findOrCreateChannel(channelID: string): Promise<{channel: Channel, isNew: boolean}>{
+    let channel = await this.connection.getCustomRepository(ChannelRepository).findOne(channelID);
+    const isNew = !channel;
+    if (isNew) {
+      channel = new Channel();
+      channel.id = channelID;
+      channel.isEnabled = false
+    }
+
+    return {channel, isNew};
+  };
+
+  private async joinSlackChannel(channelID: string, data?: DeepPartial<Channel>) {
+    const {channel, isNew} = await this.findOrCreateChannel(channelID);
+
+    channel.isArchived = false;
+    channel.isEnabled = true;
+    if (data) {
+      Object.assign(channel, data);
+    }
+
+    await this.webClient.chat.postMessage({
+      channel: channel.im,
+      text: 'Hi everyone, I am here!'
+    })
+
+    if (isNew) {
+      await this.connection.getCustomRepository(ChannelRepository).addNewChannel(channel)
+    } else {
+      await this.connection.getCustomRepository(ChannelRepository).save(channel);
+    }
+  }
 
   async syncData(team: Team) {
     const teamResponse: {team: SlackTeam} = await this.webClient.team.info() as any;
@@ -283,22 +317,6 @@ export class SlackTransport implements ITransport {
   private async updateChannels(team: Team) {
     // TODO fix update private channel where bot invited already
     const userRepository = this.connection.getRepository(User);
-    //let channels: SlackConversation[]|SlackChannel[] = [];
-
-    /*let response = await this.webClient.channels.list();
-    if (!response.ok) {
-      throw new Error(response.error);
-    }
-    channels = (response as any).channels as SlackChannel[]
-    */
-    /*response = await this.webClient.channels.list();
-    if (!response.ok) {
-      throw new Error(response.error);
-    }*/
-    // let privateChannels = ((response as any).groups as SlackGroup[])
-    // channels = channels.concat(privateChannel as any)
-    // channels = channels.concat(conversations as any)
-
     let response = await this.webClient.conversations.list({types: 'public_channel,private_channel'});
     if (!response.ok) {
       throw new Error(response.error);
@@ -589,9 +607,9 @@ export class SlackTransport implements ITransport {
       })*/
 
     const result = await this.webClient.chat.postMessage({
-      "channel": user.im,
-      "text": "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
-      "attachments": [buttonsAttachment]
+      channel: user.im,
+      text: "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
+      attachments: [buttonsAttachment]
     })
 
     // result.response_metadata.

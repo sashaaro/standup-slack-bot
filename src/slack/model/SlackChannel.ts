@@ -1,32 +1,47 @@
 /**
  * https://api.slack.com/types/channel
  */
-export interface SlackChannel
-{
-    id: string,
-    name: string,
-    is_channel: boolean,
-    created: number,
-    creator: string,
-    is_archived: boolean,
-    is_general: boolean,
-    unlinked: number,
-    name_normalized: string,
-    is_shared: boolean,
-    is_org_shared: boolean,
-    has_pins: boolean,
-    is_member: boolean,
-    is_private: boolean,
-    is_mpim: boolean,
-    last_read: string,
-    members: Array<string>,
+export interface SlackChannel {
+  id: string,
+  name: string,
+  is_channel: boolean,
+  created: number,
+  creator: string,
+  is_archived: boolean,
+  is_general: boolean,
+  unlinked: number,
+  name_normalized: string,
+  is_shared: boolean,
+  is_org_shared: boolean,
+  has_pins: boolean,
+  is_member: boolean,
+  is_private: boolean,
+  is_mpim: boolean,
+  last_read: string,
+  members: Array<string>,
+}
+
+export interface ChannelLeft {
+  type: 'channel_left',
+  channel: 'CK222FUKH',
+  actor_id: 'UJZM51SN8',
+  event_ts: '1587901539.000500'
+}
+
+export interface MemberJoinedChannel {
+  type: 'member_joined_channel',
+  user: 'UK2R50WDV',
+  channel: 'CK222FUKH',
+  channel_type: 'C',
+  team: 'TK074QB08',
+  inviter: 'UJZM51SN8',
+  event_ts: '1587901379.000300'
 }
 
 /**
  * https://api.slack.com/types/conversation
  */
-export interface SlackConversation
-{
+export interface SlackConversation {
   "id": "C012AB3CD",
   "name": "general",
   "is_channel": true,
@@ -58,7 +73,7 @@ export interface SlackConversation
     "creator": "W012A3BCD",
     "last_set": 1449709364
   },
-  "previous_names": [ "specifics", "abstractions", "etc" ],
+  "previous_names": ["specifics", "abstractions", "etc"],
   "num_members": 23,
   "locale": "en-US"
 }
@@ -71,7 +86,7 @@ export interface SlackGroup {
   "is_archived": false,
   "members": [
     "U024BE7LH"
-    ],
+  ],
   "topic": {
     "value": "Secret plans on hold",
     "creator": "U024BE7LV",
