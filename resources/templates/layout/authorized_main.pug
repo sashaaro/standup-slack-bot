@@ -21,11 +21,11 @@ block content
                     else
                         | Sync from slack api
                 .right.menu
-                    if channel && user.team.enableChannels.length
+                    if user.team.enableChannels.length
                         form.item.ui.mini.form.select-channel-item(action="/channel/selected", method="POST")
                             select.dropdown#selectChannel(name="id", placeholder="Select channel")
                                 each ch in user.team.enableChannels
-                                    option(value=ch.id, selected=ch.id === channel.id)= ch.name
+                                    option(value=ch.id, selected=channel && ch.id === channel.id)= ch.name
                         a.item(href="/settings" class= {'active': activeMenu === 'settings'})
                             i.icon.cog
                             | Settings

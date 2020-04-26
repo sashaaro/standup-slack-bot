@@ -7,7 +7,7 @@ import QuestionRepository from "../../repository/QuestionRepository";
 import {ITimezone} from "../../bot/models";
 import Timezone from "../../model/Timezone";
 import DashboardContext from "../../services/DashboardContext";
-import {AccessDenyError} from "../dashboardExpressMiddleware";
+import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
 
 @Injectable()
 export class SettingsAction implements IHttpAction {
@@ -22,17 +22,17 @@ export class SettingsAction implements IHttpAction {
     const context = req.context as DashboardContext;
     const channelRepository = this.connection.getRepository(Channel)
 
-    if (context.user) {
+    if (!context.user) {
       throw new AccessDenyError();
     }
 
-    if (context.channel) { // TODO 404
-      throw new Error('Channel is not found');
+    if (!context.channel) { // TODO 404
+      throw new ResourceNotFoundError('Selected channel is not found');
     }
 
     const timezones = await this.timezoneList
 
-    if (req.method == "POST") { // TODO check if standup in progress then not dave
+    if (req.method === "POST") { // TODO check if standup in progress then not dave
       // todo validate
       const formData = req.body as {timezone: number, duration: number, questions: string[], start: string}
       if (formData.timezone) {

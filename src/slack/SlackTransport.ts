@@ -231,16 +231,16 @@ export class SlackTransport implements ITransport {
       Object.assign(channel, data);
     }
 
-    await this.webClient.chat.postMessage({
-      channel: channel.im,
-      text: 'Hi everyone, I am here!'
-    })
-
     if (isNew) {
       await this.connection.getCustomRepository(ChannelRepository).addNewChannel(channel)
     } else {
       await this.connection.getCustomRepository(ChannelRepository).save(channel);
     }
+
+    await this.webClient.chat.postMessage({
+      channel: channel.id,
+      text: 'Hi everyone, I am here!'
+    })
   }
 
   async syncData(team: Team) {
@@ -303,7 +303,6 @@ export class SlackTransport implements ITransport {
         throw new Error(conversationsResponse.error);
       }
       const conversations = conversationsResponse['channels'] as SlackIm[];
-
       for (const conversation of conversations.filter(c => c.is_im)) {
         const user = await userRepository.findOne(conversation.user);
         if (user) {
@@ -317,12 +316,14 @@ export class SlackTransport implements ITransport {
   private async updateChannels(team: Team) {
     // TODO fix update private channel where bot invited already
     const userRepository = this.connection.getRepository(User);
-    let response = await this.webClient.conversations.list({types: 'public_channel,private_channel'});
+    const response = await this.webClient.conversations.list({types: 'public_channel,private_channel'});
+    /*let response = await this.webClient.users.conversations({
+      types: 'public_channel,private_channel',
+    });*/
     if (!response.ok) {
       throw new Error(response.error);
     }
     const conversations = (response as any).channels as SlackConversation[];
-
     const channelRepository = this.connection.getCustomRepository(ChannelRepository);
     await this.connection.createQueryBuilder()
       .update(Channel)
