@@ -11,7 +11,7 @@
     "esModuleInterop": true,
     "paths": {
       "*": [
-        "node_modules/*",
+        "node_modules/*"
       ]
     },
     "lib": [
@@ -29,9 +29,10 @@
       "es2015.symbol",
       "es2015.symbol.wellknown",
       "esnext.asynciterable"
-    ],
+    ]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "test/**/*"
   ]
 }

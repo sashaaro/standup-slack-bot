@@ -1,2 +1,2 @@
 #!/usr/bin/env sh
-node dist/cli.js $@
+node dist/src/cli.js $@

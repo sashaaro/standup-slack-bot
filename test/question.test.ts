@@ -1,75 +1,55 @@
 import Question from "./../src/model/Question";
 import * as assert from 'assert';
-import StandUpBotService from "../src/bot/StandUpBotService";
-import {IMessage, IStandUp, ITransport, IUser} from "../src/bot/models";
-import StandUp from "../src/model/StandUp";
-import {SlackStandUpProvider} from "../src/slack/SlackStandUpProvider";
-import {createTypeORMConnection} from "../src/services/createTypeORMConnection";
-import parameters from "../src/parameters.test";
-import {Subject} from "rxjs";
-import Team from "../src/model/Team";
 import {Channel} from "../src/model/Channel";
+import "reflect-metadata";
+import {ReflectiveInjector} from "injection-js";
+import {createProviders} from "../src/services/providers";
+import {Connection} from "typeorm";
+import ChannelRepository from "../src/repository/ChannelRepository";
 
-describe('Question', () => {
-    describe('work well', () => {
-        it('should work', () => {
-            const q = new Question()
-            assert.equal(q.isEnabled, true);
-        });
-    });
+const providers = createProviders( 'test');
+const injector = ReflectiveInjector.resolveAndCreate(providers);
+const connection: Connection = injector.get(Connection);
+
+beforeAll(async () => {
+  await connection.connect();
+})
+
+afterAll(async () => {
+  await connection.close();
+})
+
+beforeEach(async () => {
+  //connection.dropDatabase();
+  //connection.createQueryBuilder().t
 });
 
-class TraceableTransport implements ITransport {
-    data = []
-
-    messageSubject = new Subject<IMessage>()
-    messagesSubject = new Subject<IMessage[]>()
-    agreeToStartSubject = new Subject<IUser>()
-
-    message$ = this.messageSubject.asObservable()
-    messages$ = this.messagesSubject.asObservable()
-    agreeToStart$ = this.agreeToStartSubject.asObservable()
-
-    constructor() {
-        this.messageSubject.subscribe((data) => {
-            this.data.push({event: 'message', data})
-        })
-        this.messagesSubject.subscribe((data) => {
-            this.data.push({event: 'messages', data})
-        })
-        this.agreeToStart$.subscribe((data) => {
-            this.data.push({event: 'agreeToStart', data})
-        })
-    }
-
-    async sendMessage(user: IUser, message: string): Promise<any> {
-        this.data.push({event: 'sendMessage', data: {user, message}})
-    }
-    sendGreetingMessage(user: IUser, standUp: IStandUp) {
-        this.data.push({event: 'sendGreetingMessage', data: {user, standUp}})
-    }
-}
+afterEach(() => {
+});
 
 test('start standup', async (done) => {
-    const connection = await createTypeORMConnection(parameters as any)
-    const provider = new SlackStandUpProvider(connection)
-    const standUpBotService = new StandUpBotService(provider, new TraceableTransport());
+  const channel = new Channel();
+  channel.id = 'D3dKF92';
+  channel.name = 'my-channel';
+  channel.nameNormalized = 'my-channel';
+  const channelRepository = connection.getCustomRepository(ChannelRepository)
+  await channelRepository.addNewChannel(channel);
 
-    const channel = new Channel();
-    channel.id = '1';
-    channel.name = 'first team';
-    //channel.isArchived;
-    await connection.getRepository(Channel).save(team)
+  assert.strictEqual((await channelRepository.findOne(channel.id)).id, channel.id);
 
-    standUpBotService.startTeamStandUpByDate(new Date);
+  done();
 
-    setTimeout(() => {
-        assert.strictEqual(true, true);
-        done()
-    }, 4600)
+  /*standUpBotService.finishStandUp$.subscribe((standUp: StandUp) => {
+      assert.strictEqual(standUp.start, true);
+      done()
+  });*/
+});
 
-    /*standUpBotService.finishStandUp$.subscribe((standUp: StandUp) => {
-        assert.strictEqual(standUp.start, true);
-        done()
-    });*/
+describe('Question', () => {
+  describe('work well', () => {
+    it('should work', () => {
+      const q = new Question()
+      assert.equal(q.isEnabled, true);
+    });
+  });
 });

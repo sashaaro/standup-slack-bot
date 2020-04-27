@@ -7,11 +7,12 @@ import * as https from "https";
 import * as fs from "fs";
 import {logError} from "./services/logError";
 import {createExpress} from "./http/createExpress";
-import {createProvider, IAppConfig} from "./services/providers";
+import {createProviders, IAppConfig} from "./services/providers";
 import Rollbar from "rollbar";
 import {CONFIG_TOKEN} from "./services/token";
 import 'express-async-errors';
 import {SlackTransport} from "./slack/SlackTransport";
+import {Connection} from "typeorm";
 
 const main = async () => {
   const envParam = process.argv.filter((param) => param.startsWith(`--env=`)).pop();
@@ -22,8 +23,11 @@ const main = async () => {
 
   console.log(`Environment: ${env}`)
 
-  const injector = ReflectiveInjector.resolveAndCreate(await createProvider('app', env));
+  const injector = ReflectiveInjector.resolveAndCreate(await createProviders(env));
   const config: IAppConfig = injector.get(CONFIG_TOKEN)
+  const connection = injector.get(Connection) as Connection
+
+  await connection.connect();
 
   if (config.rollBarAccessToken) {
     const rollbar = new Rollbar({

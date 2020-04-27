@@ -21,22 +21,19 @@ export const getSyncSlackTeamKey = (teamId) => 'update-slack-' + teamId
 export class SlackStandUpProvider implements IStandUpProvider {
   constructor(private connection: Connection) {}
 
-  findTeamsByStart(date): Promise<Channel[]> {
-    // SELECT label,
-    // to_char(CURRENT_TIMESTAMP at time zone CONCAT(to_char(- timezone.utc_offset, 'HH24:'), RPAD(abs(EXTRACT(MINUTE FROM timezone.utc_offset))::text, 2, '0')), 'HH24:MI')
-    // as local_time FROM timezone;
-
-    const atTimeZone = "CONCAT(to_char(- timezone.utc_offset, 'HH24:'), RPAD(abs(EXTRACT(MINUTE FROM timezone.utc_offset))::text, 2, '0'))"; // to_char(- timezone.utc_offset, 'HH24:MI')
-    const currentTimeInTimestampSql = `to_char(CURRENT_TIMESTAMP at time zone ${atTimeZone}, 'HH24:MI')`
+  findTeamsByStart(startedAt: Date): Promise<Channel[]> {
+    const time = `${startedAt.getHours().toString(10).padStart(2, '0')}:${startedAt.getMinutes().toString(10).padStart(2, '0')}:${startedAt.getSeconds().toString(10).padStart(2, '0')}`
 
     return this.connection.getRepository(Channel)
       .createQueryBuilder('channel')
       .leftJoinAndSelect('channel.users', 'users')
       .innerJoinAndSelect('channel.timezone', 'timezone')
-      .where(`channel.start = ${currentTimeInTimestampSql}`)
+      .innerJoin( 'pg_timezone_names', 'pg_timezone', 'timezone.name = pg_timezone.name')
+      .where(`(channel.start::time - pg_timezone::utc_offset)::string = :startedAt`)
       .andWhere('channel.isArchived = false')
       .andWhere('channel.isEnabled = true')
       .andWhere('channel.timezone IS NOT NULL')
+      .setParameter('startedAt', time)
       .getMany();
   }
 
