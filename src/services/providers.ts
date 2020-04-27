@@ -94,7 +94,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
     {
       provide: WebClient,
       useFactory: (config: IAppConfig) => {
-        new WebClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined})
+        return new WebClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined})
       },
       deps: [CONFIG_TOKEN]
     },
@@ -108,11 +108,11 @@ export const createProviders = (env = 'dev'): Provider[] => {
       provide: STAND_UP_BOT_STAND_UP_PROVIDER,
       useExisting: SlackStandUpProvider
     },
-    /*SlackTransport,
+    SlackTransport,
     {
       provide: STAND_UP_BOT_TRANSPORT,
       useExisting: SlackTransport
-    },*/
+    },
     StandUpBotService,
     SyncLocker,
     ...actions

@@ -16,7 +16,6 @@ import {
   CALLBACK_PREFIX_STANDUP_INVITE,
   SlackStandUpProvider
 } from "./SlackStandUpProvider";
-import SyncLocker from "../services/SyncServcie";
 import {SlackTeam} from "./model/SlackTeam";
 import QuestionRepository from "../repository/QuestionRepository";
 import {InteractiveDialogSubmissionResponse, InteractiveResponse} from "./model/InteractiveResponse";
@@ -47,7 +46,6 @@ export class SlackTransport implements ITransport {
     private readonly slackEvents: SlackEventAdapter,
     private readonly webClient: WebClient,
     private connection: Connection,
-    private syncLocker: SyncLocker,
     private slackStandUpProvider: SlackStandUpProvider,
   ) {
   }

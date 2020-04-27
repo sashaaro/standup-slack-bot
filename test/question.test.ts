@@ -6,22 +6,35 @@ import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "../src/services/providers";
 import {Connection} from "typeorm";
 import ChannelRepository from "../src/repository/ChannelRepository";
+import Timezone from "../src/model/Timezone";
 
 const providers = createProviders( 'test');
 const injector = ReflectiveInjector.resolveAndCreate(providers);
 const connection: Connection = injector.get(Connection);
 
+const clearDatabase = async () => {
+  const entities = connection.entityMetadatas
+    .filter(e => !dictionaryEntities.includes(e.target as any))
+
+  for (const entity of entities) {
+    await connection.getRepository(entity.target).query(`TRUNCATE "${entity.tableName}" CASCADE`)
+  }
+}
+
 beforeAll(async () => {
   await connection.connect();
+  await connection.dropDatabase();
+  await connection.runMigrations();
 })
 
 afterAll(async () => {
   await connection.close();
 })
 
+const dictionaryEntities = [Timezone];
+
 beforeEach(async () => {
-  //connection.dropDatabase();
-  //connection.createQueryBuilder().t
+  await clearDatabase()
 });
 
 afterEach(() => {
