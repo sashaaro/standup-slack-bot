@@ -2,7 +2,7 @@ import {Observable} from "rxjs";
 import AnswerRequest from "../model/AnswerRequest";
 
 export interface ITimezone {
-  label: string,
+  name: string,
   utc_offset: any,
 }
 
@@ -70,7 +70,7 @@ export interface IStandUpProvider {
 
   updateAnswer(answer: IAnswerRequest): Promise<AnswerRequest>
 
-  findTeamsByStartNow(): Promise<ITeam[]>
+  findTeamsByStart(startedAt: Date): Promise<ITeam[]>
 
   findProgressByUser(user: IUser): Promise<IStandUp>
 

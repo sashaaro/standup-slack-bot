@@ -21,7 +21,7 @@ export const getSyncSlackTeamKey = (teamId) => 'update-slack-' + teamId
 export class SlackStandUpProvider implements IStandUpProvider {
   constructor(private connection: Connection) {}
 
-  findTeamsByStartNow(): Promise<Channel[]> {
+  findTeamsByStart(date): Promise<Channel[]> {
     // SELECT label,
     // to_char(CURRENT_TIMESTAMP at time zone CONCAT(to_char(- timezone.utc_offset, 'HH24:'), RPAD(abs(EXTRACT(MINUTE FROM timezone.utc_offset))::text, 2, '0')), 'HH24:MI')
     // as local_time FROM timezone;

@@ -1,6 +1,6 @@
 import { Injectable, Inject, InjectionToken } from 'injection-js';
 import {interval, Observable, of, Subject, timer} from "rxjs";
-import {delay, filter, take, takeUntil} from "rxjs/operators";
+import {delay, filter, map, mergeMap, take, takeUntil} from "rxjs/operators";
 import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITeam, ITransport, IUser} from "./models";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
@@ -75,7 +75,7 @@ export default class StandUpBotService {
 
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
     let standUps: IStandUp[] = [];
-    const teams = await this.standUpProvider.findTeamsByStartNow(); // TODO use passed date
+    const teams = await this.standUpProvider.findTeamsByStart(date); // TODO use passed date
 
     //console.log(`Start stand up ${date.toLocaleTimeString('ru')} ${teams.length ? `for teams ${teams.map(t => `#${t.id}`).join(', ')}` : `no teams`}`);
 
@@ -184,23 +184,24 @@ export default class StandUpBotService {
   }
 
   private startStandUpInterval() {
+    const intervalMs = 60 * 1000;  // every minutes
+
     const now = new Date();
     const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds();
-    const millisecondsDelay = 60 * 1000 - milliseconds;
+    const millisecondsDelay = intervalMs - milliseconds;
 
     console.log('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop');
 
-    interval(60 * 1000) // every minutes
+    interval(intervalMs)
       .pipe(
         delay(millisecondsDelay),
         takeUntil(this.end$),
-      ).subscribe(() => {
-      const now = new Date();
-      of(now).pipe(delay(5 * 1000)).subscribe(() => {
-        this.startDailyMeetUpByDate(now)
-        this.checkStandUpEndByDate(now)
-      }) // 5 seconds delay
-    })
+        map(_ => new Date()),
+        delay(5 * 1000)  // 5 seconds delay
+      ).subscribe(async (date: Date) => {
+        await this.startDailyMeetUpByDate(date)
+        await this.checkStandUpEndByDate(date)
+      })
   }
 
   async startDailyMeetUpByDate(date) {

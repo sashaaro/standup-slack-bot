@@ -13,7 +13,8 @@ const options: ConnectionOptions = {
   port: 5432,
   username: "postgres",
   password: "postgres",
-  database: "postgres"
+  database: "postgres",
+  synchronize: false
 } // TODO from config
 
 
@@ -46,6 +47,10 @@ const run = async () => {
       await connection.query(`GRANT ALL PRIVILEGES ON DATABASE ${db.database} TO ${db.username}`);
 
       console.log(`User ${db.username} was created`);
+    }
+
+    if (process.argv.includes('sync')) {
+      await connection.synchronize(false);
     }
   }
 

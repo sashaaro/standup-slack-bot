@@ -26,9 +26,5 @@ export const createTypeORMConnection = async (config: IAppConfig): Promise<Conne
     logging: config.debug,
   })
 
-  if (config.debug) {
-    await connection.synchronize()
-  }
-
   return connection;
 }
