@@ -1,4 +1,4 @@
-import {Inject, Injectable} from "injection-js";
+import {Inject, Injectable, InjectionToken} from "injection-js";
 import {Observable, Subject} from "rxjs";
 import {IMessage, IStandUp, ITransport, IUser} from "../bot/models";
 import User from "../model/User";
@@ -25,9 +25,11 @@ import * as groupBy from "lodash.groupby";
 import {DialogOpenArguments, MessageAttachment, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
+import {STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
+export const SLACK_EVENTS = new InjectionToken<ITransport>('slack_events');
 
 export const isInProgress = (standUp: IStandUp) => {
   return new Date().getTime() < standUp.endAt.getTime()
@@ -43,7 +45,7 @@ export class SlackTransport implements ITransport {
   messages$: Observable<IMessage[]> = this.messagesSubject.asObservable();
 
   constructor(
-    private readonly slackEvents: SlackEventAdapter,
+    @Inject(SLACK_EVENTS) private readonly slackEvents: SlackEventAdapter,
     private readonly webClient: WebClient,
     private connection: Connection,
     private slackStandUpProvider: SlackStandUpProvider,

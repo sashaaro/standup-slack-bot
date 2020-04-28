@@ -6,10 +6,9 @@ import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
 import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
 import actions from "../http/controller";
 import {WebClient, LogLevel} from '@slack/web-api'
-import parameters from "../parameters";
 import SyncLocker from "./SyncServcie";
 import {RenderEngine} from "./RenderEngine";
-import {SlackTransport} from "../slack/SlackTransport";
+import {SLACK_EVENTS, SlackTransport} from "../slack/SlackTransport";
 import {createEventAdapter} from "@slack/events-api";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import entities from "../model";
@@ -109,7 +108,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
       deps: [CONFIG_TOKEN]
     },
     {
-      provide: SlackEventAdapter,
+      provide: SLACK_EVENTS,
       useFactory: (config: IAppConfig) => createEventAdapter(config.slackSigningSecret),
       deps: [CONFIG_TOKEN]
     },
