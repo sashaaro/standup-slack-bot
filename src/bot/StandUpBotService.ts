@@ -83,9 +83,9 @@ export default class StandUpBotService {
       console.log(`Send questions to ${team.id} ${(team as any).name}`)
       const standUp = this.standUpProvider.createStandUp();
       standUp.team = team;
-      standUp.end = new Date();
-      standUp.end.setSeconds(0, 0);
-      standUp.end.setTime(standUp.end.getTime() + team.duration * 60 * 1000)
+      standUp.endAt = new Date();
+      standUp.endAt.setSeconds(0, 0);
+      standUp.endAt.setTime(standUp.endAt.getTime() + team.duration * 60 * 1000)
 
       await this.standUpProvider.insertStandUp(standUp);
       standUps.push(standUp);

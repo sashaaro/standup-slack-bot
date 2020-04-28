@@ -90,8 +90,8 @@ export class SlackStandUpProvider implements IStandUpProvider {
 
   public qbStandUpInProgress(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
     return qb
-      .andWhere('CURRENT_TIMESTAMP >= standup.start')
-      .andWhere('CURRENT_TIMESTAMP <= standup.end');
+      .andWhere('CURRENT_TIMESTAMP >= standup.startAt')
+      .andWhere('CURRENT_TIMESTAMP <= standup.endAt');
   }
 
   private qbAuthorAnswers(qb: SelectQueryBuilder<StandUp>, user: IUser): SelectQueryBuilder<StandUp> {
@@ -142,7 +142,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
       .leftJoinAndSelect('st.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'user')
       .leftJoinAndSelect('answers.question', 'question')
-      .where('date_trunc(\'minute\', st.end) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
+      .where('date_trunc(\'minute\', st.endAt) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
       .andWhere('channel.isArchived = false')
       .andWhere('channel.isEnabled = true')
       .orderBy("question.index", "ASC")

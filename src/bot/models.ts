@@ -53,8 +53,8 @@ export interface IStandUp {
   id: number | string;
   team: ITeam
 
-  start: Date;
-  end: Date;
+  startAt: Date;
+  endAt: Date;
   answers: IAnswerRequest[];
 }
 

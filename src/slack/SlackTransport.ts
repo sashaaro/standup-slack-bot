@@ -30,7 +30,7 @@ const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you
 
 
 export const isInProgress = (standUp: IStandUp) => {
-  return new Date().getTime() < standUp.end.getTime()
+  return new Date().getTime() < standUp.endAt.getTime()
 }
 
 @Injectable()

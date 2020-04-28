@@ -16,17 +16,17 @@ class StandUp implements IStandUp
     channel: Channel
 
     @Column()
-    start: Date;
+    startAt: Date;
 
     @Column()
-    end: Date;
+    endAt: Date;
 
     @OneToMany(type => AnswerRequest, answer => answer.standUp)
     answers: AnswerRequest[];
 
     @BeforeInsert()
     setupCreatedAt() {
-        this.start = new Date();
+        this.startAt = new Date();
     }
 
     // implements IStandUp
