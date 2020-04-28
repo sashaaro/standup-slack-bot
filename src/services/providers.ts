@@ -7,7 +7,6 @@ import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPOR
 import actions from "../http/controller";
 import {WebClient, LogLevel} from '@slack/web-api'
 import parameters from "../parameters";
-//import envParameters from "../parameters.local";
 import SyncLocker from "./SyncServcie";
 import {RenderEngine} from "./RenderEngine";
 import {SlackTransport} from "../slack/SlackTransport";
@@ -15,6 +14,7 @@ import {createEventAdapter} from "@slack/events-api";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import entities from "../model";
 import * as fs from "fs";
+import dotenv from "dotenv";
 
 export interface IAppConfig {
   env: string,
@@ -50,17 +50,27 @@ const defaultConnectionOptions: ConnectionOptions = {
 }
 
 export const createProviders = (env = 'dev'): Provider[] => {
-  //if (fs.existsSync(`../parameters.${env}.js`)) {
-  const envParameters = require(`../parameters.${env}.js`).default
-  const config = Object.assign(parameters, envParameters) as IAppConfig;
-  //}
-
-  config.env = env;
+  // dotenv.config({path: `.env`})
+  dotenv.config({path: `.env.${env}`})
 
   const providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,
-      useValue: config
+      useValue: {
+        env: env,
+        slackClientID: process.env.SLACK_CLIENT_ID,
+        slackSecret: process.env.SLACK_SECRET,
+        slackSigningSecret: process.env.SLACK_SIGNING_SECRET,
+        botUserOAuthAccessToken: process.env.BOT_USER_OAUTH_ACCESS_TOKEN,
+        host: process.env.HOST,
+        debug: process.env.DEBUG !== "false" && !!process.env.DEBUG,
+        rollBarAccessToken: process.env.ROLLBAR_ACCESS_TOKEN,
+        db: {
+          database: process.env.DB_HOST,
+          username: process.env.DB_USERNAME,
+          password: process.env.DB_PASSWORD,
+        }
+      } as IAppConfig
     },
     {
       provide: RenderEngine,

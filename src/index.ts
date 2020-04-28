@@ -13,6 +13,7 @@ import {CONFIG_TOKEN} from "./services/token";
 import 'express-async-errors';
 import {SlackTransport} from "./slack/SlackTransport";
 import {Connection} from "typeorm";
+import dotenv from "dotenv";
 
 const main = async () => {
   const envParam = process.argv.filter((param) => param.startsWith(`--env=`)).pop();
