@@ -29,20 +29,19 @@ export class SlackStandUpProvider implements IStandUpProvider {
       .leftJoinAndSelect('channel.users', 'users')
       .innerJoinAndSelect('channel.timezone', 'timezone')
       .innerJoin( 'pg_timezone_names', 'pg_timezone', 'timezone.name = pg_timezone.name')
-      .where(`(channel.start::time - pg_timezone::utc_offset)::string = :startedAt`)
+      .where(`(channel.start::time - pg_timezone.utc_offset)::varchar = :startedAt`)
       .andWhere('channel.isArchived = false')
       .andWhere('channel.isEnabled = true')
-      .andWhere('channel.timezone IS NOT NULL')
       .setParameter('startedAt', time)
       .getMany();
   }
 
   createStandUp(): StandUp {
-    return new StandUp();
+    return this.connection.manager.create(StandUp);
   }
 
   createAnswer(): AnswerRequest {
-    return new AnswerRequest();
+    return this.connection.manager.create(AnswerRequest);
   }
 
   insertAnswer(answer: AnswerRequest): Promise<any> {

@@ -6,6 +6,8 @@ import Timezone from "../src/model/Timezone";
 import StandUpBotService from "../src/bot/StandUpBotService";
 import {initFixtures} from "../src/services/providers";
 import User from "../src/model/User";
+import {TestTransport} from "./services/transport";
+import each from 'jest-each';
 
 beforeAll(async () => {
   await testConnection.connect();
@@ -15,6 +17,11 @@ beforeAll(async () => {
 beforeEach(async () => {
   await clearDatabase();
   await initFixtures(testConnection);
+})
+
+afterEach(async () => {
+  const testTransport = testInjector.get(TestTransport) as TestTransport;
+  testTransport.reset()
 })
 
 const generateChannel = (id: number) => {
@@ -27,7 +34,10 @@ const generateChannel = (id: number) => {
   return channel
 }
 
-test('new channel', async (done) => {
+each([
+  ['2020-05-01T10:05:00', true],
+  ['2020-05-01T11:05:00', false],
+]).test('new channel', async (meetUpDateStart, greeting, done) => {
   const channelRepository = testConnection.getCustomRepository(ChannelRepository)
   const channel = channelRepository.create(generateChannel(1))
 
@@ -37,10 +47,7 @@ test('new channel', async (done) => {
   const user = testConnection.getRepository(User).create();
   user.id = '1';
   user.name = 'Alex';
-  //user.channels = [channel];
   channel.users = [user]
-  //await testConnection.manager.insert(User, user);
-
   const dbChannel = await channelRepository.addNewChannel(channel);
 
   assert.strictEqual(dbChannel.id, '1');
@@ -48,7 +55,17 @@ test('new channel', async (done) => {
   assert.strictEqual(dbChannel.users.length, 1);
 
   const standUpBotService = testInjector.get(StandUpBotService) as StandUpBotService;
-  await standUpBotService.startDailyMeetUpByDate(new Date('2020-05-01T10:05:00'))
+  await standUpBotService.startDailyMeetUpByDate(new Date(meetUpDateStart))
+
+  const testTransport = testInjector.get(TestTransport) as TestTransport;
+
+  if (greeting) {
+    assert.strictEqual(testTransport.calls[0][0], 'sendGreetingMessage');
+  } else {
+    assert.strictEqual(testTransport.calls.length, 0);
+  }
+
+  testTransport.reset()
 
   done();
 })

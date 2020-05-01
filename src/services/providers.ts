@@ -13,6 +13,7 @@ import {createEventAdapter} from "@slack/events-api";
 import entities from "../model";
 import * as fs from "fs";
 import dotenv from "dotenv";
+import {TestTransport} from "../../test/services/transport";
 
 export interface IAppConfig {
   env: string,
@@ -120,9 +121,10 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useExisting: SlackStandUpProvider
     },
     SlackTransport,
+    TestTransport,
     {
       provide: STAND_UP_BOT_TRANSPORT,
-      useExisting: SlackTransport
+      useExisting: env === 'test' ? TestTransport : SlackTransport
     },
     StandUpBotService,
     SyncLocker,
