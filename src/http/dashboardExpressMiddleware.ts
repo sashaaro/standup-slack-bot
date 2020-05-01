@@ -2,7 +2,6 @@ import bodyParser from 'body-parser'
 import express from 'express'
 import session from 'express-session'
 import createRedisConnectStore from 'connect-redis';
-import redis from 'redis';
 import {Injector} from "injection-js";
 import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
@@ -11,19 +10,20 @@ import {UpdateChannelAction} from "./controller/UpdateChannelAction";
 import {Connection} from "typeorm";
 import SyncLocker from "../services/SyncServcie";
 import DashboardContext from "../services/DashboardContext";
-import {CONFIG_TOKEN, RENDER_TOKEN} from "../services/token";
+import {CONFIG_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
 import {OauthAuthorize} from "./controller/oauth-authorize";
 import {RenderEngine} from "../services/RenderEngine";
 import http from "http";
+import { Redis } from 'ioredis';
+
 
 const RedisConnectStore = createRedisConnectStore(session);
-let client = redis.createClient({host: 'redis'})
 
-export const useBodyParserAndSession = (app: express.Express | express.Router) => {
+export const useBodyParserAndSession = (app: express.Express | express.Router, client: Redis) => {
   app.use(bodyParser.urlencoded({extended: true}));
   app.use(bodyParser.json());
   app.use(session({
-    secret: 'keyboard cat',
+    secret: 'e7d3kd9-standup-slack-bot-session',
     resave: true,
     saveUninitialized: true,
     store: new RedisConnectStore({client}),
@@ -85,7 +85,7 @@ const scopes = [
 
 export const dashboardExpressMiddleware = (injector: Injector) => {
   const router = express.Router()
-  useBodyParserAndSession(router);
+  useBodyParserAndSession(router, injector.get(REDIS_TOKEN));
   router.use(createDashboardContext(injector));
 
   const config = injector.get(CONFIG_TOKEN)

@@ -4,7 +4,7 @@ import {logError} from "./services/logError";
 import {createProviders, IAppConfig, initFixtures} from "./services/providers";
 
 import {Connection, ConnectionOptions, createConnection} from "typeorm";
-import {CONFIG_TOKEN} from "./services/token";
+import {CONFIG_TOKEN, IWorkerFactory, WORKER_FACTORY_TOKEN} from "./services/token";
 import * as fs from 'fs';
 
 const run = async () => {
@@ -52,6 +52,14 @@ const run = async () => {
   if (process.argv.includes('fixtures')) {
     await initFixtures(connection)
     console.log(`Timezone was uploaded`);
+  }
+
+  if (process.argv.includes('fixtures')) {
+    (injector.get(WORKER_FACTORY_TOKEN) as IWorkerFactory)('main', async (job) => {
+      job.name
+      job.data
+      // TODO
+    });
   }
 
   console.log(`Done`);

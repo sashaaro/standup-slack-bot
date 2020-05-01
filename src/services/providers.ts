@@ -1,5 +1,13 @@
 import {Provider} from "injection-js";
-import {CONFIG_TOKEN, RENDER_TOKEN, TIMEZONES_TOKEN} from "./token";
+import {
+  CONFIG_TOKEN,
+  IQueueFactory, IWorkerFactory,
+  QUEUE_FACTORY_TOKEN,
+  REDIS_TOKEN,
+  RENDER_TOKEN,
+  TIMEZONES_TOKEN,
+  WORKER_FACTORY_TOKEN
+} from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
 import Timezone from "../model/Timezone";
 import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
@@ -12,8 +20,10 @@ import {SLACK_EVENTS, SlackTransport} from "../slack/SlackTransport";
 import {createEventAdapter} from "@slack/events-api";
 import entities from "../model";
 import * as fs from "fs";
+import IOredis, {Redis} from 'ioredis';
 import dotenv from "dotenv";
 import {TestTransport} from "../../test/services/transport";
+import {Processor, Queue, Worker} from 'bullmq';
 
 export interface IAppConfig {
   env: string,
@@ -75,6 +85,11 @@ export const createProviders = (env = 'dev'): Provider[] => {
       } as IAppConfig
     },
     {
+      provide: REDIS_TOKEN,
+      useFactory: (config) => new IOredis({host: 'redis'}),
+      deps: [CONFIG_TOKEN]
+    },
+    {
       provide: RenderEngine,
       useFactory: (config) => new RenderEngine(config.env === 'prod'),
       deps: [CONFIG_TOKEN]
@@ -114,6 +129,21 @@ export const createProviders = (env = 'dev'): Provider[] => {
       provide: SLACK_EVENTS,
       useFactory: (config: IAppConfig) => createEventAdapter(config.slackSigningSecret),
       deps: [CONFIG_TOKEN]
+    },
+    {
+      provide: QUEUE_FACTORY_TOKEN,
+      useFactory: (redis: Redis) => ((queueName: string) => new Queue(queueName, {connection: redis})) as IQueueFactory,
+      deps: [REDIS_TOKEN]
+    },
+    {
+      provide: WORKER_FACTORY_TOKEN,
+      useFactory: (redis: Redis) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {connection: redis})) as IWorkerFactory,
+      deps: [REDIS_TOKEN]
+    },
+    {
+      provide: Queue,
+      useFactory: (factory: IQueueFactory) => factory('main'),
+      deps: [QUEUE_FACTORY_TOKEN]
     },
     SlackStandUpProvider,
     {

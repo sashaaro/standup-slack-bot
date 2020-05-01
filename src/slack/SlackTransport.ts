@@ -26,6 +26,8 @@ import {DialogOpenArguments, MessageAttachment, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import {STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
+import {IQueueFactory, QUEUE_FACTORY_TOKEN, WORKER_FACTORY_TOKEN} from "../services/token";
+import {Queue} from "bullmq";
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -34,6 +36,8 @@ export const SLACK_EVENTS = new InjectionToken<ITransport>('slack_events');
 export const isInProgress = (standUp: IStandUp) => {
   return new Date().getTime() < standUp.endAt.getTime()
 }
+
+const QUEUE_SLACK_EVENT_PREFIX = 'slack-event';
 
 @Injectable()
 export class SlackTransport implements ITransport {
@@ -46,6 +50,7 @@ export class SlackTransport implements ITransport {
 
   constructor(
     @Inject(SLACK_EVENTS) private readonly slackEvents: SlackEventAdapter,
+    private readonly queue: Queue,
     private readonly webClient: WebClient,
     private connection: Connection,
     private slackStandUpProvider: SlackStandUpProvider,
@@ -89,8 +94,12 @@ export class SlackTransport implements ITransport {
 
       this.slackEvents.on('message', async (messageResponse: MessageResponse) => {
         if (messageResponse.type !== "message" || !messageResponse.client_msg_id) {
+          // log?!
           return;
         }
+
+        await this.queue.add(QUEUE_SLACK_EVENT_PREFIX + '_message', messageResponse);
+        
         // be sure it is direct answerMessage to bot
         if (!await userRepository.findOne({where: {im: messageResponse.channel}})) {
           logError(`User channel ${messageResponse.channel} is not im`);
@@ -98,10 +107,13 @@ export class SlackTransport implements ITransport {
           return
         }
 
+        const eventAt = new Date(parseInt(messageResponse.event_ts) * 1000)
+
         const message = {
           //team: await this.connection.getRepository(Channel).findOne(messageResponse.channel),
           text: messageResponse.text,
-          user: await this.connection.getRepository(User).findOne(messageResponse.user)
+          user: await this.connection.getRepository(User).findOne(messageResponse.user),
+          createdAt: eventAt
         } as IMessage;
 
         observer.next(message)
