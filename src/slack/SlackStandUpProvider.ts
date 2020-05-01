@@ -126,7 +126,9 @@ export class SlackStandUpProvider implements IStandUpProvider {
   async updateAnswer(lastNoReplyAnswer: AnswerRequest): Promise<AnswerRequest> {
     const answerRepository = this.connection.getRepository(AnswerRequest);
 
-    return answerRepository.save(lastNoReplyAnswer);
+    const answer = answerRepository.save(lastNoReplyAnswer);
+    // update standup
+    return answer;
   }
 
   async findStandUpsEndNowByDate(date: Date): Promise<StandUp[]> {

@@ -67,11 +67,28 @@ each([
   const testTransport = testInjector.get(TestTransport) as TestTransport;
 
   if (greeting) {
-    assert.strictEqual(testTransport.calls.shift()[0], 'sendGreetingMessage');
+    assert.strictEqual(testTransport.calls.shift()[0], 'sendGreetingMessage', 'Greet');
 
     testTransport.agreeToStart$.next({user, date: meetUpDateStart});
-    await sleep(1000);
+    await sleep(300);
     assert.strictEqual(testTransport.calls.shift()[0], 'sendMessage');
+
+    const msg = {
+      team: dbChannel,
+      user: user,
+      createdAt: meetUpDateStart
+    }
+
+    testTransport.messages$.next([
+      {...msg, text: '1'},
+      {...msg, text: '2'},
+      {...msg, text: '3'},
+    ])
+
+    await sleep(300);
+
+    assert.strictEqual(testTransport.calls.length, 1);
+    assert.strictEqual(testTransport.calls[0][0], 'sendMessage', 'Bay bay');
   } else {
     assert.strictEqual(testTransport.calls.length, 0);
   }

@@ -43,6 +43,7 @@ export default class StandUpBotService {
 
 
   init() {
+    this.listenMessages();
     if (this.transport.agreeToStart$) {
       this.transport.agreeToStart$.subscribe(async ({user, date}) => {
         const standUp = await this.standUpProvider.findByUser(user, date);
@@ -58,7 +59,6 @@ export default class StandUpBotService {
 
   start() {
     this.startStandUpInterval();
-    this.listenMessages();
     this.init()
   }
 
@@ -130,9 +130,9 @@ export default class StandUpBotService {
 
     const user = messages[0].user;
 
-    standUp = standUp || await this.standUpProvider.findByUser(user, messages[0].createdAt);
+    const messageDate = messages[0].createdAt;
+    standUp = standUp || await this.standUpProvider.findByUser(user, messageDate);
 
-    const now = new Date()
     for(const [i, message] of messages.entries()) {
       const question = standUp.team.questions[i]
       if (!question) {
@@ -140,15 +140,17 @@ export default class StandUpBotService {
         break;
       }
       // TODO try catch
-      const answerRequest = this.standUpProvider.createAnswer()
+      let answerRequest = this.standUpProvider.createAnswer()
       answerRequest.standUp = standUp;
-      answerRequest.user = message.user
-      answerRequest.question = question
-      answerRequest.createdAt = now;
+      answerRequest.user = message.user;
+      answerRequest.question = question;
+      answerRequest.createdAt = messageDate;
 
       answerRequest.answerMessage = message.text;
-      answerRequest.answerCreatedAt = new Date();
-      answerRequest.answerCreatedAt.setTime(now.getTime() + (i * 100) ); // for save correct order. TODO create order index question ?!
+      answerRequest.answerCreatedAt = messageDate;
+      answerRequest.answerCreatedAt.setTime(messageDate.getTime() + (i * 100) ); // for save correct order. TODO create order index question ?!
+      answerRequest = await this.standUpProvider.updateAnswer(answerRequest)
+      standUp.answers.push(answerRequest)
     }
 
     await this.afterStandUp(user, standUp);
@@ -179,7 +181,7 @@ export default class StandUpBotService {
     }
 
     answerRequest.answerMessage = message.text;
-    answerRequest.answerCreatedAt = new Date();
+    answerRequest.answerCreatedAt = message.createdAt;
     return this.standUpProvider.updateAnswer(answerRequest)
   }
 
