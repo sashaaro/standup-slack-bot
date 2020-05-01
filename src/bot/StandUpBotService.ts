@@ -75,16 +75,14 @@ export default class StandUpBotService {
 
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
     let standUps: IStandUp[] = [];
-    const teams = await this.standUpProvider.findTeamsByStart(date); // TODO use passed date
-
-    //console.log(`Start stand up ${date.toLocaleTimeString('ru')} ${teams.length ? `for teams ${teams.map(t => `#${t.id}`).join(', ')}` : `no teams`}`);
+    const teams = await this.standUpProvider.findTeamsByStart(date);
 
     for (const team of teams) {
-      console.log(`Send questions to ${team.id} ${(team as any).name}`)
       const standUp = this.standUpProvider.createStandUp();
+      standUp.startAt = date;
       standUp.team = team;
-      standUp.endAt = new Date();
-      standUp.endAt.setSeconds(0, 0);
+      standUp.endAt = new Date(standUp.startAt);
+      // standUp.endAt.setSeconds(0, 0);
       standUp.endAt.setTime(standUp.endAt.getTime() + team.duration * 60 * 1000)
 
       await this.standUpProvider.insertStandUp(standUp);

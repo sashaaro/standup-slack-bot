@@ -34,10 +34,12 @@ export class Channel implements ITeam {
   })
   team: Team
 
-  @ManyToMany(type => User, user => user.channels)
+  @ManyToMany(type => User, user => user.channels, {
+    cascade: ["insert", "update"]
+  })
   users: Array<User>
 
-  @OneToMany(type => Question, question => question.channel, {nullable: false})
+  @OneToMany(type => Question, question => question.channel)
   questions: Question[];
 
   @ManyToOne(type => Timezone, null, {

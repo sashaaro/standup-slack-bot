@@ -6,8 +6,12 @@ import QuestionRepository from "./QuestionRepository";
 class ChannelRepository extends Repository<Channel>
 {
   async addNewChannel(channel: Channel): Promise<Channel> {
-    await super.insert(channel);
-    return await this.manager.getCustomRepository(QuestionRepository).setupDefaultQuestionsToChannel(channel);
+    channel = await this.save(channel);
+    await this.manager.getCustomRepository(QuestionRepository).setupDefaultQuestionsToChannel(channel);
+
+    return this.findOneOrFail(channel.id, {relations: [
+      'questions', 'users'
+    ]})
   }
 }
 

@@ -54,7 +54,7 @@ class User implements IUser {
   profile: SlackUserProfile;
 
   @ManyToMany(type => Channel, channel => channel.users, {
-    eager: true
+    eager: true,
   })
   @JoinTable()
   channels: Channel[];

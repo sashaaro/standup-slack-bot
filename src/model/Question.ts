@@ -21,7 +21,9 @@ class Question implements IQuestion
     @Column()
     createdAt: Date;
 
-    @ManyToOne(type => Channel)
+    @ManyToOne(type => Channel, {
+        cascade: ["insert"]
+    })
     channel: Channel;
 
     @BeforeInsert()

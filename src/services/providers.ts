@@ -10,7 +10,6 @@ import SyncLocker from "./SyncServcie";
 import {RenderEngine} from "./RenderEngine";
 import {SLACK_EVENTS, SlackTransport} from "../slack/SlackTransport";
 import {createEventAdapter} from "@slack/events-api";
-import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import entities from "../model";
 import * as fs from "fs";
 import dotenv from "dotenv";
@@ -46,6 +45,9 @@ const defaultConnectionOptions: ConnectionOptions = {
   password: "postgres",
   database: "postgres",
   synchronize: false
+}
+export const initFixtures = async (connection: Connection) => {
+  await connection.query(fs.readFileSync('fixtures/timezone.sql').toString())
 }
 
 export const createProviders = (env = 'dev'): Provider[] => {

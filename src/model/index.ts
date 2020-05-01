@@ -7,11 +7,11 @@ import {Channel} from "./Channel";
 import Timezone from "./Timezone";
 
 export default [
-  Question,
-  Team,
-  User,
   AnswerRequest,
-  StandUp,
   Channel,
+  Question,
+  StandUp,
+  Team,
   Timezone,
+  User,
 ]

@@ -360,10 +360,9 @@ export class SlackTransport implements ITransport {
         await channelRepository.addNewChannel(ch)
       } else {
         if (ch.questions.length === 0) {
-          ch = await this.connection.manager.getCustomRepository(QuestionRepository).setupDefaultQuestionsToChannel(ch);
+          await this.connection.manager.getCustomRepository(QuestionRepository)
+            .setupDefaultQuestionsToChannel(ch);
         }
-
-        await channelRepository.save(ch);
       }
 
 

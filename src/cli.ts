@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import {ReflectiveInjector} from 'injection-js';
 import {logError} from "./services/logError";
-import {createProviders, IAppConfig} from "./services/providers";
+import {createProviders, IAppConfig, initFixtures} from "./services/providers";
 
 import {Connection, ConnectionOptions, createConnection} from "typeorm";
 import {CONFIG_TOKEN} from "./services/token";
@@ -50,7 +50,7 @@ const run = async () => {
   }
 
   if (process.argv.includes('fixtures')) {
-    await connection.query(fs.readFileSync('fixtures/timezone.sql').toString())
+    await initFixtures(connection)
     console.log(`Timezone was uploaded`);
   }
 

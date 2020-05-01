@@ -11,11 +11,12 @@ const questions = [
 @EntityRepository(Question)
 export default class QuestionRepository extends Repository<Question>
 {
-    async setupDefaultQuestionsToChannel(channel: Channel) {
+    async setupDefaultQuestionsToChannel(channel: Channel): Promise<Question[]> {
         // TODO transaction
         let index = 0
+        const result = [];
         for (const q of questions) {
-            const qu = new Question()
+            const qu = this.create();
             qu.text = q;
             qu.index = index;
             qu.isEnabled = true;
@@ -23,9 +24,10 @@ export default class QuestionRepository extends Repository<Question>
             qu.index = index
             ++index;
             await this.insert(qu)
+            result.push(qu);
         }
 
-        return await this.manager.getRepository(Channel).findOneOrFail(channel.id, {relations: ['questions']})
+        return result;
     }
 
     async updateForChannel(newQuestions: string[], channel: Channel) {
