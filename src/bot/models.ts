@@ -37,6 +37,7 @@ export interface IMessage {
   user: IUser
   text: string
   team?: ITeam
+  createdAt: Date
 }
 
 export interface IAnswerRequest {
@@ -72,7 +73,7 @@ export interface IStandUpProvider {
 
   findTeamsByStart(startedAt: Date): Promise<ITeam[]>
 
-  findProgressByUser(user: IUser): Promise<IStandUp>
+  findByUser(user: IUser, date: Date): Promise<IStandUp>
 
   findLastNoReplyAnswerRequest(standUp: IStandUp, user: IUser): Promise<IAnswerRequest>
 
@@ -85,7 +86,7 @@ export interface ITransport {
   sendGreetingMessage?(user: IUser, standUp: IStandUp);
   sendMessage(user: IUser, message: string): Promise<any>
 
-  agreeToStart$: Observable<IUser>
+  agreeToStart$: Observable<{user: IUser, date: Date}>
   message$?: Observable<IMessage>
   messages$?: Observable<IMessage[]> // should correct order
 }

@@ -37,10 +37,10 @@ export const isInProgress = (standUp: IStandUp) => {
 
 @Injectable()
 export class SlackTransport implements ITransport {
-  private agreeToStartSubject = new Subject<User>();
+  private agreeToStartSubject = new Subject<{user: IUser, date: Date}>();
   private messagesSubject = new Subject<IMessage[]>();
 
-  agreeToStart$: Observable<IUser> = this.agreeToStartSubject.asObservable();
+  agreeToStart$ = this.agreeToStartSubject.asObservable();
   message$: Observable<IMessage>;
   messages$: Observable<IMessage[]> = this.messagesSubject.asObservable();
 
@@ -396,7 +396,7 @@ export class SlackTransport implements ITransport {
     }
 
     // TODO already submit
-    // const standUp = await this.findProgressByUser(user);
+    // const standUp = await this.findByUser(user);
 
 
     const standUp = await this.slackStandUpProvider.standUpByIdAndUser(user, standUpId);
@@ -414,8 +414,10 @@ export class SlackTransport implements ITransport {
 
     const selectedActions = response.actions.map(a => a.value);
 
+    const msgDate = new Date(parseInt(response.message_ts) * 1000);
+
     if (selectedActions.includes(ACTION_START)) {
-      this.agreeToStartSubject.next(user);
+      this.agreeToStartSubject.next({user, date: msgDate});
       return
     } else if (!selectedActions.includes(ACTION_OPEN_DIALOG)) {
       throw new Error("No corresponded actions")

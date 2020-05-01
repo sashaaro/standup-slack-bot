@@ -24,6 +24,10 @@ afterEach(async () => {
   testTransport.reset()
 })
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 const generateChannel = (id: number) => {
   const channel = new Channel();
   channel.id = id.toString(10);
@@ -55,12 +59,18 @@ each([
   assert.strictEqual(dbChannel.users.length, 1);
 
   const standUpBotService = testInjector.get(StandUpBotService) as StandUpBotService;
-  await standUpBotService.startDailyMeetUpByDate(new Date(meetUpDateStart))
+  standUpBotService.init();
+  meetUpDateStart = new Date(meetUpDateStart);
+  await standUpBotService.startDailyMeetUpByDate(meetUpDateStart)
 
   const testTransport = testInjector.get(TestTransport) as TestTransport;
 
   if (greeting) {
-    assert.strictEqual(testTransport.calls[0][0], 'sendGreetingMessage');
+    assert.strictEqual(testTransport.calls.shift()[0], 'sendGreetingMessage');
+
+    testTransport.agreeToStart$.next({user, date: meetUpDateStart});
+    await sleep(1000);
+    assert.strictEqual(testTransport.calls.shift()[0], 'sendMessage');
   } else {
     assert.strictEqual(testTransport.calls.length, 0);
   }

@@ -42,13 +42,10 @@ export default class StandUpBotService {
   }
 
 
-  start() {
-    this.startStandUpInterval();
-    this.listenMessages();
-
+  init() {
     if (this.transport.agreeToStart$) {
-      this.transport.agreeToStart$.subscribe(async (user: IUser) => {
-        const standUp = await this.standUpProvider.findProgressByUser(user);
+      this.transport.agreeToStart$.subscribe(async ({user, date}) => {
+        const standUp = await this.standUpProvider.findByUser(user, date);
 
         if (standUp) {
           await this.askFirstQuestion(user, standUp);
@@ -57,6 +54,12 @@ export default class StandUpBotService {
         }
       })
     }
+  }
+
+  start() {
+    this.startStandUpInterval();
+    this.listenMessages();
+    this.init()
   }
 
   private listenMessages() {
@@ -127,8 +130,7 @@ export default class StandUpBotService {
 
     const user = messages[0].user;
 
-    standUp = standUp || await this.standUpProvider.findProgressByUser(user);
-
+    standUp = standUp || await this.standUpProvider.findByUser(user, messages[0].createdAt);
 
     const now = new Date()
     for(const [i, message] of messages.entries()) {
@@ -158,7 +160,7 @@ export default class StandUpBotService {
    * @param message
    */
   async answer(message: IMessage): Promise<IAnswerRequest> {
-    const progressStandUp = await this.standUpProvider.findProgressByUser(message.user);
+    const progressStandUp = await this.standUpProvider.findByUser(message.user, message.createdAt);
 
     if (!progressStandUp) {
       const error = new InProgressStandUpNotFoundError()

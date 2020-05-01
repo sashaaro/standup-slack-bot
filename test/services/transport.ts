@@ -2,7 +2,7 @@ import {IMessage, IStandUp, ITransport, IUser} from "../../src/bot/models";
 import {Subject} from "rxjs";
 
 export class TestTransport implements ITransport {
-  agreeToStart$ = new Subject<IUser>();
+  agreeToStart$ = new Subject<{user:IUser, date: Date}>();
   message$ = new Subject<IMessage>();
   messages$ = new Subject<IMessage[]>();
 

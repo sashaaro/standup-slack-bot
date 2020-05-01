@@ -54,7 +54,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
     return standUpRepository.insert(standUp)
   }
 
-  async findProgressByUser(user: IUser): Promise<StandUp> {
+  async findByUser(user: IUser, date: Date): Promise<StandUp> {
     const standUpRepository = this.connection.getRepository(StandUp);
     const qb = standUpRepository.createQueryBuilder('standup');
 
@@ -62,19 +62,15 @@ export class SlackStandUpProvider implements IStandUpProvider {
       .orderBy('standup.start', "ASC")
 
     this.qbStandUpJoins(qb)
-    this.qbActualStandUpInProgressWithAuthorAnswers(qb, user);
+    qb.andWhere('users.id = :user', {user: user.id})
+    this.qbStandUpDate(qb, date);
+    this.qbActiveQuestions(qb);
+    this.qbActiveChannels(qb)
+    this.qbAuthorAnswers(qb, user);
 
     return qb
       .take(1)
       .getOne();
-  }
-
-  public qbActualStandUpInProgressWithAuthorAnswers(qb: SelectQueryBuilder<StandUp>, user: IUser): SelectQueryBuilder<StandUp> {
-    qb.andWhere('users.id = :user', {user: user.id})
-    this.qbStandUpInProgress(qb);
-    this.qbActiveQuestions(qb);
-    this.qbActiveChannels(qb)
-    return this.qbAuthorAnswers(qb, user);
   }
 
   // TODO move to repository
@@ -87,10 +83,11 @@ export class SlackStandUpProvider implements IStandUpProvider {
       .leftJoinAndSelect('answers.user', 'answerAuthor')
   }
 
-  public qbStandUpInProgress(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
+  public qbStandUpDate(qb: SelectQueryBuilder<StandUp>, date: Date): SelectQueryBuilder<StandUp> {
     return qb
-      .andWhere('CURRENT_TIMESTAMP >= standup.startAt')
-      .andWhere('CURRENT_TIMESTAMP <= standup.endAt');
+      .andWhere('date >= standup.startAt')
+      .andWhere('date <= standup.endAt')
+      .setParameter(':date', date);
   }
 
   private qbAuthorAnswers(qb: SelectQueryBuilder<StandUp>, user: IUser): SelectQueryBuilder<StandUp> {
