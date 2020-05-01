@@ -35,12 +35,13 @@ const generateChannel = (id: number) => {
   channel.nameNormalized = 'new-channel-'+id;
   channel.isEnabled = true;
   channel.isArchived = false;
+  channel.duration = 20;
   return channel
 }
 
 each([
-  ['2020-05-01T10:05:00', true],
-  ['2020-05-01T11:05:00', false],
+  ['2020-04-01T10:05:00', true],
+  ['2020-04-01T11:05:00', false],
 ]).test('new channel', async (meetUpDateStart, greeting, done) => {
   const channelRepository = testConnection.getCustomRepository(ChannelRepository)
   const channel = channelRepository.create(generateChannel(1))

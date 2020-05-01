@@ -58,8 +58,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
     const standUpRepository = this.connection.getRepository(StandUp);
     const qb = standUpRepository.createQueryBuilder('standup');
 
-    qb
-      .orderBy('standup.start', "ASC")
+    qb.orderBy('standup.start', "ASC")
 
     this.qbStandUpJoins(qb)
     qb.andWhere('users.id = :user', {user: user.id})
@@ -85,9 +84,8 @@ export class SlackStandUpProvider implements IStandUpProvider {
 
   public qbStandUpDate(qb: SelectQueryBuilder<StandUp>, date: Date): SelectQueryBuilder<StandUp> {
     return qb
-      .andWhere('date >= standup.startAt')
-      .andWhere('date <= standup.endAt')
-      .setParameter(':date', date);
+      .andWhere(':date >= standup.startAt', {date})
+      .andWhere(':date <= standup.endAt', {date});
   }
 
   private qbAuthorAnswers(qb: SelectQueryBuilder<StandUp>, user: IUser): SelectQueryBuilder<StandUp> {

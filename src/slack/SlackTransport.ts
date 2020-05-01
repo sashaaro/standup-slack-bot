@@ -498,12 +498,15 @@ export class SlackTransport implements ITransport {
     }
 
     const messages: IMessage[] = []
+    const msgDate = new Date(parseInt(response.action_ts) * 1000);
+
     for (const index of Object.keys(response.submission).sort((current, next) => current > next ? 1 : -1)) {
       const text = response.submission[index]
       messages.push({
         team: channelTeam,
         text: text,
-        user: user
+        user: user,
+        createdAt: msgDate
       } as IMessage)
     }
 

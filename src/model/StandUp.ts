@@ -24,10 +24,10 @@ class StandUp implements IStandUp
     @OneToMany(type => AnswerRequest, answer => answer.standUp)
     answers: AnswerRequest[];
 
-    @BeforeInsert()
-    setupCreatedAt() {
-        this.startAt = new Date();
-    }
+    // @BeforeInsert()
+    // setupCreatedAt() {
+    //     this.createdAt = new Date();
+    // }
 
     // implements IStandUp
     get team() {
