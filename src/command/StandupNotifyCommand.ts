@@ -24,6 +24,6 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       this.slackTransport.sendReport(standUp)
     });
 
-    this.standUpBotService.start()
+    this.standUpBotService.startStandUpInterval();
   }
 }

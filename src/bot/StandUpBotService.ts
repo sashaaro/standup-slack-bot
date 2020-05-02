@@ -37,6 +37,7 @@ export default class StandUpBotService {
   finishStandUp$ = this.finishStandUp.asObservable()
 
   private end$ = new Subject();
+  private destroy$ = new Subject();
 
   constructor(
     @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) protected standUpProvider: IStandUpProvider,
@@ -45,41 +46,44 @@ export default class StandUpBotService {
   ) {}
 
 
-  init() {
-    this.listenMessages();
-    if (this.transport.agreeToStart$) {
-      this.transport.agreeToStart$.subscribe(async ({user, date}) => {
-        const standUp = await this.standUpProvider.findByUser(user, date);
-
-        if (standUp) {
-          await this.askFirstQuestion(user, standUp);
-        } else {
-          // you standup not started yet
-        }
-      })
-    }
-  }
-
-  start() {
-    this.startStandUpInterval();
-    this.init()
-  }
-
-  private listenMessages() {
+  listenTransport() {
     if (this.transport.message$) {
-      this.transport.message$.subscribe((message: IMessage) => this.answerAndSendNext(message))
+      this.transport.message$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((message: IMessage) => this.answerAndSendNext(message))
     }
-    if (this.transport.messages$) { // receive batch of messages
-      this.transport.messages$.subscribe((messages: IMessage[]) => this.answersAndFinish(messages))
+    if (this.transport.batchMessages$) { // receive batch of messages
+      this.transport.batchMessages$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((messages: IMessage[]) => this.answersAndFinish(messages))
+    }
+
+    if (this.transport.agreeToStart$) {
+      this.transport.agreeToStart$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(async ({user, date}) => {
+          const standUp = await this.standUpProvider.findByUser(user, date);
+
+          if (standUp) {
+            await this.askFirstQuestion(user, standUp);
+          } else {
+            // you standup not started yet
+          }
+        })
     }
   }
 
+  /*destroy() {
+    this.stop();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }*/
 
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
     let standUps: IStandUp[] = [];
     const teams = await this.standUpProvider.findTeamsByStart(date);
 
-    this.logger.debug('Start standup', {date, teams: teams.length})
+    this.logger.debug('Start standup', {date, teams: teams.map(t => t.id)})
     for (const team of teams) {
       const standUp = this.standUpProvider.createStandUp();
       standUp.startAt = date;
@@ -93,30 +97,28 @@ export default class StandUpBotService {
     return standUps;
   }
 
-  async answerAndSendNext(message: IMessage): Promise<IAnswerRequest> {
+  async answerAndSendNext(message: IMessage) {
     let repliedAnswer: IAnswerRequest;
     try {
       repliedAnswer = await this.answer(message);
     } catch (e) {
       if (e instanceof InProgressStandUpNotFoundError) {
-        this.logger.info('', {error: e});// TODO
+        this.logger.info('Attempt send answer to for ended standup', {error: e});
         await this.send(message.user, `I will remind you when your next standup is up..`)
       } else if (e instanceof AlreadySubmittedStandUpError) {
         await this.send(message.user, `You've already submitted your standup for today.`)
       } else {
         this.logger.error('Error answer', {error: e});
       }
-
-      return;
+      return
     }
     const nextQuestion = await this.standUpProvider.findOneQuestion(repliedAnswer.standUp.team, repliedAnswer.question.index + 1);
 
-    if (!nextQuestion) {
+    if (nextQuestion) {
+      await this.askQuestion(repliedAnswer.user, nextQuestion, repliedAnswer.standUp);
+    } else {
       await this.afterStandUp(repliedAnswer.user, repliedAnswer.standUp);
-      return;
     }
-
-    return this.askQuestion(repliedAnswer.user, nextQuestion, repliedAnswer.standUp);
   }
 
 
@@ -184,7 +186,7 @@ export default class StandUpBotService {
     return this.standUpProvider.updateAnswer(answerRequest)
   }
 
-  private startStandUpInterval() {
+  startStandUpInterval() {
     const intervalMs = 60 * 1000;  // every minutes
 
     const now = new Date();

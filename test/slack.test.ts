@@ -60,7 +60,7 @@ each([
   assert.strictEqual(dbChannel.users.length, 1);
 
   const standUpBotService = testInjector.get(StandUpBotService) as StandUpBotService;
-  standUpBotService.init();
+  standUpBotService.listenTransport();
   meetUpDateStart = new Date(meetUpDateStart);
   await standUpBotService.startDailyMeetUpByDate(meetUpDateStart)
 

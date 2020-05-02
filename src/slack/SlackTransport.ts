@@ -59,11 +59,11 @@ export const QUEUE_SLACK_SYNC_DATA = 'slack_sync-data';
 @Injectable()
 export class SlackTransport implements ITransport {
   private agreeToStartSubject = new Subject<{user: IUser, date: Date}>();
-  private messagesSubject = new Subject<IMessage[]>();
+  private batchMessagesSubject = new Subject<IMessage[]>();
 
   agreeToStart$ = this.agreeToStartSubject.asObservable();
   message$ = new Subject<IMessage>();
-  messages$: Observable<IMessage[]> = this.messagesSubject.asObservable();
+  batchMessages$: Observable<IMessage[]> = this.batchMessagesSubject.asObservable();
 
   constructor(
     @Inject(SLACK_EVENTS) private readonly slackEvents: SlackEventAdapter,
@@ -592,7 +592,7 @@ export class SlackTransport implements ITransport {
 
 
     if (standUp.answers.length === 0) {
-      this.messagesSubject.next(messages)
+      this.batchMessagesSubject.next(messages)
     } else {
       if (standUp.team.questions.length === 0) {
         throw new Error('Team have not any questions');

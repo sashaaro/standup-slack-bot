@@ -88,7 +88,7 @@ export interface ITransport {
 
   agreeToStart$: Observable<{user: IUser, date: Date}>
   message$?: Observable<IMessage>
-  messages$?: Observable<IMessage[]> // should correct order
+  batchMessages$?: Observable<IMessage[]> // should correct order
 }
 
 export interface ITimezoneProvider {

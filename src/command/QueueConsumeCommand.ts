@@ -5,6 +5,7 @@ import {IWorkerFactory, LOGGER_TOKEN, REDIS_TOKEN, WORKER_FACTORY_TOKEN} from ".
 import {Logger} from "winston";
 import {Connection} from "typeorm";
 import {Redis} from "ioredis";
+import StandUpBotService from "../bot/StandUpBotService";
 
 export class QueueConsumeCommand implements yargs.CommandModule {
   command = 'queue:consume';
@@ -12,7 +13,8 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
   constructor(
     @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
-    @Inject(SlackTransport) private slackTransport,
+    @Inject(SlackTransport) private slackTransport: SlackTransport,
+    @Inject(StandUpBotService) private standUpBotService: StandUpBotService,
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
@@ -29,6 +31,8 @@ export class QueueConsumeCommand implements yargs.CommandModule {
   async handler(args: yargs.Arguments<{}>) {
     await this.ready();
     await this.connection.connect();
+
+    this.standUpBotService.listenTransport();
 
     const worker = this.workerFactory('main', async (job) => {
       await this.slackTransport.handelJob(job)
