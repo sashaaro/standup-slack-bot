@@ -20,7 +20,6 @@ export class StandupNotifyCommand implements yargs.CommandModule {
   async handler(args: yargs.Arguments<{}>) {
     await this.connection.connect();
 
-    this.slackTransport.init();
     this.standUpBotService.finishStandUp$.subscribe((standUp: StandUp) => {
       this.slackTransport.sendReport(standUp)
     });

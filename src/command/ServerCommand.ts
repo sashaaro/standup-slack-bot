@@ -4,7 +4,7 @@ import {
   CONFIG_TOKEN,
   EXPRESS_DASHBOARD_TOKEN,
   EXPRESS_SLACK_API_TOKEN,
-  IWorkerFactory, REDIS_TOKEN,
+  IWorkerFactory,
   WORKER_FACTORY_TOKEN
 } from "../services/token";
 import {Connection} from "typeorm";
@@ -43,7 +43,7 @@ export class ServerCommand implements yargs.CommandModule {
 
     const expressApp = express()
 
-    this.slackTransport.init();
+    this.slackTransport.initSlackEvents();
     expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
 
     useStaticPublicFolder(expressApp);

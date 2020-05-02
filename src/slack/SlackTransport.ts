@@ -24,7 +24,7 @@ import {
 } from "./model/InteractiveResponse";
 import AnswerRequest from "../model/AnswerRequest";
 import StandUp from "../model/StandUp";
-import * as groupBy from "lodash.groupby";
+import groupBy from "lodash.groupby";
 import {DialogOpenArguments, MessageAttachment, WebAPIPlatformError, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
@@ -75,7 +75,7 @@ export class SlackTransport implements ITransport {
   ) {
   }
 
-  init(): void {
+  initSlackEvents(): void {
     this.slackEvents.on('error', async (error) => {
       this.logger.error('Receive slack events error', {error})
     });
@@ -288,11 +288,12 @@ export class SlackTransport implements ITransport {
   }
 
   async syncData(team: Team) {
-    const teamResponse: {team: SlackTeam} = await this.webClient.team.info() as any;
+    const teamResponse: {team: SlackTeam} = await this.webClient.team.info({team: team.id}) as any;
 
     if (team.id !== teamResponse.team.id) {
       throw new Error(`Wrong team id #${teamResponse.team.id}. Should ${team.id}`);
     }
+
     team.slackData = teamResponse.team;
     const teamRepository = this.connection.getRepository(Team);
     team = await teamRepository.save(team);
@@ -670,13 +671,11 @@ export class SlackTransport implements ITransport {
         }
       })*/
 
-    const result = await this.webClient.chat.postMessage({
+    await this.webClient.chat.postMessage({
       channel: user.id,
-      text: "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
+      text: `Hello, it's time to start your daily standup for #${standUp.team.name}`,
       attachments: [buttonsAttachment]
     })
-
-    // result.response_metadata.
   }
 
   async sendReport(standUp: StandUp) {
