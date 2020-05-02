@@ -4,7 +4,11 @@
 ### Development
 
 ```bash
+cp .env.dist .env.dev
 docker-compose run --rm -u $(id -u) serve npm install
+
+docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREATE DATABASE standup"
+docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREATE USER standup WITH PASSWORD 'standup_123'; GRANT ALL PRIVILEGES ON DATABASE standup TO standup;"
 
 docker-compose up -d
 docker-compose exec -u $(id -u) serve sh
@@ -13,11 +17,6 @@ docker-compose exec -u $(id -u) serve sh
 Create new migration
 ```bash
 ./node_modules/typeorm/cli.js migration:generate --name=name
-```
-
-Create database
-```bash
-./cli.sh database:create
 ```
 
 Run migrations
@@ -47,7 +46,8 @@ Server
 
 Run jest tests
 ```bash
-// ./cli.sh database:migrate --env=test
-// ./cli.sh database:fixture --env=test
+cp .env.dist .env.dev
+./cli.sh database:migrate --env=test
+./cli.sh database:fixture --env=test
 npm run test
 ```

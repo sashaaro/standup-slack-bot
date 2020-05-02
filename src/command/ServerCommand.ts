@@ -29,8 +29,6 @@ export class ServerCommand implements yargs.CommandModule {
   ) {}
 
   async handler(args: yargs.Arguments<{}>) {
-    await this.connection.connect();
-
     if (this.config.rollBarAccessToken) {
       const rollbar = new Rollbar({
         accessToken: this.config.rollBarAccessToken,
@@ -38,6 +36,8 @@ export class ServerCommand implements yargs.CommandModule {
         captureUnhandledRejections: true
       });
     }
+
+    await this.connection.connect();
 
     const expressApp = express()
 
