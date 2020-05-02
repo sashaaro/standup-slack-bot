@@ -4,6 +4,7 @@ import {SlackTransport} from "../slack/SlackTransport";
 import {IWorkerFactory, LOGGER_TOKEN, REDIS_TOKEN, WORKER_FACTORY_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Connection} from "typeorm";
+import {Redis} from "ioredis";
 
 export class QueueConsumeCommand implements yargs.CommandModule {
   command = 'queue:consume';
@@ -14,9 +15,19 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     @Inject(SlackTransport) private slackTransport,
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private connection: Connection,
+    @Inject(REDIS_TOKEN) private redis: Redis,
   ) {}
 
+  private ready() {
+    return new Promise((resolve) => {
+      this.redis.once('ready', () => {
+        resolve()
+      })
+    })
+  }
+
   async handler(args: yargs.Arguments<{}>) {
+    await this.ready();
     await this.connection.connect();
 
     const worker = this.workerFactory('main', async (job) => {
