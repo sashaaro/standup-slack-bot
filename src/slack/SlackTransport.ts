@@ -3,7 +3,6 @@ import {Observable, Subject} from "rxjs";
 import {IMessage, IStandUp, ITransport, IUser} from "../bot/models";
 import User from "../model/User";
 import {MessageResponse} from "./model/MessageResponse";
-import {logError} from "../services/logError";
 import {ChannelRepository} from "../repository/ChannelRepository";
 import {Channel} from "../model/Channel";
 import {Connection, DeepPartial} from "typeorm";
@@ -77,37 +76,26 @@ export class SlackTransport implements ITransport {
   }
 
   init(): void {
-    this.slackEvents.on('message', async (messageResponse: MessageResponse) => {
-      if (messageResponse.type !== "message" || !messageResponse.client_msg_id) {
-        // log?!
-        return;
-      }
-
-      await this.queue.add(QUEUE_SLACK_EVENT_MESSAGE, messageResponse);
+    this.slackEvents.on('error', async (error) => {
+      this.logger.error('Receive slack events error', {error})
     });
 
-
-    this.slackEvents.on('error', async (message) => {
-      logError(message);
-      this.message$.error(message);
+    this.slackEvents.on('message', async (messageResponse: MessageResponse) => {
+      await this.queue.add(QUEUE_SLACK_EVENT_MESSAGE, messageResponse);
     });
 
     this.slackEvents.on('member_left_channel', async (response: MemberJoinedChannel) => {
       await this.queue.add(QUEUE_SLACK_EVENT_MEMBER_LEFT_CHANNEL, response);
-
-      console.log('member_left_channel', response)
     })
     this.slackEvents.on('member_joined_channel', async (response: MemberJoinedChannel) => {
       await this.queue.add(QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL, response);
     })
-
     this.slackEvents.on('channel_joined', async (response) => {
       await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_JOINED, response);
     });
     this.slackEvents.on('group_joined', async (response) => {
       await this.queue.add(QUEUE_SLACK_EVENT_GROUP_JOINED, response);
     });
-
     this.slackEvents.on('channel_left', async (response: ChannelLeft) => {
       await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_LEFT, response);
     });
@@ -156,7 +144,7 @@ export class SlackTransport implements ITransport {
 
       // be sure it is direct answerMessage to bot
       if (!await userRepository.findOne({where: {im: messageResponse.channel}})) {
-        logError(`User channel ${messageResponse.channel} is not im`);
+        this.logger.error(`User channel ${messageResponse.channel} is not im`);
         // TODO try update from api
         return true
       }
@@ -324,7 +312,7 @@ export class SlackTransport implements ITransport {
       usersResponse = await this.webClient.users.list({limit: 200, cursor});
       if (!usersResponse.ok) {
         // throw..
-        logError(usersResponse.error)
+        this.logger.error('Fetch users error', {error: usersResponse.error})
         return;
       }
 
@@ -399,12 +387,13 @@ export class SlackTransport implements ITransport {
       ch.isArchived = channel.is_archived;
       ch.createdBy = await userRepository.findOne(channel.creator);
       if (!ch.createdBy) {
-        logError('Created by is not found');
+        this.logger.error(`Created by is not found`);
+
         continue;
       }
       ch.team = team
       if (!ch.team) {
-        logError('Created by is not found');
+        this.logger.error(`Created by is not found`);
         continue;
       }
 
@@ -544,7 +533,7 @@ export class SlackTransport implements ITransport {
     if (response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
       await this.handleInteractiveAnswers(response)
     } else {
-      logError(`There is no handler for callback ${response.callback_id}`);
+      this.logger.error(`There is no handler for callback`, {response});
     }
   }
 
@@ -640,7 +629,7 @@ export class SlackTransport implements ITransport {
     if (response.callback_id.startsWith(CALLBACK_PREFIX_SEND_STANDUP_ANSWERS)) {
       await this.handleInteractiveDialogSubmission(response)
     } else {
-      logError(`There is no handler for callback ${response.callback_id}`);
+      this.logger.error(`There is no handler for callback`, {response});
     }
   }
 

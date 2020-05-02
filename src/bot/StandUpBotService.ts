@@ -67,14 +67,10 @@ export default class StandUpBotService {
 
   private listenMessages() {
     if (this.transport.message$) {
-      this.transport.message$.subscribe(async (message: IMessage) => {
-        await this.answerAndSendNext(message)
-      })
+      this.transport.message$.subscribe((message: IMessage) => this.answerAndSendNext(message))
     }
     if (this.transport.messages$) { // receive batch of messages
-      this.transport.messages$.subscribe(async (messages: IMessage[]) => {
-        await this.answersAndFinish(messages)
-      })
+      this.transport.messages$.subscribe((messages: IMessage[]) => this.answersAndFinish(messages))
     }
   }
 
@@ -105,9 +101,10 @@ export default class StandUpBotService {
       if (e instanceof InProgressStandUpNotFoundError) {
         this.logger.info('', {error: e});// TODO
         await this.send(message.user, `I will remind you when your next standup is up..`)
-      }
-      if (e instanceof AlreadySubmittedStandUpError) {
+      } else if (e instanceof AlreadySubmittedStandUpError) {
         await this.send(message.user, `You've already submitted your standup for today.`)
+      } else {
+        this.logger.error('Error answer', {error: e});
       }
 
       return;

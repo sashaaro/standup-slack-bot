@@ -2,7 +2,6 @@ import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {CONFIG_TOKEN} from "../../services/token";
 import DashboardContext from "../../services/DashboardContext";
-import {logError} from "../../services/logError";
 import {IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
 import {Connection} from "typeorm";
@@ -43,11 +42,11 @@ export class OauthAuthorize implements IHttpAction {
         //redirect_uri: `${this.config.host}/auth`,
       }) as any
     } catch (e) {
-      logError(e)
+      // LOG ?
       throw new Error(e)
     }
     if (!response.ok) {
-      logError(response);
+      // LOG ?
       throw new Error(response as any)
     }
 
