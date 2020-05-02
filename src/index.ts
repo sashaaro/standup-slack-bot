@@ -1,7 +1,5 @@
 import "reflect-metadata";
 import {ReflectiveInjector} from 'injection-js';
-import StandUpBotService from './bot/StandUpBotService'
-import StandUp from "./model/StandUp";
 import * as http from "http";
 import * as https from "https";
 import * as fs from "fs";
@@ -11,9 +9,7 @@ import {createProviders, IAppConfig} from "./services/providers";
 import Rollbar from "rollbar";
 import {CONFIG_TOKEN} from "./services/token";
 import 'express-async-errors';
-import {SlackTransport} from "./slack/SlackTransport";
 import {Connection} from "typeorm";
-import dotenv from "dotenv";
 
 const main = async () => {
   const envParam = process.argv.filter((param) => param.startsWith(`--env=`)).pop();
@@ -37,15 +33,6 @@ const main = async () => {
       captureUnhandledRejections: true
     });
   }
-
-  const slackTransport: SlackTransport = injector.get(SlackTransport);
-  await slackTransport.init();
-  const standUpBot: StandUpBotService = injector.get(StandUpBotService)
-  standUpBot.start()
-
-  standUpBot.finishStandUp$.subscribe((standUp: StandUp) => {
-    slackTransport.sendReport(standUp)
-  });
 
 
   const expressApp = createExpress(injector)

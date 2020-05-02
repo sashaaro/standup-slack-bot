@@ -23,6 +23,7 @@ import IOredis, {Redis} from 'ioredis';
 import dotenv from "dotenv";
 import {TestTransport} from "../../test/services/transport";
 import {Processor, Queue, Worker} from 'bullmq';
+import {commands} from "../command";
 
 export interface IAppConfig {
   env: string,
@@ -156,7 +157,8 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useExisting: env === 'test' ? TestTransport : SlackTransport
     },
     StandUpBotService,
-    ...actions
+    ...actions,
+    ...commands
   ]
 
   return providers;

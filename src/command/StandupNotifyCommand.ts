@@ -1,0 +1,26 @@
+import * as yargs from "yargs";
+import {SlackTransport} from "../slack/SlackTransport";
+import StandUpBotService from "../bot/StandUpBotService";
+import StandUp from "../model/StandUp";
+import {Inject} from "injection-js";
+import {IWorkerFactory, WORKER_FACTORY_TOKEN} from "../services/token";
+
+export class StandupNotifyCommand implements yargs.CommandModule {
+  command = 'standup:notify';
+  describe = 'Notify teams about standup starting';
+
+  constructor(
+    @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
+    @Inject(SlackTransport) private slackTransport,
+    @Inject(StandUpBotService) private standUpBotService,
+  ) {}
+
+  async handler(args: yargs.Arguments<{}>) {
+    await this.slackTransport.init();
+    this.standUpBotService.start()
+
+    this.standUpBotService.finishStandUp$.subscribe((standUp: StandUp) => {
+      this.slackTransport.sendReport(standUp)
+    });
+  }
+}

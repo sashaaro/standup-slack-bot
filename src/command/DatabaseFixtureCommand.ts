@@ -1,18 +1,18 @@
 import * as yargs from "yargs";
-import {createProviders, initFixtures} from "../services/providers";
-import {ReflectiveInjector} from "injection-js";
+import {initFixtures} from "../services/providers";
 import {Connection} from "typeorm";
+import {Injectable} from "injection-js";
 
+@Injectable()
 export class DatabaseFixtureCommand implements yargs.CommandModule {
   command = 'database:fixture';
   describe = 'Load database fixture';
 
+  constructor(private connection: Connection) {}
+
   async handler(args: yargs.Arguments<{}>) {
-    const injector = ReflectiveInjector.resolveAndCreate(createProviders(args.env as any))
+    await this.connection.connect();
 
-    const connection = await injector.get(Connection) as Connection;
-    await connection.connect();
-
-    await initFixtures(connection)
+    await initFixtures(this.connection)
   }
 }
