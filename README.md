@@ -3,6 +3,13 @@
 
 ### Development
 
+```bash
+docker-compose run --rm -u $(id -u) serve npm install
+
+docker-compose up -d
+docker-compose exec -u $(id -u) serve sh
+```
+
 Create new migration
 ```bash
 ./node_modules/typeorm/cli.js migration:generate --name=name

@@ -1,11 +1,9 @@
 version: "3.7"
 
-# docker-compose run --rm serve npm install
-
 services:
   serve:
     image: node:12.14.1-alpine
-    entrypoint: ["npm run start"]
+    command: ["npm run start"]
     user: 1000:1000
     ports:
       - "3000:3000"
@@ -16,11 +14,11 @@ services:
       - postgres
 
   postgres:
-    image: postgres:11.6
+    image: postgres:11.7-alpine
     ports:
       - "5432:5432"
     environment:
       POSTGRES_PASSWORD: postgres
 
   redis:
-    image: redis:5.0.7
+    image: 6.0.1-alpine
