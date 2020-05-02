@@ -1,6 +1,6 @@
-import {Provider} from "injection-js";
+import {Injector, Provider} from "injection-js";
 import {
-  CONFIG_TOKEN,
+  CONFIG_TOKEN, EXPRESS_DASHBOARD_TOKEN, EXPRESS_SLACK_API_TOKEN,
   IQueueFactory, IWorkerFactory,
   QUEUE_FACTORY_TOKEN,
   REDIS_TOKEN,
@@ -24,6 +24,8 @@ import dotenv from "dotenv";
 import {TestTransport} from "../../test/services/transport";
 import {Processor, Queue, Worker} from 'bullmq';
 import {commands} from "../command";
+import {createSlackApiExpress} from "../http/createExpress";
+import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
 
 export interface IAppConfig {
   env: string,
@@ -158,7 +160,17 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     StandUpBotService,
     ...actions,
-    ...commands
+    ...commands,
+    {
+      provide: EXPRESS_SLACK_API_TOKEN,
+      useFactory: createSlackApiExpress,
+      deps: [CONFIG_TOKEN, Queue, SLACK_EVENTS]
+    },
+    {
+      provide: EXPRESS_DASHBOARD_TOKEN,
+      useFactory: dashboardExpressMiddleware,
+      deps: [Injector]
+    }
   ]
 
   return providers;

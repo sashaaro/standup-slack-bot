@@ -81,7 +81,7 @@ const scopes = [
   //'reactions:write',
 ]; //, 'im:history'
 
-export const dashboardExpressMiddleware = (injector: Injector) => {
+export const dashboardExpressMiddleware = (injector: Injector): express.Router => {
   const router = express.Router()
   useBodyParserAndSession(router, injector.get(REDIS_TOKEN));
   router.use(createDashboardContext(injector));

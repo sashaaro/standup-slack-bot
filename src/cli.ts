@@ -10,7 +10,10 @@ let argv = yargs.option('env', {
   describe: 'Environment'
 })
 
-const injector = ReflectiveInjector.resolveAndCreate(createProviders(argv.argv.env))
+const env = argv.argv.env;
+console.log(`Environment: ${env}`)
+
+const injector = ReflectiveInjector.resolveAndCreate(createProviders(env))
 
 let main = yargs
   .usage("Usage: $0 <command> [options]")
