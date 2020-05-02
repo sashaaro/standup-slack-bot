@@ -4,7 +4,6 @@ import {UpdateChannelAction} from "./UpdateChannelAction";
 import {SettingsAction} from "./settings";
 import {StandUpsAction} from "./standUps";
 import {SyncAction} from "./sync";
-import {ApiSlackInteractive} from "./apiSlackInteractive";
 import {OauthAuthorize} from "./oauth-authorize";
 
 export const templateDirPath = './resources/templates'
@@ -14,7 +13,6 @@ export interface IHttpAction {
 }
 
 const actions = [
-  ApiSlackInteractive,
   OauthAuthorize,
   ChannelsAction,
   UpdateChannelAction,

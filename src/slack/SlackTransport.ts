@@ -18,16 +18,18 @@ import {
 } from "./SlackStandUpProvider";
 import {SlackTeam} from "./model/SlackTeam";
 import QuestionRepository from "../repository/QuestionRepository";
-import {InteractiveDialogSubmissionResponse, InteractiveResponse} from "./model/InteractiveResponse";
+import {
+  InteractiveDialogSubmissionResponse,
+  InteractiveResponse,
+  InteractiveResponseTypeEnum
+} from "./model/InteractiveResponse";
 import AnswerRequest from "../model/AnswerRequest";
 import StandUp from "../model/StandUp";
 import * as groupBy from "lodash.groupby";
 import {DialogOpenArguments, MessageAttachment, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
-import {STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
-import {IQueueFactory, QUEUE_FACTORY_TOKEN, WORKER_FACTORY_TOKEN} from "../services/token";
-import {Queue} from "bullmq";
+import {Job, Queue} from "bullmq";
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -38,6 +40,13 @@ export const isInProgress = (standUp: IStandUp) => {
 }
 
 const QUEUE_SLACK_EVENT_PREFIX = 'slack-event';
+const QUEUE_SLACK_EVENT_MESSAGE = QUEUE_SLACK_EVENT_PREFIX + '_message';
+const QUEUE_SLACK_EVENT_MEMBER_LEFT_CHANNEL = QUEUE_SLACK_EVENT_PREFIX + '_member-left-channel';
+const QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL = QUEUE_SLACK_EVENT_PREFIX + '_member-joined-channel';
+const QUEUE_SLACK_EVENT_CHANNEL_JOINED = QUEUE_SLACK_EVENT_PREFIX + '_channel-joined';
+const QUEUE_SLACK_EVENT_GROUP_JOINED = QUEUE_SLACK_EVENT_PREFIX + '_group-joined';
+export const QUEUE_SLACK_INTERACTIVE_RESPONSE = 'slack-interactive-response';
+export const QUEUE_SLACK_SYNC_DATA = 'slack_sync-data';
 
 @Injectable()
 export class SlackTransport implements ITransport {
@@ -45,7 +54,7 @@ export class SlackTransport implements ITransport {
   private messagesSubject = new Subject<IMessage[]>();
 
   agreeToStart$ = this.agreeToStartSubject.asObservable();
-  message$: Observable<IMessage>;
+  message$ = new Subject<IMessage>();
   messages$: Observable<IMessage[]> = this.messagesSubject.asObservable();
 
   constructor(
@@ -58,105 +67,68 @@ export class SlackTransport implements ITransport {
   }
 
   async init(): Promise<any> {
-    this.message$ = new Observable((observer) => {
-      const userRepository = this.connection.getRepository(User);
+    /*const botMessageExample =  { type: 'message',
+      subtype: 'bot_message',
+      text: 'Hello, it\'s time to start your daily standup',
+      suppress_notification: false,
+      username: 'Standup Bot',
+      bot_id: 'B6GQCM4P5',
+      team: 'T6GQB7CSF',
+      attachments:
+        [ { callback_id: 'standup_invite',
+          text: 'Choose start asking in chat or open dialog window',
+          id: 1,
+          actions: [Array],
+          fallback: 'Choose start asking in chat or open dialog window' } ],
+      channel: 'D6HVDGXSB',
+      event_ts: '1556085305.003000',
+      ts: '1556085305.003000' }*/
+
+    /*const userMessageExample = {
+      client_msg_id: '9946389c-f9fb-491d-b717-3f2b82baf810',
+      suppress_notification: false,
+      type: 'message',
+      text: 'фывафывафыв!!!!!!!!!!!!!!!',
+      user: 'U6GSG49R8',
+      team: 'T6GQB7CSF',
+      channel: 'D6HVDGXSB',
+      event_ts: '1556085558.003300',
+      ts: '1556085558.003300'
+    }*/
 
 
-      /*const botMessageExample =  { type: 'message',
-        subtype: 'bot_message',
-        text: 'Hello, it\'s time to start your daily standup',
-        suppress_notification: false,
-        username: 'Standup Bot',
-        bot_id: 'B6GQCM4P5',
-        team: 'T6GQB7CSF',
-        attachments:
-          [ { callback_id: 'standup_invite',
-            text: 'Choose start asking in chat or open dialog window',
-            id: 1,
-            actions: [Array],
-            fallback: 'Choose start asking in chat or open dialog window' } ],
-        channel: 'D6HVDGXSB',
-        event_ts: '1556085305.003000',
-        ts: '1556085305.003000' }*/
+    this.slackEvents.on('message', async (messageResponse: MessageResponse) => {
+      if (messageResponse.type !== "message" || !messageResponse.client_msg_id) {
+        // log?!
+        return;
+      }
 
-      /*const userMessageExample = {
-        client_msg_id: '9946389c-f9fb-491d-b717-3f2b82baf810',
-        suppress_notification: false,
-        type: 'message',
-        text: 'фывафывафыв!!!!!!!!!!!!!!!',
-        user: 'U6GSG49R8',
-        team: 'T6GQB7CSF',
-        channel: 'D6HVDGXSB',
-        event_ts: '1556085558.003300',
-        ts: '1556085558.003300'
-      }*/
+      await this.queue.add(QUEUE_SLACK_EVENT_MESSAGE, messageResponse);
+    });
 
 
-      this.slackEvents.on('message', async (messageResponse: MessageResponse) => {
-        if (messageResponse.type !== "message" || !messageResponse.client_msg_id) {
-          // log?!
-          return;
-        }
-
-        await this.queue.add(QUEUE_SLACK_EVENT_PREFIX + '_message', messageResponse);
-        
-        // be sure it is direct answerMessage to bot
-        if (!await userRepository.findOne({where: {im: messageResponse.channel}})) {
-          logError(`User channel ${messageResponse.channel} is not im`);
-          // TODO try update from api
-          return
-        }
-
-        const eventAt = new Date(parseInt(messageResponse.event_ts) * 1000)
-
-        const message = {
-          //team: await this.connection.getRepository(Channel).findOne(messageResponse.channel),
-          text: messageResponse.text,
-          user: await this.connection.getRepository(User).findOne(messageResponse.user),
-          createdAt: eventAt
-        } as IMessage;
-
-        observer.next(message)
-      });
-
-
-      this.slackEvents.on('error', async (message) => {
-        logError(message);
-        observer.error(message);
-      });
+    this.slackEvents.on('error', async (message) => {
+      logError(message);
+      this.message$.error(message);
     });
 
     this.slackEvents.on('member_left_channel', async (response: MemberJoinedChannel) => {
+      await this.queue.add(QUEUE_SLACK_EVENT_MEMBER_LEFT_CHANNEL, response);
+
       console.log('member_left_channel', response)
     })
     this.slackEvents.on('member_joined_channel', async (response: MemberJoinedChannel) => {
-      console.log('member_joined_channel', response)
-      await this.joinSlackChannel(response.channel);
+      await this.queue.add(QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL, response);
     })
 
     this.slackEvents.on('channel_joined', async (response) => {
-      console.log('channel_joined', response);
-
-      const channel = response.channel as SlackChannel;
-      await this.joinSlackChannel(channel.id, {
-        isArchived: channel.is_archived,
-        name: channel.name,
-        nameNormalized: channel.name_normalized
-      })
+      await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_JOINED, response);
     });
     this.slackEvents.on('group_joined', async (response) => {
-      console.log('group_joined', response);
-      const channel = response.channel as SlackChannel;
-      await this.joinSlackChannel(channel.id, {
-        isArchived: channel.is_archived,
-        name: channel.name,
-        nameNormalized: channel.name_normalized
-      })
+      await this.queue.add(QUEUE_SLACK_EVENT_GROUP_JOINED, response);
     });
 
     this.slackEvents.on('channel_left', async (response: ChannelLeft) => {
-      console.log('channel_left', response);
-
       await this.findOrCreateAndUpdate(response.channel, {isEnabled: false})
     });
     this.slackEvents.on('group_left', async (response) => {
@@ -205,6 +177,72 @@ export class SlackTransport implements ITransport {
 
       // TODO move to cmd this.syncService.exec(getSyncSlackTeamKey(team.id), this.syncData(team));
     })
+  }
+
+  public async handelJob(job: Job) {
+    if (job.name === QUEUE_SLACK_EVENT_MESSAGE) {
+      const userRepository = this.connection.getRepository(User);
+
+      const messageResponse = job.data as MessageResponse;
+
+      // be sure it is direct answerMessage to bot
+      if (!await userRepository.findOne({where: {im: messageResponse.channel}})) {
+        logError(`User channel ${messageResponse.channel} is not im`);
+        // TODO try update from api
+        return true
+      }
+
+      const eventAt = new Date(parseInt(messageResponse.event_ts) * 1000)
+
+      const message = {
+        //team: await this.connection.getRepository(Channel).findOne(messageResponse.channel),
+        text: messageResponse.text,
+        user: await this.connection.getRepository(User).findOne(messageResponse.user),
+        createdAt: eventAt
+      } as IMessage;
+
+      this.message$.next(message)
+    } else if (job.name === QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL) {
+      const response = job.data as MemberJoinedChannel
+      console.log('member_joined_channel', response)
+      await this.joinSlackChannel(response.channel);
+    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_JOINED) {
+      const channel = job.data.channel as SlackChannel;
+      await this.joinSlackChannel(channel.id, {
+        isArchived: channel.is_archived,
+        name: channel.name,
+        nameNormalized: channel.name_normalized
+      })
+    } else if (job.name === QUEUE_SLACK_EVENT_GROUP_JOINED) {
+      const response = job.data
+      const channel = response.channel as SlackChannel;
+      await this.joinSlackChannel(channel.id, {
+        isArchived: channel.is_archived,
+        name: channel.name,
+        nameNormalized: channel.name_normalized
+      })
+    } else if (job.name === QUEUE_SLACK_SYNC_DATA) {
+      const team = await this.connection.getRepository(Team).findOne(job.data.teamId)
+      await this.syncData(team)
+    } else if (job.name === QUEUE_SLACK_INTERACTIVE_RESPONSE) {
+      const response = job.data;
+      try {
+        if (response.type === InteractiveResponseTypeEnum.interactive_message) {
+          await this.handleInteractiveResponse(response as InteractiveResponse)
+        } else if (response.type === InteractiveResponseTypeEnum.dialog_submission) {
+          await this.handleInteractiveDialogSubmissionResponse(response as InteractiveDialogSubmissionResponse)
+        } else {
+          // log
+        }
+      } catch (e) {
+        logError(e);
+      }
+    } else {
+      return false
+    }
+
+
+    return true
   }
 
   public async findOrCreateAndUpdate(channelID: string, data: DeepPartial<Channel>): Promise<{channel: Channel, isNew: boolean}> {

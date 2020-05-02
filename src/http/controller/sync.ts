@@ -2,15 +2,14 @@ import {IHttpAction} from "./index";
 import {STAND_UP_BOT_TRANSPORT} from "../../bot/StandUpBotService";
 import {Connection} from "typeorm";
 import {CONFIG_TOKEN} from "../../services/token";
-import {getSyncSlackTeamKey} from "../../slack/SlackStandUpProvider";
 import Team from "../../model/Team";
 import DashboardContext from "../../services/DashboardContext";
 import {ITransport} from "../../bot/models";
 import { Injectable, Inject } from 'injection-js';
 import {IAppConfig} from "../../services/providers";
-import SyncLocker from "../../services/SyncServcie";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
-import {SlackTransport} from "../../slack/SlackTransport";
+import {QUEUE_SLACK_SYNC_DATA, SlackTransport} from "../../slack/SlackTransport";
+import {Queue} from "bullmq";
 
 @Injectable()
 export class SyncAction implements IHttpAction {
@@ -18,9 +17,9 @@ export class SyncAction implements IHttpAction {
 
   constructor(
     private connection: Connection,
+    private queue: Queue,
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     @Inject(STAND_UP_BOT_TRANSPORT) transport: ITransport,
-    private syncService: SyncLocker
   ) {
     if (transport instanceof SlackTransport) {
       this.transport = transport;
@@ -43,12 +42,7 @@ export class SyncAction implements IHttpAction {
       return;
     }
 
-
-    if (!this.syncService.inProgress(getSyncSlackTeamKey(team.id))) {
-      this.syncService.exec(getSyncSlackTeamKey(team.id), this.transport.syncData(team))
-    } else {
-      // flash message
-    }
+    await this.queue.add(QUEUE_SLACK_SYNC_DATA, {teamId: team.id})
 
     res.redirect('/');
   }

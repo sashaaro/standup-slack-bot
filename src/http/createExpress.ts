@@ -1,12 +1,11 @@
 import express from 'express'
 import {dashboardExpressMiddleware, useStaticPublicFolder} from "./dashboardExpressMiddleware";
-import {ApiSlackInteractive} from "./controller/apiSlackInteractive";
-import {logError} from "../services/logError";
 import { createMessageAdapter } from "@slack/interactive-messages";
 import {CONFIG_TOKEN} from "../services/token";
 import {ReflectiveInjector} from "injection-js";
 import {IAppConfig} from "../services/providers";
-import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
+import {QUEUE_SLACK_INTERACTIVE_RESPONSE, SLACK_EVENTS, SlackTransport} from "../slack/SlackTransport";
+import {Queue} from "bullmq";
 
 const consoleLoggerMiddleware = (req, res, next) => {
   console.info(`${req.originalUrl} ${req.method}`);
@@ -69,16 +68,14 @@ export const createExpress = (injector: ReflectiveInjector) => {
   useStaticPublicFolder(expressApp);
 
   const slackInteractions = createMessageAdapter(config.slackSigningSecret);
+  const queue: Queue = injector.get(Queue)
+
   slackInteractions.action({},  async (response) => {
-    try {
-      await injector.get(ApiSlackInteractive).handleResponse(response);
-    } catch (e) {
-      logError(e);
-    }
+    await queue.add(QUEUE_SLACK_INTERACTIVE_RESPONSE, response)
   })
 
   expressApp.use('/api/slack/interactive', slackInteractions.expressMiddleware());
-  expressApp.use('/api/slack/events', injector.get(SlackEventAdapter).expressMiddleware());
+  expressApp.use('/api/slack/events', injector.get(SLACK_EVENTS).expressMiddleware());
   expressApp.use('/', dashboardExpressMiddleware(injector));
 
   return expressApp;

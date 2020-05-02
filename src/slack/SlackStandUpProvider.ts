@@ -13,10 +13,6 @@ export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
 export const ACTION_START = 'start'
 export const ACTION_OPEN_DIALOG = 'dialog'
 
-
-export const getSyncSlackTeamKey = (teamId) => 'update-slack-' + teamId
-
-
 @Injectable()
 export class SlackStandUpProvider implements IStandUpProvider {
   constructor(private connection: Connection) {}
@@ -58,7 +54,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
     const standUpRepository = this.connection.getRepository(StandUp);
     const qb = standUpRepository.createQueryBuilder('standup');
 
-    qb.orderBy('standup.start', "ASC")
+    qb.orderBy('standup.startAt', "ASC")
 
     this.qbStandUpJoins(qb)
     qb.andWhere('users.id = :user', {user: user.id})

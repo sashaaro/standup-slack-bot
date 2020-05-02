@@ -6,6 +6,7 @@ import {createProviders, IAppConfig, initFixtures} from "./services/providers";
 import {Connection, ConnectionOptions, createConnection} from "typeorm";
 import {CONFIG_TOKEN, IWorkerFactory, WORKER_FACTORY_TOKEN} from "./services/token";
 import * as fs from 'fs';
+import {SlackTransport} from "./slack/SlackTransport";
 
 const run = async () => {
   const envParam = process.argv.filter((param) => param.startsWith(`--env=`)).pop();
@@ -54,20 +55,41 @@ const run = async () => {
     console.log(`Timezone was uploaded`);
   }
 
-  if (process.argv.includes('fixtures')) {
-    (injector.get(WORKER_FACTORY_TOKEN) as IWorkerFactory)('main', async (job) => {
-      job.name
-      job.data
+  if (process.argv.includes('worker')) {
+    console.log(`Worker`);
+
+    const slackTransport = injector.get(SlackTransport) as SlackTransport
+    const workerFactory = injector.get(WORKER_FACTORY_TOKEN) as IWorkerFactory;
+    const worker = workerFactory('main', async (job) => {
+      const result = await slackTransport.handelJob(job)
+
+      //job.name
+      //job.data
+      console.log(result)
       // TODO
     });
+
+    worker.on('process', (job) => {
+      console.log(`${job.id} has process!`);
+    });
+
+    worker.on('completed', (job) => {
+      console.log(`${job.id} has completed!`);
+    });
+
+    worker.on('failed', (job, err) => {
+      console.log(`${job.id} has failed with ${err.message}`);
+    });
+
+    //worker.listeners()
   }
 
   console.log(`Done`);
 }
 
 run().then(() => {
-  process.exit(1);
 }).catch(error => {
   logError(error)
   throw error;
 });
+// process.exit(1);

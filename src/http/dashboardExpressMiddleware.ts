@@ -8,7 +8,6 @@ import {SettingsAction} from "./controller/settings";
 import {SyncAction} from "./controller/sync";
 import {UpdateChannelAction} from "./controller/UpdateChannelAction";
 import {Connection} from "typeorm";
-import SyncLocker from "../services/SyncServcie";
 import DashboardContext from "../services/DashboardContext";
 import {CONFIG_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
 import {OauthAuthorize} from "./controller/oauth-authorize";
@@ -40,7 +39,6 @@ const intl = new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric', we
 
 export const createDashboardContext = (injector: Injector) => {
   const connection = injector.get(Connection)
-  const syncService = injector.get(SyncLocker)
   const renderEngine = injector.get(RenderEngine)
   const config = injector.get(CONFIG_TOKEN)
 
@@ -53,7 +51,7 @@ export const createDashboardContext = (injector: Injector) => {
       debug: config.debug,
       user: context.user,
       channel: context.channel,
-      syncInProgress: context.user ? syncService.inProgress('update-slack-' + context.user.team.id) : false,
+      syncInProgress: false,//context.user ? true : false,
       intl
     }
 

@@ -14,7 +14,6 @@ import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
 import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
 import actions from "../http/controller";
 import {WebClient, LogLevel} from '@slack/web-api'
-import SyncLocker from "./SyncServcie";
 import {RenderEngine} from "./RenderEngine";
 import {SLACK_EVENTS, SlackTransport} from "../slack/SlackTransport";
 import {createEventAdapter} from "@slack/events-api";
@@ -137,7 +136,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: WORKER_FACTORY_TOKEN,
-      useFactory: (redis: Redis) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {connection: redis})) as IWorkerFactory,
+      useFactory: (redis: Redis) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {connection: redis, concurrency: 1})) as IWorkerFactory,
       deps: [REDIS_TOKEN]
     },
     {
@@ -157,7 +156,6 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useExisting: env === 'test' ? TestTransport : SlackTransport
     },
     StandUpBotService,
-    SyncLocker,
     ...actions
   ]
 
