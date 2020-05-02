@@ -10,22 +10,37 @@ Create new migration
 
 Create database
 ```bash
-./cli.sh db
+./cli.sh database:create
 ```
 
 Run migrations
 ```bash
-./node_modules/.bin/typeorm migration:run
+./cli.sh database:migrate
 ```
 
 Fixtures
 ```bash
-./cli.sh fixtures
+./cli.sh database:fixture
+```
+
+Standup notifier
+```bash
+./cli.sh standup:notify
+```
+
+Queue consumer
+```bash
+./cli.sh queue:consume
+```
+
+Server
+```bash
+./cli.sh server:run
 ```
 
 Run jest tests
 ```bash
-// ./cli.sh db migrate --env=test
-// ./cli.sh fixtures --env=test
+// ./cli.sh database:migrate --env=test
+// ./cli.sh database:fixture --env=test
 npm run test
 ```

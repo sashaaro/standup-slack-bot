@@ -4,15 +4,27 @@ volumes:
   postgres_data:
 
 services:
-  app:
-    image: node:12.14.1-alpine
-    entrypoint: ["sh", "-c", "npm install && ./node_modules/.bin/tsc && node dist/index.js --env=prod"]
+  server:
+    build: &service_app
+      dockerfile: deploy/Dockerfile
+    command: ["server:run", "--env=prod"]
     user: 1000:1000
     ports:
       - "3000:3000"
-    volumes:
-      - .:/opt/app
-    working_dir: /opt/app
+    depends_on:
+      - postgres
+
+  standup-notifier:
+    <<: *service_app
+    command: ["standup:notify", "--env=prod"]
+    user: 1000:1000
+    depends_on:
+      - postgres
+
+  queue-consumer:
+    <<: *service_app
+    command: ["queue:consume", "--env=prod"]
+    user: 1000:1000
     depends_on:
       - postgres
 
