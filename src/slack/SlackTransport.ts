@@ -26,10 +26,12 @@ import {
 import AnswerRequest from "../model/AnswerRequest";
 import StandUp from "../model/StandUp";
 import * as groupBy from "lodash.groupby";
-import {DialogOpenArguments, MessageAttachment, WebClient} from '@slack/web-api'
+import {DialogOpenArguments, MessageAttachment, WebAPIPlatformError, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import {Job, Queue} from "bullmq";
+import {LOGGER_TOKEN} from "../services/token";
+import {Logger} from "winston";
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -60,6 +62,7 @@ export class SlackTransport implements ITransport {
 
   constructor(
     @Inject(SLACK_EVENTS) private readonly slackEvents: SlackEventAdapter,
+    @Inject(LOGGER_TOKEN) private logger: Logger,
     private readonly queue: Queue,
     private readonly webClient: WebClient,
     private connection: Connection,
@@ -139,11 +142,7 @@ export class SlackTransport implements ITransport {
       if (!team) {
         team = new Team();
         team.id = scopeGranted.team_id;
-        // https://api.slack.com/methods/team.info
-        const teamInfo: {team: SlackTeam} = (await this.webClient.team.info()) as any;
-        team.name = teamInfo.team.name;``
-        team.domain = teamInfo.team.domain
-        await teamRepository.save(team);
+        await this.updateTeam(team)
       }
 
       // TODO move to cmd this.syncService.exec(getSyncSlackTeamKey(team.id), this.syncData(team));
@@ -175,22 +174,38 @@ export class SlackTransport implements ITransport {
       this.message$.next(message)
     } else if (job.name === QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL) {
       const response = job.data as MemberJoinedChannel
-      await this.joinSlackChannel(response.channel);
-    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_JOINED) {
+      const teamRepo = this.connection.getRepository(Team)
+      try {
+        await this.joinSlackChannel(response.channel, {
+          team: await this.updateTeam(
+            (await teamRepo.findOne(response.team)) || teamRepo.create({id: response.team})
+          )
+        });
+      } catch (e) {
+        if (e.code === 'slack_webapi_platform_error' && (e as WebAPIPlatformError).data.error === 'not_in_channel') {
+          this.logger.warn('Can not joined channel', {error: e})
+        } else {
+          throw e
+        }
+      }
+    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_JOINED || job.name === QUEUE_SLACK_EVENT_GROUP_JOINED) {
       const channel = job.data.channel as SlackChannel;
-      await this.joinSlackChannel(channel.id, {
-        isArchived: channel.is_archived,
-        name: channel.name,
-        nameNormalized: channel.name_normalized
-      })
-    } else if (job.name === QUEUE_SLACK_EVENT_GROUP_JOINED) {
-      const response = job.data
-      const channel = response.channel as SlackChannel;
-      await this.joinSlackChannel(channel.id, {
-        isArchived: channel.is_archived,
-        name: channel.name,
-        nameNormalized: channel.name_normalized
-      })
+
+      try {
+        // TODO use channel.members
+        await this.joinSlackChannel(channel.id, {
+          isArchived: channel.is_archived,
+          name: channel.name,
+          nameNormalized: channel.name_normalized
+        })
+      } catch (e) {
+        if (e.code === 'slack_webapi_platform_error' && (e as WebAPIPlatformError).data.error === 'not_in_channel') {
+          this.logger.warn('Can not joined channel', {error: e})
+          // throw new SyncDataProblem
+        } else {
+          throw e
+        }
+      }
     } else if (job.name === QUEUE_SLACK_SYNC_DATA) {
       const team = await this.connection.getRepository(Team).findOne(job.data.teamId)
       await this.syncData(team)
@@ -258,6 +273,8 @@ export class SlackTransport implements ITransport {
 
     const channelRepository = this.connection.getCustomRepository(ChannelRepository);
 
+    await this.updateChannelMembers(channel)
+
     if (isNew) {
       await channelRepository.addNewChannel(channel)
     } else {
@@ -267,6 +284,7 @@ export class SlackTransport implements ITransport {
     await this.webClient.chat.postMessage({
       channel: channel.id,
       text: 'Hi everyone, I am here!'
+      // token
     })
   }
 
@@ -392,17 +410,32 @@ export class SlackTransport implements ITransport {
         }
       }
 
-
-      let membersResponse = await this.webClient.conversations.members({channel: channel.id}) as { ok: boolean, members?: string[], error?: string };
-      if (!membersResponse.ok) {
-        throw new Error(membersResponse.error);
-      }
-
-      ch.users = await userRepository.createQueryBuilder('u').whereInIds(membersResponse.members).getMany();
+      await this.updateChannelMembers(ch);
       await channelRepository.save(ch);
     }
   }
 
+  async updateTeam(team: Team): Promise<Team> {
+    // https://api.slack.com/methods/team.info
+    const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({team: team.id})) as any;
+    team.name = teamInfo.team.name;``
+    team.domain = teamInfo.team.domain
+
+    return await this.connection.getRepository(Team).save(team)
+  }
+
+  async updateChannelMembers(channel: Channel) {
+    const userRepository = this.connection.getRepository(User);
+    let membersResponse = await this.webClient.conversations.members({channel: channel.id}) as { ok: boolean, members?: string[], error?: string };
+    if (!membersResponse.ok) {
+      throw new Error(membersResponse.error);
+    }
+
+    channel.users = []
+    if (membersResponse.members.length > 0) {
+      channel.users = await userRepository.createQueryBuilder('u').whereInIds(membersResponse.members).getMany()
+    }
+  }
 
   async handleInteractiveAnswers(response: InteractiveResponse) {
     const user = await this.connection.getRepository(User).findOne(response.user);

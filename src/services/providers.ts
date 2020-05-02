@@ -24,7 +24,7 @@ import dotenv from "dotenv";
 import {TestTransport} from "../../test/services/transport";
 import {Processor, Queue, Worker} from 'bullmq';
 import {commands} from "../command";
-import {createLogger, transports, format} from "winston";
+import {createLogger, transports, format, LeveledLogMethod} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
 import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
 
@@ -142,7 +142,10 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: WORKER_FACTORY_TOKEN,
-      useFactory: (redis: Redis) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {connection: redis, concurrency: 1})) as IWorkerFactory,
+      useFactory: (redis: Redis) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {
+        connection: redis,
+        concurrency: 1,
+      })) as IWorkerFactory,
       deps: [REDIS_TOKEN]
     },
     {
@@ -184,6 +187,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
           logger.add(new transports.Console({
             format: format.simple()
           }))
+          logger.level = 'debug'
         } else {
           logger.add(new transports.File({
             filename: 'var/log.log'

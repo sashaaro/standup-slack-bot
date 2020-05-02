@@ -92,9 +92,9 @@ export class StandUpsAction implements IHttpAction {
       .leftJoinAndSelect('st.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'answersUser')
       .leftJoinAndSelect('answers.question', 'answersQuestion')
-      .orderBy('st.end', 'DESC')
-      //.andWhere('st.end <= CURRENT_TIMESTAMP')
-      .where('channel.id = :channelID', {channelID: context.channel.id})
+      .orderBy('st.endAt', 'DESC')
+      .andWhere('st.endAt IS NOT NULL')
+      .andWhere('channel.id = :channelID', {channelID: context.channel.id})
 
     const recordsPerPage = 5
     const page = parseInt(req.query.page) || 1;

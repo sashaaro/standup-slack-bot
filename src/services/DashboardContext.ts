@@ -35,7 +35,6 @@ export default class DashboardContext {
         .where({id: this.session.channel})
         .andWhere('ch.isArchived = false')
         .andWhere('ch.isEnabled = true')
-        .andWhere('questions.isEnabled = true')
         .orderBy("questions.index", "ASC")
         .getOne();
     }

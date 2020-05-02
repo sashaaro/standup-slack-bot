@@ -1,7 +1,9 @@
 import { Injectable, Inject, InjectionToken } from 'injection-js';
-import {interval, Observable, of, Subject, timer} from "rxjs";
-import {delay, filter, map, mergeMap, take, takeUntil} from "rxjs/operators";
-import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITeam, ITransport, IUser} from "./models";
+import {interval, Subject} from "rxjs";
+import {delay, map, takeUntil} from "rxjs/operators";
+import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITransport, IUser} from "./models";
+import {LOGGER_TOKEN} from "../services/token";
+import {Logger} from "winston";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -38,8 +40,9 @@ export default class StandUpBotService {
 
   constructor(
     @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) protected standUpProvider: IStandUpProvider,
-    @Inject(STAND_UP_BOT_TRANSPORT) protected transport: ITransport) {
-  }
+    @Inject(STAND_UP_BOT_TRANSPORT) protected transport: ITransport,
+    @Inject(LOGGER_TOKEN) protected logger: Logger
+  ) {}
 
 
   init() {
@@ -101,7 +104,7 @@ export default class StandUpBotService {
       repliedAnswer = await this.answer(message);
     } catch (e) {
       if (e instanceof InProgressStandUpNotFoundError) {
-        console.log(e)
+        this.logger.info('', {error: e});// TODO
         await this.send(message.user, `I will remind you when your next standup is up..`)
       }
       if (e instanceof AlreadySubmittedStandUpError) {
@@ -136,7 +139,7 @@ export default class StandUpBotService {
     for(const [i, message] of messages.entries()) {
       const question = standUp.team.questions[i]
       if (!question) {
-        console.warn(`No question #${i} in standup #${standUp.id} team #${standUp.team.id}`)
+        this.logger.warn(`No question #${i} in standup #${standUp.id} team #${standUp.team.id}`);
         break;
       }
       // TODO try catch
@@ -192,7 +195,7 @@ export default class StandUpBotService {
     const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds();
     const millisecondsDelay = intervalMs - milliseconds;
 
-    console.log('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop');
+    this.logger.debug('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop')
 
     interval(intervalMs)
       .pipe(
@@ -231,7 +234,7 @@ export default class StandUpBotService {
   {
     const question = await this.standUpProvider.findOneQuestion(standUp.team, 0);
     if (!question) {
-      console.log(`No questions in standup #${standUp.id}`);
+      this.logger.warn(`No questions in standup #${standUp.id}`)
       return;
     }
     await this.askQuestion(user, question, standUp)

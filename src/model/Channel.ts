@@ -30,7 +30,8 @@ export class Channel implements ITeam {
   createdBy: User
 
   @ManyToOne(type => Team, null, {
-    eager: true
+    eager: true,
+    nullable: false
   })
   team: Team
 
@@ -39,7 +40,9 @@ export class Channel implements ITeam {
   })
   users: Array<User>
 
-  @OneToMany(type => Question, question => question.channel)
+  @OneToMany(type => Question, question => question.channel, {
+    eager: true
+  })
   questions: Question[];
 
   @ManyToOne(type => Timezone, null, {

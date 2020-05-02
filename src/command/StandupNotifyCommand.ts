@@ -12,8 +12,8 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
   constructor(
     @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
-    @Inject(SlackTransport) private slackTransport,
-    @Inject(StandUpBotService) private standUpBotService,
+    @Inject(SlackTransport) private slackTransport: SlackTransport,
+    @Inject(StandUpBotService) private standUpBotService: StandUpBotService,
     private connection: Connection,
   ) {}
 
