@@ -83,13 +83,12 @@ export default class StandUpBotService {
     let standUps: IStandUp[] = [];
     const teams = await this.standUpProvider.findTeamsByStart(date);
 
+    this.logger.debug('Start standup', {date, teams: teams.length})
     for (const team of teams) {
       const standUp = this.standUpProvider.createStandUp();
       standUp.startAt = date;
       standUp.team = team;
-      standUp.endAt = new Date(standUp.startAt);
-      // standUp.endAt.setSeconds(0, 0);
-      standUp.endAt.setTime(standUp.endAt.getTime() + team.duration * 60 * 1000)
+      standUp.endAt = new Date(standUp.endAt.getTime() + team.duration * 60 * 1000);
 
       await this.standUpProvider.insertStandUp(standUp);
       standUps.push(standUp);

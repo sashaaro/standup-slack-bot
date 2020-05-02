@@ -22,11 +22,12 @@ export class SettingsAction implements IHttpAction {
     const context = req.context as DashboardContext;
     const channelRepository = this.connection.getRepository(Channel)
 
+    // await this.slackTransport.sendMessage({id: 'UJZM51SN8'}, 'test')
     if (!context.user) {
       throw new AccessDenyError();
     }
 
-    if (!context.channel) { // TODO 404
+    if (!context.channel) {
       throw new ResourceNotFoundError('Selected channel is not found');
     }
 

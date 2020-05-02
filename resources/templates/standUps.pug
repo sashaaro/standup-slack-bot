@@ -9,7 +9,7 @@ block authorized_content
                 .ui.items.stand-up
                     .stand-up__date
                         div= intl.format(standUp.standUp.start)
-                        if isInProgress(standUp.standUp)
+                        if standUp.isInProgress
                             a.ui.teal.label= 'In progress'
                     each userAnswers in standUp.answers
                         .item.stand-up-item

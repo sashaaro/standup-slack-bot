@@ -8,6 +8,7 @@ import {AccessDenyError} from "../dashboardExpressMiddleware";
 import Team from "../../model/Team";
 import User from "../../model/User";
 import {RenderFn} from "../../services/providers";
+import {isInProgress} from "../../slack/SlackTransport";
 
 
 const replaceAll = function(string, search, replace){
@@ -124,7 +125,8 @@ export class StandUpsAction implements IHttpAction {
 
       standUpList.push({
         standUp: standUp,
-        answers: userAnswers
+        answers: userAnswers,
+        isInProgress: isInProgress(standUp)
       })
     }
 

@@ -48,6 +48,12 @@ const QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL = QUEUE_SLACK_EVENT_PREFIX + '_mem
 const QUEUE_SLACK_EVENT_CHANNEL_JOINED = QUEUE_SLACK_EVENT_PREFIX + '_channel-joined';
 const QUEUE_SLACK_EVENT_GROUP_JOINED = QUEUE_SLACK_EVENT_PREFIX + '_group-joined';
 const QUEUE_SLACK_EVENT_CHANNEL_LEFT = QUEUE_SLACK_EVENT_PREFIX + '_channel-left';
+const QUEUE_SLACK_EVENT_GROUP_LEFT = QUEUE_SLACK_EVENT_PREFIX + '_group-left';
+const QUEUE_SLACK_EVENT_CHANNEL_ARCHIVE = QUEUE_SLACK_EVENT_PREFIX + '_channel-archive';
+const QUEUE_SLACK_EVENT_GROUP_ARCHIVE = QUEUE_SLACK_EVENT_PREFIX + '_group-archive';
+const QUEUE_SLACK_EVENT_CHANNEL_UNARCHIVE = QUEUE_SLACK_EVENT_PREFIX + '_channel-unarchive';
+const QUEUE_SLACK_EVENT_GROUP_UNARCHIVE = QUEUE_SLACK_EVENT_PREFIX + '_group-unarchive';
+
 export const QUEUE_SLACK_INTERACTIVE_RESPONSE = 'slack-interactive-response';
 export const QUEUE_SLACK_SYNC_DATA = 'slack_sync-data';
 
@@ -106,36 +112,29 @@ export class SlackTransport implements ITransport {
       await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_LEFT, response);
     });
     this.slackEvents.on('group_left', async (response) => {
-      console.log('group_left', response);
-
-      const channel: string = response.channel;
-      await this.findOrCreateAndUpdate(channel, {isEnabled: false})
+      await this.queue.add(QUEUE_SLACK_EVENT_GROUP_LEFT, response);
     });
 
 
     this.slackEvents.on('channel_archive', async (response: {type: string, channel: string, user: string}) => {
-      const channel: string = response.channel;
-      await this.findOrCreateAndUpdate(channel, {isArchived: true})
+      await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_ARCHIVE, response);
     });
     this.slackEvents.on('group_archive', async (response) => {
-      const channel: string = response.channel;
-      await this.findOrCreateAndUpdate(channel, {isArchived: true})
+      await this.queue.add(QUEUE_SLACK_EVENT_GROUP_ARCHIVE, response);
     });
 
 
     this.slackEvents.on('channel_unarchive', async (response) => {
-      const channel: string = response.channel;
-      await this.findOrCreateAndUpdate(channel, {isArchived: false})
+      await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_UNARCHIVE, response);
     });
     this.slackEvents.on('group_unarchive', async (response) => {
-      const channel: string = response.channel;
-      await this.findOrCreateAndUpdate(channel, {isArchived: false})
+      await this.queue.add(QUEUE_SLACK_EVENT_GROUP_UNARCHIVE, response);
     });
 
 
     // https://api.slack.com/events/scope_granted
     this.slackEvents.on('scope_granted', async (scopeGranted: ScopeGranted) => {
-      console.log(`Scope granted for team "${scopeGranted.team_id}"`);
+      this.logger.info(`Scope granted for team`, {team: scopeGranted.team_id})
 
       const teamRepository = this.connection.getRepository(Team);
       let team = await teamRepository.findOne(scopeGranted.team_id);
@@ -217,20 +216,32 @@ export class SlackTransport implements ITransport {
         } else if (response.type === InteractiveResponseTypeEnum.dialog_submission) {
           await this.handleInteractiveDialogSubmissionResponse(response as InteractiveDialogSubmissionResponse)
         } else {
-          // log
+          this.logger.error('Wrong interactive response type', {response});
         }
       } catch (e) {
-        logError(e);
+        this.logger.error('Interactive response handle', {error: e});
       }
     } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_LEFT) {
       const response = job.data as ChannelLeft
       await this.findOrCreateAndUpdate(response.channel, {isEnabled: false})
-
-      return true;
+    } else if (job.name === QUEUE_SLACK_EVENT_GROUP_LEFT) {
+      const channel: string = job.data.channel;
+      await this.findOrCreateAndUpdate(channel, {isEnabled: false})
+    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_ARCHIVE) {
+      const channel: string = job.data.channel;
+      await this.findOrCreateAndUpdate(channel, {isArchived: true})
+    } else if (job.name === QUEUE_SLACK_EVENT_GROUP_ARCHIVE) {
+      const channel: string = job.data.channel;
+      await this.findOrCreateAndUpdate(channel, {isArchived: true})
+    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_UNARCHIVE) {
+      const channel: string = job.data.channel;
+      await this.findOrCreateAndUpdate(channel, {isArchived: false})
+    } else if (job.name === QUEUE_SLACK_EVENT_GROUP_UNARCHIVE) {
+      const channel: string = job.data.channel;
+      await this.findOrCreateAndUpdate(channel, {isArchived: false})
     } else {
       return false
     }
-
 
     return true
   }
@@ -515,11 +526,10 @@ export class SlackTransport implements ITransport {
 
     try {
       await this.webClient.dialog.open(openDialogRequest)
-      //console.log(result)
-      //await this.rtm.send('dialog.open', openDialogRequest)
     } catch (e) {
-      logError(e.message)
-      logError(e.data.response_metadata.messages)
+      this.logger.error(e.message, {
+        error: e
+      })
       throw new Error(e.message)
     }
   }
@@ -602,11 +612,11 @@ export class SlackTransport implements ITransport {
         throw new Error('Standup should contains current user answers only');
       }
 
-      await this.updateStandUpAnswers(messages.map(m => m.text), user, standUp)
+      await this.updateStandUpAnswers(messages.map(m => m.text), user, standUp, msgDate)
     }
   }
 
-  async updateStandUpAnswers(messages: string[], user: IUser, standUp: IStandUp) {
+  async updateStandUpAnswers(messages: string[], user: IUser, standUp: IStandUp, updatedAt: Date) {
     await this.connection.transaction(async (em) => {
       const repo = em.getRepository(AnswerRequest);
 
@@ -619,7 +629,7 @@ export class SlackTransport implements ITransport {
           answer.standUp = standUp;
         }
         answer.answerMessage = messages[q.index]
-        answer.answerCreatedAt = new Date();
+        answer.answerCreatedAt = updatedAt;
 
         await repo.save(answer as any)
       }
@@ -672,7 +682,7 @@ export class SlackTransport implements ITransport {
       })*/
 
     const result = await this.webClient.chat.postMessage({
-      channel: user.im,
+      channel: user.id,
       text: "Hello, it's time to start your daily standup", // TODO  for *my_private_team*
       attachments: [buttonsAttachment]
     })
@@ -715,6 +725,6 @@ export class SlackTransport implements ITransport {
   }
 
   async sendMessage(user: User, message: string): Promise<any> {
-    return this.webClient.chat.postMessage({text: message, channel: user.im});
+    return this.webClient.chat.postMessage({text: message, channel: user.id});
   }
 }
