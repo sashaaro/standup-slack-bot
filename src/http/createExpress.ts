@@ -5,9 +5,19 @@ import {IAppConfig} from "../services/providers";
 import {QUEUE_SLACK_INTERACTIVE_RESPONSE} from "../slack/SlackTransport";
 import {Queue} from "bullmq";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
+import getRawBody from "raw-body";
 
-const consoleLoggerMiddleware = (req, res, next) => {
-  console.info(`${req.originalUrl} ${req.method}`);
+const consoleLoggerMiddleware = (req: express.Request, res: express.Response, next) => {
+  let msg = `${req.originalUrl} ${req.method}`;
+
+  if (req.originalUrl.startsWith('/api/slack') && req.method === "POST") {
+    getRawBody(req).then(buff => {
+      console.log(msg + ' ' + buff.toString());
+    })
+  } else {
+    console.log(msg);
+  }
+
   res.on('finish', () => {
     console.info(`${res.statusCode} ${res.statusMessage}; ${res.get('Content-Length') || 0}b sent`)
   })
