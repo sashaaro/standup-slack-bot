@@ -4,7 +4,6 @@ import {Connection} from "typeorm";
 import {RENDER_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
 import {IStandUpSettings, ITimezone} from "../../bot/models";
 import DashboardContext from "../../services/DashboardContext";
-import ChannelRepository from "../../repository/ChannelRepository";
 import {Channel} from "../../model/Channel";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
 

@@ -1,7 +1,7 @@
 import {Injector, Provider} from "injection-js";
 import {
   CONFIG_TOKEN, EXPRESS_DASHBOARD_TOKEN, EXPRESS_SLACK_API_TOKEN,
-  IQueueFactory, IWorkerFactory,
+  IQueueFactory, IWorkerFactory, LOGGER_TOKEN,
   QUEUE_FACTORY_TOKEN,
   REDIS_TOKEN,
   RENDER_TOKEN,
@@ -24,6 +24,7 @@ import dotenv from "dotenv";
 import {TestTransport} from "../../test/services/transport";
 import {Processor, Queue, Worker} from 'bullmq';
 import {commands} from "../command";
+import {createLogger, transports, format} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
 import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
 
@@ -57,7 +58,9 @@ const defaultConnectionOptions: ConnectionOptions = {
   username: "postgres",
   password: "postgres",
   database: "postgres",
-  synchronize: false
+  synchronize: false,
+  logger: "file",
+  logging: ["error", "warn"]
 }
 export const initFixtures = async (connection: Connection) => {
   await connection.query(fs.readFileSync('fixtures/timezone.sql').toString())
@@ -164,12 +167,32 @@ export const createProviders = (env = 'dev'): Provider[] => {
     {
       provide: EXPRESS_SLACK_API_TOKEN,
       useFactory: createSlackApiExpress,
-      deps: [CONFIG_TOKEN, Queue, SLACK_EVENTS]
+      deps: [CONFIG_TOKEN, Queue, SLACK_EVENTS, LOGGER_TOKEN]
     },
     {
       provide: EXPRESS_DASHBOARD_TOKEN,
       useFactory: dashboardExpressMiddleware,
       deps: [Injector]
+    },
+    {
+      provide: LOGGER_TOKEN,
+      useFactory: () => {
+        const logger = createLogger({
+        })
+
+        if (env !== 'prod') {
+          logger.add(new transports.Console({
+            format: format.simple()
+          }))
+        } else {
+          logger.add(new transports.File({
+            filename: 'var/log.log'
+          }))
+        }
+
+        return logger;
+      },
+      deps: []
     }
   ]
 

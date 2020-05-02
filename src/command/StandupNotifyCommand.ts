@@ -4,6 +4,7 @@ import StandUpBotService from "../bot/StandUpBotService";
 import StandUp from "../model/StandUp";
 import {Inject} from "injection-js";
 import {IWorkerFactory, WORKER_FACTORY_TOKEN} from "../services/token";
+import {Connection} from "typeorm";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
   command = 'standup:notify';
@@ -13,9 +14,12 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
     @Inject(SlackTransport) private slackTransport,
     @Inject(StandUpBotService) private standUpBotService,
+    private connection: Connection,
   ) {}
 
   async handler(args: yargs.Arguments<{}>) {
+    await this.connection.connect();
+
     await this.slackTransport.init();
     this.standUpBotService.start()
 

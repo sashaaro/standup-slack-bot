@@ -4,7 +4,7 @@ import {
   CONFIG_TOKEN,
   EXPRESS_DASHBOARD_TOKEN,
   EXPRESS_SLACK_API_TOKEN,
-  IWorkerFactory,
+  IWorkerFactory, REDIS_TOKEN,
   WORKER_FACTORY_TOKEN
 } from "../services/token";
 import {Connection} from "typeorm";
@@ -16,6 +16,7 @@ import http from "http";
 import Rollbar from "rollbar";
 import {IAppConfig} from "../services/providers";
 import {useStaticPublicFolder} from "../http/dashboardExpressMiddleware";
+import {SlackTransport} from "../slack/SlackTransport";
 
 export class ServerCommand implements yargs.CommandModule {
   command = 'server:run';
@@ -25,7 +26,8 @@ export class ServerCommand implements yargs.CommandModule {
     @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
     private injector: Injector,
     private connection: Connection,
-    @Inject(CONFIG_TOKEN) private config: IAppConfig
+    @Inject(CONFIG_TOKEN) private config: IAppConfig,
+    private slackTransport: SlackTransport
   ) {}
 
   async handler(args: yargs.Arguments<{}>) {
@@ -41,7 +43,9 @@ export class ServerCommand implements yargs.CommandModule {
 
     const expressApp = express()
 
+    this.slackTransport.init();
     expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
+
     useStaticPublicFolder(expressApp);
     expressApp.use('/', this.injector.get(EXPRESS_DASHBOARD_TOKEN));
 

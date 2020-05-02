@@ -9,7 +9,7 @@ const questions = [
 ]
 
 @EntityRepository(Question)
-export default class QuestionRepository extends Repository<Question>
+export class QuestionRepository extends Repository<Question>
 {
     async setupDefaultQuestionsToChannel(channel: Channel): Promise<Question[]> {
         // TODO transaction

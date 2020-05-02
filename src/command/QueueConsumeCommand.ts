@@ -1,7 +1,9 @@
 import * as yargs from "yargs";
 import {Inject} from "injection-js";
 import {SlackTransport} from "../slack/SlackTransport";
-import {IWorkerFactory, WORKER_FACTORY_TOKEN} from "../services/token";
+import {IWorkerFactory, LOGGER_TOKEN, REDIS_TOKEN, WORKER_FACTORY_TOKEN} from "../services/token";
+import {Logger} from "winston";
+import {Connection} from "typeorm";
 
 export class QueueConsumeCommand implements yargs.CommandModule {
   command = 'queue:consume';
@@ -9,24 +11,29 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
   constructor(
     @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
-    @Inject(SlackTransport) private slackTransport
+    @Inject(SlackTransport) private slackTransport,
+    @Inject(LOGGER_TOKEN) private logger: Logger,
+    private connection: Connection,
   ) {}
 
   async handler(args: yargs.Arguments<{}>) {
+    await this.connection.connect();
+
     const worker = this.workerFactory('main', async (job) => {
       await this.slackTransport.handelJob(job)
     });
 
     worker.on('process', (job) => {
-      console.log(`${job.id} has process!`);
+      this.logger.info(`job process ${job.id}`, {data: job.data})
     });
 
     worker.on('completed', (job) => {
-      console.log(`${job.id} has completed!`);
+      this.logger.info(`job complete ${job.id}`)
     });
 
     worker.on('failed', (job, err) => {
-      console.log(`${job.id} has failed with ${err.message}`);
+      console.log(err.stack)
+      this.logger.info(`job failed ${job.name} #${job.id}`, {error: err})
     });
   }
 }

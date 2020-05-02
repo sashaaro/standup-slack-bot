@@ -3,7 +3,7 @@ import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
 import {RENDER_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
 import {Channel} from "../../model/Channel";
-import QuestionRepository from "../../repository/QuestionRepository";
+import {QuestionRepository} from "../../repository/QuestionRepository";
 import {ITimezone} from "../../bot/models";
 import Timezone from "../../model/Timezone";
 import DashboardContext from "../../services/DashboardContext";

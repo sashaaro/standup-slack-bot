@@ -1,35 +1,44 @@
 import express from 'express'
 import 'express-async-errors';
-import { createMessageAdapter } from "@slack/interactive-messages";
-import {IAppConfig} from "../services/providers";
+import getRawBody from "raw-body";
+import {Logger} from "winston";
+import {createMessageAdapter} from "@slack/interactive-messages";
 import {QUEUE_SLACK_INTERACTIVE_RESPONSE} from "../slack/SlackTransport";
 import {Queue} from "bullmq";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
-import getRawBody from "raw-body";
+import {IAppConfig} from "../services/providers";
 
-const consoleLoggerMiddleware = (req: express.Request, res: express.Response, next) => {
-  let msg = `${req.originalUrl} ${req.method}`;
-
+export const createLoggerMiddleware = (logger: Logger) => (req: express.Request, res: express.Response, next) => {
   if (req.originalUrl.startsWith('/api/slack') && req.method === "POST") {
     getRawBody(req).then(buff => {
-      console.log(msg + ' ' + buff.toString());
+      logger.info('Request', {
+        url: req.originalUrl,
+        method: req.method,
+        body: buff.toString()
+      })
     })
   } else {
-    console.log(msg);
+    logger.info('Request', {
+      url: req.originalUrl,
+      method: req.method,
+    })
   }
 
   res.on('finish', () => {
-    console.info(`${res.statusCode} ${res.statusMessage}; ${res.get('Content-Length') || 0}b sent`)
+    logger.info(`Response ${res.get('Content-Length') || 0}b sent`, {
+      status: res.statusCode,
+      method: req.method,
+    })
   })
 
   next()
 }
 
-export const createSlackApiExpress = (config: IAppConfig, queue: Queue, slackEvents: SlackEventAdapter): express.Router => {
+export const createSlackApiExpress = (config: IAppConfig, queue: Queue, slackEvents: SlackEventAdapter, logger: Logger): express.Router => {
   const router = express.Router()
 
   if (config.debug) {
-    router.use(consoleLoggerMiddleware)
+    router.use(createLoggerMiddleware(logger))
   }
 
   const slackInteractions = createMessageAdapter(config.slackSigningSecret);

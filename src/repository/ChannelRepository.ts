@@ -1,9 +1,9 @@
 import {EntityRepository, Repository} from "typeorm";
 import {Channel} from "../model/Channel";
-import QuestionRepository from "./QuestionRepository";
+import {QuestionRepository} from "./QuestionRepository";
 
 @EntityRepository(Channel)
-class ChannelRepository extends Repository<Channel>
+export class ChannelRepository extends Repository<Channel>
 {
   async addNewChannel(channel: Channel): Promise<Channel> {
     channel = await this.save(channel);
@@ -14,5 +14,3 @@ class ChannelRepository extends Repository<Channel>
     ]})
   }
 }
-
-export default ChannelRepository;

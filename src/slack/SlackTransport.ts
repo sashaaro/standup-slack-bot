@@ -4,7 +4,7 @@ import {IMessage, IStandUp, ITransport, IUser} from "../bot/models";
 import User from "../model/User";
 import {MessageResponse} from "./model/MessageResponse";
 import {logError} from "../services/logError";
-import ChannelRepository from "../repository/ChannelRepository";
+import {ChannelRepository} from "../repository/ChannelRepository";
 import {Channel} from "../model/Channel";
 import {Connection, DeepPartial} from "typeorm";
 import {ChannelLeft, MemberJoinedChannel, SlackChannel, SlackConversation} from "./model/SlackChannel";
@@ -17,7 +17,7 @@ import {
   SlackStandUpProvider
 } from "./SlackStandUpProvider";
 import {SlackTeam} from "./model/SlackTeam";
-import QuestionRepository from "../repository/QuestionRepository";
+import {QuestionRepository} from "../repository/QuestionRepository";
 import {
   InteractiveDialogSubmissionResponse,
   InteractiveResponse,
@@ -45,6 +45,7 @@ const QUEUE_SLACK_EVENT_MEMBER_LEFT_CHANNEL = QUEUE_SLACK_EVENT_PREFIX + '_membe
 const QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL = QUEUE_SLACK_EVENT_PREFIX + '_member-joined-channel';
 const QUEUE_SLACK_EVENT_CHANNEL_JOINED = QUEUE_SLACK_EVENT_PREFIX + '_channel-joined';
 const QUEUE_SLACK_EVENT_GROUP_JOINED = QUEUE_SLACK_EVENT_PREFIX + '_group-joined';
+const QUEUE_SLACK_EVENT_CHANNEL_LEFT = QUEUE_SLACK_EVENT_PREFIX + '_channel-left';
 export const QUEUE_SLACK_INTERACTIVE_RESPONSE = 'slack-interactive-response';
 export const QUEUE_SLACK_SYNC_DATA = 'slack_sync-data';
 
@@ -66,37 +67,7 @@ export class SlackTransport implements ITransport {
   ) {
   }
 
-  async init(): Promise<any> {
-    /*const botMessageExample =  { type: 'message',
-      subtype: 'bot_message',
-      text: 'Hello, it\'s time to start your daily standup',
-      suppress_notification: false,
-      username: 'Standup Bot',
-      bot_id: 'B6GQCM4P5',
-      team: 'T6GQB7CSF',
-      attachments:
-        [ { callback_id: 'standup_invite',
-          text: 'Choose start asking in chat or open dialog window',
-          id: 1,
-          actions: [Array],
-          fallback: 'Choose start asking in chat or open dialog window' } ],
-      channel: 'D6HVDGXSB',
-      event_ts: '1556085305.003000',
-      ts: '1556085305.003000' }*/
-
-    /*const userMessageExample = {
-      client_msg_id: '9946389c-f9fb-491d-b717-3f2b82baf810',
-      suppress_notification: false,
-      type: 'message',
-      text: 'фывафывафыв!!!!!!!!!!!!!!!',
-      user: 'U6GSG49R8',
-      team: 'T6GQB7CSF',
-      channel: 'D6HVDGXSB',
-      event_ts: '1556085558.003300',
-      ts: '1556085558.003300'
-    }*/
-
-
+  init(): void {
     this.slackEvents.on('message', async (messageResponse: MessageResponse) => {
       if (messageResponse.type !== "message" || !messageResponse.client_msg_id) {
         // log?!
@@ -129,7 +100,7 @@ export class SlackTransport implements ITransport {
     });
 
     this.slackEvents.on('channel_left', async (response: ChannelLeft) => {
-      await this.findOrCreateAndUpdate(response.channel, {isEnabled: false})
+      await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_LEFT, response);
     });
     this.slackEvents.on('group_left', async (response) => {
       console.log('group_left', response);
@@ -204,7 +175,6 @@ export class SlackTransport implements ITransport {
       this.message$.next(message)
     } else if (job.name === QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL) {
       const response = job.data as MemberJoinedChannel
-      console.log('member_joined_channel', response)
       await this.joinSlackChannel(response.channel);
     } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_JOINED) {
       const channel = job.data.channel as SlackChannel;
@@ -237,6 +207,11 @@ export class SlackTransport implements ITransport {
       } catch (e) {
         logError(e);
       }
+    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_LEFT) {
+      const response = job.data as ChannelLeft
+      await this.findOrCreateAndUpdate(response.channel, {isEnabled: false})
+
+      return true;
     } else {
       return false
     }
@@ -281,10 +256,12 @@ export class SlackTransport implements ITransport {
       Object.assign(channel, data);
     }
 
+    const channelRepository = this.connection.getCustomRepository(ChannelRepository);
+
     if (isNew) {
-      await this.connection.getCustomRepository(ChannelRepository).addNewChannel(channel)
+      await channelRepository.addNewChannel(channel)
     } else {
-      await this.connection.getCustomRepository(ChannelRepository).save(channel);
+      await channelRepository.save(channel);
     }
 
     await this.webClient.chat.postMessage({

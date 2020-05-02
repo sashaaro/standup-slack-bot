@@ -1,6 +1,6 @@
 import {Channel} from "../src/model/Channel";
 import {clearDatabase, testConnection, testInjector} from "./main";
-import ChannelRepository from "../src/repository/ChannelRepository";
+import {ChannelRepository} from "../src/repository/ChannelRepository";
 import assert from "assert";
 import Timezone from "../src/model/Timezone";
 import StandUpBotService from "../src/bot/StandUpBotService";
