@@ -64,6 +64,8 @@ export default class StandUpBotService {
         .subscribe(async ({user, date}) => {
           const standUp = await this.standUpProvider.findByUser(user, date);
 
+          this.logger.debug('Agree start triggered', {user: user.id, date, standUpId: standUp?.id})
+
           if (standUp) {
             await this.askFirstQuestion(user, standUp);
           } else {
@@ -88,7 +90,7 @@ export default class StandUpBotService {
       const standUp = this.standUpProvider.createStandUp();
       standUp.startAt = date;
       standUp.team = team;
-      standUp.endAt = new Date(standUp.endAt.getTime() + team.duration * 60 * 1000);
+      standUp.endAt = new Date(standUp.startAt.getTime() + team.duration * 60 * 1000);
 
       await this.standUpProvider.insertStandUp(standUp);
       standUps.push(standUp);
@@ -231,12 +233,11 @@ export default class StandUpBotService {
   private async askFirstQuestion(user: IUser, standUp: IStandUp)
   {
     const question = await this.standUpProvider.findOneQuestion(standUp.team, 0);
-    if (!question) {
+    if (question) {
+      await this.askQuestion(user, question, standUp)
+    } else {
       this.logger.warn(`No questions in standup #${standUp.id}`)
-      return;
     }
-    await this.askQuestion(user, question, standUp)
-
   }
 
   /**
@@ -272,6 +273,7 @@ export default class StandUpBotService {
   }
 
   async send(user: IUser, text: string): Promise<void> {
+    this.logger.info(`Standup bot send to #${user.id}: "${text}"`);
     return await this.transport.sendMessage(user, text)
   }
 

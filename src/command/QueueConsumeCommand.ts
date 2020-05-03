@@ -39,16 +39,16 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     });
 
     worker.on('process', (job) => {
-      this.logger.info(`job process ${job.id}`, {data: job.data})
+      this.logger.info(`job process ${job.name} #${job.id}`, {data: job.data})
     });
 
     worker.on('completed', (job) => {
-      this.logger.info(`job complete ${job.id}`)
+      this.logger.info(`job complete ${job.name} #${job.id}`)
     });
 
     worker.on('failed', (job, err) => {
-      console.log(err.stack)
       this.logger.info(`job failed ${job.name} #${job.id}`, {error: err})
+      this.logger.debug(`job failed ${job.name} #${job.id}`, err.stack)
     });
   }
 }

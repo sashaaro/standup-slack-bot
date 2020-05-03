@@ -143,11 +143,11 @@ export class SlackTransport implements ITransport {
       const messageResponse = job.data as MessageResponse;
 
       // be sure it is direct answerMessage to bot
-      if (!await userRepository.findOne({where: {im: messageResponse.channel}})) {
+      /*if (!await userRepository.findOne({where: {im: messageResponse.channel}})) {
         this.logger.error(`User channel ${messageResponse.channel} is not im`);
         // TODO try update from api
         return true
-      }
+      }*/
 
       const eventAt = new Date(parseInt(messageResponse.event_ts) * 1000)
 
@@ -198,6 +198,8 @@ export class SlackTransport implements ITransport {
       await this.syncData(team)
     } else if (job.name === QUEUE_SLACK_INTERACTIVE_RESPONSE) {
       const response = job.data;
+
+      this.logger.debug('Interactive response handling', {response});
       try {
         if (response.type === InteractiveResponseTypeEnum.interactive_message) {
           await this.handleInteractiveResponse(response as InteractiveResponse)
@@ -439,7 +441,7 @@ export class SlackTransport implements ITransport {
   }
 
   async handleInteractiveAnswers(response: InteractiveResponse) {
-    const user = await this.connection.getRepository(User).findOne(response.user);
+    const user = await this.connection.getRepository(User).findOne(response.user.id);
 
     if (!response.callback_id.startsWith(CALLBACK_PREFIX_STANDUP_INVITE)) {
       throw new Error('Wrong response');
@@ -466,7 +468,7 @@ export class SlackTransport implements ITransport {
       throw new Error(`Standup #${standUpId} is not found`)
     }
 
-    const inProgress = isInProgress(standUp);
+    const inProgress = isInProgress(standUp); // has not standUp.endAt?!
 
     if (!inProgress) { // in progress only..
       await this.sendMessage(user, standUpFinishedAlreadyMsg);
@@ -475,7 +477,7 @@ export class SlackTransport implements ITransport {
 
     const selectedActions = response.actions.map(a => a.value);
 
-    const msgDate = new Date(parseInt(response.message_ts) * 1000);
+    const msgDate = new Date(parseInt(response.action_ts) * 1000);
 
     if (selectedActions.includes(ACTION_START)) {
       this.agreeToStartSubject.next({user, date: msgDate});

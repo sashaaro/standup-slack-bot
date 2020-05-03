@@ -1,19 +1,46 @@
 version: "3.7"
 
 volumes:
-  postgres_data:
+  postgres_data: ~
+  ui_sock: ~
+  slack-api_sock: ~
 
 services:
-  server:
+  nginx:
+    image: nginx:1.18-alpine
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ui_sock:/var/run/standup-slack-bot-ui
+      - slack-api_sock:var/run/standup-slack-bot-api
+
+  ui:
     build: &service_app
       dockerfile: deploy/Dockerfile
       context: .
-    command: ["server:run", "--env=prod"]
+    command: ["server:run ui", "--env=prod"]
     user: 1000:1000
-    ports:
-      - "3000:3000"
     depends_on:
       - postgres
+    volumes:
+      - ui_sock:/var/run/standup-slack-bot-ui
+
+  slack-api:
+    <<: *service_app
+    command: ["server:run slack-api", "--env=prod"]
+    volumes:
+      - slack-api_sock:var/run/standup-slack-bot-api
+#  server:
+#    build: &service_app
+#      dockerfile: deploy/Dockerfile
+#      context: .
+#    command: ["server:run", "--env=prod"]
+#    user: 1000:1000
+#    ports:
+#      - "3000:3000"
+#    depends_on:
+#      - postgres
 
   standup-notifier:
     <<: *service_app

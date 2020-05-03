@@ -76,10 +76,7 @@ const scopes = [
   'im:read',
   'im:write',
   'im:history',
-  'pins:write',
-  'reactions:read',
-  //'reactions:write',
-]; //, 'im:history'
+];
 
 export const dashboardExpressMiddleware = (injector: Injector): express.Router => {
   const router = express.Router()
