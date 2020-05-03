@@ -248,3 +248,7 @@ code {
     text-align: center;
     margin-top: 50px;
 }
+
+.field label .error {
+    float: right;
+}

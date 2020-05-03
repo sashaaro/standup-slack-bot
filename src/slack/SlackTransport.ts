@@ -480,7 +480,7 @@ export class SlackTransport implements ITransport {
     const msgDate = new Date(parseInt(response.action_ts) * 1000);
 
     if (selectedActions.includes(ACTION_START)) {
-      this.agreeToStartSubject.next({user, date: msgDate});
+      this.agreeToStartSubject.next({user, date: msgDate}); // TODO local time should be same from slack sever, have shift then cant find standup, consider shift in bot service
       return
     } else if (!selectedActions.includes(ACTION_OPEN_DIALOG)) {
       throw new Error("No corresponded actions")

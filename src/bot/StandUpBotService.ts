@@ -1,5 +1,5 @@
 import { Injectable, Inject, InjectionToken } from 'injection-js';
-import {interval, Subject} from "rxjs";
+import {Subject, timer} from "rxjs";
 import {delay, map, takeUntil} from "rxjs/operators";
 import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITransport, IUser} from "./models";
 import {LOGGER_TOKEN} from "../services/token";
@@ -8,10 +8,8 @@ import {Logger} from "winston";
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
 
-
 export const STAND_UP_BOT_STAND_UP_PROVIDER = new InjectionToken<IStandUpProvider>('stand_up_provider');
 export const STAND_UP_BOT_TRANSPORT = new InjectionToken<ITransport>('transport');
-
 
 class InProgressStandUpNotFoundError extends Error {
   answerMessage: IMessage
@@ -70,6 +68,7 @@ export default class StandUpBotService {
             await this.askFirstQuestion(user, standUp);
           } else {
             // you standup not started yet
+            this.logger.warn("Standup is not started yet", {user: user.id, date})
           }
         })
     }
@@ -114,15 +113,20 @@ export default class StandUpBotService {
       }
       return
     }
-    const nextQuestion = await this.standUpProvider.findOneQuestion(repliedAnswer.standUp.team, repliedAnswer.question.index + 1);
+    const nextQuestionIndex = repliedAnswer.question.index + 1
+    const nextQuestion = await this.standUpProvider.findOneQuestion(repliedAnswer.standUp.team, nextQuestionIndex);
 
+    this.logger.debug('Next question: ', {
+      nextQuestion,
+      nextQuestionIndex,
+      teamId: repliedAnswer.standUp.team?.id,
+    });
     if (nextQuestion) {
       await this.askQuestion(repliedAnswer.user, nextQuestion, repliedAnswer.standUp);
     } else {
       await this.afterStandUp(repliedAnswer.user, repliedAnswer.standUp);
     }
   }
-
 
   async answersAndFinish(messages: IMessage[], standUp?: IStandUp) {
     if (messages.length === 0) {
@@ -197,12 +201,11 @@ export default class StandUpBotService {
 
     this.logger.debug('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop')
 
-    interval(intervalMs)
+    timer(millisecondsDelay, intervalMs)
       .pipe(
-        delay(millisecondsDelay),
         takeUntil(this.end$),
         map(_ => new Date()),
-        delay(5 * 1000)  // 5 seconds delay
+        delay(5 * 1000)
       ).subscribe(async (date: Date) => {
         await this.startDailyMeetUpByDate(date)
         await this.checkStandUpEndByDate(date)

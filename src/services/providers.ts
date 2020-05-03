@@ -59,8 +59,7 @@ const defaultConnectionOptions: ConnectionOptions = {
   password: "postgres",
   database: "postgres",
   synchronize: false,
-  logger: "file",
-  logging: ["error", "warn"]
+  logging: ["warn", "error"]
 }
 export const initFixtures = async (connection: Connection) => {
   await connection.query(fs.readFileSync('fixtures/timezone.sql').toString())
@@ -118,8 +117,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useFactory: (config: IAppConfig) => getConnectionManager().create({
         ...defaultConnectionOptions,
         ...config.db,
-        entities,
-        logging: config.debug,
+        entities
       }),
       deps: [CONFIG_TOKEN]
     },

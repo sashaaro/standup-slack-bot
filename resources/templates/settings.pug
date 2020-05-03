@@ -11,58 +11,64 @@ block authorized_content
                 span= "/kick "
                 a= "@daily_standup"
 
-        .two.column.large.screen.only.row
+        form.ui.form(method='post').two.column.large.screen.only.row
             .column
                 h3.ui.header= "Stan-up settings"
-                form.ui.form(method='post')
-                    // TODO .field
-                        label= 'Days'
-                        div
-                            each weekDay in weekDays
-                                .ui.checkbox
-                                    input(type="checkbox")
-                                    label= weekDay
-                    .field
-                        label= 'Locale timezone'
-                        select.dropdown.search.form-control(name="timezone")
-                            each timezone, index in timezones
-                                - var selected = channel.timezone && channel.timezone.id == timezone.id
-                                option(value=timezone.id, selected=selected)= timezone.friendlyLabel
-                    .field
-                        label= 'Start meeting (locale time)'
-                        input.form-control(name="start", type="time", step="60", value=channel.start)
-                    .field
-                        label= 'Duration'
-                        input.form-control(name="duration", type="number", step="1", value= channel.duration)
-                    button.ui.button.fluid.positive(type="submit")
-                        i.save.icon
-                        | Save settings
+                // TODO .field
+                    label= 'Days'
+                    div
+                        each weekDay in weekDays
+                            .ui.checkbox
+                                input(type="checkbox")
+                                label= weekDay
+                .field(class=errors.timezone && errors.timezone.errors ? 'error' : '')
+                    label= 'Locale timezone'
+                    select.dropdown.search.form-control(name="timezone")
+                        each timezone, index in timezones
+                            - var selected = formData.timezone == timezone.id
+                            option(value=timezone.id, selected=selected)= timezone.friendlyLabel
+                .field(class=errors.start && errors.start.errors ? 'error' : '')
+                    label= 'Start meeting (locale time)'
+                    input.form-control(name="start", type="time", step="60", value=formData.start)
+                .field(class=errors.duration && errors.duration.errors ? 'error' : '')
+                    label= 'Duration'
+                    input.form-control(name="duration", type="number", step="1", value= formData.duration)
+                button.ui.button.fluid.positive(type="submit")
+                    i.save.icon
+                    | Save settings
             .column
                 h3.ui.header= "Questions"
-                form#question.ui.form(method='post')
+                #question
                     draggable(:list="questions", v-bind="dragOptions", handle=".icon.movable")
-                        .field(v-for="(question, index) in questions")
-                            label= "#{{ index + 1 }}"
+                        .field(v-for="(question, index) in questions", v-bind:class="{ error: errors[index] && errors[index].children && errors[index].children.text.errors }")
+                            label
+                                span= "#{{ index + 1 }}"
+                                span.error= "{{ errors[index] && errors[index].children ? errors[index].children.text.errors[0] : '' }}"
                             .movable-input
                                 .ui.icon.input
-                                    input.form-control(v-bind:name="'questions[' + index + ']'", type="text", v-model="question.text", required, minlength=2)
+                                    input(type="hidden", v-bind:name="'questions[' + index + '][id]'", v-model="question.id")
+                                    input.form-control(type="text", v-bind:name="'questions[' + index + '][text]'", v-model="question.text", required, minlength=2)
                                     i.inverted.circular.trash.link.icon(v-on:click="remote(question)")
                                 i(class="icon expand arrows alternate movable")
                         div
-                    .ui.buttons.two
-                        a.ui.button.blue(href="#", v-on:click="add")
-                            i.add.icon
-                            | Add question
-                        button.ui.button.positive(type="submit", v-bind:disabled="questions.length === 0")
-                            i.save.icon
-                            | Save questions
+                .ui.buttons.two
+                    a.ui.button.blue(href="#", v-on:click="add")
+                        i.add.icon
+                        | Add question
+                    button.ui.button.positive(type="submit", v-bind:disabled="questions.length === 0")
+                        i.save.icon
+                        | Save questions
+                if errors.questions && errors.questions.errors
+                    each k, err in errors.questions.errors
+                        div= "{{ err }}"
 
 block append scripts
     script.
         var vm = new Vue({
             el: '#question',
             data: {
-                questions: !{JSON.stringify(channel.questions)},
+                questions: !{JSON.stringify(formData.questions)},
+                errors: !{JSON.stringify(errors.questions ? errors.questions.children : {})},
                 dragOptions: {
                     animation: 200,
                 }
