@@ -14,16 +14,16 @@ body {
 }
 
 .movable {
-    cursor: move;
-}
-
-.movable-input {
-    display: flex;
-    align-items: center;
+    cursor: move!important;
 }
 
 .movable-input .movable {
     margin-left: 5px;
+}
+
+.defined-responses > div {
+    padding-top: 20px;
+    padding-left: 50px;
 }
 
 .logo {

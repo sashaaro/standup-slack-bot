@@ -40,11 +40,13 @@ block content
 
 block append scripts
     script.
-      $('#selectChannel').on('change', function () {
-        if (this.value) {
-          $(this).closest('form').submit();
-        }
-      })
+      $('#selectChannel')
+        .dropdown({fullTextSearch: true})
+        .on('change', function () {
+          if (this.value) {
+            $(this).closest('form').submit();
+          }
+        })
       $('#sync-link').click(function () {
         this.classList.add('active')
       })
