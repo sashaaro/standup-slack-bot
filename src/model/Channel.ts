@@ -41,7 +41,8 @@ export class Channel implements ITeam {
   users: Array<User>
 
   @OneToMany(type => Question, question => question.channel, {
-    eager: true
+    eager: true,
+    cascade: true
   })
   questions: Question[];
 

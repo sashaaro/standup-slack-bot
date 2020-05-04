@@ -1,26 +1,43 @@
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
-import {RENDER_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
+import {RENDER_TOKEN} from "../../services/token";
 import {Channel} from "../../model/Channel";
-import {ITimezone} from "../../bot/models";
 import Timezone from "../../model/Timezone";
 import DashboardContext from "../../services/DashboardContext";
 import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
-import {plainToClassFromExist, Type} from "class-transformer";
-import {ValidateNested, IsNotEmpty, validate, MinLength, MaxLength, IsInt, Min, Max, ValidationError} from "class-validator";
+import {plainToClassFromExist, Transform, Type} from "class-transformer";
+import {
+  ValidateNested,
+  IsNotEmpty,
+  validate,
+  MinLength,
+  MaxLength,
+  IsInt,
+  Min,
+  Max,
+  ValidationError,
+  IsMilitaryTime,
+} from "class-validator";
+import Question from "../../model/Question";
+
+const transformStringToInt = (v) => v ? parseInt(v) || null : null
 
 class QuestionFormDTO {
-  @IsNotEmpty()
+  @Transform(transformStringToInt)
   id: number
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
   text: string
 }
+
 class SettingsFormDTO {
   @IsNotEmpty()
+  @Transform(transformStringToInt)
+  @IsInt()
   timezone: number
+  @Transform(transformStringToInt)
   @IsNotEmpty()
   @IsInt()
   @Min(2)
@@ -31,6 +48,7 @@ class SettingsFormDTO {
   @ValidateNested()
   questions: QuestionFormDTO[]
   @IsNotEmpty()
+  @IsMilitaryTime({message: 'must be a valid in the format HH:MM'})
   start: string
 }
 
@@ -54,7 +72,6 @@ const transformViewErrors = (errors: ValidationError[]): { [key: string]: ViewEr
 export class SettingsAction implements IHttpAction {
   constructor(
     private connection: Connection,
-    @Inject(TIMEZONES_TOKEN) private timezoneList: Promise<ITimezone[]>,
     @Inject(RENDER_TOKEN) private render: Function
   ) {
   }
@@ -71,7 +88,7 @@ export class SettingsAction implements IHttpAction {
       throw new ResourceNotFoundError('Selected channel is not found');
     }
 
-    const timezones = await this.timezoneList
+    const timezones = await this.connection.getRepository(Timezone).find();
     const formData = new SettingsFormDTO();
 
 
@@ -83,15 +100,14 @@ export class SettingsAction implements IHttpAction {
 
       const errors = await validate(formData)
 
-      if (errors.length === 0 && false) {
-
-        const timezone = timezones.filter((t: any) => t.id.toString() === formData.timezone).pop() as Timezone;
-        if (timezone) {
-          channel.timezone = timezone;
-        }
-
+      if (errors.length === 0) {
+        channel.timezone = await this.connection.getRepository(Timezone).findOne(formData.timezone) || channel.timezone;
+        channel.start = formData.start
         channel.duration = formData.duration
-        await channelRepository.save(context.channel)
+        channel.questions = formData.questions.map(q => this.connection.manager.create(Question, q))
+        channel.questions.map((q, index) => q.index = index);
+
+        await channelRepository.save(channel)
 
         res.redirect('/settings');
         return;
@@ -107,8 +123,6 @@ export class SettingsAction implements IHttpAction {
     const weekDays = [
       'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
     ];
-
-    console.log(viewErrors)
 
     res.send(this.render('settings', {
       timezones,

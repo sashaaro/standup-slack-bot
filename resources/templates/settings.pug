@@ -11,7 +11,7 @@ block authorized_content
                 span= "/kick "
                 a= "@daily_standup"
 
-        form.ui.form(method='post').two.column.large.screen.only.row
+        form.ui.form(method='post').two.column.large.screen.only.row#form
             .column
                 h3.ui.header= "Stan-up settings"
                 // TODO .field
@@ -22,42 +22,44 @@ block authorized_content
                                 input(type="checkbox")
                                 label= weekDay
                 .field(class=errors.timezone && errors.timezone.errors ? 'error' : '')
-                    label= 'Locale timezone'
+                    label
+                        span= 'Locale timezone'
+                        span.error= errors.timezone && errors.timezone.errors ? errors.timezone.errors[0] : ''
                     select.dropdown.search.form-control(name="timezone")
                         each timezone, index in timezones
                             - var selected = formData.timezone == timezone.id
                             option(value=timezone.id, selected=selected)= timezone.friendlyLabel
                 .field(class=errors.start && errors.start.errors ? 'error' : '')
-                    label= 'Start meeting (locale time)'
+                    label
+                        span= 'Start meeting (locale time)'
+                        span.error= errors.start && errors.start.errors ? errors.start.errors[0] : ''
                     input.form-control(name="start", type="time", step="60", value=formData.start)
                 .field(class=errors.duration && errors.duration.errors ? 'error' : '')
-                    label= 'Duration'
+                    label
+                        span= 'Duration'
+                        span.error= errors.duration && errors.duration.errors ? errors.duration.errors[0] : ''
                     input.form-control(name="duration", type="number", step="1", value= formData.duration)
-                button.ui.button.fluid.positive(type="submit")
+                button.ui.button.fluid.positive(type="submit", v-bind:disabled="questions.length === 0")
                     i.save.icon
                     | Save settings
             .column
                 h3.ui.header= "Questions"
-                #question
-                    draggable(:list="questions", v-bind="dragOptions", handle=".icon.movable")
-                        .field(v-for="(question, index) in questions", v-bind:class="{ error: errors[index] && errors[index].children && errors[index].children.text.errors }")
-                            label
-                                span= "#{{ index + 1 }}"
-                                span.error= "{{ errors[index] && errors[index].children ? errors[index].children.text.errors[0] : '' }}"
-                            .movable-input
-                                .ui.icon.input
-                                    input(type="hidden", v-bind:name="'questions[' + index + '][id]'", v-model="question.id")
-                                    input.form-control(type="text", v-bind:name="'questions[' + index + '][text]'", v-model="question.text", required, minlength=2)
-                                    i.inverted.circular.trash.link.icon(v-on:click="remote(question)")
-                                i(class="icon expand arrows alternate movable")
-                        div
+                draggable(:list="questions", v-bind="dragOptions", handle=".icon.movable")
+                    .field(v-for="(question, index) in questions", v-bind:class="{ error: errors[index] && errors[index].children && errors[index].children.text.errors }")
+                        label
+                            span= "#{{ index + 1 }}"
+                            span.error= "{{ errors[index] && errors[index].children ? errors[index].children.text.errors[0] : '' }}"
+                        .movable-input
+                            .ui.icon.input
+                                input(type="hidden", v-if="question.id", v-bind:name="'questions[' + index + '][id]'", v-model="question.id")
+                                input.form-control(type="text", v-bind:name="'questions[' + index + '][text]'", v-model="question.text", required, minlength=2)
+                                i.inverted.circular.trash.link.icon(v-on:click="remote(question)")
+                            i(class="icon expand arrows alternate movable")
+                    div
                 .ui.buttons.two
                     a.ui.button.blue(href="#", v-on:click="add")
                         i.add.icon
                         | Add question
-                    button.ui.button.positive(type="submit", v-bind:disabled="questions.length === 0")
-                        i.save.icon
-                        | Save questions
                 if errors.questions && errors.questions.errors
                     each k, err in errors.questions.errors
                         div= "{{ err }}"
@@ -65,7 +67,7 @@ block authorized_content
 block append scripts
     script.
         var vm = new Vue({
-            el: '#question',
+            el: '#form',
             data: {
                 questions: !{JSON.stringify(formData.questions)},
                 errors: !{JSON.stringify(errors.questions ? errors.questions.children : {})},
@@ -75,7 +77,8 @@ block append scripts
             },
             created: function () {},
             methods: {
-                add() {
+                add(e) {
+                    e.preventDefault();
                     this.questions.push({text: ""})
                 },
                 remote(question) {

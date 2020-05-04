@@ -1,8 +1,8 @@
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
-import {RENDER_TOKEN, TIMEZONES_TOKEN} from "../../services/token";
-import {IStandUpSettings, ITimezone} from "../../bot/models";
+import {RENDER_TOKEN} from "../../services/token";
+import {IStandUpSettings} from "../../bot/models";
 import DashboardContext from "../../services/DashboardContext";
 import {Channel} from "../../model/Channel";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
@@ -11,7 +11,6 @@ import {AccessDenyError} from "../dashboardExpressMiddleware";
 export class ChannelsAction implements IHttpAction {
   constructor(
     private connection: Connection,
-    @Inject(TIMEZONES_TOKEN) private timezoneList: Promise<ITimezone[]>,
     @Inject(RENDER_TOKEN) private render: Function
   ) {
   }
@@ -33,7 +32,6 @@ export class ChannelsAction implements IHttpAction {
     }
 
     res.send(this.render('channels', {
-      timezoneList: await this.timezoneList,
       activeMenu: 'channels'
     }));
   }

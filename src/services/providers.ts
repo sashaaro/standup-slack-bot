@@ -5,11 +5,9 @@ import {
   QUEUE_FACTORY_TOKEN,
   REDIS_TOKEN,
   RENDER_TOKEN,
-  TIMEZONES_TOKEN,
   WORKER_FACTORY_TOKEN
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
-import Timezone from "../model/Timezone";
 import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
 import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
 import actions from "../http/controller";
@@ -24,7 +22,7 @@ import dotenv from "dotenv";
 import {TestTransport} from "../../test/services/transport";
 import {Processor, Queue, Worker} from 'bullmq';
 import {commands} from "../command";
-import {createLogger, transports, format, LeveledLogMethod} from "winston";
+import {createLogger, transports, format} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
 import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
 
@@ -104,13 +102,6 @@ export const createProviders = (env = 'dev'): Provider[] => {
         return renderEngine.render.bind(renderEngine)
       },
       deps: [RenderEngine]
-    },
-    {
-      provide: TIMEZONES_TOKEN,
-      useFactory: (connection: Connection) => {
-        return connection.getRepository(Timezone).find()
-      },
-      deps: [Connection],
     },
     {
       provide: Connection,
