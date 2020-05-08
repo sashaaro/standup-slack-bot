@@ -65,6 +65,6 @@ export class ServerCommand implements yargs.CommandModule {
       ca: fs.readFileSync(ca),
     } : {}*/
     const port = 3000///ssl ? 443 : 3000
-    serverCreator.createServer(options, expressApp).listen(port);
+    serverCreator.createServer(options, expressApp).listen(port)
   }
 }

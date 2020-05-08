@@ -50,6 +50,7 @@ const defaultConnectionOptions: ConnectionOptions = {
   host: "postgres",
   port: 5432,
   migrationsTransactionMode: "all",
+  migrationsRun: false,
   migrations: fs.readdirSync(migrationDir)
     .filter(f => f.endsWith('.js'))
     .map(f => migrationDir + '/' + f),
@@ -174,7 +175,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
 
         if (env !== 'prod') {
           logger.add(new transports.Console({
-            format: format.simple()
+            format: format.json()
           }))
           logger.level = 'debug'
         } else {

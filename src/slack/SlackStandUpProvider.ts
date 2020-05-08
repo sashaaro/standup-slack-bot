@@ -74,6 +74,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
     return qb.innerJoinAndSelect('standup.channel', 'channel')
       .innerJoinAndSelect('channel.users', 'users') // TODO remove / reanme channelUsers
       .innerJoinAndSelect('channel.questions', 'questions')
+      .leftJoinAndSelect('questions.predefinedAnswers', 'predefinedAnswers')
       .leftJoinAndSelect('standup.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'answerAuthor')
   }

@@ -22,8 +22,10 @@ export default class DashboardContext {
 
   async init() {
     const authedUser = this.session.user as IAuthUser;
+    const userRepository = this.connection.getRepository(User);
+    this.user = await userRepository.findOne('UJZM51SN8');
+    this.session.channel = 'CK222FUKH'
     if (authedUser) {
-      const userRepository = this.connection.getRepository(User);
       this.user = await userRepository.findOne(authedUser.id);
     }
     if (this.user && this.session.channel) {
@@ -32,6 +34,7 @@ export default class DashboardContext {
         .createQueryBuilder('ch')
         .leftJoinAndSelect('ch.timezone', 'timezone')
         .leftJoinAndSelect('ch.questions', 'questions')
+        .leftJoinAndSelect('questions.predefinedAnswers', 'predefinedAnswers')
         .where({id: this.session.channel})
         .andWhere('ch.isArchived = false')
         .andWhere('ch.isEnabled = true')

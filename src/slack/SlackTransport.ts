@@ -209,7 +209,7 @@ export class SlackTransport implements ITransport {
           this.logger.error('Wrong interactive response type', {response});
         }
       } catch (e) {
-        this.logger.error('Interactive response handle', {error: e});
+        this.logger.error('Interactive response handle', {error: e.message, stack: e.stack});
       }
     } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_LEFT) {
       const response = job.data as ChannelLeft
@@ -501,12 +501,28 @@ export class SlackTransport implements ITransport {
     }
 
     for (const question of standUp.team.questions) {
-      const element: any = {
-        type: "textarea", // https://api.slack.com/dialogs#textarea_elements
-        label: question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
-        placeholder: question.text,
+      let element: any
+      element = {
         name: question.index,
+        label: question.text.length > 24 ? question.text.slice(0, 21) + '...' : question.text,
       }
+      if (question.predefinedAnswers.length > 1) {
+        element = {
+          ...element,
+          type: "select",
+          options: question.predefinedAnswers.map((pa) => ({
+            label: pa.text,
+            value: pa.id
+          })),
+        };
+      } else {
+        element = {
+          ...element,
+          type: "textarea", // https://api.slack.com/dialogs#textarea_elements
+          placeholder: question.text,
+        }
+      }
+
 
       const answer = answers[question.index];
       if (answer) {
@@ -516,6 +532,7 @@ export class SlackTransport implements ITransport {
       openDialogRequest.dialog.elements.push(element);
     }
 
+    this.logger.debug('open dialog', {dialog: openDialogRequest})
     try {
       await this.webClient.dialog.open(openDialogRequest)
     } catch (e) {

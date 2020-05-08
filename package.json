@@ -2,10 +2,9 @@
   "name": "standup-slack-bot",
   "version": "0.0.1",
   "description": "Standup slack bot",
-  "main": "index.js",
   "scripts": {
     "test": "jest",
-    "start": "DEBUG=@slack/interactive-messages:* concurrently --kill-others \"tsc -w\" \"nodemon dist/src/cli.js server:run\""
+    "start": "concurrently --kill-others \"tsc -w\" \"nodemon dist/src/cli.js server:run\""
   },
   "author": "",
   "license": "ISC",

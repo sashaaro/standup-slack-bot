@@ -1,4 +1,4 @@
-import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, BeforeUpdate} from "typeorm";
 import Question from "./Question";
 
 @Entity()
@@ -19,8 +19,13 @@ class PredefinedAnswer {
   createdAt: Date;
 
   @BeforeInsert()
-  setupCreatedAt() {
+  beforeInsert() {
     this.createdAt = new Date();
+    this.updatedAt = new Date();
+  }
+  @BeforeUpdate()
+  beforeUpdate() {
+    this.updatedAt = new Date();
   }
 }
 

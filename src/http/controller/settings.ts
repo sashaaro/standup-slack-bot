@@ -6,7 +6,7 @@ import {Channel} from "../../model/Channel";
 import Timezone from "../../model/Timezone";
 import DashboardContext from "../../services/DashboardContext";
 import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
-import {plainToClassFromExist, Transform, Type} from "class-transformer";
+import {Expose, plainToClassFromExist, Transform, Type} from "class-transformer";
 import {
   ValidateNested,
   IsNotEmpty,
@@ -17,19 +17,37 @@ import {
   Min,
   Max,
   ValidationError,
-  IsMilitaryTime,
+  IsMilitaryTime, IsArray, IsString, IsBoolean,
 } from "class-validator";
 import Question from "../../model/Question";
 
 const transformStringToInt = (v) => v ? parseInt(v) || null : null
 
-class QuestionFormDTO {
+class PredefinedAnswerFormDTO {
   @Transform(transformStringToInt)
   id: number
   @IsNotEmpty()
-  @MinLength(2)
+  @IsString()
+  text: string
+  @IsBoolean()
+  isSame: string
+}
+class QuestionFormDTO {
+  constructor() {
+    this.predefinedAnswers = []
+  }
+  @Transform(transformStringToInt)
+  id: number
+  @IsNotEmpty()
+  @MinLength(3)
   @MaxLength(50)
   text: string
+  @Expose()
+  @Type(() => PredefinedAnswerFormDTO)
+  @Transform(v => v || [])
+  @IsArray()
+  //@Min(2, {})
+  predefinedAnswers: PredefinedAnswerFormDTO[]
 }
 
 class SettingsFormDTO {
@@ -41,8 +59,9 @@ class SettingsFormDTO {
   @IsNotEmpty()
   @IsInt()
   @Min(2)
-  @Max(59)
+  @Max(59, {message: 'must not be greater than 59'})
   duration: number
+  @Expose()
   @Type(() => QuestionFormDTO)
   @IsNotEmpty()
   @ValidateNested()
@@ -52,18 +71,11 @@ class SettingsFormDTO {
   start: string
 }
 
-interface ViewError {
-  errors: string[]
-  children: { [key: string]: ViewError }
-}
-
-const transformViewErrors = (errors: ValidationError[]): { [key: string]: ViewError } => {
-  const err: { [key: string]: ViewError } = {};
+const transformViewErrors = (errors: ValidationError[], err?: any[]) => {
+  err = err || []
   errors.forEach(error => {
-    err[error.property] = {
-      errors: error.constraints ? Object.values(error.constraints) : [],
-      children: transformViewErrors(error.children)
-    } as ViewError
+    err[error.property] = error.constraints ? Object.values(error.constraints) : []
+    transformViewErrors(error.children, err[error.property])
   })
   return err;
 }
@@ -97,6 +109,7 @@ export class SettingsAction implements IHttpAction {
 
     if (req.method === "POST") { // TODO check if standup in progress then not dave
       plainToClassFromExist(formData, req.body);
+      console.log(formData);
 
       const errors = await validate(formData)
 
@@ -104,7 +117,7 @@ export class SettingsAction implements IHttpAction {
         channel.timezone = await this.connection.getRepository(Timezone).findOne(formData.timezone) || channel.timezone;
         channel.start = formData.start
         channel.duration = formData.duration
-        channel.questions = formData.questions.map(q => this.connection.manager.create(Question, q))
+        channel.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
         channel.questions.map((q, index) => q.index = index);
 
         await channelRepository.save(channel)
@@ -118,11 +131,14 @@ export class SettingsAction implements IHttpAction {
     } else {
       plainToClassFromExist(formData, channel);
       formData.timezone = channel.timezone.id;
+      //formData.questions = channel.questions.map(q => Object.assign(new QuestionFormDTO(), q))
     }
 
     const weekDays = [
       'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
     ];
+    console.log(viewErrors)
+    console.log(viewErrors.questions)
 
     res.send(this.render('settings', {
       timezones,

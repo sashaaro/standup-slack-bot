@@ -1,7 +1,8 @@
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, BeforeUpdate} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, BeforeUpdate, OneToMany} from "typeorm";
 import Team from "./Team";
 import {Channel} from "./Channel";
 import {IQuestion} from "../bot/models";
+import PredefinedAnswer from "./PredefinedAnswer";
 
 @Entity()
 class Question implements IQuestion
@@ -17,6 +18,12 @@ class Question implements IQuestion
 
     @Column({default: true})
     isEnabled: boolean = true;
+
+    @OneToMany(type => PredefinedAnswer, pa => pa.question, {
+        cascade: true,
+        eager: true
+    })
+    predefinedAnswers: PredefinedAnswer[];
 
     @Column()
     createdAt: Date;
