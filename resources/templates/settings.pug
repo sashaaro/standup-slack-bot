@@ -64,14 +64,14 @@ block authorized_content
                                     .ui.icon.button(v-on:click="remove(question)")
                                         i.trash.icon
                             .defined-responses
-                                div(v-for="(predefinedAnswer, answerIndex) in question.predefinedAnswers")
-                                    label(v-bind:class="{ error: errors[index] && errors[index].predefinedAnswers && errors[index].predefinedAnswers[answerIndex].text.length }")
+                                div(v-for="(predefinedAnswer, answerIndex) in question.options")
+                                    label(v-bind:class="{ error: errors[index] && errors[index].options && errors[index].options[answerIndex].text.length }")
                                         span= "#{{ answerIndex }}"
-                                        span.error= "{{ errors[index] && errors[index].predefinedAnswers && errors[index].predefinedAnswers[answerIndex].text[0] }}"
+                                        span.error= "{{ errors[index] && errors[index].options && errors[index].options[answerIndex].text[0] }}"
                                     .ui.input.action.mini
-                                        input.form-control(type="hidden", v-if="predefinedAnswer.id", v-bind:name="'questions[' + index + '][predefinedAnswers][' + answerIndex + '][id]'", v-model="predefinedAnswer.id", required, minlength=2)
-                                        input.form-control(type="text", v-bind:name="'questions[' + index + '][predefinedAnswers][' + answerIndex + '][text]'", v-model="predefinedAnswer.text", required, minlength=2)
-                                        .ui.icon.button(v-on:click="removePredefinedAnswer(question.predefinedAnswers, answerIndex)")
+                                        input.form-control(type="hidden", v-if="predefinedAnswer.id", v-bind:name="'questions[' + index + '][options][' + answerIndex + '][id]'", v-model="predefinedAnswer.id", required, minlength=2)
+                                        input.form-control(type="text", v-bind:name="'questions[' + index + '][options][' + answerIndex + '][text]'", v-model="predefinedAnswer.text", required, minlength=2)
+                                        .ui.icon.button(v-on:click="removePredefinedAnswer(question.options, answerIndex)")
                                             i.trash.icon
                                     .ui.checkbox
                                         input(type="checkbox", v-model="predefinedAnswer.isSame")

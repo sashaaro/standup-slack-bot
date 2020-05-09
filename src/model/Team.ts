@@ -1,36 +1,61 @@
-import {Column, Entity, OneToMany, PrimaryColumn} from "typeorm";
+import {Column, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryColumn} from "typeorm";
 import User from "./User";
-import {Channel} from "./Channel";
-import {SlackTeam} from "../slack/model/SlackTeam";
+import SlackWorkspace from "./SlackWorkspace";
+import Question from "./Question";
+import {ITeam} from "../bot/models";
+import Timezone from "./Timezone";
 
 @Entity()
-class Team {
+export class Team implements ITeam {
   @PrimaryColumn()
-  id: string;
+  id: string
 
   @Column()
-  name: string;
+  name: string
+
+  @Column({default: false})
+  isArchived: boolean;
+
+  @Column({default: false})
+  isEnabled: boolean;
+
+  // TODO isPrivate: boolean;
 
   @Column()
-  domain: string;
+  nameNormalized: string;
 
-  @OneToMany(type => User, user => user.team)
-  users: User[]
-
-  @OneToMany(type => Channel, channel => channel.team, {
+  @ManyToOne(type => User, null, {
     eager: true
   })
-  channels: Channel[]
+  createdBy: User
 
-  @Column("json", {nullable: true})
-  slackData: SlackTeam
+  @ManyToOne(type => SlackWorkspace, null, {
+    eager: true,
+    nullable: false
+  })
+  workspace: SlackWorkspace
 
-  //@Column("string", {nullable: true})
-  //accessToken: string;
+  @ManyToMany(type => User, user => user.channels, {
+    cascade: ["insert", "update"]
+  })
+  users: Array<User>
 
-  get enableChannels() {
-    return this.channels.filter((ch) => ch.isEnabled && !ch.isArchived && ch.nameNormalized !== 'general')
-  }
+  @OneToMany(type => Question, question => question.team, {
+    eager: true,
+    cascade: true
+  })
+  questions: Question[];
+
+  @ManyToOne(type => Timezone, null, {
+    eager: true
+  })
+  timezone: Timezone;
+
+  @Column({default: '11:00'})
+  start: string
+  @Column({default: 30})
+  duration: number
+
+  @Column()
+  reportSlackChannel: string
 }
-
-export default Team;

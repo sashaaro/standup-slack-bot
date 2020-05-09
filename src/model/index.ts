@@ -1,19 +1,21 @@
 import Question from "./Question";
-import Team from "./Team";
+import SlackWorkspace from "./SlackWorkspace";
 import User from "./User";
 import AnswerRequest from "./AnswerRequest";
 import StandUp from "./StandUp";
 import {Channel} from "./Channel";
 import Timezone from "./Timezone";
-import PredefinedAnswer from "./PredefinedAnswer";
+import QuestionOption from "./QuestionOption";
+import {Team} from "./Team";
 
 export default [
   AnswerRequest,
   Channel,
-  PredefinedAnswer,
+  QuestionOption,
   Question,
   StandUp,
-  Team,
+  SlackWorkspace,
   Timezone,
+  Team,
   User,
 ]

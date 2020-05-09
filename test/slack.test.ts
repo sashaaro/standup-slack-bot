@@ -1,6 +1,4 @@
-import {Channel} from "../src/model/Channel";
 import {clearDatabase, testConnection, testInjector} from "./main";
-import {ChannelRepository} from "../src/repository/ChannelRepository";
 import assert from "assert";
 import Timezone from "../src/model/Timezone";
 import StandUpBotService from "../src/bot/StandUpBotService";
@@ -8,6 +6,7 @@ import {initFixtures} from "../src/services/providers";
 import User from "../src/model/User";
 import {TestTransport} from "./services/transport";
 import each from 'jest-each';
+import {Team} from "../src/model/Team";
 
 beforeAll(async () => {
   await testConnection.connect();
@@ -28,32 +27,32 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const generateChannel = (id: number) => {
-  const channel = new Channel();
-  channel.id = id.toString(10);
-  channel.name = 'new-channel-'+id;
-  channel.nameNormalized = 'new-channel-'+id;
-  channel.isEnabled = true;
-  channel.isArchived = false;
-  channel.duration = 20;
-  return channel
+const generateTeam = (id: number) => {
+  const team = new Team();
+  team.id = id.toString(10);
+  team.name = 'new-channel-'+id;
+  team.nameNormalized = 'new-channel-'+id;
+  team.isEnabled = true;
+  team.isArchived = false;
+  team.duration = 20;
+  return team
 }
 
 each([
   ['2020-04-01T10:05:00', true],
   ['2020-04-01T11:05:00', false],
 ]).test('new channel', async (meetUpDateStart, greeting, done) => {
-  const channelRepository = testConnection.getCustomRepository(ChannelRepository)
-  const channel = channelRepository.create(generateChannel(1))
+  const teamRepository = testConnection.getRepository(Team)
+  const team = teamRepository.create(generateTeam(1))
 
-  channel.timezone = await testConnection.getRepository(Timezone).findOne({name : 'Europe/Moscow'})
-  channel.start = '13:05';
+  team.timezone = await testConnection.getRepository(Timezone).findOne({name : 'Europe/Moscow'})
+  team.start = '13:05';
 
   const user = testConnection.getRepository(User).create();
   user.id = '1';
   user.name = 'Alex';
-  channel.users = [user]
-  const dbChannel = await channelRepository.addNewChannel(channel);
+  team.users = [user]
+  const dbChannel = await teamRepository.save(team);
 
   assert.strictEqual(dbChannel.id, '1');
   assert.strictEqual(dbChannel.questions.length, 3);

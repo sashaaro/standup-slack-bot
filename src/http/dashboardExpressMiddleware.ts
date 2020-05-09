@@ -3,10 +3,8 @@ import express from 'express'
 import session from 'express-session'
 import createRedisConnectStore from 'connect-redis';
 import {Injector} from "injection-js";
-import {StandUpsAction} from "./controller/standUps";
 import {SettingsAction} from "./controller/settings";
 import {SyncAction} from "./controller/sync";
-import {UpdateChannelAction} from "./controller/UpdateChannelAction";
 import {Connection} from "typeorm";
 import DashboardContext from "../services/DashboardContext";
 import {CONFIG_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
@@ -14,6 +12,8 @@ import {OauthAuthorize} from "./controller/oauth-authorize";
 import {RenderEngine} from "../services/RenderEngine";
 import http from "http";
 import { Redis } from 'ioredis';
+import actions, {IHttpAction} from "./controller";
+import {TeamAction} from "./controller/team";
 
 
 const RedisConnectStore = createRedisConnectStore(session);
@@ -50,7 +50,6 @@ export const createDashboardContext = (injector: Injector) => {
     renderEngine.globalParams = {
       debug: config.debug,
       user: context.user,
-      channel: context.channel,
       syncInProgress: false,//context.user ? true : false,
       intl
     }
@@ -86,34 +85,33 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
   const config = injector.get(CONFIG_TOKEN)
   const authLink = `https://slack.com/oauth/v2/authorize?client_id=${config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${config.host}/auth`
 
+  actions.forEach(action => {
+    const commandInstance = injector.get(action) as IHttpAction
+    const originHandler = commandInstance.handle;
+    commandInstance.handle = (...args) => {
+      return originHandler.call(commandInstance, ...args)
+    };
+  })
 
   router.get('/', async (req, res) => {
     const context = req['context'] as DashboardContext
     if (context.user) {
-      return await injector.get(StandUpsAction).handle(req, res)
+      res.send('Welcome')
+      // TODO return await injector.get().handle(req, res)
     } else {
       res.send(injector.get(RENDER_TOKEN)('welcome', {authLink}));
     }
   });
 
-  const oauthAuthorize = injector.get(OauthAuthorize)
-  router.get('/auth', oauthAuthorize.handle.bind(oauthAuthorize));
-
+  router.get('/auth', injector.get(OauthAuthorize).handle);
   router.get('/logout', (req, res) => {
     const session = req.session as any;
     session.destroy()
     res.redirect('/');
   });
-
-  const settingAction = injector.get(SettingsAction)
-  router.all('/settings', settingAction.handle.bind(settingAction));
-
-  const syncAction = injector.get(SyncAction)
-  router.get('/sync', syncAction.handle.bind(syncAction));
-
-  const setChannelAction = injector.get(UpdateChannelAction)
-  router.post('/channel/selected', setChannelAction.handle.bind(setChannelAction));
-
+  router.all('/team/:id', injector.get(TeamAction).handle);
+  router.all('/team/:id/settings', injector.get(SettingsAction).handle);
+  router.get('/sync', injector.get(SyncAction).handle);
 
   router.use((req: express.Request, res: express.Response, next) => {
     res.status(404);
@@ -125,7 +123,6 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
 
     res.type('txt').send('Not found');
   })
-
 
   router.use((err, req, res, next) => {
     if (err instanceof AccessDenyError) {
@@ -153,8 +150,6 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
   //const channelsAction = Container.get(ChannelsAction)
   //app.get('/channels', channelsAction.handle.bind(channelsAction));
 
-  //const updateChannelAction = Container.get(UpdateChannelAction)
-  //app.post('/channel', updateChannelAction.handle.bind(updateChannelAction));
 
   return router;
 }

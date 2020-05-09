@@ -6,6 +6,7 @@ import AnswerRequest from "../model/AnswerRequest";
 import Question from "../model/Question";
 import {Channel} from "../model/Channel";
 import {IStandUpProvider, IUser} from "../bot/models";
+import {Team} from "../model/Team";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
@@ -17,17 +18,17 @@ export const ACTION_OPEN_DIALOG = 'dialog'
 export class SlackStandUpProvider implements IStandUpProvider {
   constructor(private connection: Connection) {}
 
-  findTeamsByStart(startedAt: Date): Promise<Channel[]> {
+  findTeamsByStart(startedAt: Date): Promise<Team[]> {
     const time = `${startedAt.getHours().toString(10).padStart(2, '0')}:${startedAt.getMinutes().toString(10).padStart(2, '0')}:${startedAt.getSeconds().toString(10).padStart(2, '0')}`
 
-    return this.connection.getRepository(Channel)
-      .createQueryBuilder('channel')
-      .leftJoinAndSelect('channel.users', 'users')
-      .innerJoinAndSelect('channel.timezone', 'timezone')
+    return this.connection.getRepository(Team)
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.users', 'users')
+      .innerJoinAndSelect('t.timezone', 'timezone')
       .innerJoin( 'pg_timezone_names', 'pg_timezone', 'timezone.name = pg_timezone.name')
-      .where(`(channel.start::time - pg_timezone.utc_offset)::varchar = :startedAt`)
-      .andWhere('channel.isArchived = false')
-      .andWhere('channel.isEnabled = true')
+      .where(`(t.start::time - pg_timezone.utc_offset)::varchar = :startedAt`)
+      //.andWhere('t.isArchived = false')
+      //.andWhere('t.isEnabled = true')
       .setParameter('startedAt', time)
       .getMany();
   }
@@ -74,7 +75,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
     return qb.innerJoinAndSelect('standup.channel', 'channel')
       .innerJoinAndSelect('channel.users', 'users') // TODO remove / reanme channelUsers
       .innerJoinAndSelect('channel.questions', 'questions')
-      .leftJoinAndSelect('questions.predefinedAnswers', 'predefinedAnswers')
+      .leftJoinAndSelect('questions.options', 'options')
       .leftJoinAndSelect('standup.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'answerAuthor')
   }
@@ -140,15 +141,6 @@ export class SlackStandUpProvider implements IStandUpProvider {
       .andWhere('channel.isEnabled = true')
       .orderBy("question.index", "ASC")
       .getMany()
-  }
-
-  findOneQuestion(channel: Channel, index): Promise<Question> {
-    return this.connection.getRepository(Question).findOne({
-      where: {
-        index: index,
-        channel: channel
-      }
-    })
   }
 
   async standUpByIdAndUser(user: IUser, standUpId: any): Promise<StandUp> {

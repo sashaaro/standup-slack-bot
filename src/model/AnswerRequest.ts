@@ -3,7 +3,7 @@ import Question from "./Question";
 import StandUp from "./StandUp";
 import User from "./User";
 import {IAnswerRequest} from "../bot/models";
-import PredefinedAnswer from "./PredefinedAnswer";
+import QuestionOption from "./QuestionOption";
 
 @Entity()
 class AnswerRequest implements IAnswerRequest {
@@ -26,8 +26,8 @@ class AnswerRequest implements IAnswerRequest {
   @Column({nullable: true})
   answerMessage: string
 
-  @ManyToOne(type => PredefinedAnswer)
-  predefinedAnswer: PredefinedAnswer;
+  @ManyToOne(type => QuestionOption)
+  predefinedAnswer: QuestionOption;
 
   @Column()
   createdAt: Date;

@@ -38,7 +38,7 @@ export interface OauthAccessResponse {
   "bot_user_id": "U0KRQLJ9H",
   "app_id": "A0KRD7HC3",
   "team": {
-  "name": "Slack Softball Team",
+  "name": "Slack Softball SlackWorkspace",
     "id": "T9TK3CUKW"
 },
   "enterprise": {

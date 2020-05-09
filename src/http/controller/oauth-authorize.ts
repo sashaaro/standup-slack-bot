@@ -5,7 +5,7 @@ import DashboardContext from "../../services/DashboardContext";
 import {IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
 import {Connection} from "typeorm";
-import Team from "../../model/Team";
+import SlackWorkspace from "../../model/SlackWorkspace";
 import {OauthAccessResponse} from "../../slack/model/ScopeGranted";
 import User from "../../model/User";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
@@ -50,24 +50,24 @@ export class OauthAuthorize implements IHttpAction {
       throw new Error(response as any)
     }
 
-    const teamRepository = this.connection.manager.getRepository(Team);
-    const userRepository = this.connection.manager.getRepository(User);
+    const workspaceRepository = this.connection.manager.getRepository(SlackWorkspace);
 
-    let team = await teamRepository.findOne(response.team.id);
-    if (!team) {
-      team = new Team()
-      team.id = response.team.id;
-      team.name = response.team.name
-      const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({team: team.id})) as any;
-      team.domain = teamInfo.team.domain;
-      team = await teamRepository.save(team);
+    let workspace = await workspaceRepository.findOne(response.team.id);
+    if (!workspace) {
+      workspace = new SlackWorkspace()
+      workspace.id = response.team.id;
+      workspace.name = response.team.name
+      const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({team: workspace.id})) as any;
+      workspace.domain = teamInfo.team.domain;
+      workspace = await workspaceRepository.save(workspace);
     }
 
+    const userRepository = this.connection.manager.getRepository(User);
     let user = await userRepository.findOne(response.authed_user.id);
     if (!user) {
       user = new User();
       user.id = response.authed_user.id;
-      user.team = team;
+      user.workspace = workspace;
       const userInfo: SlackUserInfo = await this.webClient.users.info({user: user.id}) as any
       user.name = userInfo.user.name;
       user.profile = userInfo.user.profile;

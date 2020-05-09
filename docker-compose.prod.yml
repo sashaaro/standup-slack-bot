@@ -57,7 +57,7 @@ services:
       - postgres
 
   postgres:
-    image: postgres:11.7-alpine
+    image: postgres:12.2-alpine
     ports:
       - "5432:5432"
     environment:

@@ -15,7 +15,7 @@ export interface  SlackTeamIcons {
 export interface SlackTeam extends WebAPICallResult
 {
     "id": "T12345",
-    "name": "My Team",
+    "name": "My SlackWorkspace",
     "domain": "example",
     "email_domain": "example.com",
     "icon": SlackTeamIcons,

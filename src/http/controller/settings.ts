@@ -2,7 +2,6 @@ import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
 import {RENDER_TOKEN} from "../../services/token";
-import {Channel} from "../../model/Channel";
 import Timezone from "../../model/Timezone";
 import DashboardContext from "../../services/DashboardContext";
 import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
@@ -20,6 +19,7 @@ import {
   IsMilitaryTime, IsArray, IsString, IsBoolean,
 } from "class-validator";
 import Question from "../../model/Question";
+import {Team} from "../../model/Team";
 
 const transformStringToInt = (v) => v ? parseInt(v) || null : null
 
@@ -34,7 +34,7 @@ class PredefinedAnswerFormDTO {
 }
 class QuestionFormDTO {
   constructor() {
-    this.predefinedAnswers = []
+    this.options = []
   }
   @Transform(transformStringToInt)
   id: number
@@ -47,7 +47,7 @@ class QuestionFormDTO {
   @Transform(v => v || [])
   @IsArray()
   //@Min(2, {})
-  predefinedAnswers: PredefinedAnswerFormDTO[]
+  options: PredefinedAnswerFormDTO[]
 }
 
 class SettingsFormDTO {
@@ -90,14 +90,27 @@ export class SettingsAction implements IHttpAction {
 
   async handle(req, res) {
     const context = req.context as DashboardContext;
-    const channelRepository = this.connection.getRepository(Channel)
+    const teamRepository = this.connection.getRepository(Team)
 
     if (!context.user) {
       throw new AccessDenyError();
     }
 
-    if (!context.channel) {
-      throw new ResourceNotFoundError('Selected channel is not found');
+    const id = req.params.id
+
+    const team = await teamRepository
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.timezone', 'timezone')
+      .leftJoinAndSelect('t.questions', 'questions')
+      .leftJoinAndSelect('questions.options', 'options')
+      .where({id: id})
+      // .andWhere('ch.isArchived = false')
+      // .andWhere('ch.isEnabled = true')
+      .orderBy("questions.index", "ASC")
+      .getOne();
+
+    if (!team) {
+      throw new ResourceNotFoundError('Team is not found');
     }
 
     const timezones = await this.connection.getRepository(Timezone).find();
@@ -105,7 +118,6 @@ export class SettingsAction implements IHttpAction {
 
 
     let viewErrors = {};
-    const channel = context.channel
 
     if (req.method === "POST") { // TODO check if standup in progress then not dave
       plainToClassFromExist(formData, req.body);
@@ -114,13 +126,13 @@ export class SettingsAction implements IHttpAction {
       const errors = await validate(formData)
 
       if (errors.length === 0) {
-        channel.timezone = await this.connection.getRepository(Timezone).findOne(formData.timezone) || channel.timezone;
-        channel.start = formData.start
-        channel.duration = formData.duration
-        channel.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
-        channel.questions.map((q, index) => q.index = index);
+        team.timezone = await this.connection.getRepository(Timezone).findOne(formData.timezone) || team.timezone;
+        team.start = formData.start
+        team.duration = formData.duration
+        team.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
+        team.questions.map((q, index) => q.index = index);
 
-        await channelRepository.save(channel)
+        await teamRepository.save(team)
 
         res.redirect('/settings');
         return;
@@ -129,8 +141,8 @@ export class SettingsAction implements IHttpAction {
         viewErrors = transformViewErrors(errors)
       }
     } else {
-      plainToClassFromExist(formData, channel);
-      formData.timezone = channel.timezone.id;
+      plainToClassFromExist(formData, team);
+      formData.timezone = team.timezone.id;
       //formData.questions = channel.questions.map(q => Object.assign(new QuestionFormDTO(), q))
     }
 

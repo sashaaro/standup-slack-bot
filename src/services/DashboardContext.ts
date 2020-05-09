@@ -13,7 +13,6 @@ export interface IAuthUser {
 @Injectable()
 export default class DashboardContext {
   user: User;
-  channel: Channel;
 
   constructor(
     private session: Express.Session,
@@ -23,33 +22,15 @@ export default class DashboardContext {
   async init() {
     const authedUser = this.session.user as IAuthUser;
     const userRepository = this.connection.getRepository(User);
-    this.user = await userRepository.findOne('UJZM51SN8');
-    this.session.channel = 'CK222FUKH'
+    //this.user = await userRepository.findOne('UJZM51SN8');
+    //this.session.channel = 'CK222FUKH'
     if (authedUser) {
       this.user = await userRepository.findOne(authedUser.id);
-    }
-    if (this.user && this.session.channel) {
-      this.channel = await this.connection
-        .getRepository(Channel)
-        .createQueryBuilder('ch')
-        .leftJoinAndSelect('ch.timezone', 'timezone')
-        .leftJoinAndSelect('ch.questions', 'questions')
-        .leftJoinAndSelect('questions.predefinedAnswers', 'predefinedAnswers')
-        .where({id: this.session.channel})
-        .andWhere('ch.isArchived = false')
-        .andWhere('ch.isEnabled = true')
-        .orderBy("questions.index", "ASC")
-        .getOne();
     }
   }
 
   authenticate(authedUser: IAuthUser, user: User) {
     this.session.user = authedUser // TODO save id only
     this.user = user;
-  }
-
-  selectChannel(channel: Channel) {
-    this.channel = channel;
-    this.session.channel = this.channel.id
   }
 }

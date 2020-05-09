@@ -114,12 +114,12 @@ export default class StandUpBotService {
       return
     }
     const nextQuestionIndex = repliedAnswer.question.index + 1
-    const nextQuestion = await this.standUpProvider.findOneQuestion(repliedAnswer.standUp.team, nextQuestionIndex);
+    const nextQuestion = repliedAnswer.standUp.team.questions[nextQuestionIndex];
 
     this.logger.debug('Next question: ', {
       nextQuestion,
       nextQuestionIndex,
-      teamId: repliedAnswer.standUp.team?.id,
+      team: repliedAnswer.standUp.team?.id,
     });
     if (nextQuestion) {
       await this.askQuestion(repliedAnswer.user, nextQuestion, repliedAnswer.standUp);
@@ -235,7 +235,7 @@ export default class StandUpBotService {
 
   private async askFirstQuestion(user: IUser, standUp: IStandUp)
   {
-    const question = await this.standUpProvider.findOneQuestion(standUp.team, 0);
+    const question = await standUp.team.questions[0];
     if (question) {
       await this.askQuestion(user, question, standUp)
     } else {

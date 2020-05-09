@@ -2,7 +2,7 @@ import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, BeforeU
 import Question from "./Question";
 
 @Entity()
-class PredefinedAnswer {
+export default class QuestionOption {
   @PrimaryGeneratedColumn()
   id: string
 
@@ -28,5 +28,3 @@ class PredefinedAnswer {
     this.updatedAt = new Date();
   }
 }
-
-export default PredefinedAnswer;

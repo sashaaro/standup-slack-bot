@@ -2,7 +2,6 @@ import {IHttpAction} from "./index";
 import {STAND_UP_BOT_TRANSPORT} from "../../bot/StandUpBotService";
 import {Connection} from "typeorm";
 import {CONFIG_TOKEN} from "../../services/token";
-import Team from "../../model/Team";
 import DashboardContext from "../../services/DashboardContext";
 import {ITransport} from "../../bot/models";
 import { Injectable, Inject } from 'injection-js';
@@ -35,14 +34,12 @@ export class SyncAction implements IHttpAction {
       throw new AccessDenyError();
     }
 
-    const teamRepository = this.connection.getRepository(Team)
-    let team = await teamRepository.findOne({id: context.user.team.id})
-    if (!team) {
-      res.send('Team is not found') // TODO 403
+    if (!context.user.workspace) {
+      res.send('SlackWorkspace is not found') // TODO 403
       return;
     }
 
-    await this.queue.add(QUEUE_SLACK_SYNC_DATA, {teamId: team.id})
+    await this.queue.add(QUEUE_SLACK_SYNC_DATA, {teamId: context.user.workspace.id})
 
     res.redirect('/');
   }

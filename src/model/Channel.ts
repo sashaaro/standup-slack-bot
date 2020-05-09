@@ -1,12 +1,9 @@
-import {Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryColumn} from "typeorm";
+import {Column, Entity, ManyToMany, ManyToOne, PrimaryColumn} from "typeorm";
 import User from "./User";
-import Team from "./Team";
-import Question from "./Question";
-import {ITeam} from "../bot/models";
-import Timezone from "./Timezone";
+import SlackWorkspace from "./SlackWorkspace";
 
 @Entity()
-export class Channel implements ITeam {
+export class Channel {
   @PrimaryColumn()
   id: string
 
@@ -29,30 +26,14 @@ export class Channel implements ITeam {
   })
   createdBy: User
 
-  @ManyToOne(type => Team, null, {
+  @ManyToOne(type => SlackWorkspace, null, {
     eager: true,
     nullable: false
   })
-  team: Team
+  workspace: SlackWorkspace
 
   @ManyToMany(type => User, user => user.channels, {
     cascade: ["insert", "update"]
   })
   users: Array<User>
-
-  @OneToMany(type => Question, question => question.channel, {
-    eager: true,
-    cascade: true
-  })
-  questions: Question[];
-
-  @ManyToOne(type => Timezone, null, {
-    eager: true
-  })
-  timezone: Timezone;
-
-  @Column({default: '11:00'})
-  start: string
-  @Column({default: 30})
-  duration: number
 }

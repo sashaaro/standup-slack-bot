@@ -1,8 +1,9 @@
 import {Entity, Column, ManyToOne, PrimaryColumn, ManyToMany, JoinTable} from "typeorm";
-import Team from "./Team";
+import SlackWorkspace from "./SlackWorkspace";
 import {SlackUserProfile} from "../slack/model/SlackUser";
 import {Channel} from "./Channel";
 import {IUser} from "../bot/models";
+import {Team} from "./Team";
 
 class Profile implements SlackUserProfile {
   title: string;
@@ -30,7 +31,7 @@ class Profile implements SlackUserProfile {
 }
 
 @Entity()
-class User implements IUser {
+export default class User implements IUser {
   @PrimaryColumn()
   id: string;
 
@@ -39,10 +40,10 @@ class User implements IUser {
   })
   name: string;
 
-  @ManyToOne(type => Team, team => team.users, {
+  @ManyToOne(type => SlackWorkspace, team => team.users, {
     eager: true
   })
-  team: Team;
+  workspace: SlackWorkspace;
 
   @Column({
     length: 10,
@@ -53,6 +54,12 @@ class User implements IUser {
   @Column('json', {default: new Profile()})
   profile: SlackUserProfile;
 
+  @ManyToMany(type => Team, channel => channel.users, {
+    eager: true,
+  })
+  @JoinTable()
+  teams: Team[];
+
   @ManyToMany(type => Channel, channel => channel.users, {
     eager: true,
   })
@@ -62,11 +69,4 @@ class User implements IUser {
   constructor() {
     this.profile = new Profile()
   }
-
-  get teams() {
-    return this.channels
-  }
 }
-
-
-export default User;

@@ -1,14 +1,14 @@
-import {IHttpAction} from "./index";
 import StandUp from "../../model/StandUp";
 import {Inject, Injectable} from 'injection-js';
 import {Connection, Repository} from "typeorm";
 import DashboardContext from "../../services/DashboardContext";
 import {RENDER_TOKEN} from "../../services/token";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
-import Team from "../../model/Team";
+import SlackWorkspace from "../../model/SlackWorkspace";
 import User from "../../model/User";
 import {RenderFn} from "../../services/providers";
 import {isInProgress} from "../../slack/SlackTransport";
+import {IHttpAction} from "./index";
 
 
 const replaceAll = function(string, search, replace){
@@ -19,7 +19,7 @@ const link = '(https?:\\/\\/(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9
 
 
 // https://api.slack.com/docs/message-formatting
-const formatMsg = async (team: Team, userRepository: Repository<User>, text) => {
+const formatMsg = async (team: SlackWorkspace, userRepository: Repository<User>, text) => {
   //text = text.replace(new RegExp('\:([a-z\-_]+)\:'), '<i class="em em-$1"></i>')
   //text = replaceAll(text, new RegExp('\:([a-z\-_]+)\:'), '<i class="em em-$1"></i>')
 
@@ -65,7 +65,7 @@ const formatMsg = async (team: Team, userRepository: Repository<User>, text) => 
 }
 
 @Injectable()
-export class StandUpsAction implements IHttpAction {
+export class TeamAction implements IHttpAction {
   constructor(
     private connection: Connection,
     @Inject(RENDER_TOKEN) private render: RenderFn
@@ -79,13 +79,10 @@ export class StandUpsAction implements IHttpAction {
       throw new AccessDenyError();
     }
 
-    if (!context.channel) {
-      res.send(this.render('editChannel'));
-      return;
-    }
+    const id = req.params.id
+
 
     const standUpRepository = this.connection.getRepository(StandUp);
-    const userRepository = this.connection.getRepository(User);
     const qb = standUpRepository
       .createQueryBuilder('st')
       .innerJoinAndSelect('st.channel', 'channel')
@@ -95,7 +92,7 @@ export class StandUpsAction implements IHttpAction {
       .leftJoinAndSelect('answers.question', 'answersQuestion')
       .orderBy('st.endAt', 'DESC')
       .andWhere('st.endAt IS NOT NULL')
-      .andWhere('channel.id = :channelID', {channelID: context.channel.id})
+      .andWhere('channel.id = :teamID', {teamID: id})
 
     const recordsPerPage = 5
     const page = parseInt(req.query.page) || 1;
@@ -110,10 +107,10 @@ export class StandUpsAction implements IHttpAction {
     const standUpList = [];
     for (let standUp of standUps) {
       const userAnswers = [];
-      for (const u of standUp.channel.users) {
+      for (const u of standUp.team.users) {
         for (const answer of standUp.answers as any) {
           if (answer.answerMessage) {
-            answer.formatAnswerMessage = await formatMsg(context.user.team, userRepository, answer.answerMessage)
+            // answer.formatAnswerMessage = await formatMsg(context.user.team, userRepository, answer.answerMessage)
           }
         }
 

@@ -6,7 +6,10 @@ export interface ITimezone {
   utc_offset: any,
 }
 
-export interface IStandUpSettings {
+export interface ITeam {
+  id: string | number;
+  users: IUser[]
+  questions: IQuestion[];
   timezone: ITimezone
   start: string
   duration: number
@@ -16,12 +19,6 @@ export interface IUser {
   id: string | number
   name: string
   teams: ITeam[]
-}
-
-export interface ITeam extends IStandUpSettings {
-  id: string | number;
-  users: IUser[]
-  questions: IQuestion[];
 }
 
 export interface IQuestion {
@@ -62,23 +59,15 @@ export interface IStandUp {
 export interface IStandUpProvider {
   // TODO startTeamStandUpByDate(): Promise<IStandUp[]>
   createStandUp(): IStandUp
-
   insertStandUp(standUp: IStandUp): Promise<any>
 
   createAnswer(): IAnswerRequest
-
   insertAnswer(answer: IAnswerRequest): Promise<any>
-
   updateAnswer(answer: IAnswerRequest): Promise<AnswerRequest>
 
   findTeamsByStart(startedAt: Date): Promise<ITeam[]>
-
   findByUser(user: IUser, date: Date): Promise<IStandUp>
-
   findLastNoReplyAnswerRequest(standUp: IStandUp, user: IUser): Promise<IAnswerRequest>
-
-  findOneQuestion(team: ITeam, index): Promise<IQuestion>
-
   findStandUpsEndNowByDate(date: Date): Promise<IStandUp[]>
 }
 
@@ -89,8 +78,4 @@ export interface ITransport {
   agreeToStart$: Observable<{user: IUser, date: Date}>
   message$?: Observable<IMessage>
   batchMessages$?: Observable<IMessage[]> // should correct order
-}
-
-export interface ITimezoneProvider {
-  (): Promise<ITimezone[]>
 }

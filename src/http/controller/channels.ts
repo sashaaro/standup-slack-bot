@@ -2,9 +2,7 @@ import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
 import {RENDER_TOKEN} from "../../services/token";
-import {IStandUpSettings} from "../../bot/models";
-import DashboardContext from "../../services/DashboardContext";
-import {Channel} from "../../model/Channel";
+import {ITeam} from "../../bot/models";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
@@ -16,19 +14,15 @@ export class ChannelsAction implements IHttpAction {
   }
 
   async handle(req, res) {
-    const context = req.context as DashboardContext;
-    if (!context.user) {
+    if (!req.context.user) {
       throw new AccessDenyError();
-    }
-    if (!context.channel) { // TODO 404
-      throw new Error('Channel is not found');
     }
 
     if (req.method == "POST") {
       // todo validate
-      const settings = <IStandUpSettings|any>req.body
-      Object.assign(context.channel, settings)
-      await this.connection.getRepository(Channel).save(context.channel)
+      const settings = <ITeam|any>req.body
+      // Object.assign(req.context.user.channel, settings)
+      // await this.connection.getRepository(Channel).save(context.channel)
     }
 
     res.send(this.render('channels', {

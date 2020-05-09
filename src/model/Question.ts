@@ -1,46 +1,40 @@
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, BeforeUpdate, OneToMany} from "typeorm";
-import Team from "./Team";
-import {Channel} from "./Channel";
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, OneToMany} from "typeorm";
 import {IQuestion} from "../bot/models";
-import PredefinedAnswer from "./PredefinedAnswer";
+import QuestionOption from "./QuestionOption";
+import {Team} from "./Team";
 
 @Entity()
-class Question implements IQuestion
-{
-    @PrimaryGeneratedColumn()
-    id: number;
+class Question implements IQuestion {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    index: number;
+  @Column()
+  index: number;
 
-    @Column()
-    text: string;
+  @Column()
+  text: string;
 
-    @Column({default: true})
-    isEnabled: boolean = true;
+  @Column({default: true})
+  isEnabled: boolean = true;
 
-    @OneToMany(type => PredefinedAnswer, pa => pa.question, {
-        cascade: true,
-        eager: true
-    })
-    predefinedAnswers: PredefinedAnswer[];
+  @OneToMany(type => QuestionOption, pa => pa.question, {
+    cascade: true,
+    eager: true
+  })
+  options: QuestionOption[];
 
-    @Column()
-    createdAt: Date;
+  @Column()
+  createdAt: Date;
 
-    @ManyToOne(type => Channel, {
-        cascade: ["insert"]
-    })
-    channel: Channel;
+  @ManyToOne(type => Team, {
+    cascade: ["insert"]
+  })
+  team: Team;
 
-    @BeforeInsert()
-    setupCreatedAt() {
-        this.createdAt = new Date();
-    }
-
-    get team() { // IQuestion interface
-        return this.channel
-    }
+  @BeforeInsert()
+  setupCreatedAt() {
+    this.createdAt = new Date();
+  }
 }
 
 export default Question;
