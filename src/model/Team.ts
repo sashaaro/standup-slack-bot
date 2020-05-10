@@ -1,4 +1,4 @@
-import {Column, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryColumn} from "typeorm";
+import {Column, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import User from "./User";
 import SlackWorkspace from "./SlackWorkspace";
 import Question from "./Question";
@@ -7,22 +7,16 @@ import Timezone from "./Timezone";
 
 @Entity()
 export class Team implements ITeam {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   id: string
 
   @Column()
   name: string
 
   @Column({default: false})
-  isArchived: boolean;
-
-  @Column({default: false})
   isEnabled: boolean;
 
   // TODO isPrivate: boolean;
-
-  @Column()
-  nameNormalized: string;
 
   @ManyToOne(type => User, null, {
     eager: true
@@ -56,6 +50,6 @@ export class Team implements ITeam {
   @Column({default: 30})
   duration: number
 
-  @Column()
+  @Column({nullable: true})
   reportSlackChannel: string
 }

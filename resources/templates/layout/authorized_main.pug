@@ -9,9 +9,9 @@ block content
                     div
                         | Standups
                         .menu-title__sign
-                            if user.team.slackData && user.team.slackData.icon.image_34
-                                img(src= user.team.slackData.icon.image_34)
-                            = 'for ' + user.team.domain + '.slack.com'
+                            if user.workspace.slackData && user.workspace.slackData.icon.image_34
+                                img(src= user.workspace.slackData.icon.image_34)
+                            = 'for ' + user.workspace.domain + '.slack.com'
                     //a.item(href="/channels" class= {'active': activeMenu === 'channels'})
                         | Channels
                 //a.item#sync-link(href="/sync", class=syncInProgress ? 'disabled' : '')
@@ -21,7 +21,7 @@ block content
                     else
                         | Sync from slack api
                 .right.menu
-                    a.item(href="/create")
+                    a.item(href="/team/create")
                       i.icon.plus
                       | Create standup
                     a.item(href="#").disabled
@@ -35,14 +35,7 @@ block content
 
 block append scripts
     script.
-      $('#selectChannel')
-        .dropdown({fullTextSearch: true})
-        .on('change', function () {
-          if (this.value) {
-            $(this).closest('form').submit();
-          }
-        })
-      $('#sync-link').click(function () {
+      $('#sync-link').on('click', function () {
         this.classList.add('active')
       })
 

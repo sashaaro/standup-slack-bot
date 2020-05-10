@@ -1,5 +1,4 @@
 import {InjectionToken} from 'injection-js';
-import {ITimezone} from "../bot/models";
 import {IAppConfig, RenderFn} from "./providers";
 import {Processor, Queue, Worker} from "bullmq";
 import {Redis} from "ioredis";

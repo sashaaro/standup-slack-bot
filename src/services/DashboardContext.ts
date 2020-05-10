@@ -12,7 +12,7 @@ export interface IAuthUser {
 
 @Injectable()
 export default class DashboardContext {
-  user: User;
+  public user: User;
 
   constructor(
     private session: Express.Session,

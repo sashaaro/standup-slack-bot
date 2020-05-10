@@ -11,7 +11,7 @@ import {QUEUE_SLACK_SYNC_DATA, SlackTransport} from "../../slack/SlackTransport"
 import {Queue} from "bullmq";
 
 @Injectable()
-export class SyncAction implements IHttpAction {
+export class SyncAction {
   transport: SlackTransport;
 
   constructor(
@@ -27,19 +27,12 @@ export class SyncAction implements IHttpAction {
     }
   }
 
-  async handle(req, res) {
-    const context = req.context as DashboardContext;
-
-    if (!context.user) {
+  handle: IHttpAction = async (req, res) => {
+    if (!req.context.user) {
       throw new AccessDenyError();
     }
 
-    if (!context.user.workspace) {
-      res.send('SlackWorkspace is not found') // TODO 403
-      return;
-    }
-
-    await this.queue.add(QUEUE_SLACK_SYNC_DATA, {teamId: context.user.workspace.id})
+    await this.queue.add(QUEUE_SLACK_SYNC_DATA, {teamId: req.context.user.workspace.id})
 
     res.redirect('/');
   }

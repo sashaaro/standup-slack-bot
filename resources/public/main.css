@@ -238,16 +238,14 @@ code {
     tab-size: 4;
 }
 
-
-
-#selectChannel {
-    width: 350px;
-}
-
 .auth-block {
     text-align: center;
     margin-top: 50px;
 }
+
+/*.select.dropdown.search {
+    width: 100%;
+}*/
 
 .field label .error {
     float: right;

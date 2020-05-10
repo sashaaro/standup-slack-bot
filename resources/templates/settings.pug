@@ -2,18 +2,25 @@ extends layout/authorized_main
 
 block authorized_content
     .ui.grid
-        .alert.alert--gray.deactivate-bot-block
-            div
-                | Deactivate bot for
-                a(href='https://' + user.team.domain + '.slack.com/messages/' + channel.id + '/details' target="blank")= " #" + channel.name
-                |  channel
-            code
-                span= "/kick "
-                a= "@daily_standup"
+        if channel
+            .alert.alert--gray.deactivate-bot-block
+                div
+                    | Deactivate bot for
+                    a(href='https://' + user.team.domain + '.slack.com/messages/' + channel.id + '/details' target="blank")= " #" + channel.name
+                    |  channel
+                code
+                    span= "/kick "
+                    a= "@daily_standup"
 
         form.ui.form.two.column.large.screen.only.row#form(method='post', v-on:submit="submit")
             .column.ui
                 h3.ui.header= "Stan-up settings"
+                .field(class=errors.name ? 'error' : '')
+                    label
+                        span= 'Name'
+                        span.error= errors.name ? errors.name[0] : ''
+                    .ui.input.large
+                        input.form-control(name="name", type="text", value= formData.name)
                 .field(class=errors.timezone && errors.timezone.length ? 'error' : '')
                     label
                         span= 'Locale timezone'
@@ -43,6 +50,14 @@ block authorized_content
                             .ui.checkbox
                                 input(type="checkbox")
                                 label= weekDay
+                .field(class=errors.receivers ? 'error' : '')
+                    label
+                        span= 'Name'
+                        span.error= errors.receivers ? receivers.name[0] : ''
+                    .ui.input.large
+                        select.dropdown.search(name="receivers", placeholder="Select receivers", multiple)
+                            each u in users
+                                option(value=u.id, selected=formData.receivers.includes(u.id))= u.name
                 button.ui.large.button.fluid.positive(type="submit", v-bind:disabled="questions.length === 0 || submitting", v-bind:class="{loading: submitting}")
                     i.save.icon
                     | Save settings
@@ -91,8 +106,8 @@ block append scripts
         var vm = new Vue({
             el: '#form',
             data: {
-                questions: !{JSON.stringify(formData.questions)},
-                errors: !{JSON.stringify(errors.questions ? errors.questions : {})},
+                questions: !{JSON.stringify(formData.questions || [])},
+                errors: !{JSON.stringify(errors.questions || {})},
                 dragOptions: {
                     animation: 200,
                 },

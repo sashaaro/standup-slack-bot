@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryColumn} from "typeorm";
+import {Column, Entity, PrimaryGeneratedColumn} from "typeorm";
 import {ITimezone} from "../bot/models";
 
 export interface IPostgresInterval {
@@ -18,7 +18,7 @@ export interface IPostgresInterval {
 
 @Entity()
 class Timezone implements ITimezone{
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column("interval")

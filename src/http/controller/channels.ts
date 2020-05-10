@@ -6,14 +6,14 @@ import {ITeam} from "../../bot/models";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
 
 @Injectable()
-export class ChannelsAction implements IHttpAction {
+export class ChannelsAction {
   constructor(
     private connection: Connection,
     @Inject(RENDER_TOKEN) private render: Function
   ) {
   }
 
-  async handle(req, res) {
+  handle: IHttpAction = async (req, res) => {
     if (!req.context.user) {
       throw new AccessDenyError();
     }

@@ -18,10 +18,6 @@ block authorized_content
 
 block append scripts
     script.
-      $('#selectChannel').dropdown({
-        clearable: true,
-        placeholder: 'Select activated channel'
-      }).dropdown('clear')
       $('#sync-link').click(function () {
         this.classList.add('active')
       })

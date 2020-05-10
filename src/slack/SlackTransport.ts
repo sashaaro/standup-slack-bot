@@ -197,8 +197,8 @@ export class SlackTransport implements ITransport {
         }
       }
     } else if (job.name === QUEUE_SLACK_SYNC_DATA) {
-      const team = await this.connection.getRepository(SlackWorkspace).findOne(job.data.teamId)
-      await this.syncData(team)
+      const workspace = await this.connection.getRepository(SlackWorkspace).findOne(job.data.teamId)
+      await this.syncData(workspace)
     } else if (job.name === QUEUE_SLACK_INTERACTIVE_RESPONSE) {
       const response = job.data;
 
@@ -287,19 +287,19 @@ export class SlackTransport implements ITransport {
     })
   }
 
-  async syncData(team: SlackWorkspace) {
-    const teamResponse: {team: SlackTeam} = await this.webClient.team.info({team: team.id}) as any;
+  async syncData(workspace: SlackWorkspace) {
+    const teamResponse: {team: SlackTeam} = await this.webClient.team.info({team: workspace.id}) as any;
 
-    if (team.id !== teamResponse.team.id) {
-      throw new Error(`Wrong team id #${teamResponse.team.id}. Should ${team.id}`);
+    if (workspace.id !== teamResponse.team.id) {
+      throw new Error(`Wrong team id #${teamResponse.team.id}. Workspace #${workspace.id}`);
     }
 
-    team.slackData = teamResponse.team;
+    workspace.slackData = teamResponse.team;
     const teamRepository = this.connection.getRepository(SlackWorkspace);
-    team = await teamRepository.save(team);
+    workspace = await teamRepository.save(workspace);
 
-    await this.updateUsers(team);
-    await this.updateChannels(team);
+    await this.updateUsers(workspace);
+    await this.updateChannels(workspace);
   }
 
   private async updateUsers(workspace: SlackWorkspace) {
@@ -377,7 +377,7 @@ export class SlackTransport implements ITransport {
       .execute()
 
     for (const channel of conversations) {
-      let ch = await channelRepository.findOne(channel.id, {relations: ['questions']});
+      let ch = await channelRepository.findOne(channel.id);
       if (!ch) {
         ch = new Channel()
         ch.id = channel.id;

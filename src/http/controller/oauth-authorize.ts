@@ -11,17 +11,19 @@ import User from "../../model/User";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
 import {ResourceNotFoundError} from "../dashboardExpressMiddleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
+import {SlackTransport} from "../../slack/SlackTransport";
 
 @Injectable()
-export class OauthAuthorize implements IHttpAction {
+export class OauthAuthorize {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private connection: Connection,
     private webClient: WebClient,
+    private slackTransport: SlackTransport,
   ) {
   }
 
-  async handle(req, res) {
+  handle: IHttpAction = async (req, res) => {
     const context = req.context as DashboardContext
     if (context.user) {
       res.redirect('/');
@@ -60,6 +62,7 @@ export class OauthAuthorize implements IHttpAction {
       const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({team: workspace.id})) as any;
       workspace.domain = teamInfo.team.domain;
       workspace = await workspaceRepository.save(workspace);
+      await this.slackTransport.syncData(workspace) // TODO
     }
 
     const userRepository = this.connection.manager.getRepository(User);

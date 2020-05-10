@@ -1,4 +1,4 @@
-import * as yargs from "yargs";
+  import * as yargs from "yargs";
 import {Inject} from "injection-js";
 import {SlackTransport} from "../slack/SlackTransport";
 import {IWorkerFactory, LOGGER_TOKEN, REDIS_TOKEN, WORKER_FACTORY_TOKEN} from "../services/token";

@@ -72,9 +72,9 @@ export class SlackStandUpProvider implements IStandUpProvider {
   // TODO move to repository
   // with channel channelUsers questions answers answerAuthor
   private qbStandUpJoins(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
-    return qb.innerJoinAndSelect('standup.channel', 'channel')
-      .innerJoinAndSelect('channel.users', 'users') // TODO remove / reanme channelUsers
-      .innerJoinAndSelect('channel.questions', 'questions')
+    return qb.innerJoinAndSelect('standup.team', 'team')
+      .innerJoinAndSelect('team.users', 'users') // TODO remove / reanme channelUsers
+      .innerJoinAndSelect('team.questions', 'questions')
       .leftJoinAndSelect('questions.options', 'options')
       .leftJoinAndSelect('standup.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'answerAuthor')
@@ -112,12 +112,11 @@ export class SlackStandUpProvider implements IStandUpProvider {
       .leftJoinAndSelect("a.user", "user")
       .leftJoinAndSelect("a.question", "question")
       .innerJoinAndSelect("a.standUp", "standUp")
-      .innerJoinAndSelect("standUp.channel", "channel")
+      .innerJoinAndSelect("standUp.team", "team")
       .where('user.id = :userID', {userID: user.id})
       .andWhere('a.answerMessage IS NULL')
       .andWhere('standUp.id = :standUp', {standUp: standUp.id})
-      .andWhere('channel.isArchived = false')
-      .andWhere('channel.isEnabled = true')
+      .andWhere('team.isEnabled = true')
       .getOne()
   }
 
@@ -131,14 +130,12 @@ export class SlackStandUpProvider implements IStandUpProvider {
 
   async findStandUpsEndNowByDate(date: Date): Promise<StandUp[]> {
     return await this.connection.getRepository(StandUp).createQueryBuilder('st')
-      .leftJoinAndSelect('st.channel', 'channel')
-      .leftJoinAndSelect('channel.team', 'team')
+      .leftJoinAndSelect('st.team', 'team')
       .leftJoinAndSelect('st.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'user')
       .leftJoinAndSelect('answers.question', 'question')
       .where('date_trunc(\'minute\', st.endAt) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
-      .andWhere('channel.isArchived = false')
-      .andWhere('channel.isEnabled = true')
+      .andWhere('team.isEnabled = true')
       .orderBy("question.index", "ASC")
       .getMany()
   }

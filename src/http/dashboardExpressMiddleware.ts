@@ -3,7 +3,6 @@ import express from 'express'
 import session from 'express-session'
 import createRedisConnectStore from 'connect-redis';
 import {Injector} from "injection-js";
-import {SettingsAction} from "./controller/settings";
 import {SyncAction} from "./controller/sync";
 import {Connection} from "typeorm";
 import DashboardContext from "../services/DashboardContext";
@@ -12,7 +11,6 @@ import {OauthAuthorize} from "./controller/oauth-authorize";
 import {RenderEngine} from "../services/RenderEngine";
 import http from "http";
 import { Redis } from 'ioredis';
-import actions, {IHttpAction} from "./controller";
 import {TeamAction} from "./controller/team";
 
 
@@ -36,6 +34,14 @@ export const useStaticPublicFolder = (app: express.Express) => {
 
 const locale = 'en';
 const intl = new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric', weekday: 'long' });
+
+declare global {
+  namespace Express {
+    interface Request {
+      context: DashboardContext
+    }
+  }
+}
 
 export const createDashboardContext = (injector: Injector) => {
   const connection = injector.get(Connection)
@@ -77,6 +83,13 @@ const scopes = [
   'im:history',
 ];
 
+export function bindThis(target: any, key: string) {
+  const origin = target[key];
+  target[key] = (...args) => {
+    return origin.call(target, ...args);
+  }
+}
+
 export const dashboardExpressMiddleware = (injector: Injector): express.Router => {
   const router = express.Router()
   useBodyParserAndSession(router, injector.get(REDIS_TOKEN));
@@ -85,18 +98,10 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
   const config = injector.get(CONFIG_TOKEN)
   const authLink = `https://slack.com/oauth/v2/authorize?client_id=${config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${config.host}/auth`
 
-  actions.forEach(action => {
-    const commandInstance = injector.get(action) as IHttpAction
-    const originHandler = commandInstance.handle;
-    commandInstance.handle = (...args) => {
-      return originHandler.call(commandInstance, ...args)
-    };
-  })
-
   router.get('/', async (req, res) => {
     const context = req['context'] as DashboardContext
     if (context.user) {
-      res.send('Welcome')
+      res.send(injector.get(RENDER_TOKEN)('dashboard', {authLink}));
       // TODO return await injector.get().handle(req, res)
     } else {
       res.send(injector.get(RENDER_TOKEN)('welcome', {authLink}));
@@ -105,12 +110,15 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
 
   router.get('/auth', injector.get(OauthAuthorize).handle);
   router.get('/logout', (req, res) => {
-    const session = req.session as any;
-    session.destroy()
+    const session = req.session;
+    session.destroy(err => {
+      // log
+    })
     res.redirect('/');
   });
-  router.all('/team/:id', injector.get(TeamAction).handle);
-  router.all('/team/:id/settings', injector.get(SettingsAction).handle);
+  router.all('/team/create', injector.get(TeamAction).create);
+  router.all('/team/:id', injector.get(TeamAction).standups);
+  router.all('/team/:id/edit', injector.get(TeamAction).edit);
   router.get('/sync', injector.get(SyncAction).handle);
 
   router.use((req: express.Request, res: express.Response, next) => {

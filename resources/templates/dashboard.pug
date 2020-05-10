@@ -1,0 +1,24 @@
+extends layout/authorized_main
+
+block authorized_content
+  | welcome
+
+block append scripts
+  link(rel='stylesheet' href='https://afeld.github.io/emoji-css/emoji.css')
+  script.
+    var url = new URL(location.href);
+    let page = parseInt(url.searchParams.get('page')) || 1
+
+    var vm = new Vue({
+      el: '#pagination',
+      data: {
+        pageCount: #{ pageCount },
+        page: page,
+      },
+      methods: {
+        handler: function (page) {
+          url.searchParams.has('page') ? url.searchParams.set('page', page) : url.searchParams.append('page', page);
+          location.href = url.href
+        }
+      }
+    })
