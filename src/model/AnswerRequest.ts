@@ -27,7 +27,7 @@ class AnswerRequest implements IAnswerRequest {
   answerMessage: string
 
   @ManyToOne(type => QuestionOption)
-  predefinedAnswer: QuestionOption;
+  option: QuestionOption;
 
   @Column()
   createdAt: Date;

@@ -1,9 +1,10 @@
-import {Entity, Column, ManyToOne, PrimaryColumn, ManyToMany, JoinTable} from "typeorm";
+import {Entity, Column, ManyToOne, PrimaryColumn, ManyToMany, JoinTable, OneToMany} from "typeorm";
 import SlackWorkspace from "./SlackWorkspace";
 import {SlackUserProfile} from "../slack/model/SlackUser";
 import {Channel} from "./Channel";
 import {IUser} from "../bot/models";
 import {Team} from "./Team";
+import AnswerRequest from "./AnswerRequest";
 
 class Profile implements SlackUserProfile {
   title: string;
@@ -65,6 +66,9 @@ export default class User implements IUser {
   })
   @JoinTable()
   channels: Channel[];
+
+  @OneToMany(type => AnswerRequest, answer => answer.user)
+  answers: AnswerRequest[];
 
   constructor() {
     this.profile = new Profile()

@@ -1,4 +1,4 @@
-import StandUp from "../../model/StandUp";
+import StandUp, {isInProgress} from "../../model/StandUp";
 import {Inject, Injectable} from 'injection-js';
 import {Connection, Repository} from "typeorm";
 import {RENDER_TOKEN} from "../../services/token";
@@ -6,7 +6,6 @@ import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddlew
 import SlackWorkspace from "../../model/SlackWorkspace";
 import User from "../../model/User";
 import {RenderFn} from "../../services/providers";
-import {isInProgress} from "../../slack/SlackTransport";
 import {IHttpAction} from "./index";
 import Timezone from "../../model/Timezone";
 import {Expose, plainToClassFromExist, Transform, Type} from "class-transformer";
@@ -24,8 +23,6 @@ import {
 } from "class-validator";
 import Question from "../../model/Question";
 import {Team} from "../../model/Team";
-import DashboardContext from "../../services/DashboardContext";
-
 
 const replaceAll = function(string, search, replace){
   return string.split(search).join(replace);
@@ -36,7 +33,7 @@ const link = '(https?:\\/\\/(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9
 
 const transformStringToInt = (v) => v ? parseInt(v) || null : null
 
-class PredefinedAnswerFormDTO {
+class QuestionOptionsFormDTO {
   @Transform(transformStringToInt)
   id: number
   @IsNotEmpty()
@@ -56,11 +53,11 @@ class QuestionFormDTO {
   @MaxLength(50)
   text: string
   @Expose()
-  @Type(() => PredefinedAnswerFormDTO)
+  @Type(() => QuestionOptionsFormDTO)
   @Transform(v => v || [])
   @IsArray()
     //@Min(2, {})
-  options: PredefinedAnswerFormDTO[]
+  options: QuestionOptionsFormDTO[]
 }
 
 
@@ -92,10 +89,10 @@ export class TeamFormDTO {
   @IsMilitaryTime({message: 'must be a valid in the format HH:MM'})
   start: string
   @Expose()
-  @Type(() => Number)
-  receivers: number[]
+  @Type(() => String)
+  receivers: string[]
 
-  constructor(props) {
+  constructor() {
     this.receivers = [];
   }
 
@@ -226,6 +223,7 @@ export class TeamAction {
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.timezone', 'timezone')
       .leftJoinAndSelect('t.questions', 'questions')
+      .leftJoinAndSelect('t.users', 'users')
       .leftJoinAndSelect('questions.options', 'options')
       .where({id: id})
       // .andWhere('ch.isArchived = false')
@@ -254,11 +252,14 @@ export class TeamAction {
         team.start = formData.start
         team.duration = formData.duration
         team.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
+        //console.log(formData.receivers)
+        team.users = formData.receivers.map(r => this.connection.getRepository(User).create({id: r}))
         team.questions.map((q, index) => q.index = index);
 
         await teamRepository.save(team)
 
-        res.redirect('/settings');
+        // todo notify
+        res.redirect(`/team/${team.id}/edit`);
         return;
         //await this.connection.getCustomRepository(QuestionRepository).updateForChannel(formData.questions, context.channel)
       } else {
@@ -266,18 +267,26 @@ export class TeamAction {
       }
     } else {
       plainToClassFromExist(formData, team);
-      formData.timezone = team.timezone.id;
+      formData.timezone = team.timezone.id; // TODO
+      formData.receivers = team.users.map(u => u.id);
       //formData.questions = channel.questions.map(q => Object.assign(new QuestionFormDTO(), q))
     }
 
     console.log(viewErrors)
     console.log(viewErrors.questions)
 
+    req.context.user.workspace = await this.connection.getRepository(SlackWorkspace).findOneOrFail(
+      req.context.user.workspace.id, { relations: ['users']}
+    )
+
+    const users = req.context.user.workspace.users
+
     res.send(this.render('settings', {
       timezones,
       activeMenu: 'settings',
       weekDays,
       formData,
+      users,
       errors: viewErrors
     }))
   }
@@ -295,12 +304,13 @@ export class TeamAction {
       .createQueryBuilder('st')
       .innerJoinAndSelect('st.team', 'team')
       .leftJoinAndSelect('team.users', 'user')
-      .leftJoinAndSelect('st.answers', 'answers')
-      .leftJoinAndSelect('answers.user', 'answersUser')
-      .leftJoinAndSelect('answers.question', 'answersQuestion')
+      .leftJoinAndSelect('user.answers', 'userAnswer')
+      .leftJoinAndSelect('userAnswer.question', 'answersQuestion')
+      .leftJoinAndSelect('userAnswer.option', 'answersOption')
+      .leftJoinAndSelect('answersQuestion.options', 'questionOptions')
       .orderBy('st.endAt', 'DESC')
       .andWhere('st.endAt IS NOT NULL')
-      .andWhere('channel.id = :teamID', {teamID: id})
+      .andWhere('team.id = :teamID', {teamID: id})
 
     const recordsPerPage = 5
     const page = parseInt(req.query.page) || 1;
@@ -312,7 +322,8 @@ export class TeamAction {
       .take(recordsPerPage) // use limit method?!
       .getMany();
 
-    const standUpList = [];
+
+    /*const standUpList = [];
     for (let standUp of standUps) {
       const userAnswers = [];
       for (const u of standUp.team.users) {
@@ -333,12 +344,13 @@ export class TeamAction {
         answers: userAnswers,
         isInProgress: isInProgress(standUp)
       })
-    }
+    }*/
 
     const pageCount = Math.ceil(standUpsTotal / recordsPerPage)
 
     res.send(this.render('standUps', {
-      standUpList,
+      //standUpList,
+      standUps,
       activeMenu: 'reports',
       pageCount
     }));

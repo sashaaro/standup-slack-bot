@@ -10,7 +10,8 @@ import {ScopeGranted, SlackIm} from "./model/ScopeGranted";
 import SlackWorkspace from "../model/SlackWorkspace";
 import {
   ACTION_OPEN_DIALOG,
-  ACTION_START, CALLBACK_PREFIX_SEND_STANDUP_ANSWERS,
+  ACTION_START,
+  CALLBACK_PREFIX_SEND_STANDUP_ANSWERS,
   CALLBACK_PREFIX_STANDUP_INVITE,
   SlackStandUpProvider
 } from "./SlackStandUpProvider";
@@ -21,7 +22,7 @@ import {
   InteractiveResponseTypeEnum
 } from "./model/InteractiveResponse";
 import AnswerRequest from "../model/AnswerRequest";
-import StandUp from "../model/StandUp";
+import StandUp, {isInProgress} from "../model/StandUp";
 import groupBy from "lodash.groupby";
 import {DialogOpenArguments, MessageAttachment, WebAPIPlatformError, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
@@ -34,10 +35,6 @@ import {Channel} from "../model/Channel";
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
 export const SLACK_EVENTS = new InjectionToken<ITransport>('slack_events');
-
-export const isInProgress = (standUp: IStandUp) => {
-  return new Date().getTime() < standUp.endAt.getTime()
-}
 
 const QUEUE_SLACK_EVENT_PREFIX = 'slack-event';
 const QUEUE_SLACK_EVENT_MESSAGE = QUEUE_SLACK_EVENT_PREFIX + '_message';

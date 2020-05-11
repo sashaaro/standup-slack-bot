@@ -3,8 +3,6 @@ import {Brackets, Connection, SelectQueryBuilder} from "typeorm";
 import User from "../model/User";
 import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
-import Question from "../model/Question";
-import {Channel} from "../model/Channel";
 import {IStandUpProvider, IUser} from "../bot/models";
 import {Team} from "../model/Team";
 
@@ -57,11 +55,10 @@ export class SlackStandUpProvider implements IStandUpProvider {
 
     qb.orderBy('standup.startAt', "ASC")
 
-    this.qbStandUpJoins(qb)
-    qb.andWhere('users.id = :user', {user: user.id})
+    this.qbStandUpJoins(qb);
+    qb.andWhere('users.id = :user', {user: user.id});
     this.qbStandUpDate(qb, date);
     this.qbActiveQuestions(qb);
-    this.qbActiveChannels(qb)
     this.qbAuthorAnswers(qb, user);
 
     return qb
@@ -98,12 +95,6 @@ export class SlackStandUpProvider implements IStandUpProvider {
   private qbActiveQuestions(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
     qb.andWhere('questions.isEnabled = true');
     return qb.orderBy("questions.index", "ASC");
-  }
-
-  private qbActiveChannels(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
-    return qb
-      .andWhere('channel.isArchived = false')
-      .andWhere('channel.isEnabled = true')
   }
 
   async findLastNoReplyAnswerRequest(standUp: StandUp, user: User): Promise<AnswerRequest> {
@@ -148,7 +139,6 @@ export class SlackStandUpProvider implements IStandUpProvider {
 
     qb.andWhere('users.id = :user AND standup.id = :standupID', {user: user.id, standupID: standUpId})
     this.qbActiveQuestions(qb);
-    this.qbActiveChannels(qb)
     this.qbAuthorAnswers(qb, user);
 
     return await qb

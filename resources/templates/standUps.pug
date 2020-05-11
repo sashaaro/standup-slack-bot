@@ -1,28 +1,29 @@
 extends layout/authorized_main
 
 block authorized_content
-    if standUpList.length === 0
+    if standUps.length === 0
         .no-meetings No meetings 🐥
-    else
-        #list
-            each standUp in standUpList
-                .ui.items.stand-up
-                    .stand-up__date
-                        div= intl.format(standUp.standUp.start)
-                        if standUp.isInProgress
-                            a.ui.teal.label= 'In progress'
-                    each userAnswers in standUp.answers
-                        .item.stand-up-item
-                            img.stand-up-item__image(src=userAnswers.user.profile.image_48).img-thumbnail
-                            .stand-up-item__content
-                                .stand-up-item__name= userAnswers.user.profile.real_name + ' (' + userAnswers.user.name + ')'
-                                if userAnswers.answers.length === 0
-                                    div= 'No answers 🐥'
-                                each answer, index in userAnswers.answers
-                                    .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
-                                        .stand-up-item__question= answer.question.text
-                                        if answer.answerMessage
-                                            .stand-up-item__answer !{ answer.formatAnswerMessage }
+    #list
+        each standUp in standUps
+            .ui.items.stand-up
+                .stand-up__date
+                    div= intl.format(standUp.start)
+                    if standUp.isInProgress
+                        a.ui.teal.label= 'In progress'
+                each u in standUp.team.users
+                    .item.stand-up-item
+                        img.stand-up-item__image(src=u.profile.image_48).img-thumbnail
+                        .stand-up-item__content
+                            .stand-up-item__name= u.profile.real_name + ' (' + u.name + ')'
+                    if u.answers.length === 0
+                        div= 'No answers 🐥'
+                    each answer, index in u.answers
+                        .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
+                            .stand-up-item__question= answer.question.text
+                            if answer.answerMessage
+                                .stand-up-item__answer !{ answer.formatAnswerMessage }
+                            if answer.option
+                                .stand-up-item__answer= answer.option.text
         #pagination
             paginate(
             v-model="page",

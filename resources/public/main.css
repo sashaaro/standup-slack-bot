@@ -21,9 +21,11 @@ body {
     margin-left: 5px;
 }
 
-.defined-responses > div {
-    padding-top: 20px;
+.question-options {
     padding-left: 50px;
+}
+.question-options > div {
+    padding-top: 20px;
 }
 
 .logo {

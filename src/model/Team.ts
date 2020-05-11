@@ -29,8 +29,8 @@ export class Team implements ITeam {
   })
   workspace: SlackWorkspace
 
-  @ManyToMany(type => User, user => user.channels, {
-    cascade: ["insert", "update"]
+  @ManyToMany(type => User, user => user.teams, {
+    cascade: ["insert", "update"],
   })
   users: Array<User>
 

@@ -1,4 +1,4 @@
-import {Entity, Column, ManyToOne, PrimaryGeneratedColumn, OneToMany} from "typeorm";
+import {Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import AnswerRequest from "./AnswerRequest";
 import {IStandUp} from "../bot/models";
 import {Team} from "./Team";
@@ -21,4 +21,12 @@ export default class StandUp implements IStandUp {
 
   @OneToMany(type => AnswerRequest, answer => answer.standUp)
   answers: AnswerRequest[];
+
+  get isInProgress() {
+    return true;
+    //return isInProgress(this)
+  }
+}
+export const isInProgress = (standUp: IStandUp) => {
+  return new Date().getTime() < standUp.endAt.getTime()
 }
