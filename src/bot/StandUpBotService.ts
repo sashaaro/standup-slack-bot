@@ -153,7 +153,19 @@ export default class StandUpBotService {
       answerRequest.question = question;
       answerRequest.createdAt = messageDate;
 
-      answerRequest.answerMessage = message.text;
+      if (answerRequest.question.options.length) {
+        const optionId = parseInt(message.text);
+        if (optionId === NaN) {
+          throw new Error('Wrong optionId')
+        }
+        answerRequest.option = await this.standUpProvider.findOption(optionId);
+        if (!answerRequest.option) {
+          throw new Error('Option not found')
+        }
+      } else {
+        answerRequest.answerMessage = message.text;
+      }
+
       answerRequest.answerCreatedAt = messageDate;
       answerRequest.answerCreatedAt.setTime(messageDate.getTime() + (i * 100) ); // for save correct order. TODO create order index question ?!
       answerRequest = await this.standUpProvider.updateAnswer(answerRequest)

@@ -1,10 +1,11 @@
 import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, BeforeUpdate} from "typeorm";
 import Question from "./Question";
+import {IQuestionOption} from "../bot/models";
 
 @Entity()
-export default class QuestionOption {
+export default class QuestionOption implements IQuestionOption {
   @PrimaryGeneratedColumn()
-  id: string
+  id: number
 
   @ManyToOne(type => Question)
   question: Question

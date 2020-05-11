@@ -21,6 +21,9 @@ export interface IUser {
   teams: ITeam[]
 }
 
+export interface IQuestionOption {
+  id: number
+}
 export interface IQuestion {
   id: string | number
   index: number
@@ -28,6 +31,7 @@ export interface IQuestion {
   //isEnabled: boolean;
   createdAt: Date
   team: ITeam
+  options: IQuestionOption[]
 }
 
 export interface IMessage {
@@ -42,6 +46,7 @@ export interface IAnswerRequest {
   user: IUser
   standUp: IStandUp
   question: IQuestion
+  option: IQuestionOption
   answerMessage: string
   answerCreatedAt: Date
   createdAt: Date
@@ -67,6 +72,7 @@ export interface IStandUpProvider {
 
   findTeamsByStart(startedAt: Date): Promise<ITeam[]>
   findByUser(user: IUser, date: Date): Promise<IStandUp>
+  findOption(id: number): Promise<IQuestionOption>
   findLastNoReplyAnswerRequest(standUp: IStandUp, user: IUser): Promise<IAnswerRequest>
   findStandUpsEndNowByDate(date: Date): Promise<IStandUp[]>
 }

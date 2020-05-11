@@ -3,8 +3,10 @@ import {Brackets, Connection, SelectQueryBuilder} from "typeorm";
 import User from "../model/User";
 import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
-import {IStandUpProvider, IUser} from "../bot/models";
+import {IQuestionOption, IStandUpProvider, IUser} from "../bot/models";
 import {Team} from "../model/Team";
+import Question from "../model/Question";
+import QuestionOption from "../model/QuestionOption";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
@@ -33,6 +35,10 @@ export class SlackStandUpProvider implements IStandUpProvider {
 
   createStandUp(): StandUp {
     return this.connection.manager.create(StandUp);
+  }
+
+  findOption(id: number): Promise<QuestionOption> {
+    return this.connection.getRepository(QuestionOption).findOneOrFail(id);
   }
 
   createAnswer(): AnswerRequest {
