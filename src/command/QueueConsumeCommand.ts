@@ -64,8 +64,10 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       throw new Error(`Queue ${queueName} is not exists`);
     }
 
-    await this.redis.connect()
-    // await redisReady(this.redis);
+    if (this.redis.status !== 'ready' && this.redis.status !== 'connecting') {
+      await this.redis.connect();
+    }
+    await redisReady(this.redis);
     await this.connection.connect();
 
     this.standUpBotService.listenTransport();
@@ -96,11 +98,11 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       }
     });
 
-    /*worker.on('closed', () => {
+    worker.on('closed', () => {
       this.logger.info(`Queue ${queueName} worker closed`)
 
       this.connection.close()
       this.redis.disconnect()
-    })*/
+    })
   }
 }

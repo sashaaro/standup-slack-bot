@@ -44,6 +44,7 @@ export class ServerCommand implements yargs.CommandModule {
     try {
       await this.startServer()
     } catch (e) {
+      console.log(e)
       this.logger.error("Start server error", {error: e})
     }
   }
@@ -51,7 +52,9 @@ export class ServerCommand implements yargs.CommandModule {
   private async startServer()
   {
     await this.connection.connect();
-    await this.redis.connect();
+    if (this.redis.status !== 'ready') {
+      await this.redis.connect();
+    }
 
     const expressApp = express()
 

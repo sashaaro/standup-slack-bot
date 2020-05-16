@@ -92,7 +92,11 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: REDIS_TOKEN,
-      useFactory: (config) => new IOredis({host: 'redis', maxRetriesPerRequest: 5, lazyConnect: true}),
+      useFactory: (config) => new IOredis({
+        host: 'redis',
+        maxRetriesPerRequest: 5,
+        //lazyConnect: true
+      }),
       deps: [CONFIG_TOKEN]
     },
     {
@@ -137,7 +141,8 @@ export const createProviders = (env = 'dev'): Provider[] => {
       provide: WORKER_FACTORY_TOKEN,
       useFactory: (redis: Redis) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {
         connection: redis,
-        concurrency: 1,
+        //lockDuration: 2000,
+        //settings: {stalledInterval: 2000}
       })) as IWorkerFactory,
       deps: [REDIS_TOKEN]
     },
