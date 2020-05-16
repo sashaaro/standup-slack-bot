@@ -64,8 +64,12 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       throw new Error(`Queue ${queueName} is not exists`);
     }
 
-    if (this.redis.status !== 'ready' && this.redis.status !== 'connecting') {
+    try {
       await this.redis.connect();
+    } catch (e) {
+      if (!e.message.startsWith('Redis is already connecting')) {
+        throw e;
+      }
     }
     await redisReady(this.redis);
     await this.connection.connect();

@@ -35,6 +35,7 @@ export interface IAppConfig {
   host: string,
   debug: false,
   rollBarAccessToken?: string,
+  redisLazyConnect: boolean
   db: {
     database: string,
     username: string,
@@ -95,7 +96,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useFactory: (config) => new IOredis({
         host: 'redis',
         maxRetriesPerRequest: 5,
-        //lazyConnect: true
+        lazyConnect: config.redisLazyConnect
       }),
       deps: [CONFIG_TOKEN]
     },
