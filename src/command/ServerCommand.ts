@@ -4,12 +4,10 @@ import {
   CONFIG_TOKEN,
   EXPRESS_DASHBOARD_TOKEN,
   EXPRESS_SLACK_API_TOKEN,
-  IWorkerFactory,
+  IWorkerFactory, LOGGER_TOKEN, REDIS_TOKEN,
   WORKER_FACTORY_TOKEN
 } from "../services/token";
 import {Connection} from "typeorm";
-import fs from "fs";
-import https from "https";
 import express from 'express'
 import 'express-async-errors';
 import http from "http";
@@ -17,6 +15,8 @@ import Rollbar from "rollbar";
 import {IAppConfig} from "../services/providers";
 import {useStaticPublicFolder} from "../http/dashboardExpressMiddleware";
 import {SlackTransport} from "../slack/SlackTransport";
+import {Redis} from "ioredis";
+import {Logger} from "winston";
 
 export class ServerCommand implements yargs.CommandModule {
   command = 'server:run';
@@ -27,7 +27,9 @@ export class ServerCommand implements yargs.CommandModule {
     private injector: Injector,
     private connection: Connection,
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
-    private slackTransport: SlackTransport
+    private slackTransport: SlackTransport,
+    @Inject(REDIS_TOKEN) private redis: Redis,
+    @Inject(LOGGER_TOKEN) protected logger: Logger
   ) {}
 
   async handler(args: yargs.Arguments<{}>) {
@@ -39,32 +41,40 @@ export class ServerCommand implements yargs.CommandModule {
       });
     }
 
+    try {
+      await this.startServer()
+    } catch (e) {
+      this.logger.error("Start server error", {error: e})
+    }
+  }
+
+  private async startServer()
+  {
     await this.connection.connect();
+    await this.redis.connect();
 
     const expressApp = express()
 
     this.slackTransport.initSlackEvents();
     expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
-
     useStaticPublicFolder(expressApp);
     expressApp.use('/', this.injector.get(EXPRESS_DASHBOARD_TOKEN));
 
-    /*const certFolder = './cert';
-    const privateKey = certFolder + '/privkey.pem';
-    const certificate = certFolder + '/cert.pem';
-    const ca = certFolder + '/chain.pem';
-    const argv = process.argv.slice(2)
+    const options = {}
+    const port = 3000
 
-    const ssl = argv.includes('--ssl') && fs.existsSync(privateKey) && fs.existsSync(certificate)
-    console.log(`SSL ${ssl ? 'enabled': 'disabled'}`)*/
-
-    const serverCreator = http; //ssl ? https : http
-    const options = {} /*ssl ? {
-      key: fs.readFileSync(privateKey),
-      cert: fs.readFileSync(certificate),
-      ca: fs.readFileSync(ca),
-    } : {}*/
-    const port = 3000///ssl ? 443 : 3000
-    serverCreator.createServer(options, expressApp).listen(port)
+    this.logger.debug('Start server');
+    const server = http.createServer(options, expressApp)
+    server.listen(port)
+      .on('error', (error) => {
+        this.logger.error('Server error', {error});
+        this.connection.close()
+        this.redis.disconnect()
+      })
+      .on('close', () => {
+        this.logger.debug('Server closed');
+        this.connection.close()
+        this.redis.disconnect()
+      });
   }
 }

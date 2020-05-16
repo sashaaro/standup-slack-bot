@@ -1,6 +1,6 @@
 import { Injectable, Inject, InjectionToken } from 'injection-js';
-import {Subject, timer} from "rxjs";
-import {delay, map, takeUntil} from "rxjs/operators";
+import {Observable, Subject, timer} from "rxjs";
+import {delay, map, share, takeUntil} from "rxjs/operators";
 import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITransport, IUser} from "./models";
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
@@ -28,6 +28,11 @@ class AlreadySubmittedStandUpError extends Error {
   }
 }
 
+class OptionNotFoundError extends Error {
+  public option: string;
+  public standup: number; // TODO save
+}
+
 @Injectable()
 export default class StandUpBotService {
   protected finishStandUp = new Subject<IStandUp>()
@@ -53,7 +58,7 @@ export default class StandUpBotService {
     if (this.transport.batchMessages$) { // receive batch of messages
       this.transport.batchMessages$
         .pipe(takeUntil(this.destroy$))
-        .subscribe((messages: IMessage[]) => this.answersAndFinish(messages))
+        .subscribe((messages: IMessage[]) => this.answers(messages))
     }
 
     if (this.transport.agreeToStart$) {
@@ -106,12 +111,16 @@ export default class StandUpBotService {
       if (e instanceof InProgressStandUpNotFoundError) {
         this.logger.info('Attempt send answer to for ended standup', {error: e});
         await this.send(message.user, `I will remind you when your next standup is up..`)
+        return;
       } else if (e instanceof AlreadySubmittedStandUpError) {
         await this.send(message.user, `You've already submitted your standup for today.`)
+        return;
+      } else if (e instanceof OptionNotFoundError) {
+        this.logger.error('Option is not found', {error: e});
       } else {
         this.logger.error('Error answer', {error: e});
+        return;
       }
-      return
     }
     const nextQuestionIndex = repliedAnswer.question.index + 1
     const nextQuestion = repliedAnswer.standUp.team.questions[nextQuestionIndex];
@@ -128,53 +137,6 @@ export default class StandUpBotService {
     }
   }
 
-  async answersAndFinish(messages: IMessage[], standUp?: IStandUp) {
-    if (messages.length === 0) {
-      throw new Error('Invalid argument messages is empty array')
-    }
-
-    // TODO validate every message's author should be same
-
-    const user = messages[0].user;
-
-    const messageDate = messages[0].createdAt;
-    standUp = standUp || await this.standUpProvider.findByUser(user, messageDate);
-
-    for(const [i, message] of messages.entries()) {
-      const question = standUp.team.questions[i]
-      if (!question) {
-        this.logger.warn(`No question #${i} in standup #${standUp.id} team #${standUp.team.id}`);
-        break;
-      }
-      // TODO try catch
-      let answerRequest = this.standUpProvider.createAnswer()
-      answerRequest.standUp = standUp;
-      answerRequest.user = message.user;
-      answerRequest.question = question;
-      answerRequest.createdAt = messageDate;
-
-      if (answerRequest.question.options.length) {
-        const optionId = parseInt(message.text);
-        if (optionId === NaN) {
-          throw new Error('Wrong optionId')
-        }
-        answerRequest.option = await this.standUpProvider.findOption(optionId);
-        if (!answerRequest.option) {
-          throw new Error('Option not found')
-        }
-      } else {
-        answerRequest.answerMessage = message.text;
-      }
-
-      answerRequest.answerCreatedAt = messageDate;
-      answerRequest.answerCreatedAt.setTime(messageDate.getTime() + (i * 100) ); // for save correct order. TODO create order index question ?!
-      answerRequest = await this.standUpProvider.updateAnswer(answerRequest)
-      standUp.answers.push(answerRequest)
-    }
-
-    await this.afterStandUp(user, standUp);
-  }
-
   /**
    * @throws InProgressStandUpNotFoundError
    * @throws AlreadySubmittedStandUpError
@@ -189,8 +151,7 @@ export default class StandUpBotService {
       throw error;
     }
 
-    const answerRequest: IAnswerRequest = await this.standUpProvider.findLastNoReplyAnswerRequest(progressStandUp, message.user);
-
+    const answerRequest: IAnswerRequest = progressStandUp.answers.find(answerRequest => !answerRequest.answerMessage);
     if (!answerRequest) {
       const error = new AlreadySubmittedStandUpError()
       error.standUp = progressStandUp
@@ -199,12 +160,107 @@ export default class StandUpBotService {
       // throw new Error(`Last no reply answerRequest is not found for standup ${standUp.id} and message ${message.text}`)
     }
 
-    answerRequest.answerMessage = message.text;
+    await this.applyMessageToAnswerRequest(answerRequest, message.text);
     answerRequest.answerCreatedAt = message.createdAt;
-    return this.standUpProvider.updateAnswer(answerRequest)
+    return await this.standUpProvider.saveAnswer(answerRequest)
   }
 
-  startStandUpInterval() {
+  /**
+   * @param answer
+   * @param message
+   * @throws OptionNotFoundError
+   */
+  async applyMessageToAnswerRequest(answer: IAnswerRequest, message: string) {
+    if (answer.question.options.length) {
+      const optionId = parseInt(message);
+      if (optionId === NaN) {
+        const error = new OptionNotFoundError('Wrong response option')
+        error.option = message;
+        throw error
+      }
+      answer.option = await this.standUpProvider.findOption(optionId);
+      if (!answer.option) {
+        const error = new OptionNotFoundError('Option not found')
+        error.option = message;
+        throw error
+      }
+    } else {
+      answer.answerMessage = message;
+    }
+  }
+
+  /**
+   * @param messages
+   * @throws OptionNotFoundError
+   */
+  async answers(messages: IMessage[]): Promise<IAnswerRequest[]> {
+    if (messages.length === 0) {
+      throw new Error('Invalid argument messages is empty array')
+    }
+
+    /*if (!answerRequest) {
+      const error = new AlreadySubmittedStandUpError()
+      error.standUp = progressStandUp
+      error.answerMessage = message
+      throw error
+    }*/
+
+    // TODO validate every message's author should be same
+    const user = messages[0].user;
+    const messageDate = messages[0].createdAt;
+    const standUp = await this.standUpProvider.findByUser(user, messageDate);
+
+    if (!standUp) {
+      throw new InProgressStandUpNotFoundError()
+    }
+
+    if (standUp.answers.length !== 0) {
+      if (standUp.answers.filter(a => a.user.id !== user.id).length > 0) {
+        throw new Error('Standup should contains current user answers only');
+      }
+    }
+
+
+    if (standUp.team.questions.length === 0) {
+      throw new Error('SlackWorkspace have not any questions');
+    }
+
+    if (standUp.team.questions.length !== messages.length) {
+      this.logger.warn('Messages count is not equal questions one')
+    }
+
+    for(const [i, message] of messages.entries()) {
+      const question = standUp.team.questions[i]
+      if (!question) {
+        this.logger.warn(`No question #${i} in standup #${standUp.id} team #${standUp.team.id}`);
+        break;
+      }
+      // TODO try catch
+
+      let answer = standUp.answers[question.index];
+      if (!answer) {
+        answer = this.standUpProvider.createAnswer()
+        answer.standUp = standUp;
+        answer.user = message.user;
+        answer.question = question;
+        answer.createdAt = messageDate;
+        standUp.answers[question.index] = answer;
+      }
+      await this.applyMessageToAnswerRequest(answer, message.text);
+
+      answer.answerCreatedAt = messageDate;
+      answer.answerCreatedAt.setTime(messageDate.getTime() + (i * 100) ); // for save correct order. TODO create order index question ?!
+    }
+
+    const answers = await this.standUpProvider.saveUserAnswers(standUp, standUp.answers)
+    // todo standUp.answers
+
+    await this.afterStandUp(user, standUp);
+
+    return answers;
+  }
+
+  startStandUpInterval(): Observable<Date> {
     const intervalMs = 60 * 1000;  // every minutes
 
     const now = new Date();
@@ -213,15 +269,24 @@ export default class StandUpBotService {
 
     this.logger.debug('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop')
 
-    timer(millisecondsDelay, intervalMs)
+    const internval$ = timer(millisecondsDelay, intervalMs)
       .pipe(
         takeUntil(this.end$),
         map(_ => new Date()),
-        delay(5 * 1000)
-      ).subscribe(async (date: Date) => {
-        await this.startDailyMeetUpByDate(date)
-        await this.checkStandUpEndByDate(date)
-      })
+        delay(5 * 1000),
+        share()
+      )
+
+    internval$.subscribe((date: Date) => {
+      this.startDailyMeetUpByDate(date)
+      this.checkStandUpEndByDate(date)
+    })
+
+    internval$.subscribe({
+      error: (e) => this.logger.error('Standup interval error', {error: e})
+    })
+
+    return internval$
   }
 
   async startDailyMeetUpByDate(date) {
@@ -282,7 +347,7 @@ export default class StandUpBotService {
     answer.standUp = standUp;
 
     await this.send(answer.user, question.text);
-    await this.standUpProvider.insertAnswer(answer);
+    await this.standUpProvider.saveAnswer(answer);
 
     return answer
   }

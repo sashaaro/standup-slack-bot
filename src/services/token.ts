@@ -21,3 +21,4 @@ export const WORKER_FACTORY_TOKEN = new InjectionToken<IWorkerFactory>('app.work
 export const EXPRESS_DASHBOARD_TOKEN = new InjectionToken<express.Router>('app.express_dashboard')
 export const EXPRESS_SLACK_API_TOKEN = new InjectionToken<express.Router>('app.express_slack_api')
 export const LOGGER_TOKEN = new InjectionToken<Logger>('app.logger')
+export const RETRY_MAIN_QUEUE = new InjectionToken<Queue>('queue.retry_main')

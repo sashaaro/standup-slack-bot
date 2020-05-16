@@ -40,7 +40,7 @@ export class OauthAuthorize {
       response = await new WebClient().oauth.v2.access({
         client_id: this.config.slackClientID,
         client_secret: this.config.slackSecret,
-        code: req.query.code,
+        code: req.query.code as string,
         //redirect_uri: `${this.config.host}/auth`,
       }) as any
     } catch (e) {

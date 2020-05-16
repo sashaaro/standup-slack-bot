@@ -1,5 +1,4 @@
 import {Observable} from "rxjs";
-import AnswerRequest from "../model/AnswerRequest";
 
 export interface ITimezone {
   name: string,
@@ -37,7 +36,6 @@ export interface IQuestion {
 export interface IMessage {
   user: IUser
   text: string
-  team?: ITeam
   createdAt: Date
 }
 
@@ -67,13 +65,12 @@ export interface IStandUpProvider {
   insertStandUp(standUp: IStandUp): Promise<any>
 
   createAnswer(): IAnswerRequest
-  insertAnswer(answer: IAnswerRequest): Promise<any>
-  updateAnswer(answer: IAnswerRequest): Promise<AnswerRequest>
+  saveAnswer(answer: IAnswerRequest): Promise<any>
+  saveUserAnswers(standUp: IStandUp, answers: IAnswerRequest[]): Promise<IAnswerRequest[]>
 
   findTeamsByStart(startedAt: Date): Promise<ITeam[]>
   findByUser(user: IUser, date: Date): Promise<IStandUp>
   findOption(id: number): Promise<IQuestionOption>
-  findLastNoReplyAnswerRequest(standUp: IStandUp, user: IUser): Promise<IAnswerRequest>
   findStandUpsEndNowByDate(date: Date): Promise<IStandUp[]>
 }
 

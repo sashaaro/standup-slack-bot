@@ -51,6 +51,8 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
     const fileContent = MigrationGenerateCommand.getTemplate(args.name as any, timestamp, upSqls, downSqls.reverse());
     const path = process.cwd() + "/" + (directory ? (directory + "/") : "") + filename;
     fs.writeFile(path, fileContent, () => {})
+
+    this.connection.close()
   }
 
   // -------------------------------------------------------------------------

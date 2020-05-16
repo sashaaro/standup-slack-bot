@@ -1,11 +1,9 @@
 import {Injectable} from 'injection-js';
 import {Brackets, Connection, SelectQueryBuilder} from "typeorm";
-import User from "../model/User";
 import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
-import {IQuestionOption, IStandUpProvider, IUser} from "../bot/models";
+import {IAnswerRequest, IStandUp, IStandUpProvider, IUser} from "../bot/models";
 import {Team} from "../model/Team";
-import Question from "../model/Question";
 import QuestionOption from "../model/QuestionOption";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
@@ -45,8 +43,8 @@ export class SlackStandUpProvider implements IStandUpProvider {
     return this.connection.manager.create(AnswerRequest);
   }
 
-  insertAnswer(answer: AnswerRequest): Promise<any> {
-    return this.connection.getRepository(AnswerRequest).insert(answer)
+  saveAnswer(answer: AnswerRequest): Promise<any> {
+    return this.connection.getRepository(AnswerRequest).save(answer)
   }
 
   insertStandUp(standUp: StandUp): Promise<any> {
@@ -103,26 +101,8 @@ export class SlackStandUpProvider implements IStandUpProvider {
     return qb.orderBy("questions.index", "ASC");
   }
 
-  async findLastNoReplyAnswerRequest(standUp: StandUp, user: User): Promise<AnswerRequest> {
-    const answerRepository = this.connection.getRepository(AnswerRequest);
-    return await answerRepository.createQueryBuilder('a')
-      .leftJoinAndSelect("a.user", "user")
-      .leftJoinAndSelect("a.question", "question")
-      .innerJoinAndSelect("a.standUp", "standUp")
-      .innerJoinAndSelect("standUp.team", "team")
-      .where('user.id = :userID', {userID: user.id})
-      .andWhere('a.answerMessage IS NULL')
-      .andWhere('standUp.id = :standUp', {standUp: standUp.id})
-      .andWhere('team.isEnabled = true')
-      .getOne()
-  }
-
-  async updateAnswer(lastNoReplyAnswer: AnswerRequest): Promise<AnswerRequest> {
-    const answerRepository = this.connection.getRepository(AnswerRequest);
-
-    const answer = answerRepository.save(lastNoReplyAnswer);
-    // update standup
-    return answer;
+  async saveUserAnswers(standUp: StandUp, answers: AnswerRequest[]): Promise<AnswerRequest[]> {
+    return await this.connection.getRepository(AnswerRequest).save(answers);
   }
 
   async findStandUpsEndNowByDate(date: Date): Promise<StandUp[]> {

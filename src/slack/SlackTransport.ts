@@ -28,9 +28,10 @@ import {DialogOpenArguments, MessageAttachment, WebAPIPlatformError, WebClient} 
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import {Job, Queue} from "bullmq";
-import {LOGGER_TOKEN} from "../services/token";
+import {IQueueFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Channel} from "../model/Channel";
+import {QUEUE_MAIN_NAME} from "../services/providers";
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -64,8 +65,8 @@ export class SlackTransport implements ITransport {
   constructor(
     @Inject(SLACK_EVENTS) private readonly slackEvents: SlackEventAdapter,
     @Inject(LOGGER_TOKEN) private logger: Logger,
-    private readonly queue: Queue,
-    private readonly webClient: WebClient,
+    private queue: Queue,
+    private webClient: WebClient,
     private connection: Connection,
     private slackStandUpProvider: SlackStandUpProvider,
   ) {
@@ -134,11 +135,11 @@ export class SlackTransport implements ITransport {
     })
   }
 
-  public async handelJob(job: Job) {
-    if (job.name === QUEUE_SLACK_EVENT_MESSAGE) {
+  public async handelJob(name: string, data: any) {
+    if (name === QUEUE_SLACK_EVENT_MESSAGE) {
       const userRepository = this.connection.getRepository(User);
 
-      const messageResponse = job.data as MessageResponse;
+      const messageResponse = data as MessageResponse;
 
       // be sure it is direct answerMessage to bot
       /*if (!await userRepository.findOne({where: {im: messageResponse.channel}})) {
@@ -150,15 +151,14 @@ export class SlackTransport implements ITransport {
       const eventAt = new Date(parseInt(messageResponse.event_ts) * 1000)
 
       const message = {
-        //team: await this.connection.getRepository(Channel).findOne(messageResponse.channel),
         text: messageResponse.text,
         user: await this.connection.getRepository(User).findOne(messageResponse.user),
         createdAt: eventAt
       } as IMessage;
 
       this.message$.next(message)
-    } else if (job.name === QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL) {
-      const response = job.data as MemberJoinedChannel
+    } else if (name === QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL) {
+      const response = data as MemberJoinedChannel
       const workspaceRepository = this.connection.getRepository(SlackWorkspace)
 
       let workspace = (await workspaceRepository.findOne(response.team)) || workspaceRepository.create({id: response.team});
@@ -175,8 +175,8 @@ export class SlackTransport implements ITransport {
           throw e
         }
       }
-    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_JOINED || job.name === QUEUE_SLACK_EVENT_GROUP_JOINED) {
-      const channel = job.data.channel as SlackChannel;
+    } else if (name === QUEUE_SLACK_EVENT_CHANNEL_JOINED || name === QUEUE_SLACK_EVENT_GROUP_JOINED) {
+      const channel = data.channel as SlackChannel;
 
       try {
         // TODO use channel.members
@@ -193,11 +193,11 @@ export class SlackTransport implements ITransport {
           throw e
         }
       }
-    } else if (job.name === QUEUE_SLACK_SYNC_DATA) {
-      const workspace = await this.connection.getRepository(SlackWorkspace).findOne(job.data.teamId)
+    } else if (name === QUEUE_SLACK_SYNC_DATA) {
+      const workspace = await this.connection.getRepository(SlackWorkspace).findOne(data.teamId)
       await this.syncData(workspace)
-    } else if (job.name === QUEUE_SLACK_INTERACTIVE_RESPONSE) {
-      const response = job.data;
+    } else if (name === QUEUE_SLACK_INTERACTIVE_RESPONSE) {
+      const response = data;
 
       this.logger.debug('Interactive response handling', {response});
       try {
@@ -211,23 +211,23 @@ export class SlackTransport implements ITransport {
       } catch (e) {
         this.logger.error('Interactive response handle', {error: e.message, stack: e.stack});
       }
-    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_LEFT) {
-      const response = job.data as ChannelLeft
+    } else if (name === QUEUE_SLACK_EVENT_CHANNEL_LEFT) {
+      const response = data as ChannelLeft
       await this.findOrCreateAndUpdate(response.channel, {isEnabled: false})
-    } else if (job.name === QUEUE_SLACK_EVENT_GROUP_LEFT) {
-      const channel: string = job.data.channel;
+    } else if (name === QUEUE_SLACK_EVENT_GROUP_LEFT) {
+      const channel: string = data.channel;
       await this.findOrCreateAndUpdate(channel, {isEnabled: false})
-    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_ARCHIVE) {
-      const channel: string = job.data.channel;
+    } else if (name === QUEUE_SLACK_EVENT_CHANNEL_ARCHIVE) {
+      const channel: string = data.channel;
       await this.findOrCreateAndUpdate(channel, {isArchived: true})
-    } else if (job.name === QUEUE_SLACK_EVENT_GROUP_ARCHIVE) {
-      const channel: string = job.data.channel;
+    } else if (name === QUEUE_SLACK_EVENT_GROUP_ARCHIVE) {
+      const channel: string = data.channel;
       await this.findOrCreateAndUpdate(channel, {isArchived: true})
-    } else if (job.name === QUEUE_SLACK_EVENT_CHANNEL_UNARCHIVE) {
-      const channel: string = job.data.channel;
+    } else if (name === QUEUE_SLACK_EVENT_CHANNEL_UNARCHIVE) {
+      const channel: string = data.channel;
       await this.findOrCreateAndUpdate(channel, {isArchived: false})
-    } else if (job.name === QUEUE_SLACK_EVENT_GROUP_UNARCHIVE) {
-      const channel: string = job.data.channel;
+    } else if (name === QUEUE_SLACK_EVENT_GROUP_UNARCHIVE) {
+      const channel: string = data.channel;
       await this.findOrCreateAndUpdate(channel, {isArchived: false})
     } else {
       return false
@@ -565,7 +565,6 @@ export class SlackTransport implements ITransport {
     for (const index of Object.keys(response.submission).sort((current, next) => current > next ? 1 : -1)) {
       const text = response.submission[index]
       messages.push({
-        // TODO team: ,
         text: text,
         user: user,
         createdAt: msgDate
@@ -592,40 +591,7 @@ export class SlackTransport implements ITransport {
       return;
     }
 
-
-    if (standUp.answers.length === 0) {
-      this.batchMessagesSubject.next(messages)
-    } else {
-      if (standUp.team.questions.length === 0) {
-        throw new Error('SlackWorkspace have not any questions');
-      }
-
-      if (standUp.answers.filter(a => a.user.id === user.id).length !== standUp.answers.length) {
-        throw new Error('Standup should contains current user answers only');
-      }
-
-      await this.updateStandUpAnswers(messages.map(m => m.text), user, standUp, msgDate)
-    }
-  }
-
-  async updateStandUpAnswers(messages: string[], user: IUser, standUp: IStandUp, updatedAt: Date) {
-    await this.connection.transaction(async (em) => {
-      const repo = em.getRepository(AnswerRequest);
-
-      for (const q of standUp.team.questions) { // sort asc by index
-        let answer = standUp.answers[q.index];
-        if (!answer) {
-          answer = new AnswerRequest()
-          answer.user = user
-          answer.question = q
-          answer.standUp = standUp;
-        }
-        answer.answerMessage = messages[q.index]
-        answer.answerCreatedAt = updatedAt;
-
-        await repo.save(answer as any)
-      }
-    })
+    this.batchMessagesSubject.next(messages)
   }
 
   async handleInteractiveDialogSubmissionResponse(response: InteractiveDialogSubmissionResponse) {

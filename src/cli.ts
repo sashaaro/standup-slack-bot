@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import "reflect-metadata";
-import * as yargs from "yargs";
+import yargs from "yargs";
 import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "./services/providers";
 import {commands} from "./command";
@@ -31,3 +31,4 @@ main
   .demandCommand(1)
   .strict()
   .argv
+

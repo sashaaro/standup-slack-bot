@@ -4,7 +4,7 @@ import {
   IQueueFactory, IWorkerFactory, LOGGER_TOKEN,
   QUEUE_FACTORY_TOKEN,
   REDIS_TOKEN,
-  RENDER_TOKEN,
+  RENDER_TOKEN, RETRY_MAIN_QUEUE,
   WORKER_FACTORY_TOKEN
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
@@ -64,6 +64,9 @@ export const initFixtures = async (connection: Connection) => {
   await connection.query(fs.readFileSync('fixtures/timezone.sql').toString())
 }
 
+export const QUEUE_MAIN_NAME = 'main'
+export const QUEUE_RETRY_MAIN_NAME = 'retry_main'
+
 export const createProviders = (env = 'dev'): Provider[] => {
   // dotenv.config({path: `.env`})
   dotenv.config({path: `.env.${env}`})
@@ -89,7 +92,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: REDIS_TOKEN,
-      useFactory: (config) => new IOredis({host: 'redis'}),
+      useFactory: (config) => new IOredis({host: 'redis', maxRetriesPerRequest: 5, lazyConnect: true}),
       deps: [CONFIG_TOKEN]
     },
     {
@@ -115,9 +118,9 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: WebClient,
-      useFactory: (config: IAppConfig) => {
-        return new WebClient(config.botUserOAuthAccessToken, {logLevel: config.debug ? LogLevel.DEBUG : undefined})
-      },
+      useFactory: (config: IAppConfig) => (new WebClient(config.botUserOAuthAccessToken, {
+        logLevel: config.debug ? LogLevel.DEBUG : undefined,
+      })),
       deps: [CONFIG_TOKEN]
     },
     {
@@ -140,7 +143,12 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: Queue,
-      useFactory: (factory: IQueueFactory) => factory('main'),
+      useFactory: (factory: IQueueFactory) => factory(QUEUE_MAIN_NAME),
+      deps: [QUEUE_FACTORY_TOKEN]
+    },
+    {
+      provide: RETRY_MAIN_QUEUE,
+      useFactory: (factory: IQueueFactory) => factory(QUEUE_RETRY_MAIN_NAME),
       deps: [QUEUE_FACTORY_TOKEN]
     },
     SlackStandUpProvider,

@@ -31,9 +31,7 @@ const generateTeam = (id: number) => {
   const team = new Team();
   team.id = id.toString(10);
   team.name = 'new-channel-'+id;
-  team.nameNormalized = 'new-channel-'+id;
   team.isEnabled = true;
-  team.isArchived = false;
   team.duration = 20;
   return team
 }

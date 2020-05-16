@@ -26,6 +26,13 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       }
     });
 
-    this.standUpBotService.startStandUpInterval();
+    this.standUpBotService.startStandUpInterval().subscribe({
+      error: () => this.close(),
+      complete: () => this.close()
+    });
+  }
+
+  private close() {
+    this.connection.close()
   }
 }

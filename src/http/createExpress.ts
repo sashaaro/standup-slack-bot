@@ -43,7 +43,12 @@ export const createSlackApiExpress = (config: IAppConfig, queue: Queue, slackEve
 
   const slackInteractions = createMessageAdapter(config.slackSigningSecret);
   slackInteractions.action({},  async (response) => {
-    await queue.add(QUEUE_SLACK_INTERACTIVE_RESPONSE, response)
+    try {
+      const job = await queue.add(QUEUE_SLACK_INTERACTIVE_RESPONSE, response)
+    } catch (e) {
+      // TODO log local file
+      logger.error('Add queue', {error: e}) // add job
+    }
   })
 
   router.use('/interactive', slackInteractions.expressMiddleware());

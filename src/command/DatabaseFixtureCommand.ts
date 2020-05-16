@@ -14,5 +14,6 @@ export class DatabaseFixtureCommand implements yargs.CommandModule {
     await this.connection.connect();
 
     await initFixtures(this.connection)
+    this.connection.close()
   }
 }

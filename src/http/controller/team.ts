@@ -239,7 +239,7 @@ export class TeamAction {
     const formData = new TeamFormDTO();
 
 
-    let viewErrors = {};
+    let viewErrors: any = {};
 
     if (req.method === "POST") { // TODO check if standup in progress then not dave
       plainToClassFromExist(formData, req.body);
@@ -313,7 +313,7 @@ export class TeamAction {
       .andWhere('team.id = :teamID', {teamID: id})
 
     const recordsPerPage = 5
-    const page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page as string) || 1;
 
     const standUpsTotal = await qb.getCount();
 
