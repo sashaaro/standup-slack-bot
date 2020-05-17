@@ -56,3 +56,10 @@ cp .env.dist .env.dev
 ./cli.sh database:fixture --env=test
 npm run test
 ```
+
+### Deployment
+
+Build images
+```bash
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose -f docker-compose.prod.yml build
+```

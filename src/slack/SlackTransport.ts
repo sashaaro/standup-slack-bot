@@ -1,6 +1,6 @@
-import {Inject, Injectable, InjectionToken} from "injection-js";
+import {Inject, Injectable} from "injection-js";
 import {Observable, Subject} from "rxjs";
-import {IMessage, IStandUp, ITransport, IUser} from "../bot/models";
+import {IMessage, ITransport, IUser} from "../bot/models";
 import User from "../model/User";
 import {MessageResponse} from "./model/MessageResponse";
 import {ChannelRepository} from "../repository/ChannelRepository";
@@ -27,15 +27,12 @@ import groupBy from "lodash.groupby";
 import {DialogOpenArguments, MessageAttachment, WebAPIPlatformError, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
-import {Job, Queue} from "bullmq";
-import {IQueueFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN} from "../services/token";
+import {Queue} from "bullmq";
+import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Channel} from "../model/Channel";
-import {QUEUE_MAIN_NAME} from "../services/providers";
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
-
-export const SLACK_EVENTS = new InjectionToken<ITransport>('slack_events');
 
 const QUEUE_SLACK_EVENT_PREFIX = 'slack-event';
 const QUEUE_SLACK_EVENT_MESSAGE = QUEUE_SLACK_EVENT_PREFIX + '_message';
@@ -63,7 +60,7 @@ export class SlackTransport implements ITransport {
   batchMessages$: Observable<IMessage[]> = this.batchMessagesSubject.asObservable();
 
   constructor(
-    @Inject(SLACK_EVENTS) private readonly slackEvents: SlackEventAdapter,
+    private slackEvents: SlackEventAdapter,
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private queue: Queue,
     private webClient: WebClient,

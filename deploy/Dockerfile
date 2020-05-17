@@ -1,14 +1,26 @@
-FROM  node:12.14.1-alpine
+# syntax=docker/dockerfile:experimental
+FROM node:12.16.3-alpine AS builder
 
 WORKDIR /opt/app
 
-COPY ./package.json ./package-lock.json
+COPY ./package.json ./package-lock.json ./
 
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm npm install
+
 COPY ./ .
 
 RUN ./node_modules/.bin/tsc
 
+FROM node:12.16.3-alpine
+
+WORKDIR /opt/app
+
+COPY ./package.json ./package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm install --production
+RUN rm -rf ~/.npm/*
+COPY --from=builder /opt/app/dist ./dist
+
+COPY ./cli.sh .
 # USER worker
 
-ENTRYPOINT "./cli.sh"
+ENTRYPOINT ["./cli.sh"]

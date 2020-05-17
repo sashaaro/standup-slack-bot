@@ -13,7 +13,7 @@ import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPOR
 import actions from "../http/controller";
 import {WebClient, LogLevel} from '@slack/web-api'
 import {RenderEngine} from "./RenderEngine";
-import {SLACK_EVENTS, SlackTransport} from "../slack/SlackTransport";
+import {SlackTransport} from "../slack/SlackTransport";
 import {createEventAdapter} from "@slack/events-api";
 import entities from "../model";
 import * as fs from "fs";
@@ -25,6 +25,7 @@ import {commands} from "../command";
 import {createLogger, transports, format} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
 import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
+import SlackEventAdapter from "@slack/events-api/dist/adapter";
 
 export interface IAppConfig {
   env: string,
@@ -129,7 +130,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
       deps: [CONFIG_TOKEN]
     },
     {
-      provide: SLACK_EVENTS,
+      provide: SlackEventAdapter,
       useFactory: (config: IAppConfig) => createEventAdapter(config.slackSigningSecret),
       deps: [CONFIG_TOKEN]
     },
@@ -174,7 +175,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
     {
       provide: EXPRESS_SLACK_API_TOKEN,
       useFactory: createSlackApiExpress,
-      deps: [CONFIG_TOKEN, Queue, SLACK_EVENTS, LOGGER_TOKEN]
+      deps: [CONFIG_TOKEN, Queue, SlackEventAdapter, LOGGER_TOKEN]
     },
     {
       provide: EXPRESS_DASHBOARD_TOKEN,
