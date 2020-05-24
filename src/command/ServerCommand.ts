@@ -4,7 +4,7 @@ import {
   CONFIG_TOKEN,
   EXPRESS_DASHBOARD_TOKEN,
   EXPRESS_SLACK_API_TOKEN,
-  IWorkerFactory, LOGGER_TOKEN, REDIS_TOKEN,
+  IWorkerFactory, LOGGER_TOKEN, REDIS_TOKEN, TERMINATE,
   WORKER_FACTORY_TOKEN
 } from "../services/token";
 import {Connection} from "typeorm";
@@ -17,6 +17,7 @@ import {useStaticPublicFolder} from "../http/dashboardExpressMiddleware";
 import {SlackTransport} from "../slack/SlackTransport";
 import {Redis} from "ioredis";
 import {Logger} from "winston";
+import {Observable} from "rxjs";
 
 export class ServerCommand implements yargs.CommandModule {
   command = 'server:run';
@@ -29,7 +30,8 @@ export class ServerCommand implements yargs.CommandModule {
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private slackTransport: SlackTransport,
     @Inject(REDIS_TOKEN) private redis: Redis,
-    @Inject(LOGGER_TOKEN) protected logger: Logger
+    @Inject(LOGGER_TOKEN) protected logger: Logger,
+    @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 
   async handler(args: yargs.Arguments<{}>) {
@@ -79,5 +81,13 @@ export class ServerCommand implements yargs.CommandModule {
         this.connection.close()
         this.redis.disconnect()
       });
+
+    this.terminate$.subscribe(() => {
+      server.close((error) => {
+        if (error) {
+          this.logger.error('Sever closing', {error});
+        }
+      });
+    })
   }
 }

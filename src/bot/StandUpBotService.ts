@@ -2,7 +2,7 @@ import { Injectable, Inject, InjectionToken } from 'injection-js';
 import {Observable, Subject, timer} from "rxjs";
 import {delay, map, share, takeUntil} from "rxjs/operators";
 import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITransport, IUser} from "./models";
-import {LOGGER_TOKEN} from "../services/token";
+import {LOGGER_TOKEN, TERMINATE} from "../services/token";
 import {Logger} from "winston";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
@@ -36,34 +36,30 @@ class OptionNotFoundError extends Error {
 @Injectable()
 export default class StandUpBotService {
   protected finishStandUp = new Subject<IStandUp>()
-
   finishStandUp$ = this.finishStandUp.asObservable()
-
-  private end$ = new Subject();
-  private destroy$ = new Subject();
 
   constructor(
     @Inject(STAND_UP_BOT_STAND_UP_PROVIDER) protected standUpProvider: IStandUpProvider,
     @Inject(STAND_UP_BOT_TRANSPORT) protected transport: ITransport,
-    @Inject(LOGGER_TOKEN) protected logger: Logger
+    @Inject(LOGGER_TOKEN) protected logger: Logger,
+    @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
-
 
   listenTransport() {
     if (this.transport.message$) {
       this.transport.message$
-        .pipe(takeUntil(this.destroy$))
+        //.pipe(takeUntil(this.terminate$))
         .subscribe((message: IMessage) => this.answerAndSendNext(message))
     }
     if (this.transport.batchMessages$) { // receive batch of messages
       this.transport.batchMessages$
-        .pipe(takeUntil(this.destroy$))
+        //.pipe(takeUntil(this.terminate$))
         .subscribe((messages: IMessage[]) => this.answers(messages))
     }
 
     if (this.transport.agreeToStart$) {
       this.transport.agreeToStart$
-        .pipe(takeUntil(this.destroy$))
+        //.pipe(takeUntil(this.terminate$))
         .subscribe(async ({user, date}) => {
           const standUp = await this.standUpProvider.findByUser(user, date);
 
@@ -78,12 +74,6 @@ export default class StandUpBotService {
         })
     }
   }
-
-  /*destroy() {
-    this.stop();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }*/
 
   async startTeamStandUpByDate(date: Date): Promise<IStandUp[]> {
     let standUps: IStandUp[] = [];
@@ -269,24 +259,24 @@ export default class StandUpBotService {
 
     this.logger.debug('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop')
 
-    const internval$ = timer(millisecondsDelay, intervalMs)
+    const interval$ = timer(millisecondsDelay, intervalMs)
       .pipe(
-        takeUntil(this.end$),
+        takeUntil(this.terminate$),
         map(_ => new Date()),
         delay(5 * 1000),
         share()
       )
 
-    internval$.subscribe((date: Date) => {
+    interval$.subscribe((date: Date) => {
       this.startDailyMeetUpByDate(date)
       this.checkStandUpEndByDate(date)
     })
 
-    internval$.subscribe({
+    interval$.subscribe({
       error: (e) => this.logger.error('Standup interval error', {error: e})
     })
 
-    return internval$
+    return interval$
   }
 
   async startDailyMeetUpByDate(date) {
@@ -355,15 +345,5 @@ export default class StandUpBotService {
   async send(user: IUser, text: string): Promise<void> {
     this.logger.info(`Standup bot send to #${user.id}: "${text}"`);
     return await this.transport.sendMessage(user, text)
-  }
-
-  stopInterval() {
-    this.end$.next();
-    this.end$.complete();
-    this.end$ = new Subject()
-  }
-
-  stop() {
-    this.stopInterval()
   }
 }

@@ -4,6 +4,7 @@ import {Processor, Queue, Worker} from "bullmq";
 import {Redis} from "ioredis";
 import express from 'express'
 import {Logger} from "winston";
+import {Observable} from "rxjs";
 
 export interface IQueueFactory {
   (queueName: string): Queue;
@@ -22,3 +23,4 @@ export const EXPRESS_DASHBOARD_TOKEN = new InjectionToken<express.Router>('app.e
 export const EXPRESS_SLACK_API_TOKEN = new InjectionToken<express.Router>('app.express_slack_api')
 export const LOGGER_TOKEN = new InjectionToken<Logger>('app.logger')
 export const RETRY_MAIN_QUEUE = new InjectionToken<Queue>('queue.retry_main')
+export const TERMINATE = new InjectionToken<Observable<void>>('terminate')

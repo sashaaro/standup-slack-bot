@@ -4,7 +4,7 @@ import yargs from "yargs";
 import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "./services/providers";
 import {commands} from "./command";
-import {CONFIG_TOKEN} from "./services/token";
+import {CONFIG_TOKEN, LOGGER_TOKEN, TERMINATE} from "./services/token";
 
 let argv = yargs.option('env', {
   default: 'dev',
@@ -12,9 +12,13 @@ let argv = yargs.option('env', {
 })
 
 const env = argv.argv.env;
-console.log(`Environment: ${env}`)
-
 const injector = ReflectiveInjector.resolveAndCreate(createProviders(env))
+
+injector.get(LOGGER_TOKEN).debug(`Environment: ${env}`)
+
+injector.get(TERMINATE).subscribe(() => {
+  injector.get(LOGGER_TOKEN).debug('Terminate...')
+})
 
 let main = yargs
   .usage("Usage: $0 <command> [options]")

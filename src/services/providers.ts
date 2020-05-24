@@ -4,7 +4,7 @@ import {
   IQueueFactory, IWorkerFactory, LOGGER_TOKEN,
   QUEUE_FACTORY_TOKEN,
   REDIS_TOKEN,
-  RENDER_TOKEN, RETRY_MAIN_QUEUE,
+  RENDER_TOKEN, RETRY_MAIN_QUEUE, TERMINATE,
   WORKER_FACTORY_TOKEN
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
@@ -25,6 +25,7 @@ import {commands} from "../command";
 import {createLogger, transports, format} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
 import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
+import {Observable} from "rxjs";
 
 export interface IAppConfig {
   env: string,
@@ -67,6 +68,7 @@ export const initFixtures = async (connection: Connection) => {
 
 export const QUEUE_MAIN_NAME = 'main'
 export const QUEUE_RETRY_MAIN_NAME = 'retry_main'
+
 
 export const createProviders = (env = 'dev'): Provider[] => {
   // dotenv.config({path: `.env`})
@@ -201,6 +203,19 @@ export const createProviders = (env = 'dev'): Provider[] => {
         return logger;
       },
       deps: []
+    },
+    {
+      provide: TERMINATE,
+      useValue: new Observable((observer) => {
+        process.on('SIGTERM', () => {
+          observer.next();
+          observer.complete();
+        })
+        process.on('SIGINT', () => {
+          observer.next();
+          observer.complete();
+        })
+      })
     }
   ]
 
