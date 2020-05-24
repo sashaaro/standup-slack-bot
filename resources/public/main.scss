@@ -115,10 +115,17 @@ body {
   @include card;
   @include clearfix;
 
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 15px;
+  }
+
   &__title {
     font-weight: 700;
     font-size: 24px;
-    margin-bottom: 15px;
   }
 
   margin-bottom: 25px;

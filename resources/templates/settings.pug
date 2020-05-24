@@ -60,7 +60,7 @@ block authorized_content
                                 option(value=u.id, selected=formData.receivers.includes(u.id))= u.name
                 button.ui.large.button.fluid.positive(type="submit", v-bind:disabled="questions.length === 0 || submitting", v-bind:class="{loading: submitting}")
                     i.save.icon
-                    | Save settings
+                    | Save
             .column
                 h3.ui.header= "Questions"
                 draggable(:list="questions", v-bind="dragOptions", handle=".icon.movable")
@@ -74,9 +74,11 @@ block authorized_content
                                 .ui.action.left.icon.input.large
                                     i.icon.arrows.alternate.vertical.link.movable
                                     input.form-control(type="text", v-bind:name="'questions[' + index + '][text]'", v-model="question.text", required, minlength=2)
+                                    .ui.icon.button.teal(title="Add options", v-if="question.options.length === 0", v-on:click="addOption(question)")
+                                        i.list.ol.icon
                                     .ui.icon.button(v-on:click="remove(question)")
                                         i.trash.icon
-                            .question-options
+                            .question-options(v-if="question.options.length > 0")
                                 div(v-for="(questionOption, answerIndex) in question.options")
                                     label(v-bind:class="{ error: errors[index] && errors[index].options && errors[index].options[answerIndex].text.length }")
                                         span= "#{{ answerIndex + 1 }}"
@@ -89,9 +91,8 @@ block authorized_content
                                     .ui.checkbox
                                         input(type="checkbox", v-model="questionOption.isSame")
                                         label= "It's not same question. reset statistics"
-
                                 div
-                                    button.mini.ui.button.olive.fluid(v-on:click="addOption(question)")
+                                    button.mini.ui.button.teal.fluid(v-on:click="addOption(question)")
                                         i.add.icon
                                         | Add option
                     div

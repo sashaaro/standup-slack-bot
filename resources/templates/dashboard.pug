@@ -6,20 +6,26 @@ block authorized_content
   .team-list
     each team in teams
       .team
-        .team__title= team.name
-        .ui.toggle.checkbox
-          input(type="checkbox")
-          label= "Activate"
-        .ui.label= "Time: " + team.start + " (" + team.timezone.name + ")"
-        .ui.label= "Duration: " + team.duration + " minutes. (until: " + team.untilTime() + ")"
-        .ui.label= "Meetings passed: 32"
-        .ui.label= "Participants: 3"
-        .ui.label= "Created at: " + intl.format(team.createdAt)
-        .ui.label= "Creator: " + team.createdBy ? team.createdBy.name : ''
-        .ui.label= "Reporting: " + team.reportSlackChannel
-        .team__extra
-          a.ui.right.floated.primary.button(href="/team/" + team.id)= "Open"
-          a.ui.right.floated.primary.button(href="/team/" + team.id + "/edit")= "Edit settings"
+        .team__header
+          .team__title= team.name
+          .ui.toggle.checkbox
+            input(type="checkbox" checked=team.isEnabled ? "checked" : "")
+            label= "Activate"
+        .team__content
+          div
+            = "Time: " + team.start + " - " + team.untilTime() + " (" + team.timezone.name + "). Duration " + team.duration  + " minutes"
+          div
+            = "Participants: 3"
+          div
+            = "Meetings passed: 32"
+          div
+            = "Report slack channel: " + team.reportSlackChannel
+          div
+            .ui.label= "Created by " + team.createdBy.name + " at: " + intl.format(team.createdAt)
+
+          .team__actions
+            a.ui.right.floated.primary.button(href="/team/" + team.id)= "Open"
+            a.ui.right.floated.primary.button(href="/team/" + team.id + "/edit")= "Edit settings"
 
 block append scripts
   link(rel='stylesheet' href='https://afeld.github.io/emoji-css/emoji.css')
