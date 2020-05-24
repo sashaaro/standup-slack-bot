@@ -107,6 +107,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
       const teams = await conn.manager.getRepository(Team).createQueryBuilder('t')
         .leftJoinAndSelect('t.timezone', 'tz')
         .leftJoinAndSelect('t.createdBy', 'createdBy')
+        .leftJoinAndSelect('t.users', 'users')
         //.andWhere('t.createdBy = :craetedBy', {craetedBy: req.context.user})
         .getMany()
 

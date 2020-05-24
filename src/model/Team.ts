@@ -51,7 +51,7 @@ export class Team implements ITeam {
   @Column({default: 30})
   duration: number
 
-  @Column({nullable: true})
+  @Column({nullable: false})
   reportSlackChannel: string
 
   untilTime()

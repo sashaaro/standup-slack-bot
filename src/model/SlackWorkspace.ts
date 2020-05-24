@@ -2,6 +2,7 @@ import {Column, Entity, OneToMany, PrimaryColumn} from "typeorm";
 import User from "./User";
 import {SlackTeam} from "../slack/model/SlackTeam";
 import {Team} from "./Team";
+import {Channel} from "./Channel";
 
 @Entity()
 class SlackWorkspace {
@@ -21,6 +22,9 @@ class SlackWorkspace {
     eager: true
   })
   team: Team[]
+
+  @OneToMany(type => Channel, ch => ch.workspace)
+  channels: Channel[]
 
   @Column("json", {nullable: true})
   slackData: SlackTeam

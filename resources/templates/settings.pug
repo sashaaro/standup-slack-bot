@@ -1,142 +1,150 @@
 extends layout/authorized_main
 
 block authorized_content
-    .ui.grid
-        if channel
-            .alert.alert--gray.deactivate-bot-block
-                div
-                    | Deactivate bot for
-                    a(href='https://' + user.team.domain + '.slack.com/messages/' + channel.id + '/details' target="blank")= " #" + channel.name
-                    |  channel
-                code
-                    span= "/kick "
-                    a= "@daily_standup"
+  .ui.grid
+    if channel
+      .alert.alert--gray.deactivate-bot-block
+        div
+          | Deactivate bot for
+          a(href='https://' + user.team.domain + '.slack.com/messages/' + channel.id + '/details' target="blank")= " #" + channel.name
+          |  channel
+        code
+          span= "/kick "
+          a= "@daily_standup"
 
-        form.ui.form.two.column.large.screen.only.row#form(method='post', v-on:submit="submit")
-            .column.ui
-                h3.ui.header= "Stan-up settings"
-                .field(class=errors.name ? 'error' : '')
-                    label
-                        span= 'Name'
-                        span.error= errors.name ? errors.name[0] : ''
-                    .ui.input.large
-                        input.form-control(name="name", type="text", value= formData.name)
-                .field(class=errors.timezone && errors.timezone.length ? 'error' : '')
-                    label
-                        span= 'Locale timezone'
-                        span.error= errors.timezone && errors.timezone.length ? errors.timezone[0] : ''
-                    select.ui.large.dropdown.search.form-control(name="timezone")
-                        each timezone, index in timezones
-                            - var selected = formData.timezone == timezone.id
-                            option(value=timezone.id, selected=selected)= timezone.friendlyLabel
-                .ui.fields.two
-                    .field(class=errors.start && errors.start.length ? 'error' : '')
-                        label
-                            span= 'Start meeting (locale time)'
-                            span.error= errors.start && errors.start.length ? errors.start[0] : ''
-                        .ui.input.large
-                            input.form-control(name="start", type="time", step="60", value=formData.start)
-                    .field(class=errors.duration ? 'error' : '')
-                        label
-                            span= 'Duration'
-                            span.error= errors.duration ? errors.duration[0] : ''
-                        .ui.right.labeled.input.large
-                            input.form-control(name="duration", type="number", step="1", value= formData.duration)
-                            .ui.basic.label= "minutes"
-                .field
-                    label= 'Days'
-                    div
-                        each weekDay in weekDays
-                            .ui.checkbox
-                                input(type="checkbox")
-                                label= weekDay
-                .field(class=errors.receivers ? 'error' : '')
-                    label
-                        span= 'Name'
-                        span.error= errors.receivers ? receivers.name[0] : ''
-                    .ui.input.large
-                        select.dropdown.search.ui.fluid(name="receivers[]", placeholder="Select receivers", multiple)
-                            each u in users
-                                option(value=u.id, selected=formData.receivers.includes(u.id))= u.name
-                button.ui.large.button.fluid.positive(type="submit", v-bind:disabled="questions.length === 0 || submitting", v-bind:class="{loading: submitting}")
-                    i.save.icon
-                    | Save
-            .column
-                h3.ui.header= "Questions"
-                draggable(:list="questions", v-bind="dragOptions", handle=".icon.movable")
-                    .field(v-for="(question, index) in questions", v-bind:class="{ error: errors[index] && errors[index].text }")
-                        label
-                            span= "#{{ index + 1 }}"
-                            span.error= "{{ errors[index] && errors[index].text ? errors[index].text[0] : '' }} {{ errors[index] }}"
-                        .movable-input
-                            div
-                                input(type="hidden", v-if="question.id", v-bind:name="'questions[' + index + '][id]'", v-model="question.id")
-                                .ui.action.left.icon.input.large
-                                    i.icon.arrows.alternate.vertical.link.movable
-                                    input.form-control(type="text", v-bind:name="'questions[' + index + '][text]'", v-model="question.text", required, minlength=2)
-                                    .ui.icon.button.teal(title="Add options", v-if="question.options.length === 0", v-on:click="addOption(question)")
-                                        i.list.ol.icon
-                                    .ui.icon.button(v-on:click="remove(question)")
-                                        i.trash.icon
-                            .question-options(v-if="question.options.length > 0")
-                                div(v-for="(questionOption, answerIndex) in question.options")
-                                    label(v-bind:class="{ error: errors[index] && errors[index].options && errors[index].options[answerIndex].text.length }")
-                                        span= "#{{ answerIndex + 1 }}"
-                                        span.error= "{{ errors[index] && errors[index].options && errors[index].options[answerIndex].text[0] }}"
-                                    .ui.input.action.mini
-                                        input.form-control(type="hidden", v-if="questionOption.id", v-bind:name="'questions[' + index + '][options][' + answerIndex + '][id]'", v-model="questionOption.id", required, minlength=2)
-                                        input.form-control(type="text", v-bind:name="'questions[' + index + '][options][' + answerIndex + '][text]'", v-model="questionOption.text", required, minlength=2)
-                                        .ui.icon.button(v-on:click="removeOption(question.options, answerIndex)")
-                                            i.trash.icon
-                                    .ui.checkbox
-                                        input(type="checkbox", v-model="questionOption.isSame")
-                                        label= "It's not same question. reset statistics"
-                                div
-                                    button.mini.ui.button.teal.fluid(v-on:click="addOption(question)")
-                                        i.add.icon
-                                        | Add option
-                    div
-                .field
-                    label &nbsp
-                    a.ui.large.button.blue.fluid(href="#", v-on:click="add")
-                        i.add.icon
-                        | Add question
-                if errors.questions
-                    each err in errors.questions
-                        div= err
+    form.ui.form.two.column.large.screen.only.row#form(method='post', v-on:submit="submit")
+      .column.ui
+        h3.ui.header= "Stan-up settings"
+        .field(class=errors.name ? 'error' : '')
+          label
+            span= 'Name'
+            span.error= errors.name ? errors.name[0] : ''
+          .ui.input.large
+            input.form-control(name="name", type="text", value= formData.name)
+        .field(class=errors.timezone && errors.timezone.length ? 'error' : '')
+          label
+            span= 'Locale timezone'
+            span.error= errors.timezone && errors.timezone.length ? errors.timezone[0] : ''
+          select.ui.large.dropdown.search.form-control(name="timezone")
+            each timezone, index in timezones
+              - var selected = formData.timezone == timezone.id
+              option(value=timezone.id, selected=selected)= timezone.friendlyLabel
+        .ui.fields.two
+          .field(class=errors.start && errors.start.length ? 'error' : '')
+            label
+              span= 'Start meeting (locale time)'
+              span.error= errors.start && errors.start.length ? errors.start[0] : ''
+            .ui.input.large
+              input.form-control(name="start", type="time", step="60", value=formData.start)
+          .field(class=errors.duration ? 'error' : '')
+            label
+              span= 'Duration'
+              span.error= errors.duration ? errors.duration[0] : ''
+            .ui.right.labeled.input.large
+              input.form-control(name="duration", type="number", step="1", value= formData.duration)
+              .ui.basic.label= "minutes"
+        .field
+          label= 'Days'
+          div
+            each weekDay in weekDays
+              .ui.checkbox
+                input(type="checkbox")
+                label= weekDay
+        .field(class=errors.receivers ? 'error' : '')
+          label
+            span= 'Participants'
+            span.error= errors.receivers ? receivers.name[0] : ''
+          .ui.input.large
+            select.dropdown.search.ui.fluid(name="receivers[]", placeholder="Select receivers", multiple)
+              each u in users
+                option(value=u.id, selected=formData.receivers.includes(u.id))= u.name
+        .field(class=errors.reportSlackChannel ? 'error' : '')
+          label
+            span= 'Report channel'
+            span.error= errors.reportSlackChannel ? errors.reportSlackChannel[0] : ''
+          .ui.input.large
+            select.dropdown.search.ui.fluid(name="reportSlackChannel", placeholder="Select channel")
+              each u in channels
+                option(value=u.id, selected=formData.reportSlackChannel === u.id)= u.name
+        button.ui.large.button.fluid.positive(type="submit", v-bind:disabled="questions.length === 0 || submitting", v-bind:class="{loading: submitting}")
+          i.save.icon
+          | Save
+      .column
+        h3.ui.header= "Questions"
+        draggable(:list="questions", v-bind="dragOptions", handle=".icon.movable")
+          .field(v-for="(question, index) in questions", v-bind:class="{ error: errors[index] && errors[index].text }")
+            label
+              span= "#{{index +1}}"
+              span.error= "{{ errors[index] && errors[index].text ? errors[index].text[0] : '' }} {{ errors[index] }}"
+            .movable-input
+              div
+                input(type="hidden", v-if="question.id", v-bind:name="'questions[' + index + '][id]'", v-model="question.id")
+                .ui.action.left.icon.input.large
+                  i.icon.arrows.alternate.vertical.link.movable
+                  input.form-control(type="text", v-bind:name="'questions[' + index + '][text]'", v-model="question.text", required, minlength=2)
+                  .ui.icon.button.teal(title="Add options", v-if="question.options.length === 0", v-on:click="addOption(question)")
+                    i.list.ol.icon
+                  .ui.icon.button(v-on:click="remove(question)")
+                    i.trash.icon
+              .question-options(v-if="question.options.length > 0")
+                div(v-for="(questionOption, answerIndex) in question.options")
+                  label(v-bind:class="{ error: errors[index] && errors[index].options && errors[index].options[answerIndex].text.length }")
+                    span= "#{{answerIndex +1}}"
+                    span.error= "{{ errors[index] && errors[index].options && errors[index].options[answerIndex].text[0] }}"
+                  .ui.input.action.mini
+                    input.form-control(type="hidden", v-if="questionOption.id", v-bind:name="'questions[' + index + '][options][' + answerIndex + '][id]'", v-model="questionOption.id", required, minlength=2)
+                    input.form-control(type="text", v-bind:name="'questions[' + index + '][options][' + answerIndex + '][text]'", v-model="questionOption.text", required, minlength=2)
+                    .ui.icon.button(v-on:click="removeOption(question.options, answerIndex)")
+                      i.trash.icon
+                  .ui.checkbox
+                    input(type="checkbox", v-model="questionOption.isSame")
+                    label= "It's not same question. reset statistics"
+                div
+                  button.mini.ui.button.teal.fluid(v-on:click="addOption(question)")
+                    i.add.icon
+                    | Add option
+          div
+        .field
+          label &nbsp
+          a.ui.large.button.blue.fluid(href="#", v-on:click="add")
+            i.add.icon
+            | Add question
+        if errors.questions
+          each err in errors.questions
+            div= err
 
 block append scripts
-    script.
-        var vm = new Vue({
-            el: '#form',
-            data: {
-                questions: !{JSON.stringify(formData.questions || [])},
-                errors: !{JSON.stringify(errors.questions || {})},
-                dragOptions: {
-                    animation: 200,
-                },
-                submitting: false
-            },
-            mounted: function () {
-                this.originalValue = this.questions;
-            },
-            methods: {
-                add(e) {
-                    e.preventDefault();
-                    this.questions.push({text: "", options: []})
-                },
-                remove(question) {
-                    this.questions.splice(this.questions.indexOf(question), 1)
-                },
-                addOption(question) {
-                    question.options.push({})
-                },
-                removeOption(options, answerIndex) {
-                    options.splice(answerIndex, 1)
-                },
-                submit() {
-                    this.submitting = true;
-                },
-            }
-        })
-        $('select.dropdown.search').dropdown({fullTextSearch: true});
+  script.
+    var vm = new Vue({
+      el: '#form',
+      data: {
+        questions: !{JSON.stringify(formData.questions || [])},
+        errors: !{JSON.stringify(errors.questions || {})},
+        dragOptions: {
+          animation: 200,
+        },
+        submitting: false
+      },
+      mounted: function () {
+        this.originalValue = this.questions;
+      },
+      methods: {
+        add(e) {
+          e.preventDefault();
+          this.questions.push({text: "", options: []})
+        },
+        remove(question) {
+          this.questions.splice(this.questions.indexOf(question), 1)
+        },
+        addOption(question) {
+          question.options.push({})
+        },
+        removeOption(options, answerIndex) {
+          options.splice(answerIndex, 1)
+        },
+        submit() {
+          this.submitting = true;
+        },
+      }
+    })
+    $('select.dropdown.search').dropdown({fullTextSearch: true});

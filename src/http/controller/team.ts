@@ -1,4 +1,4 @@
-import StandUp, {isInProgress} from "../../model/StandUp";
+import StandUp from "../../model/StandUp";
 import {Inject, Injectable} from 'injection-js';
 import {Connection, Repository} from "typeorm";
 import {RENDER_TOKEN} from "../../services/token";
@@ -23,6 +23,7 @@ import {
 } from "class-validator";
 import Question from "../../model/Question";
 import {Team} from "../../model/Team";
+import {Channel} from "../../model/Channel";
 
 const replaceAll = function(string, search, replace){
   return string.split(search).join(replace);
@@ -91,6 +92,9 @@ export class TeamFormDTO {
   @Expose()
   @Type(() => String)
   receivers: string[]
+  @IsNotEmpty()
+  @Type(() => String)
+  reportSlackChannel: string
 
   constructor() {
     this.receivers = [];
@@ -130,7 +134,7 @@ const formatMsg = async (team: SlackWorkspace, userRepository: Repository<User>,
     const user = await userRepository.findOne(match[1])
     if (user) {
       newText = text.substring(0, match.index) + text.slice(match.index).replace(`<@${match[1]}>`,
-        `<a target="_blank" href="https://${domain}.slack.com/messages/${match[1]}/details/">@${user.name}</a>`)
+        `<a target="_blank" href="https://${team.domain}.slack.com/messages/${match[1]}/details/">@${user.name}</a>`)
     } else {
       newText = text.substring(0, match.index) + text.slice(match.index).replace(`<@${match[1]}>`, `<.@${match[1]}>`)
     }
@@ -155,6 +159,12 @@ export class TeamAction {
   }
 
   create: IHttpAction = async (req, res) => {
+    const channels = await this.connection.getRepository(Channel).find({
+      workspace: req.context.user.workspace,
+      isEnabled: true,
+      isArchived: false
+    });
+
     const timezones = await this.connection.getRepository(Timezone).find();
 
     const teamRepository = this.connection.getRepository(Team)
@@ -173,8 +183,10 @@ export class TeamAction {
         team.name = formData.name
         team.start = formData.start
         team.duration = formData.duration
+        team.reportSlackChannel = formData.reportSlackChannel
         team.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
         team.questions.map((q, index) => q.index = index);
+        team.workspace = req.context.user.workspace
 
         team = await teamRepository.save(team)
 
@@ -186,11 +198,9 @@ export class TeamAction {
       }
     }
 
-    req.context.user.workspace = await this.connection.getRepository(SlackWorkspace).findOneOrFail(
-      req.context.user.workspace.id, { relations: ['users']}
-    )
-
-    const users = req.context.user.workspace.users
+    const users = await this.connection.getRepository(User).find({
+      workspace: req.context.user.workspace
+    });
 
     res.send(this.render('settings', {
       timezones,
@@ -198,7 +208,8 @@ export class TeamAction {
       weekDays: weekDays,
       formData,
       users,
-      errors: viewErrors
+      errors: viewErrors,
+      channels
     }))
   }
 
@@ -215,6 +226,7 @@ export class TeamAction {
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.timezone', 'timezone')
       .leftJoinAndSelect('t.questions', 'questions')
+      .leftJoinAndSelect('t.workspace', 'workspace')
       .leftJoinAndSelect('t.users', 'users')
       .leftJoinAndSelect('questions.options', 'options')
       .where({id: id})
@@ -227,9 +239,18 @@ export class TeamAction {
       throw new ResourceNotFoundError('Team is not found');
     }
 
+    if (req.context.user.workspace.id !== team.workspace.id) {
+      throw new ResourceNotFoundError('Team is not found');
+    }
+
+    const channels = await this.connection.getRepository(Channel).find({
+      workspace: req.context.user.workspace,
+      isEnabled: true,
+      isArchived: false
+    });
+
     const timezones = await this.connection.getRepository(Timezone).find();
     const formData = new TeamFormDTO();
-
 
     let viewErrors: any = {};
 
@@ -244,6 +265,7 @@ export class TeamAction {
         team.name = formData.name
         team.start = formData.start
         team.duration = formData.duration
+        team.reportSlackChannel = formData.reportSlackChannel
         team.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
         //console.log(formData.receivers)
         team.users = formData.receivers.map(r => this.connection.getRepository(User).create({id: r}))
@@ -268,11 +290,9 @@ export class TeamAction {
     console.log(viewErrors)
     console.log(viewErrors.questions)
 
-    req.context.user.workspace = await this.connection.getRepository(SlackWorkspace).findOneOrFail(
-      req.context.user.workspace.id, { relations: ['users']}
-    )
-
-    const users = req.context.user.workspace.users
+    const users = await this.connection.getRepository(User).find({
+      workspace: req.context.user.workspace
+    });
 
     res.send(this.render('settings', {
       timezones,
@@ -280,7 +300,8 @@ export class TeamAction {
       weekDays,
       formData,
       users,
-      errors: viewErrors
+      errors: viewErrors,
+      channels
     }))
   }
 

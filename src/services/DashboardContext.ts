@@ -25,9 +25,9 @@ export default class DashboardContext {
     //this.user = await userRepository.findOne('UJZM51SN8');
     //this.session.channel = 'CK222FUKH'
     if (authedUser) {
-      this.user = await userRepository.findOne(authedUser.id);
+      this.user = await userRepository.findOne(authedUser.id, {relations: ['workspace']});
     }
-    this.user = await userRepository.findOne(null);
+    this.user = await userRepository.findOne(null, {relations: ['workspace']});
   }
 
   authenticate(authedUser: IAuthUser, user: User) {

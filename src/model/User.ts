@@ -42,7 +42,8 @@ export default class User implements IUser {
   name: string;
 
   @ManyToOne(type => SlackWorkspace, team => team.users, {
-    eager: true
+    eager: true,
+    nullable: false
   })
   workspace: SlackWorkspace;
 

@@ -7,24 +7,26 @@ block authorized_content
     each team in teams
       .team
         .team__header
-          .team__title= team.name
+          a.team__title(href="/team/" + team.id)= team.name
           .ui.toggle.checkbox
             input(type="checkbox" checked=team.isEnabled ? "checked" : "")
             label= "Activate"
         .team__content
           div
             = "Time: " + team.start + " - " + team.untilTime() + " (" + team.timezone.name + "). Duration " + team.duration  + " minutes"
-          div
-            = "Participants: 3"
-          div
-            = "Meetings passed: 32"
-          div
-            = "Report slack channel: " + team.reportSlackChannel
+          div= "Participants: " + team.users.length
+          .team__users
+            each u in team.users
+              div(title=u.profile.real_name ? u.profile.real_name + ' (' + u.name + ')' : u.name)
+                if u.profile.image_72
+                  img.stand-up-item__image(src=u.profile.image_72)
+                else
+                  svg(data-jdenticon-value=u.id, width="72", height="72")
+          // div= "Meetings passed: 32"
+          div= "Report to #" + team.reportSlackChannel
           div
             .ui.label= "Created by " + team.createdBy.name + " at: " + intl.format(team.createdAt)
-
           .team__actions
-            a.ui.right.floated.primary.button(href="/team/" + team.id)= "Open"
             a.ui.right.floated.primary.button(href="/team/" + team.id + "/edit")= "Edit settings"
 
 block append scripts

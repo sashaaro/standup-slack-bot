@@ -115,6 +115,8 @@ body {
   @include card;
   @include clearfix;
 
+  position: relative;
+
   &__header {
     display: flex;
     justify-content: space-between;
@@ -126,6 +128,16 @@ body {
   &__title {
     font-weight: 700;
     font-size: 24px;
+  }
+
+  &__actions {
+    position: absolute;
+    right: 24px;
+    bottom: 20px;
+  }
+
+  &__users {
+    display: flex;
   }
 
   margin-bottom: 25px;
