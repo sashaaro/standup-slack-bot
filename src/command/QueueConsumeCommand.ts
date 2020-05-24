@@ -39,8 +39,8 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
   constructor(
     @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
-    @Inject(SlackTransport) private slackTransport: SlackTransport,
-    @Inject(StandUpBotService) private standUpBotService: StandUpBotService,
+    private slackTransport: SlackTransport,
+    private standUpBotService: StandUpBotService,
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
