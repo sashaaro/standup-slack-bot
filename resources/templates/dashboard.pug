@@ -1,7 +1,25 @@
 extends layout/authorized_main
 
 block authorized_content
-  | welcome
+  if teams.length === 0
+    .no-stand-ups No teams🐥
+  .team-list
+    each team in teams
+      .team
+        .team__title= team.name
+        .ui.toggle.checkbox
+          input(type="checkbox")
+          label= "Activate"
+        .ui.label= "Time: " + team.start + " (" + team.timezone.name + ")"
+        .ui.label= "Duration: " + team.duration + " minutes. (until: " + team.untilTime() + ")"
+        .ui.label= "Meetings passed: 32"
+        .ui.label= "Participants: 3"
+        .ui.label= "Created at: " + intl.format(team.createdAt)
+        .ui.label= "Creator: " + team.createdBy ? team.createdBy.name : ''
+        .ui.label= "Reporting: " + team.reportSlackChannel
+        .team__extra
+          a.ui.right.floated.primary.button(href="/team/" + team.id)= "Open"
+          a.ui.right.floated.primary.button(href="/team/" + team.id + "/edit")= "Edit settings"
 
 block append scripts
   link(rel='stylesheet' href='https://afeld.github.io/emoji-css/emoji.css')

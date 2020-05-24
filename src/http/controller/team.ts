@@ -28,7 +28,7 @@ const replaceAll = function(string, search, replace){
   return string.split(search).join(replace);
 }
 
-const link = '(https?:\\/\\/(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|https?:\\/\\/(?:www\\.|(?!www))[a-zA-Z0-9]+\\.[^\\s]{2,}|www\\.[a-zA-Z0-9]+\\.[^\\s]{2,})'
+export const linkExpr = '(https?:\\/\\/(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|https?:\\/\\/(?:www\\.|(?!www))[a-zA-Z0-9]+\\.[^\\s]{2,}|www\\.[a-zA-Z0-9]+\\.[^\\s]{2,})'
 
 
 const transformStringToInt = (v) => v ? parseInt(v) || null : null
@@ -111,15 +111,7 @@ export const transformViewErrors = (errors: ValidationError[], err?: any[]) => {
 const formatMsg = async (team: SlackWorkspace, userRepository: Repository<User>, text) => {
   //text = text.replace(new RegExp('\:([a-z\-_]+)\:'), '<i class="em em-$1"></i>')
   //text = replaceAll(text, new RegExp('\:([a-z\-_]+)\:'), '<i class="em em-$1"></i>')
-
   let newText = text
-
-  do {
-    text = newText
-    newText = text.replace(new RegExp('<'+link+'>'), '<a target="_blank" href="$1">$1</a>')
-  } while (newText !== text)
-
-
   // channel link
   do {
     text = newText
@@ -138,7 +130,7 @@ const formatMsg = async (team: SlackWorkspace, userRepository: Repository<User>,
     const user = await userRepository.findOne(match[1])
     if (user) {
       newText = text.substring(0, match.index) + text.slice(match.index).replace(`<@${match[1]}>`,
-        `<a target="_blank" href="https://${team.domain}.slack.com/messages/${match[1]}/details/">@${user.name}</a>`)
+        `<a target="_blank" href="https://${domain}.slack.com/messages/${match[1]}/details/">@${user.name}</a>`)
     } else {
       newText = text.substring(0, match.index) + text.slice(match.index).replace(`<@${match[1]}>`, `<.@${match[1]}>`)
     }
@@ -249,6 +241,7 @@ export class TeamAction {
 
       if (errors.length === 0) {
         team.timezone = await this.connection.getRepository(Timezone).findOne(formData.timezone) || team.timezone;
+        team.name = formData.name
         team.start = formData.start
         team.duration = formData.duration
         team.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
@@ -312,7 +305,7 @@ export class TeamAction {
       .andWhere('st.endAt IS NOT NULL')
       .andWhere('team.id = :teamID', {teamID: id})
 
-    const recordsPerPage = 5
+    const recordsPerPage = 3
     const page = parseInt(req.query.page as string) || 1;
 
     const standUpsTotal = await qb.getCount();
@@ -329,7 +322,7 @@ export class TeamAction {
       for (const u of standUp.team.users) {
         for (const answer of standUp.answers as any) {
           if (answer.answerMessage) {
-            // answer.formatAnswerMessage = await formatMsg(context.user.team, userRepository, answer.answerMessage)
+            answer.formatAnswerMessage = await formatMsg(context.user.team, userRepository, answer.answerMessage)
           }
         }
 

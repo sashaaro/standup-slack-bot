@@ -1,0 +1,281 @@
+body {
+  background-color: #f2f2f2;
+}
+
+.content {
+  width: 1127px;
+  padding-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.item.item--logo {
+  padding: 0;
+}
+
+.movable {
+  cursor: move !important;
+}
+
+.movable-input .movable {
+  margin-left: 5px;
+}
+
+.question-options {
+  padding-left: 50px;
+}
+
+.question-options > div {
+  padding-top: 20px;
+}
+
+.logo {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+  /* https://www.flaticon.com/free-icon/robot_270137 */
+  background-image: url("/logo.png");
+  width: 50px;
+
+  margin-left: 5px;
+}
+
+.icon.color-slack {
+  background-image: url("/slack.svg");
+  background-position: center center;
+  background-repeat: no-repeat no-repeat;
+  background-size: contain;
+}
+
+.logo.active {
+  background-color: rgba(0, 0, 0, .05);
+}
+
+.welcome {
+  width: 300px;
+  margin: 50px auto;
+  text-align: center;
+}
+
+.welcome__title {
+  font-size: 35px;
+  font-weight: 800;
+  margin-top: 30px;
+  margin-bottom: 50px;
+}
+
+.welcome .logo {
+  height: 50px;
+  margin: 0 auto 10px auto;
+}
+
+.ui.menu .item {
+  &.menu-title {
+    padding: 5px 10px;
+  }
+
+  &.select-channel-item {
+    padding-top: 0px;
+    padding-bottom: 0px;
+  }
+}
+
+.menu-title__sign {
+  color: #919193;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.menu-title__sign img {
+  display: inline;
+  vertical-align: sub;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 4px;
+  border: 1px solid #b3b3b3;
+  margin-right: 3px;
+}
+
+@mixin clearfix {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+@mixin card {
+  background: #ffffff;
+  box-shadow: 0 1px 2px 0 rgba(34, 36, 38, .15);
+  border-radius: 6px;
+  padding: 20px 24px;
+}
+
+.team {
+  @include card;
+  @include clearfix;
+
+  &__title {
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+
+  margin-bottom: 25px;
+}
+
+.stand-up {
+  @include card;
+  box-sizing: border-box;
+
+  &__date {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+
+  margin-bottom: 25px;
+}
+
+.stand-up-item {
+  &__content {
+    display: flex;
+    margin-left: 20px;
+    margin-bottom: 22px;
+  }
+
+  &__image {
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+  }
+
+  &__name {
+    font-weight: bold;
+    font-size: 24px;
+    margin-left: 10px;
+    margin-top: 12px;
+  }
+
+  &__result {
+    margin-left: 20px;
+    margin-bottom: 20px;
+    padding-left: 12px;
+    border-left: 4px solid;
+    /* https://semantic-ui.com/usage/theming.html*/
+    &--0 {
+      border-left-color: #00a6a6;
+    }
+    &--1 {
+      border-left-color: #0E6EB8;
+    }
+    &--2 {
+      border-left-color: #EE82EE;
+    }
+    &--3 {
+      border-left-color: #016936;
+    }
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__question {
+    font-weight: bold;
+    font-size: 22px;
+    margin-bottom: 18px;
+  }
+
+  &__answer {
+    font-size: 18px;
+    font-style: italic;
+  }
+
+  margin-bottom: 10px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.menu .item.active > .icon {
+  animation: icon-loading 18s linear infinite;
+}
+
+.no-stand-ups {
+  text-align: center;
+  font-size: 22px;
+  /*font-weight: 600;*/
+}
+
+#pagination {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 20px 0;
+}
+
+#pagination ul {
+  padding: 0;
+}
+
+.alert {
+  display: inline-block;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  padding: .75rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: .25rem;
+}
+
+.alert--gray {
+  background-color: #e2e3e5;
+  border-color: #d6d8db;
+}
+
+.alert--primary {
+  color: #004085;
+  background-color: #cce5ff;
+  border-color: #b8daff;
+}
+
+.activate-bot-block {
+  margin-top: 10px;
+  text-align: center;
+}
+
+
+.deactivate-bot-block {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+}
+
+code {
+  border: 1px solid #b3b3b3;
+  background-color: #f3f3f3;
+  border-radius: 5px;
+  font-family: Monaco, Menlo, Consolas, "Courier New", monospace !important;
+  font-size: .75rem;
+  line-height: .75rem;
+  white-space: normal;
+  color: #e01e5a;
+  padding: 2px 3px 1px;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+  tab-size: 4;
+}
+
+.auth-block {
+  text-align: center;
+  margin-top: 50px;
+}
+
+/*.select.dropdown.search {
+    width: 100%;
+}*/
+
+.field label .error {
+  float: right;
+}

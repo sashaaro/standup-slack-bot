@@ -1,57 +1,63 @@
 extends layout/authorized_main
 
 block authorized_content
-    if standUps.length === 0
-        .no-meetings No meetings 🐥
-    #list
-        each standUp in standUps
-            .ui.items.stand-up
-                .stand-up__date
-                    div= intl.format(standUp.start)
-                    if standUp.isInProgress
-                        a.ui.teal.label= 'In progress'
-                each u in standUp.team.users
-                    .item.stand-up-item
-                        img.stand-up-item__image(src=u.profile.image_48).img-thumbnail
-                        .stand-up-item__content
-                            .stand-up-item__name= u.profile.real_name + ' (' + u.name + ')'
-                    if u.answers.length === 0
-                        div= 'No answers 🐥'
-                    each answer, index in u.answers
-                        .stand-up-item__question-answer(class= 'stand-up-item__question-answer--'+index)
-                            .stand-up-item__question= answer.question.text
-                            if answer.answerMessage
-                                .stand-up-item__answer !{ answer.formatAnswerMessage }
-                            if answer.option
-                                .stand-up-item__answer= answer.option.text
-        #pagination
-            paginate(
-            v-model="page",
-            :page-count="pageCount",
-            :click-handler="handler",
-            :prev-text="'Prev'",
-            :next-text="'Next'",
-            :container-class="'ui pagination menu'",
-            :page-class="'item'",
-            :prev-class="'item'",
-            :next-class="'item'",
-            )
-block append scripts
-    link(rel='stylesheet' href='https://afeld.github.io/emoji-css/emoji.css')
-    script.
-        var url = new URL(location.href);
-        let page = parseInt(url.searchParams.get('page')) || 1
+  if standUps.length === 0
+    .no-stand-ups No meetings 🐥
+  .stand-up-list
+    each standUp in standUps
+      .stand-up
+        .stand-up__date
+          div= intl.format(standUp.start)
+          if !standUp.isFinished()
+            a.ui.teal.label= 'In progress'
+        each u in standUp.team.users
+          .stand-up-item
+            .stand-up-item__content
+              if u.profile.image_72
+                img.stand-up-item__image(src=u.profile.image_72)
+              else
+                svg(data-jdenticon-value=u.id, width="72", height="72")
+              .stand-up-item__name= u.profile.real_name ? u.profile.real_name + ' (' + u.name + ')' : u.name
+            if u.answers.length === 0
+              div= 'No answers 🐥'
+            each answer, index in u.answers
+              .stand-up-item__result(class= 'stand-up-item__result--' + index)
+                .stand-up-item__question= answer.question.text
+                if answer.answerMessage
+                  .stand-up-item__answer= answer.answerMessage
+                else if answer.option
+                  .stand-up-item__answer= answer.option.text
+                else
+                  .stand-up-item__answer= "-"
 
-        var vm = new Vue({
-            el: '#pagination',
-            data: {
-                pageCount: #{ pageCount },
-                page: page,
-            },
-            methods: {
-                handler: function (page) {
-                    url.searchParams.has('page') ? url.searchParams.set('page', page) : url.searchParams.append('page', page);
-                    location.href = url.href
-                }
-            }
-        })
+    #pagination
+      paginate(
+        v-model="page",
+        :page-count="pageCount",
+        :click-handler="handler",
+        :prev-text="'Prev'",
+        :next-text="'Next'",
+        :container-class="'ui pagination menu'",
+        :page-class="'item'",
+        :prev-class="'item'",
+        :next-class="'item'",
+      )
+block append scripts
+  link(rel='stylesheet' href='https://afeld.github.io/emoji-css/emoji.css')
+  script.
+    var url = new URL(location.href);
+    let page = parseInt(url.searchParams.get('page')) || 1
+
+    var vm = new Vue({
+      el: '#pagination',
+      data: {
+        pageCount: #{ pageCount },
+        page: page,
+      },
+      methods: {
+        handler: function (page) {
+          url.searchParams.has('page') ? url.searchParams.set('page', page) : url.searchParams.append('page', page);
+          location.href = url.href
+        }
+      }
+    })

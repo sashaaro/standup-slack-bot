@@ -19,7 +19,8 @@ export class Team implements ITeam {
   // TODO isPrivate: boolean;
 
   @ManyToOne(type => User, null, {
-    eager: true
+    eager: true,
+    nullable: false
   })
   createdBy: User
 
@@ -52,4 +53,10 @@ export class Team implements ITeam {
 
   @Column({nullable: true})
   reportSlackChannel: string
+
+  untilTime()
+  {
+    const time = new Date(new Date('2020.01.01 ' + this.start).getTime() + this.duration * 60 * 1000);
+    return time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0')
+  }
 }

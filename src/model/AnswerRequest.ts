@@ -4,6 +4,7 @@ import StandUp from "./StandUp";
 import User from "./User";
 import {IAnswerRequest} from "../bot/models";
 import QuestionOption from "./QuestionOption";
+import {linkExpr} from "../http/controller/team";
 
 @Entity()
 class AnswerRequest implements IAnswerRequest {
@@ -38,6 +39,18 @@ class AnswerRequest implements IAnswerRequest {
   @BeforeInsert()
   setupCreatedAt() {
     this.createdAt = new Date();
+  }
+
+
+  formatAnswerMessage() {
+    // const slackDomain = this.standUp.team.workspace.domain;
+    let formattedMsg = this.answerMessage
+
+
+    /* do {
+      const originMsg = formattedMsg
+      formattedMsg = originMsg.replace(new RegExp('<'+linkExpr+'>'), '<a target="_blank" href="$1">$1</a>')
+    } while (formattedMsg !== originMsg)*/
   }
 }
 

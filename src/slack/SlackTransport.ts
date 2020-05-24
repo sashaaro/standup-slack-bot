@@ -638,7 +638,7 @@ export class SlackTransport implements ITransport {
 
     await this.webClient.chat.postMessage({
       channel: user.id,
-      text: `Hello, it's time to start your daily standup for #${standUp.team.name}`,
+      text: `Hello, it's time to start your #1 daily standup (${standUp.team.name})`,
       attachments: [buttonsAttachment]
     })
   }

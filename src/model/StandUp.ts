@@ -22,11 +22,7 @@ export default class StandUp implements IStandUp {
   @OneToMany(type => AnswerRequest, answer => answer.standUp)
   answers: AnswerRequest[];
 
-  get isInProgress() {
-    return true;
-    //return isInProgress(this)
+  isFinished() {
+    return this.endAt && this.endAt.getTime() > new Date().getTime()
   }
-}
-export const isInProgress = (standUp: IStandUp) => {
-  return new Date().getTime() < standUp.endAt.getTime()
 }

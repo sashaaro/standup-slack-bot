@@ -12,6 +12,7 @@ import {RenderEngine} from "../services/RenderEngine";
 import http from "http";
 import { Redis } from 'ioredis';
 import {TeamAction} from "./controller/team";
+import {Team} from "../model/Team";
 
 
 const RedisConnectStore = createRedisConnectStore(session);
@@ -97,14 +98,21 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
 
   const config = injector.get(CONFIG_TOKEN)
   const authLink = `https://slack.com/oauth/v2/authorize?client_id=${config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${config.host}/auth`
+  const render = injector.get(RENDER_TOKEN);
+
+  const conn = injector.get(Connection)
 
   router.get('/', async (req, res) => {
-    const context = req['context'] as DashboardContext
-    if (context.user) {
-      res.send(injector.get(RENDER_TOKEN)('dashboard', {authLink}));
-      // TODO return await injector.get().handle(req, res)
+    if (req.context.user) {
+      const teams = await conn.manager.getRepository(Team).createQueryBuilder('t')
+        .leftJoinAndSelect('t.timezone', 'tz')
+        .leftJoinAndSelect('t.createdBy', 'createdBy')
+        //.andWhere('t.createdBy = :craetedBy', {craetedBy: req.context.user})
+        .getMany()
+
+      res.send(render('dashboard', {authLink, teams}));
     } else {
-      res.send(injector.get(RENDER_TOKEN)('welcome', {authLink}));
+      res.send(render('welcome', {authLink}));
     }
   });
 
@@ -125,7 +133,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
     res.status(404);
 
     if (req.accepts('html')) {
-      res.send(injector.get(RENDER_TOKEN)('404'));
+      res.send(render('404'));
       return;
     }
 
@@ -137,7 +145,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
       res.status(403);
 
       if (req.accepts('html')) {
-        res.send(injector.get(RENDER_TOKEN)('403'));
+        res.send(render('403'));
       } else {
         res.send("")
       }
@@ -145,7 +153,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
       res.status(404);
 
       if (req.accepts('html')) {
-        res.send(injector.get(RENDER_TOKEN)('404'));
+        res.send(render('404'));
       } else {
         res.send("")
       }

@@ -53,7 +53,7 @@ export default class User implements IUser {
   im: string;
 
   @Column('json', {default: new Profile()})
-  profile: SlackUserProfile;
+  profile: SlackUserProfile = new Profile();
 
   @ManyToMany(type => Team, channel => channel.users, {
     eager: true,
@@ -69,8 +69,4 @@ export default class User implements IUser {
 
   @OneToMany(type => AnswerRequest, answer => answer.user)
   answers: AnswerRequest[];
-
-  constructor() {
-    this.profile = new Profile()
-  }
 }

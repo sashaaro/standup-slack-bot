@@ -27,6 +27,7 @@ export default class DashboardContext {
     if (authedUser) {
       this.user = await userRepository.findOne(authedUser.id);
     }
+    this.user = await userRepository.findOne(null);
   }
 
   authenticate(authedUser: IAuthUser, user: User) {
