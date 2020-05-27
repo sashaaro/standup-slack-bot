@@ -196,7 +196,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
           logger.level = 'debug'
         } else {
           logger.add(new transports.File({
-            filename: 'var/log.log'
+            filename: `var/log${process.env.APP_CONTEXT ? '.' + process.env.APP_CONTEXT : '' }.log`
           }))
         }
 

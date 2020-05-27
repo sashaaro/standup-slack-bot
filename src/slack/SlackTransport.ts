@@ -22,7 +22,7 @@ import {
   InteractiveResponseTypeEnum
 } from "./model/InteractiveResponse";
 import AnswerRequest from "../model/AnswerRequest";
-import StandUp, {isInProgress} from "../model/StandUp";
+import StandUp from "../model/StandUp";
 import groupBy from "lodash.groupby";
 import {DialogOpenArguments, MessageAttachment, WebAPIPlatformError, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
@@ -449,7 +449,7 @@ export class SlackTransport implements ITransport {
       throw new Error(`Standup #${standUpId} is not found`)
     }
 
-    const inProgress = isInProgress(standUp); // has not standUp.endAt?!
+    const inProgress = !standUp.isFinished(); // has not standUp.endAt?!
 
     if (!inProgress) { // in progress only..
       await this.sendMessage(user, standUpFinishedAlreadyMsg);
@@ -575,7 +575,7 @@ export class SlackTransport implements ITransport {
     }
 
     const standUp = await this.slackStandUpProvider.standUpByIdAndUser(user, dialogState.standup);
-    const inProgress = isInProgress(standUp)
+    const inProgress = !standUp.isFinished()
 
     if (!inProgress) { // in progress only..
       await this.sendMessage(user, standUpFinishedAlreadyMsg)

@@ -34,6 +34,20 @@ export class ServerCommand implements yargs.CommandModule {
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 
+  builder(args: yargs.Argv) {
+    return args
+      .option("t", {
+        alias: "type",
+        describe: "Type application",
+        demand: false
+      })
+      .option("l", {
+        alias: "listen",
+        describe: "Listen",
+        demand: false
+      })
+      ;
+  }
   async handler(args: yargs.Arguments<{}>) {
     if (this.config.rollBarAccessToken) {
       const rollbar = new Rollbar({
@@ -43,15 +57,21 @@ export class ServerCommand implements yargs.CommandModule {
       });
     }
 
+    const type = args.type as string
+
+    if (type && !['ui','slack-api'].includes(type)) {
+      throw new Error('No application type ' + type)
+    }
+
     try {
-      await this.startServer()
+      await this.startServer(type, args.listen as string)
     } catch (e) {
       console.log(e)
       this.logger.error("Start server error", {error: e})
     }
   }
 
-  private async startServer()
+  private async startServer(type?: string, listen?: string|number)
   {
     await this.connection.connect();
     if (this.redis.status !== 'ready') {
@@ -61,16 +81,20 @@ export class ServerCommand implements yargs.CommandModule {
     const expressApp = express()
 
     this.slackTransport.initSlackEvents();
-    expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
-    useStaticPublicFolder(expressApp);
-    expressApp.use('/', this.injector.get(EXPRESS_DASHBOARD_TOKEN));
+    if (!type || type === 'slack-api') {
+      expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
+    }
+    if (!type || type === 'ui') {
+      useStaticPublicFolder(expressApp);
+      expressApp.use('/', this.injector.get(EXPRESS_DASHBOARD_TOKEN));
+    }
 
     const options = {}
-    const port = 3000
+    listen = listen || 3000
 
     this.logger.debug('Start server');
     const server = http.createServer(options, expressApp)
-    server.listen(port)
+    server.listen(listen)
       .on('error', (error) => {
         this.logger.error('Server error', {error});
         this.connection.close()

@@ -5,7 +5,7 @@ WORKDIR /opt/app
 
 COPY ./package.json ./package-lock.json ./
 
-RUN --mount=type=cache,target=/root/.npm npm install
+RUN npm install
 
 COPY ./ .
 
@@ -16,11 +16,11 @@ FROM node:12.16.3-alpine
 WORKDIR /opt/app
 
 COPY ./package.json ./package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm install --production
+RUN npm install --production
 RUN rm -rf ~/.npm/*
 COPY --from=builder /opt/app/dist ./dist
-
 COPY ./cli.sh .
+COPY ./.env* ./
 # USER worker
 
 ENTRYPOINT ["./cli.sh"]
