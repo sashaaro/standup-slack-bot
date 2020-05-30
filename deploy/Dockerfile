@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:experimental
-FROM node:12.16.3-alpine AS builder
+FROM node:12.17.0-alpine AS builder
 
 WORKDIR /opt/app
 

@@ -75,7 +75,7 @@ services:
       - ./var:/opt/app/var
 
   postgres:
-    image: postgres:12.2-alpine
+    image: postgres:12.3-alpine
     ports:
       - "5432:5432"
     environment:
@@ -84,4 +84,4 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:6.0.1-alpine
+    image: redis:6.0.4-alpine
