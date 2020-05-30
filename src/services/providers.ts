@@ -44,6 +44,7 @@ export interface IAppConfig {
     username: string,
     password: string,
   },
+  supportTelegram?: string
 }
 
 export type RenderFn = (templateName: string, params?: object) => string;
@@ -58,9 +59,9 @@ const defaultConnectionOptions: ConnectionOptions = {
   migrations: fs.readdirSync(migrationDir)
     .filter(f => f.endsWith('.js'))
     .map(f => migrationDir + '/' + f),
+  database: "postgres",
   username: "postgres",
   password: "postgres",
-  database: "postgres",
   synchronize: false,
   logging: ["warn", "error"]
 }
@@ -93,7 +94,8 @@ export const createProviders = (env = 'dev'): Provider[] => {
           database: process.env.DB_HOST,
           username: process.env.DB_USERNAME,
           password: process.env.DB_PASSWORD,
-        }
+        },
+        supportTelegram: process.env.SUPPORT_TELEGRAM,
       } as IAppConfig
     },
     {
@@ -101,7 +103,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useFactory: (config) => new IOredis({
         host: 'redis',
         maxRetriesPerRequest: 5,
-        lazyConnect: false//config.redisLazyConnect
+        lazyConnect: true
       }),
       deps: [CONFIG_TOKEN]
     },

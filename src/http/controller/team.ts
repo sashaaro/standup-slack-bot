@@ -187,6 +187,7 @@ export class TeamAction {
         team.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
         team.questions.map((q, index) => q.index = index);
         team.workspace = req.context.user.workspace
+        team.createdBy = req.context.user;
 
         team = await teamRepository.save(team)
 
@@ -267,7 +268,6 @@ export class TeamAction {
         team.duration = formData.duration
         team.reportSlackChannel = formData.reportSlackChannel
         team.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
-        //console.log(formData.receivers)
         team.users = formData.receivers.map(r => this.connection.getRepository(User).create({id: r}))
         team.questions.map((q, index) => q.index = index);
 

@@ -13,8 +13,10 @@ export class DatabaseMigrateCommand implements yargs.CommandModule {
     await this.connection.connect();
 
     const migrations = await this.connection.runMigrations();
-    migrations.map(m => m.name).map(console.log)
+    migrations.forEach(m => {
+      console.log(m.instance);
+    });
 
-    this.connection.close()
+    await this.connection.close();
   }
 }

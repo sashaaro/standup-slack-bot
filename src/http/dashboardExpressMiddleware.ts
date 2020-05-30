@@ -163,7 +163,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
     } else {
       logger.error("Catch express middleware error", {error: err})
       res.status(502);
-      res.send("Sorry, something going wrong")
+      res.send(render('502', {supportTelegram: config.supportTelegram}))
     }
   })
 
