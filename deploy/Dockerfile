@@ -9,7 +9,7 @@ RUN npm install
 
 COPY ./ .
 
-RUN ./node_modules/.bin/tsc
+RUN npm run build
 
 FROM node:12.16.3-alpine
 

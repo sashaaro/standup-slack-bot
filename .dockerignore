@@ -2,3 +2,4 @@ node_modules
 dist
 deploy
 var
+resources/public/*.css
