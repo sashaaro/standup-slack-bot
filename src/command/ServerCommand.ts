@@ -1,7 +1,6 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  CONFIG_TOKEN,
   EXPRESS_DASHBOARD_TOKEN,
   EXPRESS_SLACK_API_TOKEN, IQueueFactory,
   IWorkerFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE,
@@ -11,7 +10,6 @@ import {Connection} from "typeorm";
 import express from 'express'
 import 'express-async-errors';
 import http from "http";
-import Rollbar from "rollbar";
 import {IAppConfig, QUEUE_MAIN_NAME} from "../services/providers";
 import {useStaticPublicFolder} from "../http/dashboardExpressMiddleware";
 import {SlackTransport} from "../slack/SlackTransport";
@@ -29,7 +27,6 @@ export class ServerCommand implements yargs.CommandModule {
     @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
     private injector: Injector,
     private connection: Connection,
-    @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private slackTransport: SlackTransport,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
@@ -52,14 +49,6 @@ export class ServerCommand implements yargs.CommandModule {
       ;
   }
   async handler(args: yargs.Arguments<{}>) {
-    if (this.config.rollBarAccessToken) {
-      const rollbar = new Rollbar({
-        accessToken: this.config.rollBarAccessToken,
-        captureUncaught: true,
-        captureUnhandledRejections: true
-      });
-    }
-
     const type = args.type as string
 
     if (type && !['ui','slack-api'].includes(type)) {
@@ -87,8 +76,8 @@ export class ServerCommand implements yargs.CommandModule {
 
     const expressApp = express()
 
-    this.slackTransport.initSlackEvents();
     if (!type || type === 'slack-api') {
+      this.slackTransport.initSlackEvents();
       expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
     }
     if (!type || type === 'ui') {

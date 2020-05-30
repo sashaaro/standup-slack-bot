@@ -58,6 +58,7 @@ export const createDashboardContext = (injector: Injector) => {
       debug: config.debug,
       user: context.user,
       syncInProgress: false,//context.user ? true : false,
+      yandexMetrikaID: config.yandexMetrikaID || undefined,
       intl
     }
 

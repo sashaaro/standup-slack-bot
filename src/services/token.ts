@@ -5,7 +5,6 @@ import {Redis} from "ioredis";
 import express from 'express'
 import {Logger} from "winston";
 import {Observable} from "rxjs";
-import {ITransport} from "../bot/models";
 
 export interface IQueueFactory {
   (queueName: string): Queue;

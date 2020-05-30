@@ -5,6 +5,7 @@ import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "./services/providers";
 import {commands} from "./command";
 import {CONFIG_TOKEN, LOGGER_TOKEN, TERMINATE} from "./services/token";
+import Rollbar from "rollbar";
 
 let argv = yargs.option('env', {
   default: 'dev',
@@ -13,17 +14,29 @@ let argv = yargs.option('env', {
 
 const env = argv.argv.env;
 const injector = ReflectiveInjector.resolveAndCreate(createProviders(env))
+
 const logger = injector.get(LOGGER_TOKEN);
-logger.debug(`Environment: ${env}`)
+logger.debug(`Environment: ${env}`);
 
 injector.get(TERMINATE).subscribe(() => {
   injector.get(LOGGER_TOKEN).debug('Terminate...')
 })
 
+const config = injector.get(CONFIG_TOKEN);
+
+if (config.rollBarAccessToken) {
+  const rollbar = new Rollbar({
+    accessToken: config.rollBarAccessToken,
+    captureUncaught: true,
+    captureUnhandledRejections: true,
+    environment: process.env.APP_CONTEXT || undefined
+  });
+}
+
+// config.redisLazyConnect = !argv.argv._.includes('queue:consume')
+
 let main = yargs
   .usage("Usage: $0 <command> [options]")
-
-injector.get(CONFIG_TOKEN).redisLazyConnect = !argv.argv._.includes('queue:consume')
 
 commands.forEach(command => {
   const commandInstance = injector.get(command) as yargs.CommandModule
@@ -40,6 +53,6 @@ try {
     .strict()
     .argv
 } catch (e) {
-  logger.error('Application error', {error: e})
+  logger.error('Application error', {error: e});
 }
 

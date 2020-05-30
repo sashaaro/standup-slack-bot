@@ -36,6 +36,7 @@ export interface IAppConfig {
   botUserOAuthAccessToken: string,
   host: string,
   debug: false,
+  yandexMetrikaID?: string,
   rollBarAccessToken?: string,
   redisLazyConnect: boolean
   db: {
@@ -86,6 +87,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
         botUserOAuthAccessToken: process.env.BOT_USER_OAUTH_ACCESS_TOKEN,
         host: process.env.HOST,
         debug: process.env.DEBUG !== "false" && !!process.env.DEBUG,
+        yandexMetrikaID: process.env.YANDEX_METRIKA_ID ?? undefined,
         rollBarAccessToken: process.env.ROLLBAR_ACCESS_TOKEN,
         db: {
           database: process.env.DB_HOST,
