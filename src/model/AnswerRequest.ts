@@ -4,7 +4,6 @@ import StandUp from "./StandUp";
 import User from "./User";
 import {IAnswerRequest} from "../bot/models";
 import QuestionOption from "./QuestionOption";
-import {linkExpr} from "../http/controller/team";
 
 @Entity()
 class AnswerRequest implements IAnswerRequest {

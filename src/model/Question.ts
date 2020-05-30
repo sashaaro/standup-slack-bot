@@ -17,7 +17,7 @@ class Question implements IQuestion {
   @Column({default: true})
   isEnabled: boolean = true;
 
-  @OneToMany(type => QuestionOption, pa => pa.question, {
+  @OneToMany(type => QuestionOption, o => o.question, {
     cascade: true,
     eager: true
   })

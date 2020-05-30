@@ -5,10 +5,10 @@ import {IQuestionOption} from "../bot/models";
 @Entity()
 export default class QuestionOption implements IQuestionOption {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
-  @ManyToOne(type => Question)
-  question: Question
+  @ManyToOne(type => Question, q => q.options)
+  question: Question;
 
   @Column({nullable: false})
   text: string

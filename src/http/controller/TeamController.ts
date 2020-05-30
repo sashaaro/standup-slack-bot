@@ -1,9 +1,8 @@
 import StandUp from "../../model/StandUp";
 import {Inject, Injectable} from 'injection-js';
-import {Connection, Repository} from "typeorm";
+import {Connection} from "typeorm";
 import {RENDER_TOKEN} from "../../services/token";
 import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
-import SlackWorkspace from "../../model/SlackWorkspace";
 import User from "../../model/User";
 import {RenderFn} from "../../services/providers";
 import {IHttpAction} from "./index";
@@ -24,13 +23,8 @@ import {
 import Question from "../../model/Question";
 import {Team} from "../../model/Team";
 import {Channel} from "../../model/Channel";
-
-const replaceAll = function(string, search, replace){
-  return string.split(search).join(replace);
-}
-
-export const linkExpr = '(https?:\\/\\/(?:www\\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|www\\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\\.[^\\s]{2,}|https?:\\/\\/(?:www\\.|(?!www))[a-zA-Z0-9]+\\.[^\\s]{2,}|www\\.[a-zA-Z0-9]+\\.[^\\s]{2,})'
-
+import {Request} from "express";
+import QuestionOption from "../../model/QuestionOption";
 
 const transformStringToInt = (v) => v ? parseInt(v) || null : null
 
@@ -41,7 +35,7 @@ class QuestionOptionsFormDTO {
   @IsString()
   text: string
   @IsBoolean()
-  isSame: string
+  isNew: boolean
 }
 class QuestionFormDTO {
   constructor() {
@@ -111,119 +105,112 @@ export const transformViewErrors = (errors: ValidationError[], err?: any[]) => {
   return err;
 }
 
-// https://api.slack.com/docs/message-formatting
-const formatMsg = async (team: SlackWorkspace, userRepository: Repository<User>, text) => {
-  //text = text.replace(new RegExp('\:([a-z\-_]+)\:'), '<i class="em em-$1"></i>')
-  //text = replaceAll(text, new RegExp('\:([a-z\-_]+)\:'), '<i class="em em-$1"></i>')
-  let newText = text
-  // channel link
-  do {
-    text = newText
-    newText = text.replace(new RegExp('<#([A-Z0-9]+)\\|([#a-zA-Z0-9\-]+)>'),
-      `<a target="_blank" href="https://${team.domain}.slack.com/messages/$1/details/">#$2</a>`
-    )
-  } while (newText !== text)
 
-  do {
-    text = newText
-    const match = text.match(new RegExp('<@([A-Z0-9]+)>'))
-
-    if (!match || match.length === 0) {
-      break;
-    }
-    const user = await userRepository.findOne(match[1])
-    if (user) {
-      newText = text.substring(0, match.index) + text.slice(match.index).replace(`<@${match[1]}>`,
-        `<a target="_blank" href="https://${team.domain}.slack.com/messages/${match[1]}/details/">@${user.name}</a>`)
-    } else {
-      newText = text.substring(0, match.index) + text.slice(match.index).replace(`<@${match[1]}>`, `<.@${match[1]}>`)
-    }
-
-  } while (true)
-
-  do {
-    text = newText
-    newText = text.replace(new RegExp('\:([a-z\-_]+)\:'), '<i class="em em-$1"></i>')
-  } while (newText !== text)
-
-  return newText;
-}
 
 @Injectable()
-export class TeamAction {
+export class TeamController {
+  teamRepository = this.connection.getRepository(Team)
+  timezoneRepository = this.connection.getRepository(Timezone)
+
   constructor(
     private connection: Connection,
     @Inject(RENDER_TOKEN) private render: RenderFn
   ) {
-
   }
 
-  create: IHttpAction = async (req, res) => {
-    const channels = await this.connection.getRepository(Channel).find({
+  private async availableChannels(req: Request): Promise<Channel[]> {
+    return await this.connection.getRepository(Channel).find({
       workspace: req.context.user.workspace,
       isEnabled: true,
       isArchived: false
     });
+  }
 
-    const timezones = await this.connection.getRepository(Timezone).find();
+  private async availableUsers(req: Request): Promise<User[]> {
+    return await this.connection.getRepository(User).find({
+      workspace: req.context.user.workspace
+    })
+  }
 
-    const teamRepository = this.connection.getRepository(Team)
+  private async availableTimezones(): Promise<Timezone[]> {
+    return await this.connection.getRepository(Timezone).find();
+  }
+
+  private async handleSubmitRequest(req: Request, formData: TeamFormDTO, team: Team): Promise<ValidationError[]>
+  {
+    plainToClassFromExist(formData, req.body);
+    const errors = await validate(formData)
+    if (errors.length === 0) {
+      team.timezone = await this.timezoneRepository.findOne(formData.timezone) || team.timezone;
+      team.name = formData.name
+      team.start = formData.start
+      team.duration = formData.duration
+      team.reportSlackChannel = formData.reportSlackChannel
+      team.users = formData.receivers.map(r => this.connection.manager.create(User, {id: r}))
+
+      team.questions = [];
+      formData.questions.forEach(q => {
+        const question = this.connection.manager.create(Question, q);
+        question.options = []
+        q.options.forEach(o => {
+          const item = this.connection.manager.create(QuestionOption, {id: o.id, text: o.text, question});
+          console.log(o);
+          if (o.isNew) {
+            delete item.id;
+          }
+          question.options.push(item)
+        })
+        team.questions.push(question);
+      })
+      
+      team.questions.map((q, index) => q.index = index); // recalculate question index
+      await this.teamRepository.save(team);
+
+      formData.questions.forEach(q => {
+        q.options.forEach(o => {
+          o.isNew = false;
+        })
+      })
+    }
+
+    return errors;
+  }
+
+  create: IHttpAction = async (req, res) => {
+    const team = new Team()
+    team.workspace = req.context.user.workspace
+    team.createdBy = req.context.user;
+
     const formData = new TeamFormDTO();
-    let viewErrors = {}
-
+    let errors = []
     if (req.method === "POST") { // TODO check if standup in progress then not dave
-      plainToClassFromExist(formData, req.body);
-      console.log(formData);
-
-      const errors = await validate(formData)
-
+      errors = await this.handleSubmitRequest(req, formData, team);
       if (errors.length === 0) {
-        let team = new Team()
-        team.timezone = await this.connection.getRepository(Timezone).findOne(formData.timezone) || team.timezone;
-        team.name = formData.name
-        team.start = formData.start
-        team.duration = formData.duration
-        team.reportSlackChannel = formData.reportSlackChannel
-        team.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
-        team.questions.map((q, index) => q.index = index);
-        team.workspace = req.context.user.workspace
-        team.createdBy = req.context.user;
-
-        team = await teamRepository.save(team)
-
+        // notification
         res.redirect(`/team/${team.id}/edit`);
         return;
-        //await this.connection.getCustomRepository(QuestionRepository).updateForChannel(formData.questions, context.channel)
-      } else {
-        viewErrors = transformViewErrors(errors)
       }
     }
 
-    const users = await this.connection.getRepository(User).find({
-      workspace: req.context.user.workspace
-    });
-
-    res.send(this.render('settings', {
-      timezones,
-      activeMenu: 'settings',
+    res.send(this.render('team/form', {
+      timezones: await this.availableTimezones(),
+      users: await this.availableUsers(req),
+      channels: await this.availableChannels(req),
       weekDays: weekDays,
+      activeMenu: 'settings',
       formData,
-      users,
-      errors: viewErrors,
-      channels
+      errors: transformViewErrors(errors),
     }))
   }
 
   edit: IHttpAction = async (req, res) => {
-    const teamRepository = this.connection.getRepository(Team)
-
     if (!req.context.user) {
       throw new AccessDenyError();
     }
 
     const id = req.params.id
 
-    const team = await teamRepository
+    const team = await this.teamRepository
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.timezone', 'timezone')
       .leftJoinAndSelect('t.questions', 'questions')
@@ -244,41 +231,14 @@ export class TeamAction {
       throw new ResourceNotFoundError('Team is not found');
     }
 
-    const channels = await this.connection.getRepository(Channel).find({
-      workspace: req.context.user.workspace,
-      isEnabled: true,
-      isArchived: false
-    });
-
-    const timezones = await this.connection.getRepository(Timezone).find();
     const formData = new TeamFormDTO();
-
-    let viewErrors: any = {};
-
+    let errors = [];
     if (req.method === "POST") { // TODO check if standup in progress then not dave
-      plainToClassFromExist(formData, req.body);
-      console.log(formData);
-
-      const errors = await validate(formData)
-
+      errors = await this.handleSubmitRequest(req, formData, team);
       if (errors.length === 0) {
-        team.timezone = await this.connection.getRepository(Timezone).findOne(formData.timezone) || team.timezone;
-        team.name = formData.name
-        team.start = formData.start
-        team.duration = formData.duration
-        team.reportSlackChannel = formData.reportSlackChannel
-        team.questions = formData.questions.map(q => this.connection.getRepository(Question).create(q as object))
-        team.users = formData.receivers.map(r => this.connection.getRepository(User).create({id: r}))
-        team.questions.map((q, index) => q.index = index);
-
-        await teamRepository.save(team)
-
-        // todo notify
+        // TODO notification save
         res.redirect(`/team/${team.id}/edit`);
         return;
-        //await this.connection.getCustomRepository(QuestionRepository).updateForChannel(formData.questions, context.channel)
-      } else {
-        viewErrors = transformViewErrors(errors)
       }
     } else {
       plainToClassFromExist(formData, team);
@@ -287,21 +247,14 @@ export class TeamAction {
       //formData.questions = channel.questions.map(q => Object.assign(new QuestionFormDTO(), q))
     }
 
-    console.log(viewErrors)
-    console.log(viewErrors.questions)
-
-    const users = await this.connection.getRepository(User).find({
-      workspace: req.context.user.workspace
-    });
-
-    res.send(this.render('settings', {
-      timezones,
-      activeMenu: 'settings',
+    res.send(this.render('team/form', {
+      timezones: await this.availableTimezones(),
+      users: await this.availableUsers(req),
+      channels: await this.availableChannels(req),
       weekDays,
+      activeMenu: 'settings',
       formData,
-      users,
-      errors: viewErrors,
-      channels
+      errors: transformViewErrors(errors),
     }))
   }
 

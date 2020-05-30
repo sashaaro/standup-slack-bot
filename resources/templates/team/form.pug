@@ -1,4 +1,4 @@
-extends layout/authorized_main
+extends ../layout/authorized_main
 
 block authorized_content
   .ui.grid
@@ -87,18 +87,18 @@ block authorized_content
                   .ui.icon.button(v-on:click="remove(question)")
                     i.trash.icon
               .question-options(v-if="question.options.length > 0")
-                div(v-for="(questionOption, answerIndex) in question.options")
-                  label(v-bind:class="{ error: errors[index] && errors[index].options && errors[index].options[answerIndex].text.length }")
-                    span= "#{{answerIndex +1}}"
-                    span.error= "{{ errors[index] && errors[index].options && errors[index].options[answerIndex].text[0] }}"
+                div(v-for="(questionOption, optionIndex) in question.options")
+                  label(v-bind:class="{ error: errors[index] && errors[index].options && errors[index].options[optionIndex].text.length }")
+                    span= "#{{optionIndex +1}}"
+                    span.error= "{{ errors[index] && errors[index].options && errors[index].options[optionIndex].text[0] }}"
                   .ui.input.action.mini
-                    input.form-control(type="hidden", v-if="questionOption.id", v-bind:name="'questions[' + index + '][options][' + answerIndex + '][id]'", v-model="questionOption.id", required, minlength=2)
-                    input.form-control(type="text", v-bind:name="'questions[' + index + '][options][' + answerIndex + '][text]'", v-model="questionOption.text", required, minlength=2)
-                    .ui.icon.button(v-on:click="removeOption(question.options, answerIndex)")
+                    input.form-control(type="hidden", v-if="questionOption.id", v-bind:name="'questions[' + index + '][options][' + optionIndex + '][id]'", v-model="questionOption.id", required, minlength=2)
+                    input.form-control(type="text", v-bind:name="'questions[' + index + '][options][' + optionIndex + '][text]'", v-model="questionOption.text", required, minlength=2)
+                    .ui.icon.button(v-on:click="removeOption(question.options, optionIndex)")
                       i.trash.icon
-                  .ui.checkbox
-                    input(type="checkbox", v-model="questionOption.isSame")
-                    label= "It's not same question. reset statistics"
+                  .ui.checkbox(v-if="questionOption.id && isChanged(questionOption)")
+                    input(type="checkbox", v-bind:name="'questions[' + index + '][options][' + optionIndex + '][isNew]'", v-model="questionOption.isNew")
+                    label= "It is new question"
                 div
                   button.mini.ui.button.teal.fluid(v-on:click="addOption(question)")
                     i.add.icon
@@ -115,18 +115,19 @@ block authorized_content
 
 block append scripts
   script.
+    const formErrors = !{JSON.stringify(errors.questions || {})};
+    const resetFormQuestionDate = !{JSON.stringify(formData.questions || [])}
+    const formQuestionDate = !{JSON.stringify(formData.questions || [])}
+
     var vm = new Vue({
       el: '#form',
       data: {
-        questions: !{JSON.stringify(formData.questions || [])},
-        errors: !{JSON.stringify(errors.questions || {})},
+        questions: formQuestionDate,
+        errors: formErrors,
         dragOptions: {
           animation: 200,
         },
         submitting: false
-      },
-      mounted: function () {
-        this.originalValue = this.questions;
       },
       methods: {
         add(e) {
@@ -139,8 +140,13 @@ block append scripts
         addOption(question) {
           question.options.push({})
         },
-        removeOption(options, answerIndex) {
-          options.splice(answerIndex, 1)
+        removeOption(options, optionIndex) {
+          options.splice(optionIndex, 1)
+        },
+        isChanged(questionOption) {
+          const foundOption = [].concat(...resetFormQuestionDate.map(q => q.options)).find(o => o.id === questionOption.id);
+          console.log(foundOption)
+          return foundOption && foundOption.text !== questionOption.text;
         },
         submit() {
           this.submitting = true;

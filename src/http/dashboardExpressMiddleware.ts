@@ -11,7 +11,7 @@ import {OauthAuthorize} from "./controller/oauth-authorize";
 import {RenderEngine} from "../services/RenderEngine";
 import http from "http";
 import { Redis } from 'ioredis';
-import {TeamAction} from "./controller/team";
+import {TeamController} from "./controller/TeamController";
 import {Team} from "../model/Team";
 
 
@@ -126,9 +126,9 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
     })
     res.redirect('/');
   });
-  router.all('/team/create', injector.get(TeamAction).create);
-  router.all('/team/:id', injector.get(TeamAction).standups);
-  router.all('/team/:id/edit', injector.get(TeamAction).edit);
+  router.all('/team/create', injector.get(TeamController).create);
+  router.all('/team/:id', injector.get(TeamController).standups);
+  router.all('/team/:id/edit', injector.get(TeamController).edit);
   router.get('/sync', injector.get(SyncAction).handle);
 
   router.use((req: express.Request, res: express.Response, next) => {
