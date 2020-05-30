@@ -190,18 +190,28 @@ export const createProviders = (env = 'dev'): Provider[] => {
     {
       provide: LOGGER_TOKEN,
       useFactory: () => {
-        const logger = createLogger({
-        })
+        const logger = createLogger({})
 
-        if (env !== 'prod') {
-          logger.add(new transports.Console({
-            format: format.json()
-          }))
-          logger.level = 'debug'
-        } else {
+        if (env === 'prod') {
           logger.add(new transports.File({
             filename: `var/log${process.env.APP_CONTEXT ? '.' + process.env.APP_CONTEXT : '' }.log`
           }))
+        } else {
+          // const prettyPrintFormat = format.prettyPrint({colorize: true});
+          const errorStackFormat = format.errors({stack: true});
+          const jsonFormat = format.json();
+
+          logger.add(new transports.Console({
+            /*format: format.printf((info) => {
+              if (info.error instanceof Error) {
+                return errorStackFormat.transform({message: info.error})
+              } else {
+                return jsonFormat.transform(info)
+              };
+            })*/
+            format: format.printf(info => `${info.timestamp} ${info.level}: ${info.message}.${info.error ? '\n' + info.error.stack : ''}`)
+          }))
+          logger.level = 'debug'
         }
 
         return logger;

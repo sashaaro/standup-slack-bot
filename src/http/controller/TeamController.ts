@@ -18,7 +18,7 @@ import {
   MaxLength,
   Min,
   MinLength,
-  validate, ValidateNested, ValidationError
+  validate, ValidateNested, validateSync, ValidationError
 } from "class-validator";
 import Question from "../../model/Question";
 import {Team} from "../../model/Team";
@@ -85,15 +85,11 @@ export class TeamFormDTO {
   start: string
   @Expose()
   @Type(() => String)
-  receivers: string[]
+  @Min(1)
+  receivers: string[] = []
   @IsNotEmpty()
   @Type(() => String)
   reportSlackChannel: string
-
-  constructor() {
-    this.receivers = [];
-  }
-
 }
 
 export const transformViewErrors = (errors: ValidationError[], err?: any[]) => {
@@ -136,44 +132,36 @@ export class TeamController {
     return await this.connection.getRepository(Timezone).find();
   }
 
-  private async handleSubmitRequest(req: Request, formData: TeamFormDTO, team: Team): Promise<ValidationError[]>
+  private handleSubmitRequest(req: Request, formData: TeamFormDTO, team: Team): ValidationError[]
   {
     plainToClassFromExist(formData, req.body);
-    const errors = await validate(formData)
-    if (errors.length === 0) {
-      team.timezone = await this.timezoneRepository.findOne(formData.timezone) || team.timezone;
-      team.name = formData.name
-      team.start = formData.start
-      team.duration = formData.duration
-      team.reportSlackChannel = formData.reportSlackChannel
-      team.users = formData.receivers.map(r => this.connection.manager.create(User, {id: r}))
-
-      team.questions = [];
-      formData.questions.forEach(q => {
-        const question = this.connection.manager.create(Question, q);
-        question.options = []
-        q.options.forEach(o => {
-          const item = this.connection.manager.create(QuestionOption, {id: o.id, text: o.text, question});
-          console.log(o);
-          if (o.isNew) {
-            delete item.id;
-          }
-          question.options.push(item)
-        })
-        team.questions.push(question);
-      })
-      
-      team.questions.map((q, index) => q.index = index); // recalculate question index
-      await this.teamRepository.save(team);
-
-      formData.questions.forEach(q => {
-        q.options.forEach(o => {
-          o.isNew = false;
-        })
-      })
+    const errors = validateSync(formData);
+    if (errors.length > 0) {
+      return errors
     }
+    team.timezone = this.connection.manager.create(Timezone, {id: formData.timezone}) || team.timezone;
+    team.name = formData.name
+    team.start = formData.start
+    team.duration = formData.duration
+    team.reportSlackChannel = formData.reportSlackChannel
+    team.users = (formData.receivers || []).map(r => this.connection.manager.create(User, {id: r}))
 
-    return errors;
+    team.questions = [];
+    formData.questions.forEach(q => {
+      const question = this.connection.manager.create(Question, q);
+      question.options = []
+      q.options.forEach(o => {
+        const item = this.connection.manager.create(QuestionOption, {id: o.id, text: o.text, question});
+        if (o.isNew) {
+          delete item.id;
+        }
+        question.options.push(item)
+      })
+      team.questions.push(question);
+    })
+
+    team.questions.map((q, index) => q.index = index); // recalculate question index
+    return [];
   }
 
   create: IHttpAction = async (req, res) => {
@@ -184,8 +172,9 @@ export class TeamController {
     const formData = new TeamFormDTO();
     let errors = []
     if (req.method === "POST") { // TODO check if standup in progress then not dave
-      errors = await this.handleSubmitRequest(req, formData, team);
+      errors = this.handleSubmitRequest(req, formData, team);
       if (errors.length === 0) {
+        await this.teamRepository.save(team);
         // notification
         res.redirect(`/team/${team.id}/edit`);
         return;
@@ -234,8 +223,9 @@ export class TeamController {
     const formData = new TeamFormDTO();
     let errors = [];
     if (req.method === "POST") { // TODO check if standup in progress then not dave
-      errors = await this.handleSubmitRequest(req, formData, team);
+      errors = this.handleSubmitRequest(req, formData, team);
       if (errors.length === 0) {
+        await this.teamRepository.save(team);
         // TODO notification save
         res.redirect(`/team/${team.id}/edit`);
         return;
