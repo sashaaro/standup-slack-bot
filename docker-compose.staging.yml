@@ -13,37 +13,40 @@ x-base-image: &base-image
 
 services:
   nginx:
-    image: nginx:1.18-alpine
-    #user: 1000:1000
+    build:
+      dockerfile: deploy/nginx.Dockerfile
+      context: .
     ports:
       - "3000:3000"
     volumes:
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf
-      - ui_sock:/var/run/standup-slack-bot-ui
-      - slack-api_sock:/var/run/standup-slack-bot-api
+      - ui_sock:/tmp/ui
+      - slack-api_sock:/tmp/slack-api
 
   ui:
     <<: *base-image
-    command: ["server:run", "--type=ui", "--listen=/var/run/standup-slack-bot-ui", "--env=prod"]
+    command: ["server:run", "--type=ui", "--listen=/tmp/node.sock", "--env=prod"]
     user: 1000:1000
     environment:
       - APP_CONTEXT=ui
     depends_on:
       - postgres
+      - redis
     volumes:
-      - ui_sock:/var/run/standup-slack-bot-ui
+      - ui_sock:/tmp
       - ./var:/opt/app/var
 
   slack-api:
     <<: *base-image
-    command: ["server:run", "--type=slack-api", "--listen=/var/run/standup-slack-bot-api", "--env=prod"]
+    command: ["server:run", "--type=slack-api", "--listen=/tmp/node.sock", "--env=prod"]
     user: 1000:1000
     environment:
       - APP_CONTEXT=slack-api
     depends_on:
       - postgres
+      - redis
     volumes:
-      - slack-api_sock:/var/run/standup-slack-bot-api
+      - slack-api_sock:/tmp
       - ./var:/opt/app/var
 
   standup-notifier:
@@ -54,6 +57,7 @@ services:
       - APP_CONTEXT=standup-notifier
     depends_on:
       - postgres
+      - redis
     volumes:
       - ./var:/opt/app/var
 
@@ -66,6 +70,7 @@ services:
       - APP_CONTEXT=queue-consumer
     depends_on:
       - postgres
+      - redis
     volumes:
       - ./var:/opt/app/var
 

@@ -28,9 +28,10 @@ import {DialogOpenArguments, MessageAttachment, WebAPIPlatformError, WebClient} 
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import {Queue} from "bullmq";
-import {LOGGER_TOKEN} from "../services/token";
+import {IQueueFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Channel} from "../model/Channel";
+import {QUEUE_MAIN_NAME} from "../services/providers";
 
 const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -62,7 +63,7 @@ export class SlackTransport implements ITransport {
   constructor(
     private slackEvents: SlackEventAdapter,
     @Inject(LOGGER_TOKEN) private logger: Logger,
-    private queue: Queue,
+    @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
     private webClient: WebClient,
     private connection: Connection,
     private slackStandUpProvider: SlackStandUpProvider,
@@ -73,46 +74,48 @@ export class SlackTransport implements ITransport {
   }
 
   initSlackEvents(): void {
+    const queue = this.queueFactory(QUEUE_MAIN_NAME);
+
     this.slackEvents.on('error', async (error) => {
       this.logger.error('Receive slack events error', {error})
     });
 
     this.slackEvents.on('message', async (messageResponse: MessageResponse) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_MESSAGE, messageResponse);
+      await queue.add(QUEUE_SLACK_EVENT_MESSAGE, messageResponse);
     });
 
     this.slackEvents.on('member_left_channel', async (response: MemberJoinedChannel) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_MEMBER_LEFT_CHANNEL, response);
+      await queue.add(QUEUE_SLACK_EVENT_MEMBER_LEFT_CHANNEL, response);
     })
     this.slackEvents.on('member_joined_channel', async (response: MemberJoinedChannel) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL, response);
+      await queue.add(QUEUE_SLACK_EVENT_MEMBER_JOINED_CHANNEL, response);
     })
     this.slackEvents.on('channel_joined', async (response) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_JOINED, response);
+      await queue.add(QUEUE_SLACK_EVENT_CHANNEL_JOINED, response);
     });
     this.slackEvents.on('group_joined', async (response) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_GROUP_JOINED, response);
+      await queue.add(QUEUE_SLACK_EVENT_GROUP_JOINED, response);
     });
     this.slackEvents.on('channel_left', async (response: ChannelLeft) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_LEFT, response);
+      await queue.add(QUEUE_SLACK_EVENT_CHANNEL_LEFT, response);
     });
     this.slackEvents.on('group_left', async (response) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_GROUP_LEFT, response);
+      await queue.add(QUEUE_SLACK_EVENT_GROUP_LEFT, response);
     });
 
 
     this.slackEvents.on('channel_archive', async (response: {type: string, channel: string, user: string}) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_ARCHIVE, response);
+      await queue.add(QUEUE_SLACK_EVENT_CHANNEL_ARCHIVE, response);
     });
     this.slackEvents.on('group_archive', async (response) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_GROUP_ARCHIVE, response);
+      await queue.add(QUEUE_SLACK_EVENT_GROUP_ARCHIVE, response);
     });
 
     this.slackEvents.on('channel_unarchive', async (response) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_CHANNEL_UNARCHIVE, response);
+      await queue.add(QUEUE_SLACK_EVENT_CHANNEL_UNARCHIVE, response);
     });
     this.slackEvents.on('group_unarchive', async (response) => {
-      await this.queue.add(QUEUE_SLACK_EVENT_GROUP_UNARCHIVE, response);
+      await queue.add(QUEUE_SLACK_EVENT_GROUP_UNARCHIVE, response);
     });
 
 

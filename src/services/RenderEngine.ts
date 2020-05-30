@@ -6,7 +6,6 @@ export class RenderEngine {
   globalParams = {};
 
   constructor(private enableCache = false) {
-
   }
 
   compileTemplate(templateName: string) {

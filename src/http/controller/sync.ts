@@ -1,11 +1,11 @@
 import {IHttpAction} from "./index";
 import {STAND_UP_BOT_TRANSPORT} from "../../bot/StandUpBotService";
 import {Connection} from "typeorm";
-import {CONFIG_TOKEN} from "../../services/token";
+import {CONFIG_TOKEN, IQueueFactory, QUEUE_FACTORY_TOKEN} from "../../services/token";
 import DashboardContext from "../../services/DashboardContext";
 import {ITransport} from "../../bot/models";
 import { Injectable, Inject } from 'injection-js';
-import {IAppConfig} from "../../services/providers";
+import {IAppConfig, QUEUE_MAIN_NAME} from "../../services/providers";
 import {AccessDenyError} from "../dashboardExpressMiddleware";
 import {QUEUE_SLACK_SYNC_DATA, SlackTransport} from "../../slack/SlackTransport";
 import {Queue} from "bullmq";
@@ -14,9 +14,11 @@ import {Queue} from "bullmq";
 export class SyncAction {
   transport: SlackTransport;
 
+  private queue = this.queueFactory(QUEUE_MAIN_NAME)
+
   constructor(
     private connection: Connection,
-    private queue: Queue,
+    @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     @Inject(STAND_UP_BOT_TRANSPORT) transport: ITransport,
   ) {

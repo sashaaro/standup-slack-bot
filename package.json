@@ -10,13 +10,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@slack/events-api": "^2.3.2",
+    "@slack/events-api": "^2.3.3",
     "@slack/interactive-messages": "^1.6.0",
     "@slack/rtm-api": "^5.0.4",
     "@slack/types": "^1.6.0",
-    "@slack/web-api": "^5.8.1",
+    "@slack/web-api": "^5.9.0",
     "body-parser": "^1.19.0",
-    "bullmq": "^1.8.7",
+    "bullmq": "^1.8.9",
     "chalk": "^4.0.0",
     "class-transformer": "^0.2.3",
     "class-validator": "^0.12.2",
@@ -26,7 +26,7 @@
     "express-async-errors": "^3.1.1",
     "express-session": "^1.17.1",
     "injection-js": "^2.3.0",
-    "ioredis": "^4.17.0",
+    "ioredis": "^4.17.1",
     "lodash.groupby": "^4.6.0",
     "pg": "^8.2.1",
     "pug": "^2.0.4",
@@ -34,9 +34,9 @@
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
-    "rollbar": "^2.16.1",
+    "rollbar": "^2.16.2",
     "rxjs": "^6.5.5",
-    "typeorm": "^0.2.24",
+    "typeorm": "^0.2.25",
     "winston": "^3.2.1",
     "yargs": "^15.3.1"
   },
@@ -44,7 +44,7 @@
     "@types/body-parser": "^1.19.0",
     "@types/express": "^4.17.6",
     "@types/express-session": "^1.17.0",
-    "@types/jest": "^25.2.2",
+    "@types/jest": "^25.2.3",
     "@types/winston": "^2.4.4",
     "@types/yargs": "^15.0.4",
     "concurrently": "^5.2.0",
@@ -52,6 +52,6 @@
     "jest-each": "^25.5.0",
     "node-sass": "^4.14.1",
     "nodemon": "^2.0.4",
-    "typescript": "^3.9.2"
+    "typescript": "^3.9.3"
   }
 }

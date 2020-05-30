@@ -6,7 +6,9 @@ import {createMessageAdapter} from "@slack/interactive-messages";
 import {QUEUE_SLACK_INTERACTIVE_RESPONSE} from "../slack/SlackTransport";
 import {Queue} from "bullmq";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
-import {IAppConfig} from "../services/providers";
+import {IAppConfig, QUEUE_MAIN_NAME} from "../services/providers";
+import {Inject} from "injection-js";
+import {IQueueFactory, RETRY_MAIN_QUEUE} from "../services/token";
 
 export const createLoggerMiddleware = (logger: Logger) => (req: express.Request, res: express.Response, next) => {
   if (req.originalUrl.startsWith('/api/slack') && req.method === "POST") {
@@ -34,7 +36,7 @@ export const createLoggerMiddleware = (logger: Logger) => (req: express.Request,
   next()
 }
 
-export const createSlackApiExpress = (config: IAppConfig, queue: Queue, slackEvents: SlackEventAdapter, logger: Logger): express.Router => {
+export const createSlackApiExpress = (config: IAppConfig, queueFactory: IQueueFactory, slackEvents: SlackEventAdapter, logger: Logger): express.Router => {
   const router = express.Router()
 
   if (config.debug) {
@@ -42,6 +44,7 @@ export const createSlackApiExpress = (config: IAppConfig, queue: Queue, slackEve
   }
 
   const slackInteractions = createMessageAdapter(config.slackSigningSecret);
+  const queue = queueFactory(QUEUE_MAIN_NAME)
   slackInteractions.action({},  async (response) => {
     try {
       const job = await queue.add(QUEUE_SLACK_INTERACTIVE_RESPONSE, response)

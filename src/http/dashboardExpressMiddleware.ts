@@ -6,7 +6,7 @@ import {Injector} from "injection-js";
 import {SyncAction} from "./controller/sync";
 import {Connection} from "typeorm";
 import DashboardContext from "../services/DashboardContext";
-import {CONFIG_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
+import {CONFIG_TOKEN, LOGGER_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
 import {OauthAuthorize} from "./controller/oauth-authorize";
 import {RenderEngine} from "../services/RenderEngine";
 import http from "http";
@@ -141,6 +141,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
     res.type('txt').send('Not found');
   })
 
+  const logger = injector.get(LOGGER_TOKEN);
   router.use((err, req, res, next) => {
     if (err instanceof AccessDenyError) {
       res.status(403);
@@ -159,7 +160,9 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
         res.send("")
       }
     } else {
-      console.log(err)
+      logger.error("Catch express middleware error", {error: err})
+      res.status(502);
+      res.send("Sorry, something going wrong")
     }
   })
 

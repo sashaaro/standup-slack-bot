@@ -74,6 +74,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
   // dotenv.config({path: `.env`})
   dotenv.config({path: `.env.${env}`})
 
+  const queues = {}
   const providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,
@@ -98,7 +99,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useFactory: (config) => new IOredis({
         host: 'redis',
         maxRetriesPerRequest: 5,
-        lazyConnect: config.redisLazyConnect
+        lazyConnect: false//config.redisLazyConnect
       }),
       deps: [CONFIG_TOKEN]
     },
@@ -137,7 +138,11 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: QUEUE_FACTORY_TOKEN,
-      useFactory: (redis: Redis) => ((queueName: string) => new Queue(queueName, {connection: redis})) as IQueueFactory,
+      useFactory: (redis: Redis) => ((queueName: string) => {
+        queues[queueName] = queues[queueName] || new Queue(queueName, {connection: redis});
+
+        return queues[queueName];
+      }) as IQueueFactory,
       deps: [REDIS_TOKEN]
     },
     {
@@ -148,11 +153,6 @@ export const createProviders = (env = 'dev'): Provider[] => {
         //settings: {stalledInterval: 2000}
       })) as IWorkerFactory,
       deps: [REDIS_TOKEN]
-    },
-    {
-      provide: Queue,
-      useFactory: (factory: IQueueFactory) => factory(QUEUE_MAIN_NAME),
-      deps: [QUEUE_FACTORY_TOKEN]
     },
     {
       provide: RETRY_MAIN_QUEUE,
@@ -176,7 +176,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
     {
       provide: EXPRESS_SLACK_API_TOKEN,
       useFactory: createSlackApiExpress,
-      deps: [CONFIG_TOKEN, Queue, SlackEventAdapter, LOGGER_TOKEN]
+      deps: [CONFIG_TOKEN, QUEUE_FACTORY_TOKEN, SlackEventAdapter, LOGGER_TOKEN]
     },
     {
       provide: EXPRESS_DASHBOARD_TOKEN,

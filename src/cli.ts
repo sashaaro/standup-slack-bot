@@ -13,8 +13,8 @@ let argv = yargs.option('env', {
 
 const env = argv.argv.env;
 const injector = ReflectiveInjector.resolveAndCreate(createProviders(env))
-
-injector.get(LOGGER_TOKEN).debug(`Environment: ${env}`)
+const logger = injector.get(LOGGER_TOKEN);
+logger.debug(`Environment: ${env}`)
 
 injector.get(TERMINATE).subscribe(() => {
   injector.get(LOGGER_TOKEN).debug('Terminate...')
@@ -34,8 +34,12 @@ commands.forEach(command => {
   main = main.command(commandInstance);
 })
 
-main
-  .demandCommand(1)
-  .strict()
-  .argv
+try {
+  main
+    .demandCommand(1)
+    .strict()
+    .argv
+} catch (e) {
+  logger.error('Application error', {error: e})
+}
 

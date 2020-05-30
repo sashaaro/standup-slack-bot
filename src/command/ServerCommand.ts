@@ -3,8 +3,8 @@ import {Inject, Injector} from "injection-js";
 import {
   CONFIG_TOKEN,
   EXPRESS_DASHBOARD_TOKEN,
-  EXPRESS_SLACK_API_TOKEN,
-  IWorkerFactory, LOGGER_TOKEN, REDIS_TOKEN, TERMINATE,
+  EXPRESS_SLACK_API_TOKEN, IQueueFactory,
+  IWorkerFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE,
   WORKER_FACTORY_TOKEN
 } from "../services/token";
 import {Connection} from "typeorm";
@@ -12,12 +12,14 @@ import express from 'express'
 import 'express-async-errors';
 import http from "http";
 import Rollbar from "rollbar";
-import {IAppConfig} from "../services/providers";
+import {IAppConfig, QUEUE_MAIN_NAME} from "../services/providers";
 import {useStaticPublicFolder} from "../http/dashboardExpressMiddleware";
 import {SlackTransport} from "../slack/SlackTransport";
 import {Redis} from "ioredis";
 import {Logger} from "winston";
 import {Observable} from "rxjs";
+import {redisReady} from "./QueueConsumeCommand";
+import * as fs from "fs";
 
 export class ServerCommand implements yargs.CommandModule {
   command = 'server:run';
@@ -30,6 +32,7 @@ export class ServerCommand implements yargs.CommandModule {
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private slackTransport: SlackTransport,
     @Inject(REDIS_TOKEN) private redis: Redis,
+    @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
     @Inject(LOGGER_TOKEN) protected logger: Logger,
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
@@ -66,7 +69,6 @@ export class ServerCommand implements yargs.CommandModule {
     try {
       await this.startServer(type, args.listen as string)
     } catch (e) {
-      console.log(e)
       this.logger.error("Start server error", {error: e})
     }
   }
@@ -74,9 +76,14 @@ export class ServerCommand implements yargs.CommandModule {
   private async startServer(type?: string, listen?: string|number)
   {
     await this.connection.connect();
-    if (this.redis.status !== 'ready') {
+    try {
       await this.redis.connect();
+    } catch (e) {
+      if (!e.message.startsWith('Redis is already connecting')) {
+        throw e;
+      }
     }
+    await redisReady(this.redis);
 
     const expressApp = express()
 
@@ -92,18 +99,21 @@ export class ServerCommand implements yargs.CommandModule {
     const options = {}
     listen = listen || 3000
 
-    this.logger.debug('Start server');
+    this.logger.debug(`Start server. Listen ${listen}`);
     const server = http.createServer(options, expressApp)
+
+    if (fs.existsSync(listen as any)) {
+      fs.unlinkSync(listen as any);
+    }
+
     server.listen(listen)
       .on('error', (error) => {
         this.logger.error('Server error', {error});
-        this.connection.close()
-        this.redis.disconnect()
+        this.close();
       })
       .on('close', () => {
         this.logger.debug('Server closed');
-        this.connection.close()
-        this.redis.disconnect()
+        this.close();
       });
 
     this.terminate$.subscribe(() => {
@@ -113,5 +123,17 @@ export class ServerCommand implements yargs.CommandModule {
         }
       });
     })
+  }
+
+  private close() {
+    this.connection.close()
+    try {
+      this.queueFactory(QUEUE_MAIN_NAME).close()
+      this.redis.disconnect()
+    } catch (e) {
+      if (!e.message.startsWith('Connection is closed')) {
+        this.logger.error('Close redis error', {error: e})
+      }
+    }
   }
 }

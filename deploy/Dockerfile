@@ -19,6 +19,7 @@ COPY ./package.json ./package-lock.json ./
 RUN npm install --production
 RUN rm -rf ~/.npm/*
 COPY --from=builder /opt/app/dist ./dist
+COPY --from=builder /opt/app/resources ./resources
 COPY ./cli.sh .
 COPY ./.env* ./
 # USER worker

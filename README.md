@@ -62,9 +62,9 @@ npm run test
 Build images
 ```bash
 cp .env.dist .env.prod
-COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose -f docker-compose.prod.yml build
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose -f docker-compose.staging.yml build
 ```
 Create db and execute migrations
 ```bash
-dc -f docker-compose.prod.yml run --rm ui database:migrate --env=prod
+dc -f docker-compose.staging.yml run --rm ui database:migrate --env=prod
 ```

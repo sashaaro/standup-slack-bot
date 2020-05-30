@@ -1,13 +1,21 @@
 import * as yargs from "yargs";
 import {Inject} from "injection-js";
 import {SlackTransport} from "../slack/SlackTransport";
-import {IWorkerFactory, LOGGER_TOKEN, REDIS_TOKEN, RETRY_MAIN_QUEUE, WORKER_FACTORY_TOKEN} from "../services/token";
+import {
+  IQueueFactory,
+  IWorkerFactory,
+  LOGGER_TOKEN, QUEUE_FACTORY_TOKEN,
+  REDIS_TOKEN,
+  TERMINATE,
+  WORKER_FACTORY_TOKEN
+} from "../services/token";
 import {Logger} from "winston";
 import {Connection} from "typeorm";
 import {Redis} from "ioredis";
 import StandUpBotService from "../bot/StandUpBotService";
 import {Job, Queue} from "bullmq";
 import {QUEUE_MAIN_NAME, QUEUE_RETRY_MAIN_NAME} from "../services/providers";
+import {Observable} from "rxjs";
 
 class HasPreviousError extends Error {
   public previous: Error;
@@ -23,7 +31,6 @@ export const redisReady = (redis: Redis) => {
       resolve()
     } else {
       redis.once('ready', (e) => {
-        console.log(e)
         resolve()
       })
       redis.once('error', (e) => {
@@ -44,8 +51,8 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
-    private readonly queue: Queue,
-    @Inject(RETRY_MAIN_QUEUE) private retryQueue: Queue,
+    @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
+    @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 
   builder(args: yargs.Argv) {
@@ -74,11 +81,14 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     await redisReady(this.redis);
     await this.connection.connect();
 
+
     this.standUpBotService.listenTransport();
 
     const worker = this.workerFactory(queueName, async (job) => {
       await this.slackTransport.handelJob(job.name, job.data)
     });
+
+    await worker.waitUntilReady()
 
     worker.on('process', (job) => {
       this.logger.info(`job process ${job.name} #${job.id}`, {data: job.data})
@@ -88,6 +98,8 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       this.logger.info(`job complete ${job.name} #${job.id}`)
     });
 
+    const retryQueue = this.queueFactory(QUEUE_RETRY_MAIN_NAME);
+
     worker.on('failed', async (job, err) => {
       const error = new ConsumerError()
       error.previous = err
@@ -96,7 +108,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       this.logger.debug(`job failed ${job.name} #${job.id}`, err.stack)
 
       if (queueName === QUEUE_MAIN_NAME) {
-        await this.retryQueue.add(job.name, job.data, {delay: 5000})
+        await retryQueue.add(job.name, job.data, {delay: 5000})
       } else if (queueName === QUEUE_RETRY_MAIN_NAME) {
         // todo save to file
       }
@@ -107,6 +119,10 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
       this.connection.close()
       this.redis.disconnect()
+    });
+
+    this.terminate$.subscribe(() => {
+      worker.close()
     })
   }
 }
