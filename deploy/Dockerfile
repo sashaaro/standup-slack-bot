@@ -11,7 +11,7 @@ COPY ./ .
 
 RUN npm run build
 
-FROM node:12.16.3-alpine
+FROM node:12.17.0-alpine
 
 WORKDIR /opt/app
 
@@ -22,6 +22,7 @@ COPY --from=builder /opt/app/dist ./dist
 COPY --from=builder /opt/app/resources ./resources
 COPY ./cli.sh .
 COPY ./.env* ./
+RUN mkdir var
 # USER worker
 
 ENTRYPOINT ["./cli.sh"]

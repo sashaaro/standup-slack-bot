@@ -40,11 +40,13 @@ export interface IAppConfig {
   rollBarAccessToken?: string,
   redisLazyConnect: boolean
   db: {
+    host: string,
     database: string,
     username: string,
     password: string,
   },
   supportTelegram?: string
+  redisHost?: string
 }
 
 export type RenderFn = (templateName: string, params?: object) => string;
@@ -91,17 +93,19 @@ export const createProviders = (env = 'dev'): Provider[] => {
         yandexMetrikaID: process.env.YANDEX_METRIKA_ID,
         rollBarAccessToken: process.env.ROLLBAR_ACCESS_TOKEN,
         db: {
-          database: process.env.DB_HOST,
+          host: process.env.DB_HOST,
+          database: process.env.DB_DATABASE,
           username: process.env.DB_USERNAME,
           password: process.env.DB_PASSWORD,
         },
+        redisHost: process.env.REDIS_HOST || 'redis',
         supportTelegram: process.env.SUPPORT_TELEGRAM,
       } as IAppConfig
     },
     {
       provide: REDIS_TOKEN,
       useFactory: (config) => new IOredis({
-        host: 'redis',
+        host: config.redisHost,
         maxRetriesPerRequest: 5,
         lazyConnect: true
       }),

@@ -57,14 +57,25 @@ cp .env.dist .env.dev
 npm run test
 ```
 
-### Deployment
+### Staging
 
 Build images
 ```bash
 cp .env.dist .env.prod
-COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose -f docker-compose.staging.yml build
+docker-compose -f docker-compose.staging.yml build
 ```
 Create db and execute migrations
 ```bash
 dc -f docker-compose.staging.yml run --rm ui database:migrate --env=prod
+```
+
+### Minikube
+
+Build base image
+```bash
+$(minikube docker-env) docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
+```
+
+```bash
+kubectl create -f deploy/ui.yaml
 ```
