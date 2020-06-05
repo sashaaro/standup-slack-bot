@@ -192,9 +192,13 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useFactory: () => {
         const logger = createLogger({})
 
+        const logFormat = format.printf(info =>
+          `${info.timestamp} ${info.level}: ${info.message}.${info.error ? '\n' + info.error.stack || JSON.stringify(info.error) : ''}`
+        );
         if (env === 'prod') {
           logger.add(new transports.File({
-            filename: `var/log${process.env.APP_CONTEXT ? '.' + process.env.APP_CONTEXT : '' }.log`
+            filename: `var/log${process.env.APP_CONTEXT ? '.' + process.env.APP_CONTEXT : '' }.log`,
+            format: logFormat
           }))
         } else {
           // const prettyPrintFormat = format.prettyPrint({colorize: true});
@@ -209,7 +213,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
                 return jsonFormat.transform(info)
               };
             })*/
-            format: format.printf(info => `${info.timestamp} ${info.level}: ${info.message}.${info.error ? '\n' + info.error.stack : ''}`)
+            format: logFormat
           }))
           logger.level = 'debug'
         }

@@ -122,7 +122,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
   router.get('/logout', (req, res) => {
     const session = req.session;
     session.destroy(err => {
-      // log
+      logger.error('Destroy session error', {error: err})
     })
     res.redirect('/');
   });
