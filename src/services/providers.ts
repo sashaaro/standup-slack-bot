@@ -196,9 +196,24 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useFactory: () => {
         const logger = createLogger({})
 
-        const logFormat = format.printf(info =>
-          `${info.timestamp} ${info.level}: ${info.message}.${info.error ? '\n' + info.error.stack || JSON.stringify(info.error) : ''}`
-        );
+        const logFormat = format.printf(info => {
+          info = {...info};
+          let formatted = `${info.timestamp} ${info.level}: ${info.message}`;
+          delete info.timestamp
+          delete info.level
+          delete info.message
+          if (info.error) {
+            const isError = info.error instanceof Error
+            formatted += `\n${isError ? info.error.stack : JSON.stringify(info.error)}`;
+            delete info.error
+          }
+
+          if (Object.getOwnPropertyNames(info).length > 0) {
+            formatted += `\n${JSON.stringify(info)}`;
+          }
+
+          return formatted;
+        });
         if (env === 'prod') {
           logger.add(new transports.File({
             filename: `var/log${process.env.APP_CONTEXT ? '.' + process.env.APP_CONTEXT : '' }.log`,
