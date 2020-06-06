@@ -43,7 +43,7 @@ block authorized_content
             .ui.right.labeled.input.large
               input.form-control(name="duration", type="number", step="1", value= formData.duration)
               .ui.basic.label= "minutes"
-        .field
+        //.field
           label= 'Days'
           div
             each weekDay in weekDays
@@ -53,7 +53,7 @@ block authorized_content
         .field(class=errors.receivers ? 'error' : '')
           label
             span= 'Participants'
-            span.error= errors.receivers ? receivers.name[0] : ''
+            span.error= errors.receivers ? errors.receivers[0] : ''
           .ui.input.large
             select.dropdown.search.ui.fluid(name="receivers[]", placeholder="Select receivers", multiple)
               each u in users

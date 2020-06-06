@@ -4,10 +4,10 @@ import {Injectable} from 'injection-js';
 import User from "../model/User";
 
 export interface IAuthUser {
-  "id": "U1234",
-  "scope": "chat:write",
-  "access_token": "xoxp-1234",
-  "token_type": "user"
+  id: string,
+  scope?: string,
+  access_token?: string,
+  token_type?: string
 }
 
 @Injectable()
@@ -22,16 +22,14 @@ export default class DashboardContext {
   async init() {
     const authedUser = this.session.user as IAuthUser;
     const userRepository = this.connection.getRepository(User);
-    //this.user = await userRepository.findOne('UJZM51SN8');
-    //this.session.channel = 'CK222FUKH'
     if (authedUser) {
       this.user = await userRepository.findOne(authedUser.id, {relations: ['workspace']});
     }
-    this.user = await userRepository.findOne(null, {relations: ['workspace']});
+    // this.authenticate({id: 'UJZM51SN8'}, await userRepository.findOne('UJZM51SN8'));
   }
 
   authenticate(authedUser: IAuthUser, user: User) {
-    this.session.user = authedUser // TODO save id only
+    this.session.user = authedUser; // TODO save id only
     this.user = user;
   }
 }

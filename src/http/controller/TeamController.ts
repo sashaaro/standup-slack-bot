@@ -85,8 +85,9 @@ export class TeamFormDTO {
   start: string
   @Expose()
   @Type(() => String)
-  @Min(1)
-  receivers: string[] = []
+  // @Min(1)
+  @IsNotEmpty()
+  receivers: string[] = [];
   @IsNotEmpty()
   @Type(() => String)
   reportSlackChannel: string
@@ -140,11 +141,11 @@ export class TeamController {
       return errors
     }
     team.timezone = this.connection.manager.create(Timezone, {id: formData.timezone}) || team.timezone;
-    team.name = formData.name
-    team.start = formData.start
-    team.duration = formData.duration
-    team.reportSlackChannel = formData.reportSlackChannel
-    team.users = (formData.receivers || []).map(r => this.connection.manager.create(User, {id: r}))
+    team.name = formData.name;
+    team.start = formData.start;
+    team.duration = formData.duration;
+    team.reportSlackChannel = formData.reportSlackChannel;
+    team.users = (formData.receivers || []).map(r => this.connection.manager.create(User, {id: r}));
 
     team.questions = [];
     formData.questions.forEach(q => {
@@ -166,7 +167,7 @@ export class TeamController {
 
   create: IHttpAction = async (req, res) => {
     const team = new Team()
-    team.workspace = req.context.user.workspace
+    team.workspace = req.context.user.workspace;
     team.createdBy = req.context.user;
 
     const formData = new TeamFormDTO();
@@ -207,8 +208,7 @@ export class TeamController {
       .leftJoinAndSelect('t.users', 'users')
       .leftJoinAndSelect('questions.options', 'options')
       .where({id: id})
-      // .andWhere('ch.isArchived = false')
-      // .andWhere('ch.isEnabled = true')
+      .andWhere('t.isEnabled = true')
       .orderBy("questions.index", "ASC")
       .getOne();
 
@@ -230,6 +230,8 @@ export class TeamController {
         res.redirect(`/team/${team.id}/edit`);
         return;
       }
+
+      formData.receivers = formData.receivers || []
     } else {
       plainToClassFromExist(formData, team);
       formData.timezone = team.timezone.id; // TODO

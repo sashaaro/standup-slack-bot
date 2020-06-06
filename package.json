@@ -13,11 +13,11 @@
   "dependencies": {
     "@slack/events-api": "^2.3.3",
     "@slack/interactive-messages": "^1.6.0",
-    "@slack/rtm-api": "^5.0.4",
-    "@slack/types": "^1.6.0",
-    "@slack/web-api": "^5.9.0",
+    "@slack/rtm-api": "^5.0.5",
+    "@slack/types": "^1.7.0",
+    "@slack/web-api": "^5.10.0",
     "body-parser": "^1.19.0",
-    "bullmq": "^1.8.9",
+    "bullmq": "^1.8.13",
     "chalk": "^4.0.0",
     "class-transformer": "^0.2.3",
     "class-validator": "^0.12.2",
@@ -27,7 +27,7 @@
     "express-async-errors": "^3.1.1",
     "express-session": "^1.17.1",
     "injection-js": "^2.3.0",
-    "ioredis": "^4.17.1",
+    "ioredis": "^4.17.3",
     "lodash.groupby": "^4.6.0",
     "pg": "^8.2.1",
     "pug": "^2.0.4",
@@ -53,6 +53,6 @@
     "jest-each": "^25.5.0",
     "node-sass": "^4.14.1",
     "nodemon": "^2.0.4",
-    "typescript": "^3.9.3"
+    "typescript": "^3.9.5"
   }
 }

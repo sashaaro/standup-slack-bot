@@ -4,11 +4,10 @@ import getRawBody from "raw-body";
 import {Logger} from "winston";
 import {createMessageAdapter} from "@slack/interactive-messages";
 import {QUEUE_SLACK_INTERACTIVE_RESPONSE} from "../slack/SlackTransport";
-import {Queue} from "bullmq";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import {IAppConfig, QUEUE_MAIN_NAME} from "../services/providers";
-import {Inject} from "injection-js";
-import {IQueueFactory, RETRY_MAIN_QUEUE} from "../services/token";
+import {IQueueFactory} from "../services/token";
+import * as fs from "fs";
 
 export const createLoggerMiddleware = (logger: Logger) => (req: express.Request, res: express.Response, next) => {
   if (req.originalUrl.startsWith('/api/slack') && req.method === "POST") {
@@ -44,13 +43,18 @@ export const createSlackApiExpress = (config: IAppConfig, queueFactory: IQueueFa
   }
 
   const slackInteractions = createMessageAdapter(config.slackSigningSecret);
-  const queue = queueFactory(QUEUE_MAIN_NAME)
+  const queue = queueFactory(QUEUE_MAIN_NAME);
   slackInteractions.action({},  async (response) => {
     try {
       const job = await queue.add(QUEUE_SLACK_INTERACTIVE_RESPONSE, response)
     } catch (e) {
-      // TODO log local file
-      logger.error('Add queue', {error: e}) // add job
+      logger.error('Add queue', {error: e})
+
+      fs.appendFile(`var/failed-jobs.log`, JSON.stringify({name: QUEUE_SLACK_INTERACTIVE_RESPONSE, response}) + '\n' , (err) =>  {
+        if (err) {
+          logger.error('Save failed job', {error: err})
+        }
+      });
     }
   })
 

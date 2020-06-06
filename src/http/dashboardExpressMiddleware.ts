@@ -122,9 +122,12 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
   router.get('/logout', (req, res) => {
     const session = req.session;
     session.destroy(err => {
-      logger.error('Destroy session error', {error: err})
+      if (err) {
+        logger.error('Destroy session error', {error: err})
+      }
+
+      return res.redirect('/');
     })
-    res.redirect('/');
   });
   router.all('/team/create', injector.get(TeamController).create);
   router.all('/team/:id', injector.get(TeamController).standups);
