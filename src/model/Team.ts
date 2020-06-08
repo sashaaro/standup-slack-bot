@@ -14,7 +14,7 @@ export class Team implements ITeam {
   name: string
 
   @Column({default: false})
-  isEnabled: boolean;
+  isEnabled: boolean = true;
 
   // TODO isPrivate: boolean;
 

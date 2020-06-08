@@ -171,10 +171,11 @@ export class TeamController {
     team.createdBy = req.context.user;
 
     const formData = new TeamFormDTO();
-    let errors = []
+    let errors = [];
     if (req.method === "POST") { // TODO check if standup in progress then not dave
       errors = this.handleSubmitRequest(req, formData, team);
       if (errors.length === 0) {
+        team.isEnabled = true;
         await this.teamRepository.save(team);
         // notification
         res.redirect(`/team/${team.id}/edit`);
