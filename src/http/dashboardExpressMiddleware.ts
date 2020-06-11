@@ -154,7 +154,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
       res.status(403);
 
       if (req.accepts('html')) {
-        res.send(render('403'));
+        res.send(render('welcome', {msg: "Access denied", authLink}));
       } else {
         res.send("")
       }

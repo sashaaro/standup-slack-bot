@@ -1,6 +1,9 @@
 extends layout/main
 
 block content
+    if msg
+        .row.auth-block
+            h3= msg
     .row.welcome
         .logo
         .welcome__title Standup Bot

@@ -9,7 +9,7 @@ import SlackWorkspace from "../../model/SlackWorkspace";
 import {OauthAccessResponse} from "../../slack/model/ScopeGranted";
 import User from "../../model/User";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
-import {ResourceNotFoundError} from "../dashboardExpressMiddleware";
+import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
 import {SlackTransport} from "../../slack/SlackTransport";
 
@@ -30,6 +30,11 @@ export class OauthAuthorize {
       return;
     }
 
+    if (req.query.error) {
+      if (req.query.error === 'access_denied') {
+        throw new AccessDenyError()
+      }
+    }
     if (!req.query.code) {
       throw new ResourceNotFoundError()
     }
