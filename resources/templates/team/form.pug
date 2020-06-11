@@ -116,13 +116,13 @@ block authorized_content
 block append scripts
   script.
     const formErrors = !{JSON.stringify(errors.questions || {})};
-    const resetFormQuestionDate = !{JSON.stringify(formData.questions || [])}
-    const formQuestionDate = !{JSON.stringify(formData.questions || [])}
+    const resetFormQuestionData = !{JSON.stringify(formData.questions || [])}
+    const formQuestionData = !{JSON.stringify(formData.questions || [])}
 
     var vm = new Vue({
       el: '#form',
       data: {
-        questions: formQuestionDate,
+        questions: formQuestionData,
         errors: formErrors,
         dragOptions: {
           animation: 200,
@@ -144,8 +144,7 @@ block append scripts
           options.splice(optionIndex, 1)
         },
         isChanged(questionOption) {
-          const foundOption = [].concat(...resetFormQuestionDate.map(q => q.options)).find(o => o.id === questionOption.id);
-          console.log(foundOption)
+          const foundOption = [].concat(...resetFormQuestionData.map(q => q.options)).find(o => o.id === questionOption.id);
           return foundOption && foundOption.text !== questionOption.text;
         },
         submit() {

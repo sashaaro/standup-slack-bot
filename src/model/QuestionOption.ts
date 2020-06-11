@@ -7,7 +7,9 @@ export default class QuestionOption implements IQuestionOption {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(type => Question, q => q.options)
+  @ManyToOne(type => Question, q => q.options, {
+    cascade: ["insert"],
+  })
   question: Question;
 
   @Column({nullable: false})

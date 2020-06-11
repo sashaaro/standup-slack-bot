@@ -1,4 +1,13 @@
-import {Column, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn
+} from "typeorm";
 import User from "./User";
 import SlackWorkspace from "./SlackWorkspace";
 import Question from "./Question";
@@ -13,10 +22,8 @@ export class Team implements ITeam {
   @Column()
   name: string
 
-  @Column({default: false})
-  isEnabled: boolean = true;
-
-  // TODO isPrivate: boolean;
+  @Column({default: true})
+  isEnabled: boolean;
 
   @ManyToOne(type => User, null, {
     eager: true,

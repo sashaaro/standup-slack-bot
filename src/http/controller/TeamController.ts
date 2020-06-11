@@ -2,14 +2,14 @@ import StandUp from "../../model/StandUp";
 import {Inject, Injectable} from 'injection-js';
 import {Connection} from "typeorm";
 import {RENDER_TOKEN} from "../../services/token";
-import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
+import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
 import User from "../../model/User";
 import {RenderFn} from "../../services/providers";
 import {IHttpAction} from "./index";
 import Timezone from "../../model/Timezone";
 import {Expose, plainToClassFromExist, Transform, Type} from "class-transformer";
 import {
-  IsArray,
+  IsArray, isBoolean,
   IsBoolean,
   IsInt, IsMilitaryTime,
   IsNotEmpty,
@@ -107,7 +107,6 @@ export const transformViewErrors = (errors: ValidationError[], err?: any[]) => {
 @Injectable()
 export class TeamController {
   teamRepository = this.connection.getRepository(Team)
-  timezoneRepository = this.connection.getRepository(Timezone)
 
   constructor(
     private connection: Connection,
@@ -147,16 +146,37 @@ export class TeamController {
     team.reportSlackChannel = formData.reportSlackChannel;
     team.users = (formData.receivers || []).map(r => this.connection.manager.create(User, {id: r}));
 
+    const questions = team.questions;
     team.questions = [];
     formData.questions.forEach(q => {
-      const question = this.connection.manager.create(Question, q);
+      let question;
+      if (q.id) {
+        question = questions.find((qu) => qu.id === q.id)
+        question = {...question, ...q}
+      }
+
+      if (!question) {
+        question = this.connection.manager.create(Question, {...q, team})
+      }
+      const options = question.options;
       question.options = []
       q.options.forEach(o => {
-        const item = this.connection.manager.create(QuestionOption, {id: o.id, text: o.text, question});
-        if (o.isNew) {
-          delete item.id;
+        let option;
+        if (o.id && !o.isNew) {
+          option = options.find((op) => op.id === o.id);
+          option = {...option, text: o.text}
         }
-        question.options.push(item)
+        if (!option) {
+          option = this.connection.manager.create(QuestionOption, {
+            id: o.id,
+            text: o.text,
+            question
+          })
+        }
+        if (o.isNew) {
+          delete option.id;
+        }
+        question.options.push(option)
       })
       team.questions.push(question);
     })
@@ -208,8 +228,8 @@ export class TeamController {
       .leftJoinAndSelect('t.workspace', 'workspace')
       .leftJoinAndSelect('t.users', 'users')
       .leftJoinAndSelect('questions.options', 'options')
-      .where({id: id})
-      .andWhere('t.isEnabled = true')
+      .where("t.id = :id", {id: id})
+      .andWhere('t.isEnabled = :isEnabled', {isEnabled: true})
       .orderBy("questions.index", "ASC")
       .getOne();
 
@@ -249,6 +269,21 @@ export class TeamController {
       formData,
       errors: transformViewErrors(errors),
     }))
+  }
+
+  putIsEnabled: IHttpAction = async (req, res) => {
+    if (!req.context.user) {
+      throw new AccessDenyError();
+    }
+
+    const id = req.params.id
+    if (!isBoolean(req.body.isEnabled)) {
+      throw new BadRequestError();
+    }
+
+    await this.teamRepository.update({id: id}, {isEnabled: req.body.isEnabled})
+
+    res.sendStatus(204);
   }
 
   standups: IHttpAction = async (req, res) => {
