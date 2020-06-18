@@ -146,23 +146,23 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: QUEUE_FACTORY_TOKEN,
-      useFactory: (redis: Redis, config: IAppConfig) => ((queueName: string) => {
+      useFactory: (redis: Redis) => ((queueName: string) => {
         queues[queueName] = queues[queueName] || new Queue(queueName, {
-          connection: {host: config.redisHost, port: 32856}//redis
+          connection: redis
         });
 
         return queues[queueName];
       }) as IQueueFactory,
-      deps: [REDIS_TOKEN, CONFIG_TOKEN]
+      deps: [REDIS_TOKEN]
     },
     {
       provide: WORKER_FACTORY_TOKEN,
-      useFactory: (redis: Redis, config: IAppConfig) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {
-        connection: {host: config.redisHost, port: 32856}//redis,
+      useFactory: (redis: Redis) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {
+        connection: redis,
         //lockDuration: 2000,
         //settings: {stalledInterval: 2000}
       })) as IWorkerFactory,
-      deps: [REDIS_TOKEN, CONFIG_TOKEN]
+      deps: [REDIS_TOKEN]
     },
     {
       provide: RETRY_MAIN_QUEUE,
