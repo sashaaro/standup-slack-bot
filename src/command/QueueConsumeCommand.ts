@@ -1,5 +1,5 @@
 import * as yargs from "yargs";
-import {Inject} from "injection-js";
+import {Inject, Injector} from "injection-js";
 import {SlackTransport} from "../slack/SlackTransport";
 import {
   IQueueFactory,
@@ -45,7 +45,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
   describe = 'Run queue consumers';
 
   constructor(
-    @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
+    private injector: Injector,
     private slackTransport: SlackTransport,
     private standUpBotService: StandUpBotService,
     @Inject(LOGGER_TOKEN) private logger: Logger,
@@ -84,7 +84,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
     this.standUpBotService.listenTransport();
 
-    const worker = this.workerFactory(queueName, async (job) => {
+    const worker = this.injector.get(WORKER_FACTORY_TOKEN)(queueName, async (job) => {
       await this.slackTransport.handelJob(job.name, job.data)
     });
 
