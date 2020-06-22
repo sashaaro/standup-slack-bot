@@ -84,7 +84,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
     const worker = this.injector.get(QUEUE_FACTORY_TOKEN)(queueName) as Queue;
 
-    worker.process(async (job) => {
+    worker.process('*', async (job) => {
       if (!await this.slackTransport.handelJob(job.name, job.data)) {
         const err = new ConsumerError('Not found handler')
         err.job = job;
@@ -114,10 +114,6 @@ export class QueueConsumeCommand implements yargs.CommandModule {
         // todo save to file
       }
     });
-
-    worker.on('drained', async () => {
-      console.log('drained');
-    })
 
     /*worker.on('closed', () => {
       console.log('closed')
