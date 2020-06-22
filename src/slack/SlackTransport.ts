@@ -27,7 +27,6 @@ import groupBy from "lodash.groupby";
 import {DialogOpenArguments, MessageAttachment, WebAPIPlatformError, WebClient} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
-import {Queue} from "bullmq";
 import {IQueueFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Channel} from "../model/Channel";
