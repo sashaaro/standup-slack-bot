@@ -17,10 +17,10 @@ const injector = ReflectiveInjector.resolveAndCreate(createProviders(env))
 
 const config = injector.get(CONFIG_TOKEN);
 const logger = injector.get(LOGGER_TOKEN);
-logger.debug(`Environment: ${env}. Debug: ${config.debug ? 'enable' : 'disable'}`);
+console.log(`Environment: ${env}. Debug: ${config.debug ? 'enable' : 'disable'}`);
 
 injector.get(TERMINATE).subscribe(() => {
-  logger.debug('Terminate...')
+  console.log('Terminate...')
 })
 
 
