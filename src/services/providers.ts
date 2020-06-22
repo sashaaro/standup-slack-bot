@@ -195,10 +195,10 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: LOGGER_TOKEN,
-      useFactory: () => {
+      useFactory: (config: IAppConfig) => {
         const logger = createLogger({})
 
-        const logFormat = format.printf(info => {
+        let logFormat = format.printf(info => {
           info = {...info};
           let formatted = `${info.timestamp} ${info.level}: ${info.message}`;
           delete info.timestamp
@@ -216,10 +216,13 @@ export const createProviders = (env = 'dev'): Provider[] => {
 
           return formatted;
         });
+
+        logFormat = format.combine(format.timestamp(), logFormat);
+
         if (env === 'prod') {
           logger.add(new transports.File({
             filename: `var/log${process.env.APP_CONTEXT ? '.' + process.env.APP_CONTEXT : '' }.log`,
-            format: logFormat
+            format: logFormat,
           }))
         } else {
           // const prettyPrintFormat = format.prettyPrint({colorize: true});
@@ -234,14 +237,17 @@ export const createProviders = (env = 'dev'): Provider[] => {
                 return jsonFormat.transform(info)
               };
             })*/
-            format: logFormat
+            format: logFormat,
           }))
+        }
+
+        if (config.debug) {
           logger.level = 'debug'
         }
 
         return logger;
       },
-      deps: []
+      deps: [CONFIG_TOKEN]
     },
     {
       provide: TERMINATE,
