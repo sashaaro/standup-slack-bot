@@ -3,8 +3,7 @@ import {Inject, Injector} from "injection-js";
 import {
   EXPRESS_DASHBOARD_TOKEN,
   EXPRESS_SLACK_API_TOKEN, IQueueFactory,
-  IWorkerFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE,
-  WORKER_FACTORY_TOKEN
+  LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
 import {Connection} from "typeorm";
 import express from 'express'
@@ -24,7 +23,6 @@ export class ServerCommand implements yargs.CommandModule {
   describe = 'Run server';
 
   constructor(
-    @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
     private injector: Injector,
     private connection: Connection,
     private slackTransport: SlackTransport,

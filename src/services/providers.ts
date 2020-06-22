@@ -1,11 +1,10 @@
 import {Injector, Provider} from "injection-js";
 import {
   CONFIG_TOKEN, EXPRESS_DASHBOARD_TOKEN, EXPRESS_SLACK_API_TOKEN,
-  IQueueFactory, IWorkerFactory, LOGGER_TOKEN,
+  IQueueFactory, LOGGER_TOKEN,
   QUEUE_FACTORY_TOKEN,
   REDIS_TOKEN,
   RENDER_TOKEN, RETRY_MAIN_QUEUE, TERMINATE,
-  WORKER_FACTORY_TOKEN
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
 import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
@@ -20,13 +19,13 @@ import * as fs from "fs";
 import IOredis, {Redis} from 'ioredis';
 import dotenv from "dotenv";
 import {TestTransport} from "../../test/services/transport";
-import {Processor, Queue, Worker} from 'bullmq';
 import {commands} from "../command";
 import {createLogger, transports, format} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
 import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
+import Queue from "bull";
 
 export interface IAppConfig {
   env: string,
@@ -146,23 +145,12 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: QUEUE_FACTORY_TOKEN,
-      useFactory: (redis: Redis) => ((queueName: string) => {
-        queues[queueName] = queues[queueName] || new Queue(queueName, {
-          connection: redis
-        });
+      useFactory: (config: IAppConfig) => ((queueName: string) => {
+        queues[queueName] = queues[queueName] || new Queue(queueName, {redis: {host: config.redisHost, port: 6379}});
 
         return queues[queueName];
       }) as IQueueFactory,
-      deps: [REDIS_TOKEN]
-    },
-    {
-      provide: WORKER_FACTORY_TOKEN,
-      useFactory: (redis: Redis) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {
-        connection: redis,
-        //lockDuration: 2000,
-        //settings: {stalledInterval: 2000}
-      })) as IWorkerFactory,
-      deps: [REDIS_TOKEN]
+      deps: [CONFIG_TOKEN]
     },
     {
       provide: RETRY_MAIN_QUEUE,

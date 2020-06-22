@@ -1,6 +1,6 @@
 import {InjectionToken} from 'injection-js';
 import {IAppConfig, RenderFn} from "./providers";
-import {Processor, Queue, Worker} from "bullmq";
+import {Queue} from "bull";
 import {Redis} from "ioredis";
 import express from 'express'
 import {Logger} from "winston";
@@ -10,15 +10,10 @@ export interface IQueueFactory {
   (queueName: string): Queue;
 }
 
-export interface IWorkerFactory {
-  (queueName: string, processor: Processor): Worker;
-}
-
 export const CONFIG_TOKEN = new InjectionToken<IAppConfig>('app.config');
 export const RENDER_TOKEN = new InjectionToken<RenderFn>('app.render');
 export const REDIS_TOKEN = new InjectionToken<Redis>('app.redis');
 export const QUEUE_FACTORY_TOKEN = new InjectionToken<IQueueFactory>('app.queue_factory');
-export const WORKER_FACTORY_TOKEN = new InjectionToken<IWorkerFactory>('app.worker_factory');
 export const EXPRESS_DASHBOARD_TOKEN = new InjectionToken<express.Router>('app.express_dashboard');
 export const EXPRESS_SLACK_API_TOKEN = new InjectionToken<express.Router>('app.express_slack_api');
 export const LOGGER_TOKEN = new InjectionToken<Logger>('app.logger');

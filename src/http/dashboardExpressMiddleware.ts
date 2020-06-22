@@ -6,14 +6,13 @@ import {Injector} from "injection-js";
 import {SyncAction} from "./controller/sync";
 import {Connection} from "typeorm";
 import DashboardContext from "../services/DashboardContext";
-import {CONFIG_TOKEN, LOGGER_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
+import {CONFIG_TOKEN, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
 import {OauthAuthorize} from "./controller/oauth-authorize";
 import {RenderEngine} from "../services/RenderEngine";
 import http from "http";
 import { Redis } from 'ioredis';
 import {TeamController} from "./controller/TeamController";
 import {Team} from "../model/Team";
-
 
 const RedisConnectStore = createRedisConnectStore(session);
 
