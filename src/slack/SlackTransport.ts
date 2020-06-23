@@ -617,12 +617,6 @@ export class SlackTransport implements ITransport {
       callback_id: callbackId,
       actions: [
         {
-          name: "start",
-          text: "Start",
-          type: "button",
-          value: ACTION_START
-        },
-        {
           name: "dialog",
           text: "Open dialog",
           type: "button",
@@ -630,6 +624,17 @@ export class SlackTransport implements ITransport {
         }
       ]
     }
+
+    const hasOptionQuestions = standUp.team.questions.filter(q => q.options.length > 0)
+    //if (!hasOptionQuestions) {
+    buttonsAttachment.actions.unshift({
+      name: "start",
+      text: "Start",
+      type: "button",
+      value: ACTION_START
+    });
+    //}
+
     // TODO I'm late?!
     /*attachmentBtns.actions.push(
       {

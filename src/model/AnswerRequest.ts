@@ -20,7 +20,7 @@ class AnswerRequest implements IAnswerRequest {
   })
   standUp: StandUp;
 
-  @ManyToOne(type => Question)
+  @ManyToOne(type => Question, {eager: true})
   question: Question
 
   @Column({nullable: true})
