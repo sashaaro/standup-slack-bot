@@ -89,9 +89,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       if (success) {
         this.logger.debug('Success handled job', {job: job})
       } else {
-        const err = new ConsumerError('Not found handler')
-        err.job = job;
-        throw err;
+        throw new Error('Not found job handler')
       }
     })
 

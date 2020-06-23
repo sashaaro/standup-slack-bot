@@ -152,9 +152,9 @@ export class SlackTransport implements ITransport {
 
       if (!user) {
         this.logger.warn('Message author is not found', {
-          message: messageResponse
+          messageResponse: messageResponse
         })
-        return;
+        return true;
       }
 
       const message = {

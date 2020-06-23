@@ -194,7 +194,12 @@ export const createProviders = (env = 'dev'): Provider[] => {
           delete info.message
           if (info.error) {
             const isError = info.error instanceof Error
-            formatted += `\n${isError ? info.error.stack : JSON.stringify(info.error)}`;
+            if (Object.getOwnPropertyNames(info.error).length > 0) {
+              formatted += `\n${JSON.stringify(info.error)}`;
+            }
+            if (isError) {
+              formatted += `\n${info.error.stack}`
+            }
             delete info.error
           }
 
