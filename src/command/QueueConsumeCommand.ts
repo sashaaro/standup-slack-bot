@@ -85,7 +85,10 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     const worker = this.injector.get(QUEUE_FACTORY_TOKEN)(queueName) as Queue;
 
     worker.process('*', async (job) => {
-      if (!await this.slackTransport.handelJob(job.name, job.data)) {
+      const success = await this.slackTransport.handelJob(job.name, job.data)
+      if (success) {
+        this.logger.debug('Success handled job', {job: job})
+      } else {
         const err = new ConsumerError('Not found handler')
         err.job = job;
         throw err;
