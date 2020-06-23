@@ -70,7 +70,7 @@ export default class StandUpBotService {
             await this.askFirstQuestion(user, standUp);
           } else {
             this.logger.info("Standup is not started yet", {user: user.id, date});
-            await this.send(user, standUpWillRemindYouNextTime)
+            // await this.send(user, standUpWillRemindYouNextTime)
           }
         })
     }

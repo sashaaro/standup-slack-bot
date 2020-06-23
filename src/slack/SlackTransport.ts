@@ -148,10 +148,16 @@ export class SlackTransport implements ITransport {
       }*/
 
       const eventAt = new Date(parseInt(messageResponse.event_ts) * 1000)
+      const user = await this.connection.getRepository(User).findOne(messageResponse.user)
+
+      if (!user) {
+        this.logger.warn('Message author is not found', {userId: messageResponse.user})
+        return;
+      }
 
       const message = {
         text: messageResponse.text,
-        user: await this.connection.getRepository(User).findOne(messageResponse.user),
+        user,
         createdAt: eventAt
       } as IMessage;
 
