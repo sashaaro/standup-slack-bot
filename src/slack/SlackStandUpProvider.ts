@@ -65,7 +65,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
     this.qbActiveQuestions(qb);
     this.qbAuthorAnswers(qb, user);
 
-    return qb
+    return await qb
       .take(1)
       .getOne();
   }

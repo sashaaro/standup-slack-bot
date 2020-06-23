@@ -196,7 +196,6 @@ export default class StandUpBotService {
       throw error
     }*/
 
-    // TODO validate every message's author should be same
     const user = messages[0].user;
     const messageDate = messages[0].createdAt;
     const standUp = await this.standUpProvider.findByUser(user, messageDate);
@@ -211,9 +210,8 @@ export default class StandUpBotService {
       }
     }
 
-
     if (standUp.team.questions.length === 0) {
-      throw new Error('SlackWorkspace have not any questions');
+      throw new Error('Team have not any questions');
     }
 
     if (standUp.team.questions.length !== messages.length) {
@@ -229,14 +227,15 @@ export default class StandUpBotService {
       // TODO try catch
 
       let answer = standUp.answers[question.index];
+
       if (!answer) {
         answer = this.standUpProvider.createAnswer()
         answer.standUp = standUp;
         answer.user = message.user;
-        answer.question = question;
         answer.createdAt = messageDate;
         standUp.answers[question.index] = answer;
       }
+      answer.question = question;
       await this.applyMessageToAnswerRequest(answer, message.text);
 
       answer.answerCreatedAt = messageDate;

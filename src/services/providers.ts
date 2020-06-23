@@ -162,12 +162,6 @@ export const createProviders = (env = 'dev'): Provider[] => {
       provide: STAND_UP_BOT_STAND_UP_PROVIDER,
       useExisting: SlackStandUpProvider
     },
-    SlackTransport,
-    TestTransport,
-    {
-      provide: STAND_UP_BOT_TRANSPORT,
-      useExisting: env === 'test' ? TestTransport : SlackTransport
-    },
     StandUpBotService,
     ...actions,
     ...commands,
@@ -256,6 +250,13 @@ export const createProviders = (env = 'dev'): Provider[] => {
       })
     }
   ]
+
+  providers.push(env === 'test' ? TestTransport : SlackTransport);
+  providers.push({
+    provide: STAND_UP_BOT_TRANSPORT,
+    useExisting: env === 'test' ? TestTransport : SlackTransport
+  });
+
 
   return providers;
 }

@@ -17,10 +17,10 @@ import Timezone from "./Timezone";
 @Entity()
 export class Team implements ITeam {
   @PrimaryGeneratedColumn()
-  id: string
+  id: number;
 
   @Column()
-  name: string
+  name: string;
 
   @Column({default: true})
   isEnabled: boolean;
@@ -29,13 +29,13 @@ export class Team implements ITeam {
     eager: true,
     nullable: false
   })
-  createdBy: User
+  createdBy: User;
 
   @ManyToOne(type => SlackWorkspace, null, {
     eager: true,
     nullable: false
   })
-  workspace: SlackWorkspace
+  workspace: SlackWorkspace;
 
   @ManyToMany(type => User, user => user.teams, {
     cascade: ["insert", "update"],
