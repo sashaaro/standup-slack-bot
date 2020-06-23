@@ -276,8 +276,8 @@ export class TeamController {
       throw new AccessDenyError();
     }
 
-    const id = req.params.id
-    if (!isBoolean(req.body.isEnabled)) {
+    const id = parseInt(req.params.id)
+    if (!(id && isBoolean(req.body.isEnabled))) {
       throw new BadRequestError();
     }
 
