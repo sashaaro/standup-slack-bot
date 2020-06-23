@@ -151,7 +151,9 @@ export class SlackTransport implements ITransport {
       const user = await this.connection.getRepository(User).findOne(messageResponse.user)
 
       if (!user) {
-        this.logger.warn('Message author is not found', {userId: messageResponse.user})
+        this.logger.warn('Message author is not found', {
+          message: messageResponse
+        })
         return;
       }
 
