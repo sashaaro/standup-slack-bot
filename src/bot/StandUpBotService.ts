@@ -58,8 +58,8 @@ export default class StandUpBotService {
         .subscribe((messages: IMessage[]) => this.answers(messages))
     }
 
-    if (this.transport.agreeToStart$) {
-      this.transport.agreeToStart$
+    if (this.transport.startConfirm$) {
+      this.transport.startConfirm$
         //.pipe(takeUntil(this.terminate$))
         .subscribe(async ({user, date}) => {
           const standUp = await this.standUpProvider.findByUser(user, date);
@@ -285,8 +285,9 @@ export default class StandUpBotService {
 
     for (const standUp of standUps) {
       for (const user of standUp.team.users) {
-        const canStart = await this.beforeStandUp(user, standUp);
-        if (canStart) {
+        await this.beforeStandUp(user, standUp);
+        const haveStartConfirm = this.transport.startConfirm$ // true if no agree option
+        if (!haveStartConfirm) {
           await this.askFirstQuestion(user, standUp);
         }
       }
@@ -311,18 +312,15 @@ export default class StandUpBotService {
   }
 
   /**
-   * Returns observable boolean Can we start to asking
    * @param user
    * @param standUp
    */
-  private async beforeStandUp(user: IUser, standUp: IStandUp): Promise<boolean> {
+  private async beforeStandUp(user: IUser, standUp: IStandUp) {
     if (this.transport.sendGreetingMessage) {
       await this.transport.sendGreetingMessage(user, standUp)
     } else {
       await this.send(user, standUpGreeting);
     }
-
-    return !this.transport.agreeToStart$ // true if no agree option
   }
 
   private async afterStandUp(user: IUser, standUp: IStandUp) {

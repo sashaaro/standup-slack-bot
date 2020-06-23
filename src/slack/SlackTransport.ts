@@ -58,10 +58,10 @@ export const QUEUE_SLACK_SYNC_DATA = 'slack_sync-data';
 
 @Injectable()
 export class SlackTransport implements ITransport {
-  private agreeToStartSubject = new Subject<{user: IUser, date: Date}>();
+  private startConfirmSubject = new Subject<{user: IUser, date: Date}>();
   private batchMessagesSubject = new Subject<IMessage[]>();
 
-  agreeToStart$ = this.agreeToStartSubject.asObservable();
+  startConfirm$ = this.startConfirmSubject.asObservable();
   message$ = new Subject<IMessage>();
   batchMessages$: Observable<IMessage[]> = this.batchMessagesSubject.asObservable();
 
@@ -473,7 +473,7 @@ export class SlackTransport implements ITransport {
     const msgDate = new Date(parseInt(response.action_ts) * 1000);
 
     if (selectedActions.includes(ACTION_START)) {
-      this.agreeToStartSubject.next({user, date: msgDate}); // TODO local time should be same from slack sever, have shift then cant find standup, consider shift in bot service
+      this.startConfirmSubject.next({user, date: msgDate}); // TODO local time should be same from slack sever, have shift then cant find standup, consider shift in bot service
       return
     } else if (!selectedActions.includes(ACTION_OPEN_DIALOG)) {
       throw new Error("No corresponded actions")

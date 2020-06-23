@@ -25,8 +25,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
       .innerJoinAndSelect('t.timezone', 'timezone')
       .innerJoin( 'pg_timezone_names', 'pg_timezone', 'timezone.name = pg_timezone.name')
       .where(`(t.start::time - pg_timezone.utc_offset)::varchar = :startedAt`)
-      //.andWhere('t.isArchived = false')
-      //.andWhere('t.isEnabled = true')
+      // TODO .andWhere('t.isEnabled = true')
       .setParameter('startedAt', time)
       .getMany();
   }
