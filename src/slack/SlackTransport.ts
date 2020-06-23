@@ -24,7 +24,13 @@ import {
 import AnswerRequest from "../model/AnswerRequest";
 import StandUp from "../model/StandUp";
 import groupBy from "lodash.groupby";
-import {DialogOpenArguments, MessageAttachment, WebAPIPlatformError, WebClient} from '@slack/web-api'
+import {
+  ChatPostMessageArguments,
+  DialogOpenArguments,
+  MessageAttachment,
+  WebAPIPlatformError,
+  WebClient
+} from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import {IQueueFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN} from "../services/token";
@@ -67,9 +73,6 @@ export class SlackTransport implements ITransport {
     private connection: Connection,
     private slackStandUpProvider: SlackStandUpProvider,
   ) {
-    // this.logger.debug('1111', {ss: '1----'});
-    // this.logger.error('2222', new Error('2----'));
-    // this.logger.error('3333', {error: new Error('3----')});
   }
 
   initSlackEvents(): void {
@@ -284,11 +287,10 @@ export class SlackTransport implements ITransport {
     await this.updateChannelMembers(channel)
 
 
-    await this.webClient.chat.postMessage({
+    /*await this.postMessage({
       channel: channel.id,
-      text: 'Hi everyone, I am here! Every one hear will be receive question and report will be hear. Open settings if want change'
-      // token
-    })
+      text: 'Hi everyone, I am here! Every one here will be receive questions. Open settings if want change'
+    })*/
   }
 
   async syncData(workspace: SlackWorkspace) {
@@ -523,7 +525,7 @@ export class SlackTransport implements ITransport {
       openDialogRequest.dialog.elements.push(element);
     }
 
-    this.logger.debug('open dialog', {dialog: openDialogRequest})
+    this.logger.debug('Call webClient.dialog.open', {dialog: openDialogRequest})
     try {
       await this.webClient.dialog.open(openDialogRequest)
     } catch (e) {
@@ -651,7 +653,8 @@ export class SlackTransport implements ITransport {
         }
       })*/
 
-    await this.webClient.chat.postMessage({
+
+    await this.postMessage({
       channel: user.id,
       text: `Hello, it's time to start your #1 daily standup (${standUp.team.name})`,
       attachments: [buttonsAttachment]
@@ -685,14 +688,20 @@ export class SlackTransport implements ITransport {
     if (attachments.length === 0) {
       text += ' Nobody sent answers 🐥'
     }
-    await this.webClient.chat.postMessage({
+    await this.postMessage({
       channel: standUp.team.reportSlackChannel,
       text,
       attachments
     })
   }
 
+  private async postMessage(args: ChatPostMessageArguments): Promise<any> {
+    this.logger.debug('Call webClient.chat.postMessage', args)
+    return this.webClient.chat.postMessage(args);
+  }
+
   async sendMessage(user: User, message: string): Promise<any> {
-    return this.webClient.chat.postMessage({text: message, channel: user.id});
+    const args: ChatPostMessageArguments = {text: message, channel: user.id}
+    await this.postMessage(args);
   }
 }
