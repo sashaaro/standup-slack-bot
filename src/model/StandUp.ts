@@ -23,6 +23,6 @@ export default class StandUp implements IStandUp {
   answers: AnswerRequest[];
 
   isFinished() {
-    return this.endAt && this.endAt.getTime() > new Date().getTime()
+    return this.endAt && this.endAt.getTime() < new Date().getTime()
   }
 }

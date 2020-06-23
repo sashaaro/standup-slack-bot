@@ -7,6 +7,7 @@ import {Logger} from "winston";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
+const standUpWillRemindYouNextTime = `I will remind you when your next standup is up..`;
 
 export const STAND_UP_BOT_STAND_UP_PROVIDER = new InjectionToken<IStandUpProvider>('stand_up_provider');
 export const STAND_UP_BOT_TRANSPORT = new InjectionToken<ITransport>('transport');
@@ -68,8 +69,8 @@ export default class StandUpBotService {
           if (standUp) {
             await this.askFirstQuestion(user, standUp);
           } else {
-            // you standup not started yet
-            this.logger.warn("Standup is not started yet", {user: user.id, date})
+            this.logger.info("Standup is not started yet", {user: user.id, date});
+            await this.send(user, standUpWillRemindYouNextTime)
           }
         })
     }
@@ -100,7 +101,7 @@ export default class StandUpBotService {
     } catch (e) {
       if (e instanceof InProgressStandUpNotFoundError) {
         this.logger.info('Attempt send answer to for ended standup', {error: e});
-        await this.send(message.user, `I will remind you when your next standup is up..`)
+        await this.send(message.user, standUpWillRemindYouNextTime)
         return;
       } else if (e instanceof AlreadySubmittedStandUpError) {
         await this.send(message.user, `You've already submitted your standup for today.`)
