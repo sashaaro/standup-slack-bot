@@ -6,7 +6,7 @@ import {LOGGER_TOKEN} from "../src/services/token";
 import TransportStream from "winston-transport";
 import {createLogger} from "winston";
 
-const testProviders = createProviders( 'test');
+const testProviders = createProviders( 'test') as any[];
 
 const loggerProvider = testProviders.find(p => p.provide === LOGGER_TOKEN)
 loggerProvider.useFactory = () => {
