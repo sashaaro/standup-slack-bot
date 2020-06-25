@@ -211,7 +211,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
 
         if (env === 'prod') {
           logger.add(new transports.File({
-            filename: `var/${process.env.APP_CONTEXT ? 'logs' + process.env.APP_CONTEXT : '' }.log`,
+            filename: `var/${process.env.APP_CONTEXT || 'logs'}.log`,
             format: logFormat,
           }))
         } else {
