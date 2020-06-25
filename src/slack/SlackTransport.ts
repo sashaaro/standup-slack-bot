@@ -27,7 +27,7 @@ import groupBy from "lodash.groupby";
 import {
   ChatPostMessageArguments,
   DialogOpenArguments,
-  MessageAttachment,
+  MessageAttachment, WebAPICallResult,
   WebAPIPlatformError,
   WebClient
 } from '@slack/web-api'
@@ -695,9 +695,9 @@ export class SlackTransport implements ITransport {
     })
   }
 
-  private async postMessage(args: ChatPostMessageArguments): Promise<any> {
+  private async postMessage(args: ChatPostMessageArguments): Promise<WebAPICallResult> {
     this.logger.debug('Call webClient.chat.postMessage', args)
-    return this.webClient.chat.postMessage(args);
+    return await this.webClient.chat.postMessage(args);
   }
 
   async sendMessage(user: User, message: string): Promise<any> {
