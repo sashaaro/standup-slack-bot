@@ -1,21 +1,19 @@
 import * as yargs from "yargs";
-import {Inject} from "injection-js";
+import {Inject, Injector} from "injection-js";
 import {SlackTransport} from "../slack/SlackTransport";
 import {
   IQueueFactory,
-  IWorkerFactory,
   LOGGER_TOKEN, QUEUE_FACTORY_TOKEN,
   REDIS_TOKEN,
-  TERMINATE,
-  WORKER_FACTORY_TOKEN
+  TERMINATE
 } from "../services/token";
 import {Logger} from "winston";
 import {Connection} from "typeorm";
 import {Redis} from "ioredis";
 import StandUpBotService from "../bot/StandUpBotService";
-import {Job, Queue} from "bullmq";
 import {QUEUE_MAIN_NAME, QUEUE_RETRY_MAIN_NAME} from "../services/providers";
 import {Observable} from "rxjs";
+import {Queue, Job} from "bull";
 
 class HasPreviousError extends Error {
   public previous: Error;
@@ -45,7 +43,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
   describe = 'Run queue consumers';
 
   constructor(
-    @Inject(WORKER_FACTORY_TOKEN) private workerFactory: IWorkerFactory,
+    private injector: Injector,
     private slackTransport: SlackTransport,
     private standUpBotService: StandUpBotService,
     @Inject(LOGGER_TOKEN) private logger: Logger,
@@ -84,11 +82,16 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
     this.standUpBotService.listenTransport();
 
-    const worker = this.workerFactory(queueName, async (job) => {
-      await this.slackTransport.handelJob(job.name, job.data)
-    });
+    const worker = this.injector.get(QUEUE_FACTORY_TOKEN)(queueName) as Queue;
 
-    await worker.waitUntilReady()
+    worker.process('*', async (job) => {
+      const success = await this.slackTransport.handelJob(job.name, job.data)
+      if (success) {
+        this.logger.debug('Success handled job', {job: job})
+      } else {
+        throw new Error('Not found job handler')
+      }
+    })
 
     worker.on('process', (job) => {
       this.logger.info(`job process ${job.name} #${job.id}`, {data: job.data})
@@ -104,8 +107,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       const error = new ConsumerError()
       error.previous = err
       error.job = job
-      this.logger.info(`job failed ${job.name} #${job.id}`, {error: err})
-      this.logger.debug(`job failed ${job.name} #${job.id}`, err.stack)
+      this.logger.error(`job failed ${job.name} #${job.id}`, {error: err})
 
       if (queueName === QUEUE_MAIN_NAME) {
         await retryQueue.add(job.name, job.data, {delay: 5000})
@@ -114,15 +116,19 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       }
     });
 
-    worker.on('closed', () => {
+    /*worker.on('closed', () => {
+      console.log('closed')
       this.logger.info(`Queue ${queueName} worker closed`)
 
       this.connection.close()
       this.redis.disconnect()
-    });
+    });*/
 
     this.terminate$.subscribe(() => {
-      worker.close()
+      worker.close();
+
+      this.connection.close()
+      this.redis.disconnect()
     })
   }
 }

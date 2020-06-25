@@ -1,11 +1,10 @@
 import {Injector, Provider} from "injection-js";
 import {
   CONFIG_TOKEN, EXPRESS_DASHBOARD_TOKEN, EXPRESS_SLACK_API_TOKEN,
-  IQueueFactory, IWorkerFactory, LOGGER_TOKEN,
+  IQueueFactory, LOGGER_TOKEN,
   QUEUE_FACTORY_TOKEN,
   REDIS_TOKEN,
   RENDER_TOKEN, RETRY_MAIN_QUEUE, TERMINATE,
-  WORKER_FACTORY_TOKEN
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
 import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
@@ -20,13 +19,13 @@ import * as fs from "fs";
 import IOredis, {Redis} from 'ioredis';
 import dotenv from "dotenv";
 import {TestTransport} from "../../test/services/transport";
-import {Processor, Queue, Worker} from 'bullmq';
 import {commands} from "../command";
 import {createLogger, transports, format} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
 import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
+import Queue from "bull";
 
 export interface IAppConfig {
   env: string,
@@ -149,21 +148,12 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: QUEUE_FACTORY_TOKEN,
-      useFactory: (redis: Redis) => ((queueName: string) => {
-        queues[queueName] = queues[queueName] || new Queue(queueName, {connection: redis});
+      useFactory: (config: IAppConfig) => ((queueName: string) => {
+        queues[queueName] = queues[queueName] || new Queue(queueName, {redis: {host: config.redisHost, port: 6379}});
 
         return queues[queueName];
       }) as IQueueFactory,
-      deps: [REDIS_TOKEN]
-    },
-    {
-      provide: WORKER_FACTORY_TOKEN,
-      useFactory: (redis: Redis) => ((queueName: string, processor: Processor) => new Worker(queueName, processor, {
-        connection: redis,
-        //lockDuration: 2000,
-        //settings: {stalledInterval: 2000}
-      })) as IWorkerFactory,
-      deps: [REDIS_TOKEN]
+      deps: [CONFIG_TOKEN]
     },
     {
       provide: RETRY_MAIN_QUEUE,
@@ -174,12 +164,6 @@ export const createProviders = (env = 'dev'): Provider[] => {
     {
       provide: STAND_UP_BOT_STAND_UP_PROVIDER,
       useExisting: SlackStandUpProvider
-    },
-    SlackTransport,
-    TestTransport,
-    {
-      provide: STAND_UP_BOT_TRANSPORT,
-      useExisting: env === 'test' ? TestTransport : SlackTransport
     },
     StandUpBotService,
     ...actions,
@@ -196,10 +180,10 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     {
       provide: LOGGER_TOKEN,
-      useFactory: () => {
+      useFactory: (config: IAppConfig) => {
         const logger = createLogger({})
 
-        const logFormat = format.printf(info => {
+        let logFormat = format.printf(info => {
           info = {...info};
           let formatted = `${info.timestamp} ${info.level}: ${info.message}`;
           delete info.timestamp
@@ -207,7 +191,12 @@ export const createProviders = (env = 'dev'): Provider[] => {
           delete info.message
           if (info.error) {
             const isError = info.error instanceof Error
-            formatted += `\n${isError ? info.error.stack : JSON.stringify(info.error)}`;
+            if (Object.getOwnPropertyNames(info.error).length > 0) {
+              formatted += `\n${JSON.stringify(info.error)}`;
+            }
+            if (isError) {
+              formatted += `\n${info.error.stack}`
+            }
             delete info.error
           }
 
@@ -217,10 +206,13 @@ export const createProviders = (env = 'dev'): Provider[] => {
 
           return formatted;
         });
+
+        logFormat = format.combine(format.timestamp(), logFormat);
+
         if (env === 'prod') {
           logger.add(new transports.File({
             filename: `var/${process.env.APP_CONTEXT ? 'logs' + process.env.APP_CONTEXT : '' }.log`,
-            format: logFormat
+            format: logFormat,
           }))
         } else {
           // const prettyPrintFormat = format.prettyPrint({colorize: true});
@@ -235,14 +227,17 @@ export const createProviders = (env = 'dev'): Provider[] => {
                 return jsonFormat.transform(info)
               };
             })*/
-            format: logFormat
+            format: logFormat,
           }))
+        }
+
+        if (config.debug) {
           logger.level = 'debug'
         }
 
         return logger;
       },
-      deps: []
+      deps: [CONFIG_TOKEN]
     },
     {
       provide: TERMINATE,
@@ -258,6 +253,13 @@ export const createProviders = (env = 'dev'): Provider[] => {
       })
     }
   ]
+
+  providers.push(env === 'test' ? TestTransport : SlackTransport);
+  providers.push({
+    provide: STAND_UP_BOT_TRANSPORT,
+    useExisting: env === 'test' ? TestTransport : SlackTransport
+  });
+
 
   return providers;
 }

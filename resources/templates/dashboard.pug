@@ -2,49 +2,59 @@ extends layout/authorized_main
 
 block authorized_content
   if teams.length === 0
-    .no-stand-ups No teams🐥
+    .no-stand-ups
+      | No teams🐥
+      i.icon.bee
   .team-list
     each team in teams
-      .team
+      .team(data-id=team.id, class=team.isEnabled ? "" : "team--disabled")
         .team__header
-          a.team__title(href="/team/" + team.id)= team.name
+          a.team__title(href="/team/" + team.id)
+            =team.name
+            span= "(" + team.users.length +  " participants)"
           .ui.toggle.checkbox
-            input(type="checkbox" checked=team.isEnabled ? "checked" : "")
+            input(type="checkbox" checked=team.isEnabled)
             label= "Activate"
         .team__content
-          div
-            = "Time: " + team.start + " - " + team.untilTime() + " (" + team.timezone.name + "). Duration " + team.duration  + " minutes"
-          div= "Participants: " + team.users.length
+          .team__info
+            .team__time
+              i.clock.outline.icon
+              = "Time: " + team.start + " - " + team.untilTime() + " (" + team.timezone.name + "). Duration " + team.duration + " minutes"
+            // div= "Meetings passed: 32"
+            // div= "Report to #" + team.reportSlackChannel
+            .team__created
+              i.icon.pencil.alternate
+              ="Created by " + team.createdBy.name + " at " + intl.format(team.createdAt)
           .team__users
             each u in team.users
               div(title=u.profile.real_name ? u.profile.real_name + ' (' + u.name + ')' : u.name)
-                if u.profile.image_72
-                  img.stand-up-item__image(src=u.profile.image_72)
+                if u.profile.image_48
+                  img.stand-up-item__image(src=u.profile.image_48)
                 else
-                  svg(data-jdenticon-value=u.id, width="72", height="72")
-          // div= "Meetings passed: 32"
-          div= "Report to #" + team.reportSlackChannel
-          div
-            .ui.label= "Created by " + team.createdBy.name + " at: " + intl.format(team.createdAt)
-          .team__actions
-            a.ui.right.floated.primary.button(href="/team/" + team.id + "/edit")= "Edit settings"
+                  svg(data-jdenticon-value=u.id, width="48", height="48")
+        .team__actions
+          a.ui.right.floated.primary.button(href="/team/" + team.id + "/edit")= "Edit settings"
 
 block append scripts
-  link(rel='stylesheet' href='https://afeld.github.io/emoji-css/emoji.css')
   script.
-    var url = new URL(location.href);
-    let page = parseInt(url.searchParams.get('page')) || 1
+    $('.team').each((_, el) => {
+      const teamId = $(el).data('id');
+      $(el).find('input[type="checkbox"]').on('change', async (e) => {
+        const checked = e.target.checked
+        const response = await fetch(`/team/${teamId}/isEnabled`, {
+          method: "PUT",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({isEnabled: checked})
+        })
 
-    var vm = new Vue({
-      el: '#pagination',
-      data: {
-        pageCount: #{ pageCount },
-        page: page,
-      },
-      methods: {
-        handler: function (page) {
-          url.searchParams.has('page') ? url.searchParams.set('page', page) : url.searchParams.append('page', page);
-          location.href = url.href
+        if (response.status === 204) {
+          const disabledClass = 'team--disabled';
+          checked ? el.classList.remove(disabledClass) : el.classList.add(disabledClass)
+        } else {
+          e.target.checked = !checked;
+          // notify
         }
-      }
+      })
     })

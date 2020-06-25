@@ -18,7 +18,7 @@ class Question implements IQuestion {
   isEnabled: boolean = true;
 
   @OneToMany(type => QuestionOption, o => o.question, {
-    cascade: true,
+    cascade: ["insert", "update"],
     eager: true
   })
   options: QuestionOption[];
@@ -34,6 +34,7 @@ class Question implements IQuestion {
   @BeforeInsert()
   setupCreatedAt() {
     this.createdAt = new Date();
+    this.index = this.index !== undefined ? this.index : this.team?.questions?.indexOf(this);
   }
 }
 

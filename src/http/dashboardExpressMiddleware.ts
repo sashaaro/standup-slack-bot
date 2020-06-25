@@ -6,14 +6,13 @@ import {Injector} from "injection-js";
 import {SyncAction} from "./controller/sync";
 import {Connection} from "typeorm";
 import DashboardContext from "../services/DashboardContext";
-import {CONFIG_TOKEN, LOGGER_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
+import {CONFIG_TOKEN, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
 import {OauthAuthorize} from "./controller/oauth-authorize";
 import {RenderEngine} from "../services/RenderEngine";
 import http from "http";
 import { Redis } from 'ioredis';
 import {TeamController} from "./controller/TeamController";
 import {Team} from "../model/Team";
-
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -72,6 +71,8 @@ export class AccessDenyError extends Error {
 export class ResourceNotFoundError extends Error {
 }
 
+export class BadRequestError extends Error {
+}
 
 const scopes = [
   'team:read',
@@ -132,6 +133,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
   router.all('/team/create', injector.get(TeamController).create);
   router.all('/team/:id', injector.get(TeamController).standups);
   router.all('/team/:id/edit', injector.get(TeamController).edit);
+  router.put('/team/:id/isEnabled', injector.get(TeamController).putIsEnabled);
   router.get('/sync', injector.get(SyncAction).handle);
 
   router.use((req: express.Request, res: express.Response, next) => {
@@ -151,10 +153,12 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
       res.status(403);
 
       if (req.accepts('html')) {
-        res.send(render('403'));
+        res.send(render('welcome', {msg: "Access denied", authLink}));
       } else {
         res.send("")
       }
+    } else if (err instanceof BadRequestError) {
+      res.sendStatus(400);
     } else if (err instanceof ResourceNotFoundError) {
       res.status(404);
 

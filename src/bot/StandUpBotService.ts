@@ -7,6 +7,7 @@ import {Logger} from "winston";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
+const standUpWillRemindYouNextTime = `I will remind you when your next standup is up..`;
 
 export const STAND_UP_BOT_STAND_UP_PROVIDER = new InjectionToken<IStandUpProvider>('stand_up_provider');
 export const STAND_UP_BOT_TRANSPORT = new InjectionToken<ITransport>('transport');
@@ -57,8 +58,8 @@ export default class StandUpBotService {
         .subscribe((messages: IMessage[]) => this.answers(messages))
     }
 
-    if (this.transport.agreeToStart$) {
-      this.transport.agreeToStart$
+    if (this.transport.startConfirm$) {
+      this.transport.startConfirm$
         //.pipe(takeUntil(this.terminate$))
         .subscribe(async ({user, date}) => {
           const standUp = await this.standUpProvider.findByUser(user, date);
@@ -68,8 +69,8 @@ export default class StandUpBotService {
           if (standUp) {
             await this.askFirstQuestion(user, standUp);
           } else {
-            // you standup not started yet
-            this.logger.warn("Standup is not started yet", {user: user.id, date})
+            this.logger.info("Standup is not started yet", {user: user.id, date});
+            // await this.send(user, standUpWillRemindYouNextTime)
           }
         })
     }
@@ -100,7 +101,7 @@ export default class StandUpBotService {
     } catch (e) {
       if (e instanceof InProgressStandUpNotFoundError) {
         this.logger.info('Attempt send answer to for ended standup', {error: e});
-        await this.send(message.user, `I will remind you when your next standup is up..`)
+        await this.send(message.user, standUpWillRemindYouNextTime)
         return;
       } else if (e instanceof AlreadySubmittedStandUpError) {
         await this.send(message.user, `You've already submitted your standup for today.`)
@@ -195,7 +196,6 @@ export default class StandUpBotService {
       throw error
     }*/
 
-    // TODO validate every message's author should be same
     const user = messages[0].user;
     const messageDate = messages[0].createdAt;
     const standUp = await this.standUpProvider.findByUser(user, messageDate);
@@ -210,9 +210,8 @@ export default class StandUpBotService {
       }
     }
 
-
     if (standUp.team.questions.length === 0) {
-      throw new Error('SlackWorkspace have not any questions');
+      throw new Error('Team have not any questions');
     }
 
     if (standUp.team.questions.length !== messages.length) {
@@ -228,14 +227,15 @@ export default class StandUpBotService {
       // TODO try catch
 
       let answer = standUp.answers[question.index];
+
       if (!answer) {
         answer = this.standUpProvider.createAnswer()
         answer.standUp = standUp;
         answer.user = message.user;
-        answer.question = question;
         answer.createdAt = messageDate;
         standUp.answers[question.index] = answer;
       }
+      answer.question = question;
       await this.applyMessageToAnswerRequest(answer, message.text);
 
       answer.answerCreatedAt = messageDate;
@@ -285,8 +285,9 @@ export default class StandUpBotService {
 
     for (const standUp of standUps) {
       for (const user of standUp.team.users) {
-        const canStart = await this.beforeStandUp(user, standUp);
-        if (canStart) {
+        await this.beforeStandUp(user, standUp);
+        const haveStartConfirm = this.transport.startConfirm$ // true if no agree option
+        if (!haveStartConfirm) {
           await this.askFirstQuestion(user, standUp);
         }
       }
@@ -311,18 +312,15 @@ export default class StandUpBotService {
   }
 
   /**
-   * Returns observable boolean Can we start to asking
    * @param user
    * @param standUp
    */
-  private async beforeStandUp(user: IUser, standUp: IStandUp): Promise<boolean> {
+  private async beforeStandUp(user: IUser, standUp: IStandUp) {
     if (this.transport.sendGreetingMessage) {
       await this.transport.sendGreetingMessage(user, standUp)
     } else {
       await this.send(user, standUpGreeting);
     }
-
-    return !this.transport.agreeToStart$ // true if no agree option
   }
 
   private async afterStandUp(user: IUser, standUp: IStandUp) {

@@ -78,7 +78,7 @@ export interface ITransport {
   sendGreetingMessage?(user: IUser, standUp: IStandUp);
   sendMessage(user: IUser, message: string): Promise<any>
 
-  agreeToStart$: Observable<{user: IUser, date: Date}>
+  startConfirm$?: Observable<{user: IUser, date: Date}>
   message$?: Observable<IMessage>
   batchMessages$?: Observable<IMessage[]> // should correct order
 }

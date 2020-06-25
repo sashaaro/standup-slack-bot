@@ -29,6 +29,15 @@ body {
   padding-top: 20px;
 }
 
+.icon {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+  &.bee {
+    background-image: url("/bee.png");
+  }
+}
+
 .logo {
   background-size: contain;
   background-repeat: no-repeat;
@@ -117,6 +126,14 @@ body {
 
   position: relative;
 
+  &--disabled {
+    opacity: 0.6;
+    a {
+      pointer-events: none;
+      cursor: default;
+    }
+  }
+
   &__header {
     display: flex;
     justify-content: space-between;
@@ -128,6 +145,32 @@ body {
   &__title {
     font-weight: 700;
     font-size: 24px;
+    span {
+      font-weight: normal;
+      font-size: 18px;
+      color: initial;
+      margin-left: 10px;
+    }
+  }
+
+  &__content {
+    display: flex;
+    justify-content: space-between;
+    margin-right: 150px;
+  }
+
+  &__info {
+    & > div {
+      margin-bottom: 10px;
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  &__time {
+    font-size: 16px;
+    font-weight: bold;
   }
 
   &__actions {
@@ -138,6 +181,12 @@ body {
 
   &__users {
     display: flex;
+    max-width: 200px;
+    overflow-x: hidden;
+  }
+
+  &__created {
+    font-size: 16px;
   }
 
   margin-bottom: 25px;
@@ -166,8 +215,8 @@ body {
   }
 
   &__image {
-    width: 72px;
-    height: 72px;
+    width: 48px;
+    height: 48px;
     border-radius: 8px;
   }
 
@@ -224,7 +273,8 @@ body {
 
 .no-stand-ups {
   text-align: center;
-  font-size: 22px;
+  font-size: 33px;
+  margin-top: 50px;
   /*font-weight: 600;*/
 }
 

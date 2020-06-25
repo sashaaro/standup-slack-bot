@@ -2,7 +2,9 @@ extends layout/authorized_main
 
 block authorized_content
   if standUps.length === 0
-    .no-stand-ups No meetings 🐥
+    .no-stand-ups
+      | No meetings
+      i.icon.bee
   .stand-up-list
     each standUp in standUps
       .stand-up
@@ -13,10 +15,10 @@ block authorized_content
         each u in standUp.team.users
           .stand-up-item
             .stand-up-item__content
-              if u.profile.image_72
-                img.stand-up-item__image(src=u.profile.image_72)
+              if u.profile.image_48
+                img.stand-up-item__image(src=u.profile.image_48)
               else
-                svg(data-jdenticon-value=u.id, width="72", height="72")
+                svg(data-jdenticon-value=u.id, width="48", height="48")
               .stand-up-item__name= u.profile.real_name ? u.profile.real_name + ' (' + u.name + ')' : u.name
             if u.answers.length === 0
               div= 'No answers 🐥'
@@ -32,6 +34,7 @@ block authorized_content
 
     #pagination
       paginate(
+        v-if="pageCount"
         v-model="page",
         :page-count="pageCount",
         :click-handler="handler",

@@ -7,7 +7,7 @@ volumes:
 
 x-base-image: &base-image
   image: standup-slack-bot:latest
-  build: &service_app
+  build:
     dockerfile: deploy/Dockerfile
     context: .
 
@@ -55,6 +55,7 @@ services:
     user: 1000:1000
     environment:
       - APP_CONTEXT=standup-notifier
+      #- DEBUG=true
     depends_on:
       - postgres
       - redis
@@ -62,12 +63,12 @@ services:
       - ./var:/opt/app/var
 
   queue-consumer:
-    build:
-      <<: *service_app
+    <<: *base-image
     command: ["queue:consume", "--env=prod"]
     user: 1000:1000
     environment:
       - APP_CONTEXT=queue-consumer
+      #- DEBUG=true
     depends_on:
       - postgres
       - redis

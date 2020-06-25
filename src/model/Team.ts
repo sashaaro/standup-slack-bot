@@ -1,4 +1,13 @@
-import {Column, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn
+} from "typeorm";
 import User from "./User";
 import SlackWorkspace from "./SlackWorkspace";
 import Question from "./Question";
@@ -8,27 +17,25 @@ import Timezone from "./Timezone";
 @Entity()
 export class Team implements ITeam {
   @PrimaryGeneratedColumn()
-  id: string
+  id: number;
 
   @Column()
-  name: string
+  name: string;
 
-  @Column({default: false})
-  isEnabled: boolean = true;
-
-  // TODO isPrivate: boolean;
+  @Column({default: true})
+  isEnabled: boolean;
 
   @ManyToOne(type => User, null, {
     eager: true,
     nullable: false
   })
-  createdBy: User
+  createdBy: User;
 
   @ManyToOne(type => SlackWorkspace, null, {
     eager: true,
     nullable: false
   })
-  workspace: SlackWorkspace
+  workspace: SlackWorkspace;
 
   @ManyToMany(type => User, user => user.teams, {
     cascade: ["insert", "update"],

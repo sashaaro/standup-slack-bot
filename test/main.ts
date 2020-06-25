@@ -2,8 +2,30 @@ import {createProviders} from "../src/services/providers";
 import {ReflectiveInjector} from "injection-js";
 import {Connection} from "typeorm";
 import Timezone from "../src/model/Timezone";
+import {LOGGER_TOKEN} from "../src/services/token";
+import TransportStream from "winston-transport";
+import {createLogger} from "winston";
 
-const testProviders = createProviders( 'test');
+const testProviders = createProviders( 'test') as any[];
+
+const loggerProvider = testProviders.find(p => p.provide === LOGGER_TOKEN)
+loggerProvider.useFactory = () => {
+  const logger = createLogger()
+  const transport = new TransportStream({
+    log: (info) => {
+      this.logs = this.logs ?? [];
+      this.logs.push(info);
+    },
+  });
+
+  (transport as any).reset = function() {
+    this.logs = [];
+  }
+
+  logger.add(transport);
+  (logger as any).transport = transport;
+  return logger;
+}
 export const testInjector = ReflectiveInjector.resolveAndCreate(testProviders);
 
 export const testConnection: Connection = testInjector.get(Connection);

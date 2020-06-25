@@ -15,14 +15,14 @@ let argv = yargs.option('env', {
 const env = argv.argv.env;
 const injector = ReflectiveInjector.resolveAndCreate(createProviders(env))
 
+const config = injector.get(CONFIG_TOKEN);
 const logger = injector.get(LOGGER_TOKEN);
-logger.debug(`Environment: ${env}`);
+console.log(`Environment: ${env}. Debug: ${config.debug ? 'enable' : 'disable'}`);
 
 injector.get(TERMINATE).subscribe(() => {
-  injector.get(LOGGER_TOKEN).debug('Terminate...')
+  console.log('Terminate...')
 })
 
-const config = injector.get(CONFIG_TOKEN);
 
 if (config.rollBarAccessToken) {
   const rollbar = new Rollbar({

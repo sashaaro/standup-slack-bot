@@ -10,23 +10,17 @@ import {IQueueFactory} from "../services/token";
 import * as fs from "fs";
 
 export const createLoggerMiddleware = (logger: Logger) => (req: express.Request, res: express.Response, next) => {
-  if (req.originalUrl.startsWith('/api/slack') && req.method === "POST") {
-    getRawBody(req).then(buff => {
-      logger.info('Request', {
-        url: req.originalUrl,
-        method: req.method,
-        body: buff.toString()
-      })
-    })
-  } else {
-    logger.info('Request', {
+  (req.originalUrl.startsWith('/api/slack') && req.method === "POST" ? getRawBody(req) : Promise.resolve(null)).then(buff => {
+    logger.debug('Request', {
       url: req.originalUrl,
       method: req.method,
+      body: buff?.toString(),
+      headers: JSON.stringify(req.headers)
     })
-  }
+  })
 
   res.on('finish', () => {
-    logger.info(`Response ${res.get('Content-Length') || 0}b sent`, {
+    logger.debug(`Response ${res.get('Content-Length') || 0}b sent`, {
       status: res.statusCode,
       method: req.method,
     })
