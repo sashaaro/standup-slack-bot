@@ -48,6 +48,7 @@ export class ServerCommand implements yargs.CommandModule {
       })
       ;
   }
+
   async handler(args: yargs.Arguments<{}>) {
     const type = args.type as string
 

@@ -64,15 +64,16 @@ const defaultConnectionOptions: ConnectionOptions = {
   database: "postgres",
   username: "postgres",
   password: "postgres",
-  synchronize: false,
-  logging: ["warn", "error"]
-}
-export const initFixtures = async (connection: Connection) => {
-  await connection.query(fs.readFileSync('fixtures/timezone.sql').toString())
+  synchronize: false
 }
 
-export const QUEUE_MAIN_NAME = 'main'
-export const QUEUE_RETRY_MAIN_NAME = 'retry_main'
+
+export const initFixtures = async (connection: Connection) => {
+  await connection.query(fs.readFileSync('fixtures/timezone.sql').toString());
+}
+
+export const QUEUE_MAIN_NAME = 'main';
+export const QUEUE_RETRY_MAIN_NAME = 'retry_main';
 
 export const createProviders = (env = 'dev'): Provider[] => {
   // dotenv.config({path: `.env`})
@@ -128,7 +129,9 @@ export const createProviders = (env = 'dev'): Provider[] => {
       useFactory: (config: IAppConfig) => getConnectionManager().create({
         ...defaultConnectionOptions,
         ...config.db,
-        entities
+        entities,
+        logger: config.env === 'prod' ? 'file' : 'advanced-console',
+        logging: config.env === 'prod' ? false : ["error", "warn"].concat(config.debug ? ["query"] : []) as any
       }),
       deps: [CONFIG_TOKEN]
     },
@@ -216,7 +219,7 @@ export const createProviders = (env = 'dev'): Provider[] => {
         });
         if (env === 'prod') {
           logger.add(new transports.File({
-            filename: `var/log${process.env.APP_CONTEXT ? '.' + process.env.APP_CONTEXT : '' }.log`,
+            filename: `var/${process.env.APP_CONTEXT ? 'logs' + process.env.APP_CONTEXT : '' }.log`,
             format: logFormat
           }))
         } else {
