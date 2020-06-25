@@ -19,13 +19,15 @@ export class SlackStandUpProvider implements IStandUpProvider {
   findTeamsByStart(startedAt: Date): Promise<Team[]> {
     const time = `${startedAt.getHours().toString(10).padStart(2, '0')}:${startedAt.getMinutes().toString(10).padStart(2, '0')}:${startedAt.getSeconds().toString(10).padStart(2, '0')}`
 
-    return this.connection.getRepository(Team)
-      .createQueryBuilder('t')
-      .leftJoinAndSelect('t.users', 'users')
-      .innerJoinAndSelect('t.timezone', 'timezone')
+    const qb = this.connection.getRepository(Team).createQueryBuilder('team');
+
+    this.qbTeamJoins(qb);
+
+    return qb
+      .innerJoinAndSelect('team.timezone', 'timezone')
       .innerJoin( 'pg_timezone_names', 'pg_timezone', 'timezone.name = pg_timezone.name')
-      .where(`(t.start::time - pg_timezone.utc_offset) = :startedAt`)
-      .andWhere('t.isEnabled = true')
+      .where(`(team.start::time - pg_timezone.utc_offset) = :startedAt`)
+      .andWhere('team.isEnabled = true')
       .setParameter('startedAt', time)
       .getMany();
   }
@@ -71,13 +73,19 @@ export class SlackStandUpProvider implements IStandUpProvider {
 
   // TODO move to repository
   // with channel channelUsers questions answers answerAuthor
-  private qbStandUpJoins(qb: SelectQueryBuilder<StandUp>): SelectQueryBuilder<StandUp> {
-    return qb.innerJoinAndSelect('standup.team', 'team')
+  private qbTeamJoins(qb: SelectQueryBuilder<Team>): SelectQueryBuilder<Team> {
+    return qb
       .innerJoinAndSelect('team.users', 'users') // TODO remove / reanme channelUsers
       .innerJoinAndSelect('team.questions', 'questions')
       .leftJoinAndSelect('questions.options', 'options')
-      .leftJoinAndSelect('standup.answers', 'answers')
+  }
+
+  private qbStandUpJoins(qb: SelectQueryBuilder<StandUp|Team>): SelectQueryBuilder<StandUp|Team> {
+    qb.leftJoinAndSelect('standup.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'answerAuthor')
+      .innerJoinAndSelect('standup.team', 'team');
+
+    return this.qbTeamJoins(qb);
   }
 
   public qbStandUpDate(qb: SelectQueryBuilder<StandUp>, date: Date): SelectQueryBuilder<StandUp> {

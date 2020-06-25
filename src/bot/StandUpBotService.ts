@@ -285,10 +285,14 @@ export default class StandUpBotService {
 
     for (const standUp of standUps) {
       for (const user of standUp.team.users) {
-        await this.beforeStandUp(user, standUp);
-        const haveStartConfirm = this.transport.startConfirm$ // true if no agree option
-        if (!haveStartConfirm) {
-          await this.askFirstQuestion(user, standUp);
+        try {
+          await this.beforeStandUp(user, standUp);
+          const haveStartConfirm = this.transport.startConfirm$; // true if no agree option
+          if (!haveStartConfirm) {
+            await this.askFirstQuestion(user, standUp);
+          }
+        } catch (e) {
+          this.logger.error('Start daily meeting error', {standUpId: standUp.id, userId: user.id, error: e})
         }
       }
     }
