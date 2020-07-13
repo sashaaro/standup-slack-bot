@@ -186,6 +186,10 @@ export class TeamController {
   }
 
   create: IHttpAction = async (req, res) => {
+    if (!req.context.user) {
+      throw new AccessDenyError();
+    }
+
     const team = new Team()
     team.workspace = req.context.user.workspace;
     team.createdBy = req.context.user;

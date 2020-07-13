@@ -279,7 +279,7 @@ export default class StandUpBotService {
     return interval$
   }
 
-  async startDailyMeetUpByDate(date) {
+  async startDailyMeetUpByDate(date: Date) {
     // start ask users
     const standUps = await this.startTeamStandUpByDate(date);
 
@@ -298,7 +298,7 @@ export default class StandUpBotService {
     }
   }
 
-  async checkStandUpEndByDate(date) {
+  async checkStandUpEndByDate(date: Date) {
     const endedStandUps = await this.standUpProvider.findStandUpsEndNowByDate(date);
     for (const endedStandUp of endedStandUps) {
       this.finishStandUp.next(endedStandUp);
