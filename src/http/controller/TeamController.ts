@@ -309,6 +309,7 @@ export class TeamController {
       .leftJoinAndSelect('answersQuestion.options', 'questionOptions')
       .orderBy('st.endAt', 'DESC')
       .andWhere('st.endAt IS NOT NULL')
+      .andWhere('userAnswer.standUp = st.id')
       .andWhere('team.id = :teamID', {teamID: id})
 
     const recordsPerPage = 3
