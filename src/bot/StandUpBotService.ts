@@ -162,18 +162,23 @@ export default class StandUpBotService {
    * @throws OptionNotFoundError
    */
   async applyMessageToAnswerRequest(answer: IAnswerRequest, message: string) {
+    if (answer.question === undefined) {
+      const error = new OptionNotFoundError('Option is undefined!')
+      error.option = message;
+      throw error
+    }
     if (answer.question.options.length) {
       const optionId = parseInt(message);
       if (optionId === NaN) {
         const error = new OptionNotFoundError('Wrong response option')
         error.option = message;
-        throw error
+        throw error;
       }
       answer.option = await this.standUpProvider.findOption(optionId);
       if (!answer.option) {
         const error = new OptionNotFoundError('Option not found')
         error.option = message;
-        throw error
+        throw error;
       }
     } else {
       answer.answerMessage = message;

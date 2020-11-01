@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:experimental
-FROM node:12.17.0-alpine AS builder
+FROM node:14.15.0-alpine AS builder
 
 WORKDIR /opt/app
 
@@ -11,7 +11,7 @@ COPY ./ .
 
 RUN npm run build
 
-FROM node:12.17.0-alpine
+FROM node:14.15.0-alpine
 
 WORKDIR /opt/app
 

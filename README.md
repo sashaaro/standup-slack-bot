@@ -5,7 +5,7 @@
 
 ```bash
 cp .env.dist .env.dev
-docker-compose run --rm -u $(id -u) --entrypoint npm serve install
+docker-compose run --rm -u $(id -u) serve install
 
 docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREATE DATABASE standup"
 docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREATE USER standup WITH PASSWORD 'standup_123'; GRANT ALL PRIVILEGES ON DATABASE standup TO standup;"
