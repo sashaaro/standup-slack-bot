@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: standup-notifier-deployment
+  labels:
+    app: ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: standup-notifier
+          image: standup-slack-bot:latest
+          imagePullPolicy: Never
+          args: ["standup:notify", "--env=prod"]
+          env:
+            - name: SLACK_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: client-id
+            - name: SLACK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: secret
+            - name: SLACK_SIGNING_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: signing-secrent
+            - name: BOT_USER_OAUTH_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: bot-user-oauth-access-token
+            - name: DEBUG
+              value: "false"
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-configmap
+                  key: service
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-configmap
+                  key: service
+            - name: DB_DATABASE
+              value: standup
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password

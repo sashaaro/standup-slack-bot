@@ -2,7 +2,7 @@
 set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    CREATE USER docker;
-    CREATE DATABASE docker;
-    GRANT ALL PRIVILEGES ON DATABASE docker TO docker;
+    CREATE USER standup;
+    CREATE DATABASE standup;
+    GRANT ALL PRIVILEGES ON DATABASE standup TO standup;
 EOSQL

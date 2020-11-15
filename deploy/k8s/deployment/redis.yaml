@@ -37,4 +37,4 @@ kind: ConfigMap
 metadata:
   name: redis-configmap
 data:
-  database_url: redis-service
+  service: redis-service

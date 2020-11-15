@@ -27,31 +27,46 @@ spec:
             - containerPort: 3000
           env:
             - name: SLACK_CLIENT_ID
-              value: "646242827008.988405770482"
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: client-id
             - name: SLACK_SECRET
-              value: "f282a8506f30eb68ecbe76637363779f"
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: secret
             - name: SLACK_SIGNING_SECRET
-              value: "6c83498414d8830b91a64917b0e7cb00"
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: signing-secrent
             - name: BOT_USER_OAUTH_ACCESS_TOKEN
-              value: "xoxb-646242827008-989765163491-nsYfYpSYmYbHhyPkTDBo32kk"
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: bot-user-oauth-access-token
             - name: DEBUG
               value: "false"
             - name: REDIS_HOST
               valueFrom:
                 configMapKeyRef:
                   name: redis-configmap
-                  key: database_url
+                  key: service
             - name: DB_HOST
               valueFrom:
                 configMapKeyRef:
                   name: postgres-configmap
-                  key: database_url
+                  key: service
             - name: DB_DATABASE
-              value: "standup"
+              value: standup
             - name: DB_USERNAME
-              value: "standup"
+              value: postgres
             - name: DB_PASSWORD
-              value: "standup_123" # TODO secret
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
 ---
 apiVersion: v1
 kind: Service
@@ -64,10 +79,3 @@ spec:
     - protocol: TCP
       port: 3000
       targetPort: 3000
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ui-configmap
-data:
-  database_url: ui-service
