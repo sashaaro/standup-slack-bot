@@ -1,5 +1,4 @@
 import {Connection} from "typeorm";
-import {Channel} from "../model/Channel";
 import {Injectable} from 'injection-js';
 import User from "../model/User";
 
@@ -15,7 +14,7 @@ export default class DashboardContext {
   public user: User;
 
   constructor(
-    private session: Express.Session,
+    private session: any,
     private connection: Connection
   ) {}
 

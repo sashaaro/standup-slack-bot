@@ -18,14 +18,30 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
-      containers:
-        - name: ui
+      initContainers:
+        - name: create-db
+          image: postgres:13.1-alpine
+          env:
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-configmap
+                  key: service
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+          command:
+            - "bash"
+            - "-c"
+            - |
+              psql -U postgres -c "CREATE DATABASE standup" || echo "Already exists"
+        - name: create-schema
           image: standup-slack-bot:latest
           imagePullPolicy: Never
-          args: ["server:run", "--type=ui", "--listen=3000", "--env=dev"]
-          ports:
-            - containerPort: 3000
-          env:
+          args: ["database:migrate"]
+          env: &appEnv
             - name: SLACK_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -67,6 +83,19 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: postgres-password
+        - name: fixture-db
+          image: standup-slack-bot:latest
+          imagePullPolicy: Never
+          args: [ "database:fixture"]
+          env: *appEnv
+      containers:
+        - name: ui
+          image: standup-slack-bot:latest
+          imagePullPolicy: Never
+          args: ["server:run", "--type=ui", "--listen=3000", "--env=dev"]
+          ports:
+            - containerPort: 3000
+          env: *appEnv
 ---
 apiVersion: v1
 kind: Service

@@ -78,5 +78,14 @@ docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
 ```
 
 ```bash
-kubectl create -f deploy/ui.yaml
+kubectl apply -f deploy/k8s/deployment/redis.yaml
+kubectl apply -f deploy/k8s/secret/postgres-secret.yaml
+kubectl apply -f deploy/k8s/deployment/postgres.yaml
+kubectl apply -f deploy/k8s/secret/slack-api-secret.yaml
+kubectl apply -f deploy/k8s/deployment/ui.yaml
+kubectl apply -f deploy/k8s/deployment/api.yaml
+kubectl apply -f deploy/k8s/deployment/queue-consumer.yaml
+kubectl apply -f deploy/k8s/deployment/standup-notifier.yaml
+kubectl create secret tls app-secret-tls --cert=path/to/cert/file --key=path/to/key/file
+kubectl apply -f deploy/k8s/app-ingress.yaml
 ```

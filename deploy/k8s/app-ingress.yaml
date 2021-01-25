@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: app-ingress
@@ -11,20 +11,17 @@ spec:
     - host: stand-up.botenza.com
       http:
         paths:
-          #- path: /api/slack
-          #  backend:
-          #    serviceName: api-service
-          #    servicePort: 3000
-          - path: /
+          - path: /api/slack
+            pathType: "Prefix"
             backend:
-              serviceName: ui-service
-              servicePort: 3000
-#---
-#apiVersion: v1
-#kind: Secret
-#metadata:
-#  name: app-secret-tls
-#type: Opaque
-#data:
-#  tls.crt: c3RhbmR1cF8xMjM=
-#  tls.key: c3RhbmR1cF8xMjM=
+              service:
+                name: api-service
+                port:
+                  number: 3000
+          - path: /
+            pathType: "Prefix"
+            backend:
+              service:
+                name: ui-service
+                port:
+                  number: 3000

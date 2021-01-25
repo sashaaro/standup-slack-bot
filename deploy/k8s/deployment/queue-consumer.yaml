@@ -22,7 +22,7 @@ spec:
         - name: queue-consumer
           image: standup-slack-bot:latest
           imagePullPolicy: Never
-          args: ["queue:consume", "--listen=3000", "--env=prod"]
+          args: ["queue:consume", "--env=prod"]
           ports:
             - containerPort: 3000
           env:

@@ -69,7 +69,7 @@ const defaultConnectionOptions: ConnectionOptions = {
 
 
 export const initFixtures = async (connection: Connection) => {
-  await connection.query(fs.readFileSync('fixtures/timezone.sql').toString());
+  await connection.query(fs.readFileSync('resources/timezone.sql').toString());
 }
 
 export const QUEUE_MAIN_NAME = 'main';

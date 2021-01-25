@@ -8,7 +8,6 @@ import {createLogger} from "winston";
 
 const {providers} = createProviders( 'test');
 
-const loggerProvider = providers.find(p => p.provide === LOGGER_TOKEN)
 /*loggerProvider.useFactory = () => {
   const logger = createLogger()
   const transport = new TransportStream({

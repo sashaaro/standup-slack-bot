@@ -22,7 +22,7 @@ spec:
         - name: api
           image: standup-slack-bot:latest
           imagePullPolicy: Never
-          args: ["server:run", "--type=api", "--listen=3000", "--env=prod"]
+          args: ["server:run", "--type=slack-api", "--listen=3000", "--env=dev"]
           ports:
             - containerPort: 3000
           env:
