@@ -1,0 +1,14 @@
+services:
+  nginx:
+    image: library/nginx:1.19.6
+    network_mode: host
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d
+      # - ./nginx/log:/var/log/nginx
+      - ./public:/var/www
+      - /etc/letsencrypt:/etc/letsencrypt
+
+  tunnel:
+    image: jpillora/chisel:latest
+    network_mode: host
+    command: "server -p 8080 --reverse"

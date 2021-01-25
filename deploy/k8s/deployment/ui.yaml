@@ -22,7 +22,7 @@ spec:
         - name: ui
           image: standup-slack-bot:latest
           imagePullPolicy: Never
-          args: ["server:run", "--type=ui", "--listen=3000", "--env=prod"]
+          args: ["server:run", "--type=ui", "--listen=3000", "--env=dev"]
           ports:
             - containerPort: 3000
           env:
@@ -47,7 +47,7 @@ spec:
                   name: slack-api-secret
                   key: bot-user-oauth-access-token
             - name: DEBUG
-              value: "false"
+              value: "true"
             - name: REDIS_HOST
               valueFrom:
                 configMapKeyRef:

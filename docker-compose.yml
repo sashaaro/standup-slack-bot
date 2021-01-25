@@ -23,4 +23,9 @@ services:
       POSTGRES_PASSWORD: postgres
 
   redis:
-    image: redis:6.0.4-alpine
+    image: redis:6.0.9-alpine
+
+  tunnel:
+    image: jpillora/chisel:latest
+    network_mode: host
+    command: "client botenza.com:8080 R:3000:3000"

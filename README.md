@@ -73,7 +73,8 @@ dc -f docker-compose.staging.yml run --rm ui database:migrate --env=prod
 
 Build base image
 ```bash
-$(minikube docker-env) docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
+eval $(minikube -p minikube docker-env)
+docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
 ```
 
 ```bash

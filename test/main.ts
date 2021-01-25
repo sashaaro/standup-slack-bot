@@ -9,7 +9,7 @@ import {createLogger} from "winston";
 const testProviders = createProviders( 'test') as any[];
 
 const loggerProvider = testProviders.find(p => p.provide === LOGGER_TOKEN)
-loggerProvider.useFactory = () => {
+/*loggerProvider.useFactory = () => {
   const logger = createLogger()
   const transport = new TransportStream({
     log: (info) => {
@@ -25,7 +25,7 @@ loggerProvider.useFactory = () => {
   logger.add(transport);
   (logger as any).transport = transport;
   return logger;
-}
+}*/
 export const testInjector = ReflectiveInjector.resolveAndCreate(testProviders);
 
 export const testConnection: Connection = testInjector.get(Connection);

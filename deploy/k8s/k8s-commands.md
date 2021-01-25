@@ -3,6 +3,7 @@
     kubectl -n standup apply -f secret/postgres-secret.yaml
     kubectl -n standup apply -f volume/postgres-volume.yaml
     kubectl -n standup apply -f deployment/postgres.yaml
+    kubectl -n standup exec -it postgres-deployment-6b6fdfd6c-dhbp7 -- bash
     
     kubectl -n standup apply -f secret/slack-api-secrent.yaml
     kubectl -n standup apply -f deployment/radis.yaml

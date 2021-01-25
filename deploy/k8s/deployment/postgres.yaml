@@ -14,12 +14,19 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        #fsGroup: 1000
+      # TODO initContainers:
+      #  - name: create-database
       containers:
         - name: postgres
           image: postgres:13.1-alpine
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgresql-data
+              readOnly: false
           ports:
             - containerPort: 5432
           env:
@@ -32,8 +39,8 @@ spec:
                   key: postgres-password
       volumes:
         - name: postgresql-data
-          persistentVolumeClaim:
-            claimName: postgres-pv-claim
+          hostPath:
+            path: "/var/lib/postgresql/data"
 ---
 apiVersion: v1
 kind: Service
