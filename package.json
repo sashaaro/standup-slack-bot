@@ -4,7 +4,7 @@
   "description": "Standup slack bot",
   "scripts": {
     "test": "jest",
-    "watch": "concurrently --kill-others \"tsc -w\" \"node-sass -w resources/public/main.scss resources/public/main.css\" \"nodemon dist/src/cli.js server:run\"",
+    "watch": "concurrently --kill-others \"tsc -w\" \"node-sass -w resources/public/main.scss resources/public/main.css\" \"nodemon dist/src/cli.js dev\"",
     "build": "tsc && node-sass resources/public/main.scss resources/public/main.css",
     "start": "npm run build && node dist/src/cli.js server:run"
   },

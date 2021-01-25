@@ -6,9 +6,9 @@ import {LOGGER_TOKEN} from "../src/services/token";
 import TransportStream from "winston-transport";
 import {createLogger} from "winston";
 
-const testProviders = createProviders( 'test') as any[];
+const {providers} = createProviders( 'test');
 
-const loggerProvider = testProviders.find(p => p.provide === LOGGER_TOKEN)
+const loggerProvider = providers.find(p => p.provide === LOGGER_TOKEN)
 /*loggerProvider.useFactory = () => {
   const logger = createLogger()
   const transport = new TransportStream({
@@ -26,7 +26,7 @@ const loggerProvider = testProviders.find(p => p.provide === LOGGER_TOKEN)
   (logger as any).transport = transport;
   return logger;
 }*/
-export const testInjector = ReflectiveInjector.resolveAndCreate(testProviders);
+export const testInjector = ReflectiveInjector.resolveAndCreate(providers);
 
 export const testConnection: Connection = testInjector.get(Connection);
 

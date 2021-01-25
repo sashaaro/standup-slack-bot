@@ -4,8 +4,9 @@ import {QueueConsumeCommand} from "./QueueConsumeCommand";
 import {StandupNotifyCommand} from "./StandupNotifyCommand";
 import {ServerCommand} from "./ServerCommand";
 import {MigrationGenerateCommand} from "./MigrationGenerateCommand";
+import * as yargs from "yargs";
 
-export const commands = [
+export const commands: any = [
   DatabaseMigrateCommand,
   DatabaseFixtureCommand,
   QueueConsumeCommand,

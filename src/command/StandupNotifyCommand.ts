@@ -8,6 +8,7 @@ import {Connection} from "typeorm";
 import {Observable} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
+import {bind} from "../services/utils";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
   command = 'standup:notify';
@@ -21,6 +22,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 
+  @bind
   async handler(args: yargs.Arguments<{}>) {
     await this.connection.connect();
     try {

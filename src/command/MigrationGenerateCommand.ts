@@ -2,6 +2,7 @@ import * as yargs from "yargs";
 import {Connection} from "typeorm";
 import {Injectable} from "injection-js";
 import * as fs from "fs";
+import {bind} from "../services/utils";
 
 const camelCase = function(str) {
   return str
@@ -30,6 +31,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
   constructor(private connection: Connection) {}
 
+  @bind
   async handler(args: yargs.Arguments) {
     const timestamp = new Date().getTime();
     const filename = timestamp + "-" + args.name + ".ts";

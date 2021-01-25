@@ -3,7 +3,6 @@ import "reflect-metadata";
 import yargs from "yargs";
 import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "./services/providers";
-import {commands} from "./command";
 import {CONFIG_TOKEN, LOGGER_TOKEN, TERMINATE} from "./services/token";
 import Rollbar from "rollbar";
 
@@ -13,7 +12,8 @@ let argv = yargs.option('env', {
 })
 
 const env = argv.argv.env;
-const injector = ReflectiveInjector.resolveAndCreate(createProviders(env))
+const {providers, commands} = createProviders(env);
+const injector = ReflectiveInjector.resolveAndCreate(providers);
 
 const config = injector.get(CONFIG_TOKEN);
 const logger = injector.get(LOGGER_TOKEN);
@@ -33,23 +33,16 @@ if (config.rollBarAccessToken) {
   });
 }
 
-// config.redisLazyConnect = !argv.argv._.includes('queue:consume')
-
 let main = yargs
   .usage("Usage: $0 <command> [options]")
 
 commands.forEach(command => {
   const commandInstance = injector.get(command) as yargs.CommandModule
-  const originHandler = commandInstance.handler;
-  commandInstance.handler = (...args) => {
-    return originHandler.call(commandInstance, ...args)
-  };
   main = main.command(commandInstance);
 })
 
 try {
   main
-    .demandCommand(1)
     .strict()
     .argv
 } catch (e) {

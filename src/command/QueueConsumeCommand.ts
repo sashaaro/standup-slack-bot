@@ -14,6 +14,7 @@ import StandUpBotService from "../bot/StandUpBotService";
 import {QUEUE_MAIN_NAME, QUEUE_RETRY_MAIN_NAME} from "../services/providers";
 import {Observable} from "rxjs";
 import {Queue, Job} from "bull";
+import {bind} from "../services/utils";
 
 class HasPreviousError extends Error {
   public previous: Error;
@@ -23,7 +24,7 @@ class ConsumerError extends HasPreviousError {
   job: Job
 }
 
-export const redisReady = (redis: Redis) => {
+export const redisReady = (redis: Redis): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (redis.status === 'ready') {
       resolve()
@@ -63,6 +64,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       });
   }
 
+  @bind
   async handler(args: yargs.Arguments<{}>) {
     const queueName = args.queue as string
     if (![QUEUE_MAIN_NAME, QUEUE_RETRY_MAIN_NAME].includes(queueName)) {

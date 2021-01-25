@@ -26,6 +26,7 @@ import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import Queue from "bull";
+import {DevCommand} from "../command/DevCommand";
 
 export interface IAppConfig {
   env: string,
@@ -74,12 +75,12 @@ export const initFixtures = async (connection: Connection) => {
 export const QUEUE_MAIN_NAME = 'main';
 export const QUEUE_RETRY_MAIN_NAME = 'retry_main';
 
-export const createProviders = (env = 'dev'): Provider[] => {
+export const createProviders = (env = 'dev'): {providers: Provider[], commands: Provider[]} => {
   // dotenv.config({path: `.env`})
   dotenv.config({path: `.env.${env}`})
 
   const queues = {}
-  const providers: Provider[] = [
+  let providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,
       useValue: {
@@ -167,7 +168,6 @@ export const createProviders = (env = 'dev'): Provider[] => {
     },
     StandUpBotService,
     ...actions,
-    ...commands,
     {
       provide: EXPRESS_SLACK_API_TOKEN,
       useFactory: createSlackApiExpress,
@@ -260,6 +260,12 @@ export const createProviders = (env = 'dev'): Provider[] => {
     useExisting: env === 'test' ? TestTransport : SlackTransport
   });
 
+  const commandProviders = [...commands]
+  if (env !== "prod") {
+    commandProviders.push(DevCommand)
+  }
 
-  return providers;
+  providers = providers.concat(commandProviders)
+
+  return {providers, commands: commandProviders};
 }

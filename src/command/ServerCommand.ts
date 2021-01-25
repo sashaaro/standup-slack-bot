@@ -17,6 +17,7 @@ import {Logger} from "winston";
 import {Observable} from "rxjs";
 import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
+import {bind} from "../services/utils";
 
 export class ServerCommand implements yargs.CommandModule {
   command = 'server:run';
@@ -47,6 +48,7 @@ export class ServerCommand implements yargs.CommandModule {
       ;
   }
 
+  @bind
   async handler(args: yargs.Arguments<{}>) {
     const type = args.type as string
 
