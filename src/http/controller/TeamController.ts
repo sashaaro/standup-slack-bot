@@ -25,8 +25,9 @@ import {Team} from "../../model/Team";
 import {Channel} from "../../model/Channel";
 import {Request} from "express";
 import QuestionOption from "../../model/QuestionOption";
+import {TransformFnParams} from "class-transformer/types/interfaces";
 
-const transformStringToInt = (v) => v ? parseInt(v) || null : null
+const transformStringToInt = (params: TransformFnParams) => parseInt(params.value) || null
 
 class QuestionOptionsFormDTO {
   @Transform(transformStringToInt)
@@ -49,7 +50,7 @@ class QuestionFormDTO {
   text: string
   @Expose()
   @Type(() => QuestionOptionsFormDTO)
-  @Transform(v => v || [])
+  @Transform((params: TransformFnParams) => params.value || [])
   @IsArray()
     //@Min(2, {})
   options: QuestionOptionsFormDTO[]
