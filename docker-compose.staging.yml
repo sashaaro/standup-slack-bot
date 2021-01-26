@@ -27,8 +27,6 @@ services:
     <<: *base-image
     command: ["server:run", "--type=ui", "--listen=/tmp/node.sock", "--env=prod"]
     user: 1000:1000
-    environment:
-      - APP_CONTEXT=ui
     depends_on:
       - postgres
       - redis
@@ -40,8 +38,6 @@ services:
     <<: *base-image
     command: ["server:run", "--type=slack-api", "--listen=/tmp/node.sock", "--env=prod"]
     user: 1000:1000
-    environment:
-      - APP_CONTEXT=slack-api
     depends_on:
       - postgres
       - redis
@@ -54,7 +50,6 @@ services:
     command: ["standup:notify", "--env=prod"]
     user: 1000:1000
     environment:
-      - APP_CONTEXT=standup-notifier
       #- DEBUG=true
     depends_on:
       - postgres
@@ -67,7 +62,6 @@ services:
     command: ["queue:consume", "--env=prod"]
     user: 1000:1000
     environment:
-      - APP_CONTEXT=queue-consumer
       #- DEBUG=true
     depends_on:
       - postgres

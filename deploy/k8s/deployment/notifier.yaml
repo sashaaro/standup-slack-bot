@@ -1,28 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: standup-notifier-deployment
+  name: standup-notifier
   labels:
-    app: ui
+    app: standup-notifier
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ui
+      app: standup-notifier
   template:
     metadata:
       labels:
-        app: ui
+        app: standup-notifier
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+      #securityContext:
+      #  runAsUser: 1000
+      #  runAsGroup: 1000
+      #  fsGroup: 1000
+      volumes:
+        - name: standup-notifier-log
+          hostPath:
+            path: "/var/log/standup-notifier"
       containers:
         - name: standup-notifier
           image: standup-slack-bot:latest
           imagePullPolicy: Never
           args: ["standup:notify", "--env=prod"]
+          volumeMounts:
+            - name: standup-notifier-log
+              mountPath: /var/log
+              readOnly: false
           env:
             - name: SLACK_CLIENT_ID
               valueFrom:
@@ -45,7 +53,7 @@ spec:
                   name: slack-api-secret
                   key: bot-user-oauth-access-token
             - name: DEBUG
-              value: "false"
+              value: "true"
             - name: REDIS_HOST
               valueFrom:
                 configMapKeyRef:
@@ -60,6 +68,8 @@ spec:
               value: standup
             - name: DB_USERNAME
               value: postgres
+            - name: LOG_DIR
+              value: "/var/log"
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:

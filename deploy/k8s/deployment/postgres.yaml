@@ -23,7 +23,7 @@ spec:
         - name: postgres
           image: postgres:13.1-alpine
           volumeMounts:
-            - mountPath: /var/lib/postgresql/data
+            - mountPath: "/var/lib/postgresql/data"
               name: postgresql-data
               readOnly: false
           ports:

@@ -29,7 +29,7 @@ if (config.rollBarAccessToken) {
     accessToken: config.rollBarAccessToken,
     captureUncaught: true,
     captureUnhandledRejections: true,
-    environment: process.env.APP_CONTEXT || undefined
+    environment: process.argv.join(' ')
   });
 }
 

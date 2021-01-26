@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-deployment
+  name: standup-api
   labels:
-    app: api
+    app: standup-api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api
+      app: standup-api
   template:
     metadata:
       labels:
-        app: api
+        app: standup-api
     spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
       containers:
-        - name: api
+        - name: standup-api
           image: standup-slack-bot:latest
           imagePullPolicy: Never
           args: ["server:run", "--type=slack-api", "--listen=3000", "--env=dev"]
@@ -71,10 +71,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-service
+  name: standup-api-service
 spec:
   selector:
-    app: api
+    app: standup-api
   ports:
     - protocol: TCP
       port: 3000

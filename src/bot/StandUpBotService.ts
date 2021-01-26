@@ -262,7 +262,7 @@ export default class StandUpBotService {
     const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds();
     const millisecondsDelay = intervalMs - milliseconds;
 
-    this.logger.debug('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop')
+    this.logger.debug('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop');
 
     const interval$ = timer(millisecondsDelay, intervalMs)
       .pipe(
@@ -287,6 +287,8 @@ export default class StandUpBotService {
   async startDailyMeetUpByDate(date: Date) {
     // start ask users
     const standUps = await this.startTeamStandUpByDate(date);
+
+    this.logger.info('Start daily meetings', {standUps: standUps.map(standUp => standUp.id)})
 
     for (const standUp of standUps) {
       for (const user of standUp.team.users) {

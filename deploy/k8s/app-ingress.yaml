@@ -15,13 +15,13 @@ spec:
             pathType: "Prefix"
             backend:
               service:
-                name: api-service
+                name: standup-api-service
                 port:
                   number: 3000
           - path: /
             pathType: "Prefix"
             backend:
               service:
-                name: ui-service
+                name: standup-ui-service
                 port:
                   number: 3000

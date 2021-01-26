@@ -3,12 +3,13 @@ import {SlackTransport} from "../slack/SlackTransport";
 import StandUpBotService from "../bot/StandUpBotService";
 import StandUp from "../model/StandUp";
 import {Inject} from "injection-js";
-import {REDIS_TOKEN, TERMINATE} from "../services/token";
+import {LOGGER_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
 import {Connection} from "typeorm";
 import {Observable} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
 import {bind} from "../services/utils";
+import {Logger} from "winston";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
   command = 'standup:notify';
@@ -19,11 +20,13 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     @Inject(StandUpBotService) private standUpBotService: StandUpBotService,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
-    @Inject(TERMINATE) protected terminate$: Observable<void>
+    @Inject(TERMINATE) protected terminate$: Observable<void>,
+    @Inject(LOGGER_TOKEN) protected logger: Logger,
   ) {}
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
+    this.logger.debug('Database connecting...');
     await this.connection.connect();
     try {
       await this.redis.connect();
@@ -32,6 +35,8 @@ export class StandupNotifyCommand implements yargs.CommandModule {
         throw e;
       }
     }
+
+    this.logger.debug('Redis connecting...');
     await redisReady(this.redis);
 
     this.standUpBotService.finishStandUp$.subscribe((standUp: StandUp) => {
@@ -40,6 +45,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       }
     });
 
+    this.logger.debug('Start standup notificator loop...');
     this.standUpBotService.startStandUpInterval().subscribe({
       error: () => this.close(),
       complete: () => this.close()

@@ -75,6 +75,7 @@ Build base image
 ```bash
 eval $(minikube -p minikube docker-env)
 docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
+docker build -t my-fluentd -f deploy/k8s/efk/fluentd.Dockerfile deploy/k8s/efk
 ```
 
 ```bash
@@ -85,7 +86,10 @@ kubectl apply -f deploy/k8s/secret/slack-api-secret.yaml
 kubectl apply -f deploy/k8s/deployment/ui.yaml
 kubectl apply -f deploy/k8s/deployment/api.yaml
 kubectl apply -f deploy/k8s/deployment/queue-consumer.yaml
-kubectl apply -f deploy/k8s/deployment/standup-notifier.yaml
+kubectl apply -f deploy/k8s/deployment/notifier.yaml
 kubectl create secret tls app-secret-tls --cert=path/to/cert/file --key=path/to/key/file
 kubectl apply -f deploy/k8s/app-ingress.yaml
+
+kubectl apply -f deploy/k8s/efk/elastic.yaml
+kubectl apply -f deploy/k8s/efk/kibana.yaml
 ```

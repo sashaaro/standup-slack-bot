@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ui-deployment
+  name: standup-ui
   labels:
-    app: ui
+    app: standup-ui
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ui
+      app: standup-ui
   template:
     metadata:
       labels:
-        app: ui
+        app: standup-ui
     spec:
       securityContext:
         runAsUser: 1000
@@ -40,6 +40,10 @@ spec:
         - name: create-schema
           image: standup-slack-bot:latest
           imagePullPolicy: Never
+          #securityContext:
+          #  runAsUser: node
+          #  runAsNonRoot: true
+          #  runAsGroup: node
           args: ["database:migrate"]
           env: &appEnv
             - name: SLACK_CLIENT_ID
@@ -89,10 +93,10 @@ spec:
           args: [ "database:fixture"]
           env: *appEnv
       containers:
-        - name: ui
+        - name: standup-ui
           image: standup-slack-bot:latest
           imagePullPolicy: Never
-          args: ["server:run", "--type=ui", "--listen=3000", "--env=dev"]
+          args: ["server:run", "--type=ui", "--listen=3000", "--env=prod"]
           ports:
             - containerPort: 3000
           env: *appEnv
@@ -100,10 +104,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ui-service
+  name: standup-ui-service
 spec:
   selector:
-    app: ui
+    app: standup-ui
   ports:
     - protocol: TCP
       port: 3000

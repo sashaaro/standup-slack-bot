@@ -27,6 +27,7 @@ import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import Queue from "bull";
 import {DevCommand} from "../command/DevCommand";
+import * as Transport from "winston-transport";
 
 export interface IAppConfig {
   env: string,
@@ -47,6 +48,7 @@ export interface IAppConfig {
   },
   supportTelegram?: string
   redisHost?: string
+  logDir?: string
 }
 
 export type RenderFn = (templateName: string, params?: object) => string;
@@ -89,6 +91,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
         slackSecret: process.env.SLACK_SECRET,
         slackSigningSecret: process.env.SLACK_SIGNING_SECRET,
         botUserOAuthAccessToken: process.env.BOT_USER_OAUTH_ACCESS_TOKEN,
+        logDir: process.env.LOG_DIR,
         host: process.env.HOST,
         debug: process.env.DEBUG !== "false" && !!process.env.DEBUG,
         yandexMetrikaID: process.env.YANDEX_METRIKA_ID,
@@ -181,61 +184,65 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     {
       provide: LOGGER_TOKEN,
       useFactory: (config: IAppConfig) => {
-        const logger = createLogger({})
-
-        let logFormat = format.printf(info => {
-          info = {...info};
-          let formatted = `${info.timestamp} ${info.level}: ${info.message}`;
-          delete info.timestamp
-          delete info.level
-          delete info.message
-          if (info.error) {
-            const isError = info.error instanceof Error
-            if (Object.getOwnPropertyNames(info.error).length > 0) {
-              formatted += `\n${JSON.stringify(info.error)}`;
-            }
-            if (isError) {
-              formatted += `\n${info.error.stack}`
-            }
-            delete info.error
-          }
-
-          if (Object.getOwnPropertyNames(info).length > 0) {
-            formatted += `\n${JSON.stringify(info)}`;
-          }
-
-          return formatted;
-        });
-
-        logFormat = format.combine(format.timestamp(), logFormat);
+        let transport: Transport;
 
         if (env === 'prod') {
-          logger.add(new transports.File({
-            filename: `var/${process.env.APP_CONTEXT || 'logs'}.log`,
-            format: logFormat,
-          }))
+          // const errorStackFormat = format.errors({stack: true});
+          const logDir = config.logDir || 'var';
+          transport = new transports.File({
+            filename: `${logDir}/standup-slack-bot.log`, // TODO depends from channel metadata?!
+            format: format.combine(
+                format.timestamp(),
+                format.json()
+            ),
+          })
         } else {
           // const prettyPrintFormat = format.prettyPrint({colorize: true});
-          const errorStackFormat = format.errors({stack: true});
-          const jsonFormat = format.json();
 
-          logger.add(new transports.Console({
-            /*format: format.printf((info) => {
-              if (info.error instanceof Error) {
-                return errorStackFormat.transform({message: info.error})
-              } else {
-                return jsonFormat.transform(info)
-              };
-            })*/
-            format: logFormat,
-          }))
+          let logFormat = format.printf(info => {
+            info = {...info};
+            let formatted = `${info.timestamp} ${info.level}: ${info.message}`;
+            delete info.timestamp
+            delete info.level
+            delete info.message
+            if (info.error) {
+              const isError = info.error instanceof Error
+              if (Object.getOwnPropertyNames(info.error).length > 0) {
+                formatted += `\n${JSON.stringify(info.error)}`;
+              }
+              if (isError) {
+                formatted += `\n${info.error.stack}`
+              }
+              delete info.error
+            }
+
+            if (Object.getOwnPropertyNames(info).length > 0) {
+              formatted += `\n${JSON.stringify(info)}`;
+            }
+
+            return formatted;
+          });
+
+          /* logFormat = format.printf((info) => {
+            if (info.error instanceof Error) {
+              return errorStackFormat.transform({message: info.error})
+            } else {
+              return jsonFormat.transform(info)
+            };
+          })*/
+
+          transport = new transports.Console({
+            format: format.combine(
+                format.timestamp(),
+                logFormat
+            ),
+          })
         }
 
-        if (config.debug) {
-          logger.level = 'debug'
-        }
-
-        return logger;
+        return createLogger({
+          level: config.debug ? 'debug' : 'info',
+          transports: transport
+        });
       },
       deps: [CONFIG_TOKEN]
     },
