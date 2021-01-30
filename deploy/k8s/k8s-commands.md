@@ -1,3 +1,7 @@
+```shell
+https://kubernetes.io/ru/docs/reference/kubectl/cheatsheet/
+```
+
 ### kubectl apply commands in order
     kubectl create namespace standup
     kubectl -n standup apply -f secret/postgres-secret.yaml

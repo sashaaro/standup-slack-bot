@@ -88,8 +88,10 @@ kubectl apply -f deploy/k8s/deployment/api.yaml
 kubectl apply -f deploy/k8s/deployment/queue-consumer.yaml
 kubectl apply -f deploy/k8s/deployment/notifier.yaml
 kubectl create secret tls app-secret-tls --cert=path/to/cert/file --key=path/to/key/file
-kubectl apply -f deploy/k8s/app-ingress.yaml
+kubectl apply -f deploy/k8s/standup-bot-ingress.yaml
 
 kubectl apply -f deploy/k8s/efk/elastic.yaml
 kubectl apply -f deploy/k8s/efk/kibana.yaml
+
+kubectl apply -f deploy/k8s/deployment/certificate.yaml
 ```

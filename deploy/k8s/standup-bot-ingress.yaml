@@ -1,14 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: app-ingress
+  name: standup-bot-ingress
 spec:
-  #tls:
-  #  - hosts:
-  #    - stand-up.botenza.com
-  #    secretName: app-secret-tls
+  tls:
+    - hosts:
+        - standup.botenza.com
+      secretName: standup-bot-cert
   rules:
-    - host: stand-up.botenza.com
+    - host: standup.botenza.com
       http:
         paths:
           - path: /api/slack
