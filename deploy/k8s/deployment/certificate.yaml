@@ -22,7 +22,7 @@ kind: Certificate
 metadata:
   name: standup-bot-cert
 spec:
-  secretName: tls-secret
+  secretName: standup-bot-cert-secret
   issuerRef:
     kind: Issuer
     name: letsencrypt
