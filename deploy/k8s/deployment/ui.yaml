@@ -14,10 +14,10 @@ spec:
       labels:
         app: standup-ui
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+      #securityContext:
+      #  runAsUser: 1000
+      #  runAsGroup: 1000
+      #  fsGroup: 1000
       initContainers:
         - name: create-db
           image: postgres:13.1-alpine
@@ -87,16 +87,26 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: postgres-password
+            - name: LOG_DIR
+              value: "/var/log"
         - name: fixture-db
           image: registry.digitalocean.com/simple/standup-slack-bot:latest
           # imagePullPolicy: Never
           args: [ "database:fixture"]
           env: *appEnv
+      volumes:
+        - name: standup-ui-log
+          hostPath:
+            path: "/var/log/standup-ui"
       containers:
         - name: standup-ui
           image: registry.digitalocean.com/simple/standup-slack-bot:latest
           #imagePullPolicy: Never
           args: ["server:run", "--type=ui", "--listen=3000", "--env=prod"]
+          volumeMounts:
+            - name: standup-ui-log
+              mountPath: /var/log
+              readOnly: false
           ports:
             - containerPort: 3000
           env: *appEnv

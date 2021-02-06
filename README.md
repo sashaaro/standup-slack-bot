@@ -72,10 +72,13 @@ dc -f docker-compose.staging.yml run --rm ui database:migrate --env=prod
 ### Minikube
 
 Build base image
+https://www.digitalocean.com/docs/container-registry/quickstart/
+
 ```bash
 eval $(minikube -p minikube docker-env)
 docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
-docker build -t my-fluentd -f deploy/k8s/efk/fluentd.Dockerfile deploy/k8s/efk
+docker tag standup-slack-bot:latest registry.digitalocean.com/simple/standup-slack-bot:latest
+docker push registry.digitalocean.com/simple/standup-slack-bot:latest
 ```
 
 ```bash
@@ -87,25 +90,6 @@ kubectl apply -f deploy/k8s/deployment/ui.yaml
 kubectl apply -f deploy/k8s/deployment/api.yaml
 kubectl apply -f deploy/k8s/deployment/queue-consumer.yaml
 kubectl apply -f deploy/k8s/deployment/notifier.yaml
-kubectl create secret tls app-secret-tls --cert=path/to/cert/file --key=path/to/key/file
+# kubectl create secret tls app-secret-tls --cert=path/to/cert/file --key=path/to/key/file
 kubectl apply -f deploy/k8s/standup-bot-ingress.yaml
-
-kubectl apply -f deploy/k8s/efk/elastic.yaml
-kubectl apply -f deploy/k8s/efk/kibana.yaml
-
-kubectl apply -f deploy/k8s/deployment/certificate.yaml
-
-helm install prometheus prometheus-community/prometheus
-
-https://grafana.com/grafana/dashboards/7249 Kubernetes Cluster dashboards
-https://grafana.com/grafana/dashboards/9614 NGINX Ingress controller dashboards
-https://grafana.com/grafana/dashboards/315 Kubernetes cluster monitoring (via Prometheus)
-
-https://grafana.com/grafana/dashboards/455 Postgres Overview
-https://github.com/wrouesnel/postgres_exporter
-
-https://grafana.com/grafana/dashboards/1860 Node Exporter Full
-https://grafana.com/grafana/dashboards/3320 Kubernetes Node Exporter Full
-
-https://grafana.com/grafana/dashboards/4371 RabbitMQ Metrics
 ```

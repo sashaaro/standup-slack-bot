@@ -1,26 +1,31 @@
 import {Injector, Provider} from "injection-js";
 import {
-  CONFIG_TOKEN, EXPRESS_DASHBOARD_TOKEN, EXPRESS_SLACK_API_TOKEN,
-  IQueueFactory, LOGGER_TOKEN,
+  CONFIG_TOKEN,
+  EXPRESS_DASHBOARD_TOKEN,
+  EXPRESS_SLACK_API_TOKEN,
+  IQueueFactory,
+  LOGGER_TOKEN,
   QUEUE_FACTORY_TOKEN,
   REDIS_TOKEN,
-  RENDER_TOKEN, RETRY_MAIN_QUEUE, TERMINATE,
+  RENDER_TOKEN,
+  RETRY_MAIN_QUEUE,
+  TERMINATE,
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
 import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
 import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
 import actions from "../http/controller";
-import {WebClient, LogLevel} from '@slack/web-api'
+import {LogLevel, WebClient} from '@slack/web-api'
 import {RenderEngine} from "./RenderEngine";
 import {SlackTransport} from "../slack/SlackTransport";
 import {createEventAdapter} from "@slack/events-api";
 import entities from "../model";
 import * as fs from "fs";
-import IOredis, {Redis} from 'ioredis';
+import IOredis from 'ioredis';
 import dotenv from "dotenv";
 import {TestTransport} from "../../test/services/transport";
 import {commands} from "../command";
-import {createLogger, transports, format} from "winston";
+import {createLogger, format, Logger, transports} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
 import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
 import {Observable} from "rxjs";
@@ -28,6 +33,8 @@ import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import Queue from "bull";
 import {DevCommand} from "../command/DevCommand";
 import * as Transport from "winston-transport";
+import {TransformableInfo} from "logform";
+import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
 
 export interface IAppConfig {
   env: string,
@@ -76,6 +83,17 @@ export const initFixtures = async (connection: Connection) => {
 
 export const QUEUE_MAIN_NAME = 'main';
 export const QUEUE_RETRY_MAIN_NAME = 'retry_main';
+
+const enumerateErrorFormat = format((info: TransformableInfo) => {
+  if (info.error instanceof Error) {
+    info.error = Object.assign({
+      message: info.error.message,
+      stack: info.error.stack
+    }, info.error);
+  }
+
+  return info;
+});
 
 export const createProviders = (env = 'dev'): {providers: Provider[], commands: Provider[]} => {
   // dotenv.config({path: `.env`})
@@ -140,10 +158,11 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     },
     {
       provide: WebClient,
-      useFactory: (config: IAppConfig) => (new WebClient(config.botUserOAuthAccessToken, {
-        logLevel: config.debug ? LogLevel.DEBUG : undefined,
-      })),
-      deps: [CONFIG_TOKEN]
+      useFactory: (config: IAppConfig, logger: Logger) => new WebClient(config.botUserOAuthAccessToken, {
+        logger: new WinstonSlackLoggerAdapter(logger),
+        logLevel: LogLevel.DEBUG
+      }),
+      deps: [CONFIG_TOKEN, LOGGER_TOKEN]
     },
     {
       provide: SlackEventAdapter,
@@ -186,56 +205,22 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       useFactory: (config: IAppConfig) => {
         let transport: Transport;
 
+        const pretty = env === 'dev';
+        const logFormat = format.combine(
+            format.timestamp(),
+            enumerateErrorFormat(),
+            format.json({space: pretty ? 2 : 0})
+        );
+
         if (env === 'prod') {
-          // const errorStackFormat = format.errors({stack: true});
           const logDir = config.logDir || 'var';
           transport = new transports.File({
             filename: `${logDir}/standup-slack-bot.log`, // TODO depends from channel metadata?!
-            format: format.combine(
-                format.timestamp(),
-                format.json()
-            ),
+            format: logFormat,
           })
         } else {
-          // const prettyPrintFormat = format.prettyPrint({colorize: true});
-
-          let logFormat = format.printf(info => {
-            info = {...info};
-            let formatted = `${info.timestamp} ${info.level}: ${info.message}`;
-            delete info.timestamp
-            delete info.level
-            delete info.message
-            if (info.error) {
-              const isError = info.error instanceof Error
-              if (Object.getOwnPropertyNames(info.error).length > 0) {
-                formatted += `\n${JSON.stringify(info.error)}`;
-              }
-              if (isError) {
-                formatted += `\n${info.error.stack}`
-              }
-              delete info.error
-            }
-
-            if (Object.getOwnPropertyNames(info).length > 0) {
-              formatted += `\n${JSON.stringify(info)}`;
-            }
-
-            return formatted;
-          });
-
-          /* logFormat = format.printf((info) => {
-            if (info.error instanceof Error) {
-              return errorStackFormat.transform({message: info.error})
-            } else {
-              return jsonFormat.transform(info)
-            };
-          })*/
-
           transport = new transports.Console({
-            format: format.combine(
-                format.timestamp(),
-                logFormat
-            ),
+            format: logFormat
           })
         }
 

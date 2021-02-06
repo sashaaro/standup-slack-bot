@@ -15,6 +15,9 @@ spec:
         - name: standup-notifier-logs
           hostPath:
             path: /var/log/standup-notifier
+        - name: standup-ui-logs
+          hostPath:
+            path: /var/log/standup-ui
         - name: promtail-config
           configMap:
             name: promtail-configmap
@@ -26,6 +29,8 @@ spec:
           volumeMounts:
             - name: standup-notifier-logs
               mountPath: /var/log/standup-notifier
+            - name: standup-ui-logs
+              mountPath: /var/log/standup-ui
             - name: promtail-config
               mountPath: /etc/promtail
 ---
@@ -55,6 +60,12 @@ data:
               job: varlogs
               host: minikube
               __path__: /var/log/standup-notifier/*.log
+          - targets:
+              - localhost
+            labels:
+              job: varlogs
+              host: minikube
+              __path__: /var/log/standup-ui/*.log
 ---
 
 ---
