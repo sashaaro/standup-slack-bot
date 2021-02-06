@@ -44,7 +44,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-service
+  name: postgres
 spec:
   selector:
     app: postgres
@@ -60,5 +60,5 @@ kind: ConfigMap
 metadata:
   name: postgres-configmap
 data:
-  service: postgres-service
+  service: postgres
 

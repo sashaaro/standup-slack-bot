@@ -57,6 +57,10 @@ spec:
             - containerPort: 3000
               name: http
               protocol: TCP
+          # https://github.com/kubernetes/ingress-nginx/blob/master/deploy/grafana/deployment.yaml
+          #volumeMounts:
+          #  - mountPath: /var/lib/grafana
+          #    name: data
 ---
 apiVersion: v1
 kind: Service

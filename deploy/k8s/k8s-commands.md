@@ -26,9 +26,9 @@ https://kubernetes.io/ru/docs/reference/kubectl/cheatsheet/
 ### kubectl debugging commands
 
     kubectl describe pod postgres-deployment-xxxxxx
-    kubectl describe service postgres-service
+    kubectl describe service postgres
     kubectl logs postgres-xxxxxx
 
 ### give a URL to external service in minikube
 
-    minikube service postgres-service
+    minikube service postgres
