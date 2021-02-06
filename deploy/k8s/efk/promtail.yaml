@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: promtail-daemonset
+spec:
+  selector:
+    matchLabels:
+      name: promtail
+  template:
+    metadata:
+      labels:
+        name: promtail
+    spec:
+      volumes:
+        - name: standup-notifier-logs
+          hostPath:
+            path: /var/log/standup-notifier
+        - name: promtail-config
+          configMap:
+            name: promtail-configmap
+      containers:
+        - name: promtail-container
+          image: grafana/promtail
+          args:
+            - -config.file=/etc/promtail/promtail.yaml
+          volumeMounts:
+            - name: standup-notifier-logs
+              mountPath: /var/log/standup-notifier
+            - name: promtail-config
+              mountPath: /etc/promtail
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-configmap
+data:
+  promtail.yaml: |-
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+      log_level: "debug"
+
+    positions:
+      filename: /tmp/positions.yaml
+
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+
+    scrape_configs:
+      - job_name: standup-notifier
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: varlogs
+              host: minikube
+              __path__: /var/log/standup-notifier/*.log
+---
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: promtail-clusterrole
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - services
+      - pods
+    verbs:
+      - get
+      - watch
+      - list
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: promtail-serviceaccount
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: promtail-clusterrolebinding
+subjects:
+  - kind: ServiceAccount
+    name: promtail-serviceaccount
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: promtail-clusterrole
+  apiGroup: rbac.authorization.k8s.io

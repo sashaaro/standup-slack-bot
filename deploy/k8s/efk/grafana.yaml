@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      initContainers:
+        - name: create-db
+          image: postgres:13.1-alpine
+          env:
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-configmap
+                  key: service
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+          command:
+            - "bash"
+            - "-c"
+            - |
+              psql -U postgres -c "CREATE DATABASE grafana" || echo "Already exists"
+      containers:
+        - name: grafana
+          image: grafana/grafana:7.3.7
+          env:
+            - name: GF_DATABASE_TYPE
+              value: postgres
+            - name: GF_DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-configmap
+                  key: service
+            - name: GF_DATABASE_USER
+              value: postgres
+            - name: GF_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+            - name: DB_DATABASE
+              value: grafana
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+spec:
+  selector:
+    app: grafana
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000

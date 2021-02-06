@@ -86,6 +86,15 @@ export class ServerCommand implements yargs.CommandModule {
       expressApp.use('/', this.injector.get(EXPRESS_DASHBOARD_TOKEN));
     }
 
+    expressApp.get('/health-check', (request, response) => {
+      const redis = this.injector.get(REDIS_TOKEN).status === 'connected';
+      const postgres = this.injector.get(Connection).isConnected
+
+      response.status(redis && postgres ? 200 : 500);
+      response.setHeader('Content-type', 'application/json')
+      response.send({redis, postgres});
+    });
+
     const options = {}
     listen = listen || 3000
 
