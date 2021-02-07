@@ -68,6 +68,8 @@ spec:
                   key: bot-user-oauth-access-token
             - name: DEBUG
               value: "true"
+            - name: HOST
+              value: "https://standup.botenza.com"
             - name: REDIS_HOST
               valueFrom:
                 configMapKeyRef:

@@ -46,11 +46,14 @@ export class OauthAuthorize {
         client_id: this.config.slackClientID,
         client_secret: this.config.slackSecret,
         code: req.query.code as string,
-        //redirect_uri: `${this.config.host}/auth`,
+        redirect_uri: `${this.config.host}/auth`,
       }) as any
     } catch (e) {
-      // LOG ?
-      throw new Error(e)
+      if (e.error !== 'invalid_code') {
+        throw e;
+      } else {
+        // TODO message invalid code
+      }
     }
     if (!response.ok) {
       // LOG ?

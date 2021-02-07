@@ -96,8 +96,9 @@ const enumerateErrorFormat = format((info: TransformableInfo) => {
 });
 
 export const createProviders = (env = 'dev'): {providers: Provider[], commands: Provider[]} => {
-  // dotenv.config({path: `.env`})
-  dotenv.config({path: `.env.${env}`})
+  if (fs.existsSync(`.env.${env}`)) {
+    dotenv.config({path: `.env.${env}`})
+  }
 
   const queues = {}
   let providers: Provider[] = [
@@ -109,18 +110,18 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
         slackSecret: process.env.SLACK_SECRET,
         slackSigningSecret: process.env.SLACK_SIGNING_SECRET,
         botUserOAuthAccessToken: process.env.BOT_USER_OAUTH_ACCESS_TOKEN,
-        logDir: process.env.LOG_DIR,
         host: process.env.HOST,
-        debug: process.env.DEBUG !== "false" && !!process.env.DEBUG,
-        yandexMetrikaID: process.env.YANDEX_METRIKA_ID,
-        rollBarAccessToken: process.env.ROLLBAR_ACCESS_TOKEN,
+        redisHost: process.env.REDIS_HOST || 'redis',
         db: {
           host: process.env.DB_HOST,
           database: process.env.DB_DATABASE,
           username: process.env.DB_USERNAME,
           password: process.env.DB_PASSWORD,
         },
-        redisHost: process.env.REDIS_HOST || 'redis',
+        logDir: process.env.LOG_DIR,
+        debug: process.env.DEBUG !== "false" && !!process.env.DEBUG,
+        yandexMetrikaID: process.env.YANDEX_METRIKA_ID,
+        rollBarAccessToken: process.env.ROLLBAR_ACCESS_TOKEN,
         supportTelegram: process.env.SUPPORT_TELEGRAM,
       } as IAppConfig
     },
