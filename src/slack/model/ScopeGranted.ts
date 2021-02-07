@@ -39,16 +39,16 @@ export interface OauthAccessResponse {
   "app_id": "A0KRD7HC3",
   "team": {
   "name": "Slack Softball SlackWorkspace",
-    "id": "T9TK3CUKW"
-},
+      "id": "T9TK3CUKW"
+  },
   "enterprise": {
-  "name": "slack-sports",
+    "name": "slack-sports",
     "id": "E12345678"
-},
+  },
   "authed_user": {
-  "id": "U1234",
+    "id": "U1234",
     "scope": "chat:write",
     "access_token": "xoxp-1234",
     "token_type": "user"
-}
+  }
 }

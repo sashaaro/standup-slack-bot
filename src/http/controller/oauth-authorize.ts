@@ -70,7 +70,7 @@ export class OauthAuthorize {
       const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({team: workspace.id})) as any;
       workspace.domain = teamInfo.team.domain;
       workspace = await workspaceRepository.save(workspace);
-      await this.slackTransport.syncData(workspace) // TODO
+      this.slackTransport.syncData(workspace);
     }
 
     const userRepository = this.connection.manager.getRepository(User);
@@ -82,8 +82,9 @@ export class OauthAuthorize {
       const userInfo: SlackUserInfo = await this.webClient.users.info({user: user.id}) as any
       user.name = userInfo.user.name;
       user.profile = userInfo.user.profile;
-      user = await userRepository.save(user)
     }
+    user.accessToken = response.access_token;
+    user = await userRepository.save(user);
 
     context.authenticate(response.authed_user, user);
 

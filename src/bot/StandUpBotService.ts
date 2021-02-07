@@ -4,6 +4,7 @@ import {delay, map, share, takeUntil} from "rxjs/operators";
 import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITransport, IUser} from "./models";
 import {LOGGER_TOKEN, TERMINATE} from "../services/token";
 import {Logger} from "winston";
+import {hasOptionQuestions} from "../slack/SlackTransport";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -21,6 +22,15 @@ class InProgressStandUpNotFoundError extends Error {
 }
 
 class AlreadySubmittedStandUpError extends Error {
+  standUp: IStandUp
+  answerMessage: IMessage
+
+  constructor() {
+    super('Standup already submitted')
+  }
+}
+
+class NeedOpenDialogStandUpError extends Error {
   standUp: IStandUp
   answerMessage: IMessage
 
@@ -106,6 +116,9 @@ export default class StandUpBotService {
       } else if (e instanceof AlreadySubmittedStandUpError) {
         await this.send(message.user, `You've already submitted your standup for today.`)
         return;
+      } else if (e instanceof NeedOpenDialogStandUpError) {
+        this.send(message.user, "Click \"Open dialog\" above")
+        return;
       } else if (e instanceof OptionNotFoundError) {
         this.logger.error('Option is not found', {error: e});
       } else {
@@ -141,6 +154,9 @@ export default class StandUpBotService {
       error.answerMessage = message
       throw error;
     }
+    if (hasOptionQuestions(progressStandUp.team)) {
+      throw new NeedOpenDialogStandUpError()
+    }
 
     const answerRequest: IAnswerRequest = progressStandUp.answers.find(answerRequest => !answerRequest.answerMessage);
     if (!answerRequest) {
@@ -162,7 +178,7 @@ export default class StandUpBotService {
    * @throws OptionNotFoundError
    */
   async applyMessageToAnswerRequest(answer: IAnswerRequest, message: string) {
-    if (answer.question === undefined) {
+    if (!answer.question) {
       const error = new OptionNotFoundError('Option is undefined!')
       error.option = message;
       throw error

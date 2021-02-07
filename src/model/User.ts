@@ -53,6 +53,9 @@ export default class User implements IUser {
   })
   im: string;
 
+  @Column({nullable: true})
+  accessToken: string;
+
   @Column('json', {default: new Profile()})
   profile: SlackUserProfile = new Profile();
 
