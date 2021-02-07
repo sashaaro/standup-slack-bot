@@ -38,7 +38,7 @@ import {Logger} from "winston";
 import {Channel} from "../model/Channel";
 import {QUEUE_MAIN_NAME} from "../services/providers";
 
-const standUpFinishedAlreadyMsg = `Stand up has already ended\nI will remind you when your next stand up would came`; // TODO link to report
+const standUpFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
 const QUEUE_SLACK_EVENT_PREFIX = 'slack-event';
 const QUEUE_SLACK_EVENT_MESSAGE = QUEUE_SLACK_EVENT_PREFIX + '_message';
@@ -55,6 +55,8 @@ const QUEUE_SLACK_EVENT_GROUP_UNARCHIVE = QUEUE_SLACK_EVENT_PREFIX + '_group-una
 
 export const QUEUE_SLACK_INTERACTIVE_RESPONSE = 'slack-interactive-response';
 export const QUEUE_SLACK_SYNC_DATA = 'slack_sync-data';
+
+export const hasOptionQuestions = (team) => team.questions.filter(q => q.options.length > 0)
 
 @Injectable()
 export class SlackTransport implements ITransport {
@@ -83,6 +85,7 @@ export class SlackTransport implements ITransport {
     });
 
     this.slackEvents.on('message', async (messageResponse: MessageResponse) => {
+      console.log(messageResponse);
       await queue.add(QUEUE_SLACK_EVENT_MESSAGE, messageResponse);
     });
 
@@ -137,7 +140,7 @@ export class SlackTransport implements ITransport {
     })
   }
 
-  public async handelJob(name: string, data: any) {
+  public async handleJob(name: string, data: any) {
     if (name === QUEUE_SLACK_EVENT_MESSAGE) {
       const userRepository = this.connection.getRepository(User);
 
@@ -304,8 +307,8 @@ export class SlackTransport implements ITransport {
     const teamRepository = this.connection.getRepository(SlackWorkspace);
     workspace = await teamRepository.save(workspace);
 
-    await this.updateUsers(workspace);
-    await this.updateChannels(workspace);
+    this.updateUsers(workspace);
+    this.updateChannels(workspace);
   }
 
   private async updateUsers(workspace: SlackWorkspace) {
@@ -354,6 +357,7 @@ export class SlackTransport implements ITransport {
         throw new Error(conversationsResponse.error);
       }
       const conversations = conversationsResponse['channels'] as SlackIm[];
+      // TODO sql batch update
       for (const conversation of conversations.filter(c => c.is_im)) {
         const user = await userRepository.findOne(conversation.user);
         if (user) {
@@ -374,6 +378,7 @@ export class SlackTransport implements ITransport {
     if (!response.ok) {
       throw new Error(response.error);
     }
+
     const conversations = (response as any).channels as SlackConversation[];
     const channelRepository = this.connection.getCustomRepository(ChannelRepository);
     await this.connection.createQueryBuilder()
@@ -382,14 +387,14 @@ export class SlackTransport implements ITransport {
       .set({isArchived: true})
       .execute()
 
-    for (const channel of conversations) {
+    for (const channel of conversations.filter(ch => !ch.is_member)) {
       let ch = await channelRepository.findOne(channel.id);
       if (!ch) {
         ch = new Channel()
         ch.id = channel.id;
       }
 
-      ch.isEnabled = channel.is_member;
+      ch.isEnabled = true;
       ch.isArchived = channel.is_archived;
       ch.createdBy = await userRepository.findOne(channel.creator);
       if (!ch.createdBy) {
@@ -464,7 +469,7 @@ export class SlackTransport implements ITransport {
     const inProgress = !standUp.isFinished(); // has not standUp.endAt?!
 
     if (!inProgress) { // in progress only..
-      await this.sendMessage(user, standUpFinishedAlreadyMsg);
+      await this.sendMessage(user, standUpFinishedAlreadyMsg.replace('{id}', standUp.id.toString()));
       return;
     }
 
@@ -519,7 +524,17 @@ export class SlackTransport implements ITransport {
 
       const answer = answers[question.index];
       if (answer) {
-        element.value = answer.answerMessage;
+        if (answer.answerMessage) {
+          element.value = answer.answerMessage;
+        } else {
+
+          element.initial_option = element.options.find(item => item.value === answer.option.id);
+          if (!element.initial_option) {
+            // TODO warming
+          }
+        }
+
+        console.log(element)
       }
 
       openDialogRequest.dialog.elements.push(element);
@@ -590,7 +605,7 @@ export class SlackTransport implements ITransport {
     const inProgress = !standUp.isFinished()
 
     if (!inProgress) { // in progress only..
-      await this.sendMessage(user, standUpFinishedAlreadyMsg)
+      await this.sendMessage(user, standUpFinishedAlreadyMsg.replace('{id}', standUp.id.toString()))
       return;
     }
 
@@ -627,15 +642,14 @@ export class SlackTransport implements ITransport {
       ]
     }
 
-    const hasOptionQuestions = standUp.team.questions.filter(q => q.options.length > 0)
-    //if (!hasOptionQuestions) {
-    buttonsAttachment.actions.unshift({
-      name: "start",
-      text: "Start",
-      type: "button",
-      value: ACTION_START
-    });
-    //}
+    if (!hasOptionQuestions(standUp.team)) {
+      buttonsAttachment.actions.unshift({
+        name: "start",
+        text: "Start",
+        type: "button",
+        value: ACTION_START
+      });
+    }
 
     // TODO I'm late?!
     /*attachmentBtns.actions.push(

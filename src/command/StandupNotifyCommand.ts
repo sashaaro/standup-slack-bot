@@ -36,7 +36,6 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       }
     }
 
-    this.logger.debug('Redis connecting...');
     await redisReady(this.redis);
 
     this.standUpBotService.finishStandUp$.subscribe((standUp: StandUp) => {
@@ -53,7 +52,9 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
     this.terminate$.subscribe(() => {
       this.close();
-    })
+    });
+
+    console.log('Notifier listen!');
   }
 
   private close() {

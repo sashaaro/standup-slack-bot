@@ -133,6 +133,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
     qb.andWhere('users.id = :user AND standup.id = :standupID', {user: user.id, standupID: standUpId})
     this.qbActiveQuestions(qb);
     this.qbAuthorAnswers(qb, user);
+    qb.leftJoinAndSelect('answers.option', 'optionAnswer')
 
     return await qb
       .take(1)

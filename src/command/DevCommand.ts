@@ -26,5 +26,7 @@ export class DevCommand implements yargs.CommandModule {
             const cmd = this.injector.get(command) as yargs.CommandModule
             cmd.handler(args)
         }
+
+        console.log('Dev ready!')
     }
 }
