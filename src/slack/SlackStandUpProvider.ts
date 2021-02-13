@@ -83,6 +83,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
   private qbStandUpJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
     qb.leftJoinAndSelect('standup.answers', 'answers')
       .leftJoinAndSelect('answers.user', 'answerAuthor')
+      .leftJoinAndSelect('answers.question', 'answersQuestion')
       .innerJoinAndSelect('standup.team', 'team');
 
     return this.qbTeamJoins(qb);

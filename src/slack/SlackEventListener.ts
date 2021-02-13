@@ -14,6 +14,10 @@ import {SlackBotTransport} from "./slack-bot-transport.service";
 import {Connection} from "typeorm";
 import {SlackAction, ViewSubmission} from "./model/ViewSubmission";
 import {ACTION_OPEN_DIALOG, CALLBACK_STANDUP_SUBMIT, SlackStandUpProvider} from "./SlackStandUpProvider";
+import Question from "../model/Question";
+import StandUp from "../model/StandUp";
+import StandUpBotService from "../bot/StandUpBotService";
+import AnswerRequest from "../model/AnswerRequest";
 
 export class SlackEventListener {
   evensHandlers: {[event:string]: Function} = {
@@ -97,6 +101,7 @@ export class SlackEventListener {
     private slackEvents: SlackEventAdapter,
     private slackBotTransport: SlackBotTransport,
     private slackStandUpProvider: SlackStandUpProvider,
+    private standUpBotService: StandUpBotService,
     @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
     private connection: Connection,
     @Inject(LOGGER_TOKEN) private logger: Logger,
@@ -201,11 +206,53 @@ export class SlackEventListener {
     }
 
     //viewSubmission.view.private_metadata
-    const msgDate = new Date()//parseInt(viewSubmission.ts) * 1000);
+    //const msgDate = new Date(parseInt(viewSubmission.ts) * 1000);
 
-    console.log(viewSubmission)
-    console.log(viewSubmission.view.blocks)
-    console.log(viewSubmission.view.state.values)
+    const metadata = JSON.parse(viewSubmission.view.private_metadata);
+    const standup = await this.slackStandUpProvider.standUpByIdAndUser(user, metadata.standup)
+    if (!standup) {
+      // TODO
+      throw new Error('No standup #' + metadata.standup)
+    }
+
+    let values: any = viewSubmission.view.state.values
+    values = Object.assign({}, ...Object.values(values));
+
+    const answers: AnswerRequest[] = [];
+    for(const actionId in values) {
+      const item = values[actionId];
+      const question = await this.connection.getRepository(Question).findOne(parseInt(actionId));
+      const hasOptions = question.options.length > 1
+      const value = hasOptions ? item.selected_option.value : item.value
+      let answer = standup.answers.find(answer => answer.question.id === question.id)
+      if (!answer) {
+        answer = new AnswerRequest()
+        answer.question = question;
+        answer.user = user; // TODO check it is not nullable!
+        answer.standUp = standup; // TODO check it is not nullable!
+      } else {
+        if (answer.question.id !== question.id) {
+          // TODO throw?
+        }
+        if (answer.user.id !== user.id) {
+          // TODO throw?
+        }
+      }
+
+      if (hasOptions) {
+        answer.option = question.options.find(o => o.id === parseInt(value))
+      } else {
+        answer.answerMessage = value;
+      }
+
+      answers.push(answer)
+    }
+
+    console.log(answers);
+    if (answers.length > 0) {
+      const updatedanswers = await this.connection.getRepository(AnswerRequest).save(answers)
+      console.log(updatedanswers)
+    }
 
     //await this.slackBotTransport.handleSubmittedStandUp(response as InteractiveDialogSubmissionResponse)
   }

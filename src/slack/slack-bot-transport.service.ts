@@ -28,7 +28,6 @@ import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Channel} from "../model/Channel";
 import {Block, KnownBlock} from "@slack/types";
-import {SlackAction} from "./model/ViewSubmission";
 
 const standUpFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -251,6 +250,7 @@ export class SlackBotTransport implements ITransport {
     }
 
     const answers = standUp.answers.filter(a => a.user.id === user.id);
+    console.log(standUp)
 
     const view = {
       type: "modal",
@@ -294,18 +294,22 @@ export class SlackBotTransport implements ITransport {
           },
           value: pa.id.toString()
         }));
+      } else {
+        element.multiline = true;
+        element.min_length = 2;
+        element.max_length = 500;
       }
 
-      const answer = answers[question.index];
+      const answer = answers.find(answer => answer.question.id === question.id);
       if (answer) {
         if (hasOptions) {
           //element.value = answer.option.id
-          element.initial_option = element.options.find(item => item.value === answer.option.id);
+          element.initial_option = element.options.find(option => option.value === answer.option.id.toString());
           if (!element.initial_option) {
             // TODO warming
           }
         } else {
-          element.value = answer.answerMessage;
+          element.initial_value = answer.answerMessage;
         }
       }
 
@@ -317,7 +321,7 @@ export class SlackBotTransport implements ITransport {
           "emoji": true
         },
         element,
-        block_id: question.id.toString()
+        //block_id: question.id.toString()
       })
     }
 
