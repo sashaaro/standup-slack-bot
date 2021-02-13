@@ -3,21 +3,20 @@ import {Inject, Injector} from "injection-js";
 import {
   EXPRESS_DASHBOARD_TOKEN,
   EXPRESS_SLACK_API_TOKEN, IQueueFactory,
-  LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE,
+  LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, QUEUE_LIST, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
 import {Connection} from "typeorm";
 import express from 'express'
 import 'express-async-errors';
 import http from "http";
-import {IAppConfig, QUEUE_MAIN_NAME} from "../services/providers";
 import {useStaticPublicFolder} from "../http/dashboardExpressMiddleware";
-import {SlackTransport} from "../slack/SlackTransport";
 import {Redis} from "ioredis";
 import {Logger} from "winston";
 import {Observable} from "rxjs";
 import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
 import {bind} from "../services/utils";
+import {SlackEventListener} from "../slack/SlackEventListener";
 
 export class ServerCommand implements yargs.CommandModule {
   command = 'server:run';
@@ -26,7 +25,7 @@ export class ServerCommand implements yargs.CommandModule {
   constructor(
     private injector: Injector,
     private connection: Connection,
-    private slackTransport: SlackTransport,
+    private slackEventListener: SlackEventListener,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
     @Inject(LOGGER_TOKEN) protected logger: Logger,
@@ -78,7 +77,7 @@ export class ServerCommand implements yargs.CommandModule {
     const expressApp = express()
 
     if (!type || type === 'slack-api') {
-      this.slackTransport.initSlackEvents();
+      this.slackEventListener.initSlackEvents();
       expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
     }
     if (!type || type === 'ui') {
@@ -127,7 +126,7 @@ export class ServerCommand implements yargs.CommandModule {
   private close() {
     this.connection.close()
     try {
-      this.queueFactory(QUEUE_MAIN_NAME).close()
+      this.injector.get(QUEUE_LIST).forEach(q => q.close())
       this.redis.disconnect()
     } catch (e) {
       if (!e.message.startsWith('Connection is closed')) {

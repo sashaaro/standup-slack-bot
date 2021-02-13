@@ -5,10 +5,9 @@ import {
   EXPRESS_SLACK_API_TOKEN,
   IQueueFactory,
   LOGGER_TOKEN,
-  QUEUE_FACTORY_TOKEN,
+  QUEUE_FACTORY_TOKEN, QUEUE_LIST,
   REDIS_TOKEN,
   RENDER_TOKEN,
-  RETRY_MAIN_QUEUE,
   TERMINATE,
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
@@ -17,7 +16,7 @@ import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPOR
 import actions from "../http/controller";
 import {LogLevel, WebClient} from '@slack/web-api'
 import {RenderEngine} from "./RenderEngine";
-import {SlackTransport} from "../slack/SlackTransport";
+import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import {createEventAdapter} from "@slack/events-api";
 import entities from "../model";
 import * as fs from "fs";
@@ -35,6 +34,7 @@ import {DevCommand} from "../command/DevCommand";
 import * as Transport from "winston-transport";
 import {TransformableInfo} from "logform";
 import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
+import {SlackEventListener} from "../slack/SlackEventListener";
 
 export interface IAppConfig {
   env: string,
@@ -81,8 +81,8 @@ export const initFixtures = async (connection: Connection) => {
   await connection.query(fs.readFileSync('resources/timezone.sql').toString());
 }
 
-export const QUEUE_MAIN_NAME = 'main';
-export const QUEUE_RETRY_MAIN_NAME = 'retry_main';
+export const QUEUE_NAME_SLACK_EVENTS = 'slack_events';
+export const QUEUE_NAME_SLACK_INTERACTIVE = 'slack_interactive';
 
 const enumerateErrorFormat = format((info: TransformableInfo) => {
   if (info.error instanceof Error) {
@@ -100,7 +100,25 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     dotenv.config({path: `.env.${env}`})
   }
 
-  const queues = {}
+  const queueProviders: Provider[] = [
+    {
+      provide: QUEUE_FACTORY_TOKEN,
+      useFactory: (config: IAppConfig, queues) => ((queueName: string) => {
+        queues[queueName] = queues[queueName] || new Queue(queueName, {redis: {host: config.redisHost, port: 6379}});
+
+        return queues[queueName];
+      }) as IQueueFactory,
+      deps: [CONFIG_TOKEN, QUEUE_LIST]
+    },
+  ]
+
+  queueProviders.push(
+    {
+      provide: QUEUE_LIST,
+      useFactory: () => []
+    }
+  )
+
   let providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,
@@ -170,21 +188,8 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       useFactory: (config: IAppConfig) => createEventAdapter(config.slackSigningSecret),
       deps: [CONFIG_TOKEN]
     },
-    {
-      provide: QUEUE_FACTORY_TOKEN,
-      useFactory: (config: IAppConfig) => ((queueName: string) => {
-        queues[queueName] = queues[queueName] || new Queue(queueName, {redis: {host: config.redisHost, port: 6379}});
-
-        return queues[queueName];
-      }) as IQueueFactory,
-      deps: [CONFIG_TOKEN]
-    },
-    {
-      provide: RETRY_MAIN_QUEUE,
-      useFactory: (factory: IQueueFactory) => factory(QUEUE_RETRY_MAIN_NAME),
-      deps: [QUEUE_FACTORY_TOKEN]
-    },
     SlackStandUpProvider,
+    SlackEventListener,
     {
       provide: STAND_UP_BOT_STAND_UP_PROVIDER,
       useExisting: SlackStandUpProvider
@@ -244,13 +249,14 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
           observer.complete();
         })
       })
-    }
+    },
+    ...queueProviders
   ]
 
-  providers.push(env === 'test' ? TestTransport : SlackTransport);
+  providers.push(env === 'test' ? TestTransport : SlackBotTransport);
   providers.push({
     provide: STAND_UP_BOT_TRANSPORT,
-    useExisting: env === 'test' ? TestTransport : SlackTransport
+    useExisting: env === 'test' ? TestTransport : SlackBotTransport
   });
 
   const commandProviders = [...commands]

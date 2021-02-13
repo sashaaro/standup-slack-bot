@@ -7,7 +7,7 @@ import {Team} from "../model/Team";
 import QuestionOption from "../model/QuestionOption";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
-export const CALLBACK_PREFIX_SEND_STANDUP_ANSWERS = 'send_answers'
+export const CALLBACK_STANDUP_SUBMIT = 'standup-submit'
 
 export const ACTION_START = 'start'
 export const ACTION_OPEN_DIALOG = 'dialog'

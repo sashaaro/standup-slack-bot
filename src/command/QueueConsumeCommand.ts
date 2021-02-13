@@ -1,6 +1,5 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
-import {SlackTransport} from "../slack/SlackTransport";
 import {
   IQueueFactory,
   LOGGER_TOKEN, QUEUE_FACTORY_TOKEN,
@@ -11,10 +10,12 @@ import {Logger} from "winston";
 import {Connection} from "typeorm";
 import {Redis} from "ioredis";
 import StandUpBotService from "../bot/StandUpBotService";
-import {QUEUE_MAIN_NAME, QUEUE_RETRY_MAIN_NAME} from "../services/providers";
+import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {Observable} from "rxjs";
-import {Queue, Job} from "bull";
+import {Job} from "bull";
 import {bind} from "../services/utils";
+import {SlackEventListener} from "../slack/SlackEventListener";
+import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
 
 class HasPreviousError extends Error {
   public previous: Error;
@@ -43,9 +44,24 @@ export class QueueConsumeCommand implements yargs.CommandModule {
   command = 'queue:consume';
   describe = 'Run queue consumers';
 
+  queueHandlers = {
+    [QUEUE_NAME_SLACK_EVENTS]: async (job: Job) => {
+      this.slackEventListener.handleEventJob(job.name, job.data)
+    },
+    [QUEUE_NAME_SLACK_INTERACTIVE]: (job: Job) => {
+      const data = job.data;
+      if (data.type === InteractiveResponseTypeEnum.block_actions) {
+        this.slackEventListener.handleAction(data);
+      }
+      if (data.type === InteractiveResponseTypeEnum.view_submission) {
+        this.slackEventListener.handleViewSubmission(data);
+      }
+    }
+  }
+
   constructor(
     private injector: Injector,
-    private slackTransport: SlackTransport,
+    private slackEventListener: SlackEventListener,
     private standUpBotService: StandUpBotService,
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private connection: Connection,
@@ -60,16 +76,19 @@ export class QueueConsumeCommand implements yargs.CommandModule {
         alias: "queue",
         describe: "Queue name",
         demand: true,
-        default: QUEUE_MAIN_NAME
+        default: QUEUE_NAME_SLACK_EVENTS
       });
   }
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    const queueName = args.queue as string
-    if (![QUEUE_MAIN_NAME, QUEUE_RETRY_MAIN_NAME].includes(queueName)) {
-      throw new Error(`Queue ${queueName} is not exists`);
+    const queue = args.queue as string;
+    const availableQueues = Object.keys(this.queueHandlers);
+    if (queue && !availableQueues.includes(queue)) {
+      throw new Error(`Queue ${queue} is not exists`);
     }
+
+    let queueNames = queue ? [queue] : availableQueues
 
     try {
       await this.redis.connect();
@@ -84,39 +103,37 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
     this.standUpBotService.listenTransport();
 
-    const worker = this.injector.get(QUEUE_FACTORY_TOKEN)(queueName) as Queue;
+    const queues = queueNames.map(q => this.injector.get(QUEUE_FACTORY_TOKEN)(q))
 
-    worker.process('*', async (job) => {
-      const success = await this.slackTransport.handleJob(job.name, job.data)
-      if (success) {
-        this.logger.debug('Success handled job', {job: job})
-      } else {
-        throw new Error('Not found job handler')
-      }
+    queues.forEach(queue => {
+      const handler = this.queueHandlers[queue.name]
+
+      handler.bind(this)
+      queue.process('*',  (job) => {
+        //try {
+          handler(job);
+        //} catch (error) {
+        //  this.logger.error('Job handle error', {error, job})
+        //  job.discard()
+        //}
+      });
+
+      queue.on('process', (job) => {
+        this.logger.info(`job process ${job.name} #${job.id}`, {data: job.data})
+      });
+
+      queue.on('completed', (job) => {
+        this.logger.info(`job complete ${job.name} #${job.id}`)
+      });
+
+      queue.on('failed', async (job, err) => {
+        const error = new ConsumerError()
+        error.previous = err
+        error.job = job
+        this.logger.error(`job failed ${job.name} #${job.id}`, {error: err})
+        // TODO retry?!
+      });
     })
-
-    worker.on('process', (job) => {
-      this.logger.info(`job process ${job.name} #${job.id}`, {data: job.data})
-    });
-
-    worker.on('completed', (job) => {
-      this.logger.info(`job complete ${job.name} #${job.id}`)
-    });
-
-    const retryQueue = this.queueFactory(QUEUE_RETRY_MAIN_NAME);
-
-    worker.on('failed', async (job, err) => {
-      const error = new ConsumerError()
-      error.previous = err
-      error.job = job
-      this.logger.error(`job failed ${job.name} #${job.id}`, {error: err})
-
-      if (queueName === QUEUE_MAIN_NAME) {
-        await retryQueue.add(job.name, job.data, {delay: 5000})
-      } else if (queueName === QUEUE_RETRY_MAIN_NAME) {
-        // todo save to file
-      }
-    });
 
     /*worker.on('closed', () => {
       console.log('closed')
@@ -127,7 +144,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     });*/
 
     this.terminate$.subscribe(() => {
-      worker.close();
+      queues.forEach(q => q.close())
 
       this.connection.close()
       this.redis.disconnect()

@@ -1,5 +1,5 @@
 import * as yargs from "yargs";
-import {SlackTransport} from "../slack/SlackTransport";
+import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import StandUpBotService from "../bot/StandUpBotService";
 import StandUp from "../model/StandUp";
 import {Inject} from "injection-js";
@@ -16,7 +16,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
   describe = 'Notify teams about standup starting';
 
   constructor(
-    @Inject(SlackTransport) private slackTransport: SlackTransport,
+    @Inject(SlackBotTransport) private slackTransport: SlackBotTransport,
     @Inject(StandUpBotService) private standUpBotService: StandUpBotService,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,

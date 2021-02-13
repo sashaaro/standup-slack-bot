@@ -4,7 +4,7 @@ import {delay, map, share, takeUntil} from "rxjs/operators";
 import {IAnswerRequest, IMessage, IQuestion, IStandUp, IStandUpProvider, ITransport, IUser} from "./models";
 import {LOGGER_TOKEN, TERMINATE} from "../services/token";
 import {Logger} from "winston";
-import {hasOptionQuestions} from "../slack/SlackTransport";
+import {hasOptionQuestions} from "../slack/slack-bot-transport.service";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';

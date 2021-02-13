@@ -11,7 +11,7 @@ import User from "../../model/User";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
 import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
-import {SlackTransport} from "../../slack/SlackTransport";
+import {SlackBotTransport} from "../../slack/slack-bot-transport.service";
 
 @Injectable()
 export class OauthAuthorize {
@@ -19,7 +19,7 @@ export class OauthAuthorize {
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private connection: Connection,
     private webClient: WebClient,
-    private slackTransport: SlackTransport,
+    private slackTransport: SlackBotTransport,
   ) {
   }
 

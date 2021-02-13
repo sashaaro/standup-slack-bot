@@ -7,14 +7,15 @@ export enum InteractiveResponseWithinEnum {
 
 export enum InteractiveResponseTypeEnum {
   message_action = 'message_action',
-  dialog_submission = 'dialog_submission',
   button = 'button',
   select = 'select',
 
   // wtf?!
   interactive_message = 'interactive_message',
-
-  dialog_cancellation = 'dialog_cancellation'
+  dialog_cancellation = 'dialog_cancellation',
+  dialog_submission = 'dialog_submission',
+  view_submission = 'view_submission',
+  block_actions = 'block_actions',
 }
 
 export interface InteractiveResponse {
@@ -42,20 +43,6 @@ export interface InteractiveResponse {
   response_url:
     'https://hooks.slack.com/actions/T6GQB7CSF/546720711042/j8HC7oybBaJji5485y5LcBAl',
   trigger_id: '546562582292.220827250899.33196fe718bc1de4fb286ac689f7b612'
-}
-
-export interface InteractiveDialogSubmissionResponse {
-  type: 'dialog_submission',
-  token: 'sdfjalsdlf',
-  action_ts: '1549718276.192685',
-  team: { id: 'T6GQB7CSF', domain: 'sashaaro' },
-  user: { id: 'U6GSG49R8', name: 'sashaaro' },
-  channel: { id: 'D6HVDGXSB', name: 'directmessage' },
-  submission: { [key: string]: string},
-  callback_id: 'send_answers',
-  response_url:
-    'https://hooks.slack.com/app/T6GQG4CSF/asdf/dsfasdf',
-  state: 'some data'
 }
 
 

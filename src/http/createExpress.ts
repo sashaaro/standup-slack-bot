@@ -3,11 +3,11 @@ import 'express-async-errors';
 import getRawBody from "raw-body";
 import {Logger} from "winston";
 import {createMessageAdapter} from "@slack/interactive-messages";
-import {QUEUE_SLACK_INTERACTIVE_RESPONSE} from "../slack/SlackTransport";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
-import {IAppConfig, QUEUE_MAIN_NAME} from "../services/providers";
+import {IAppConfig, QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {IQueueFactory} from "../services/token";
-import * as fs from "fs";
+import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
+import {ACTION_OPEN_DIALOG, CALLBACK_STANDUP_SUBMIT} from "../slack/SlackStandUpProvider";
 
 export const createLoggerMiddleware = (logger: Logger) => (req: express.Request, res: express.Response, next) => {
   (req.originalUrl.startsWith('/api/slack') && req.method === "POST" ? getRawBody(req) : Promise.resolve(null)).then(buff => {
@@ -29,7 +29,12 @@ export const createLoggerMiddleware = (logger: Logger) => (req: express.Request,
   next()
 }
 
-export const createSlackApiExpress = (config: IAppConfig, queueFactory: IQueueFactory, slackEvents: SlackEventAdapter, logger: Logger): express.Router => {
+export const createSlackApiExpress = (
+  config: IAppConfig,
+  queueFactory: IQueueFactory,
+  slackEvents: SlackEventAdapter,
+  logger: Logger
+): express.Router => {
   const router = express.Router()
 
   if (config.debug) {
@@ -37,18 +42,20 @@ export const createSlackApiExpress = (config: IAppConfig, queueFactory: IQueueFa
   }
 
   const slackInteractions = createMessageAdapter(config.slackSigningSecret);
-  const queue = queueFactory(QUEUE_MAIN_NAME);
-  slackInteractions.action({},  async (response) => {
-    try {
-      const job = await queue.add(QUEUE_SLACK_INTERACTIVE_RESPONSE, response)
-    } catch (e) {
-      logger.error('Add queue', {error: e})
+  const queue = queueFactory(QUEUE_NAME_SLACK_INTERACTIVE);
 
-      fs.appendFile(`var/failed-jobs.log`, JSON.stringify({name: QUEUE_SLACK_INTERACTIVE_RESPONSE, response}) + '\n' , (err) =>  {
-        if (err) {
-          logger.error('Save failed job', {error: err})
-        }
-      });
+  slackInteractions.viewSubmission(CALLBACK_STANDUP_SUBMIT, async (response: ViewSubmission) => {
+    try {
+      const job = await queue.add(response);
+    } catch (error) {
+      logger.error('Error put slack view submission to queue', {error})
+    }
+  })
+  slackInteractions.action({actionId: ACTION_OPEN_DIALOG},  async (response: SlackAction) => {
+    try {
+      const job = await queue.add(response);
+    } catch (error) {
+      logger.error('Error put slack action to queue', {error})
     }
   })
 
