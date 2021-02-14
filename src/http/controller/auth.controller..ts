@@ -1,7 +1,7 @@
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {CONFIG_TOKEN, LOGGER_TOKEN} from "../../services/token";
-import DashboardContext from "../../services/DashboardContext";
+import ApiContext from "../../services/ApiContext";
 import {IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
 import {Connection} from "typeorm";
@@ -15,7 +15,7 @@ import {SlackBotTransport} from "../../slack/slack-bot-transport.service";
 import {Logger} from "winston";
 
 @Injectable()
-export class OauthAuthorize {
+export class AuthController {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private connection: Connection,

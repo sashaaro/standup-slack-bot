@@ -8,7 +8,7 @@ import {Connection} from "typeorm";
 import express from 'express'
 import 'express-async-errors';
 import http from "http";
-import {apiExpressMiddleware, useStaticPublicFolder} from "../http/apiExpressMiddleware";
+import {apiExpressMiddleware} from "../http/apiExpressMiddleware";
 import {Redis} from "ioredis";
 import {Logger} from "winston";
 import {Observable} from "rxjs";

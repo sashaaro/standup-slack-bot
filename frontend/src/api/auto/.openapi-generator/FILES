@@ -3,10 +3,13 @@ README.md
 api.module.ts
 api/api.ts
 api/auth.service.ts
+api/team.service.ts
+api/user.service.ts
 configuration.ts
 encoder.ts
 git_push.sh
 index.ts
 model/models.ts
+model/team.ts
 model/user.ts
 variables.ts

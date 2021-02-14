@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
-import {AuthService} from "../api/auto";
+import {SessionService} from "./service/session.service";
+import {log} from "./operator/log";
 
 @Component({
   selector: 'app-root',
@@ -7,12 +8,12 @@ import {AuthService} from "../api/auto";
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  constructor(private authService: AuthService) {
+  constructor(private sessionService: SessionService) {
   }
 
   ngOnInit() {
-    this.authService.getSession().subscribe(user => {
-      console.log(user);
+    this.sessionService.auth().pipe(log('session')).subscribe(user => {
+      console.log(11);
     })
   }
 }

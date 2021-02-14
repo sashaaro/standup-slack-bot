@@ -1,15 +1,16 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import {AuthComponent} from "./pages/auth/auth.component";
+import {TeamsComponent} from "./pages/teams/teams.component";
+import {CreateTeamComponent} from "./pages/team/create-team/create-team.component";
 
 const routes: Routes = [
   {
-    path: 'auth',
-    component: AuthComponent
+    path: '',
+    component: TeamsComponent
   },
   {
-    path: 'auth2',
-    component: AuthComponent
+    path: 'team/create',
+    component: CreateTeamComponent
   }
 ];
 

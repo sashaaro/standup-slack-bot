@@ -30,7 +30,6 @@
     "ioredis": "^4.19.4",
     "lodash.groupby": "^4.6.0",
     "pg": "^8.5.1",
-    "pug": "^3.0.0",
     "raw-body": "^2.4.1",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",

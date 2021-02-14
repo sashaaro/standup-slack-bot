@@ -1,8 +1,7 @@
 import {Request, Response} from "express";
-import {ChannelsAction} from "./channels";
-import {SyncAction} from "./sync";
-import {OauthAuthorize} from "./oauth-authorize";
-import {TeamController} from "./TeamController";
+import {AuthController} from "./auth.controller.";
+import {TeamController} from "./team.controller";
+import {UsersController} from "./users.controller";
 
 export const templateDirPath = './resources/templates'
 
@@ -12,10 +11,9 @@ export interface IHttpAction {
 
 
 const actions = [
-  OauthAuthorize,
-  ChannelsAction,
+  AuthController,
   TeamController,
-  SyncAction
+  UsersController
 ];
 
 export default actions;

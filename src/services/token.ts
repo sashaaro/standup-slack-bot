@@ -11,7 +11,6 @@ export interface IQueueFactory {
 }
 
 export const CONFIG_TOKEN = new InjectionToken<IAppConfig>('app.config');
-export const RENDER_TOKEN = new InjectionToken<RenderFn>('app.render');
 export const REDIS_TOKEN = new InjectionToken<Redis>('app.redis');
 export const QUEUE_FACTORY_TOKEN = new InjectionToken<IQueueFactory>('app.queue_factory');
 export const QUEUE_LIST = new InjectionToken<Queue[]>('app.queue_list');

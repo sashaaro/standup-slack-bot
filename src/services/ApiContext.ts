@@ -10,7 +10,7 @@ export interface IAuthUser {
 }
 
 @Injectable()
-export default class DashboardContext {
+export default class ApiContext {
   public user: User;
 
   constructor(
@@ -24,7 +24,6 @@ export default class DashboardContext {
     if (authedUser) {
       this.user = await userRepository.findOne(authedUser.id, {relations: ['workspace']});
     }
-    // this.authenticate({id: 'UJZM51SN8'}, await userRepository.findOne('UJZM51SN8'));
   }
 
   authenticate(authedUser: IAuthUser, user: User) {

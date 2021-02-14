@@ -3,59 +3,29 @@ import express from 'express'
 import session from 'express-session'
 import createRedisConnectStore from 'connect-redis';
 import {Injector} from "injection-js";
-import {SyncAction} from "./controller/sync";
 import {Connection} from "typeorm";
-import DashboardContext from "../services/DashboardContext";
-import {CONFIG_TOKEN, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN, RENDER_TOKEN} from "../services/token";
-import {OauthAuthorize} from "./controller/oauth-authorize";
-import {RenderEngine} from "../services/RenderEngine";
+import ApiContext from "../services/ApiContext";
+import {LOGGER_TOKEN, REDIS_TOKEN} from "../services/token";
+import {AuthController} from "./controller/auth.controller.";
 import http from "http";
-import { Redis } from 'ioredis';
-import {TeamController} from "./controller/TeamController";
-import {Team} from "../model/Team";
+import {TeamController} from "./controller/team.controller";
+import {UsersController} from "./controller/users.controller";
 
 const RedisConnectStore = createRedisConnectStore(session);
-
-export const useBodyParserAndSession = (app: express.Express | express.Router, client: Redis) => {
-  app.use(bodyParser.urlencoded({extended: true}));
-  app.use(bodyParser.json());
-  app.use(session({
-    secret: 'e7d3kd9-standup-slack-bot-session',
-    resave: true,
-    saveUninitialized: true,
-    store: new RedisConnectStore({client}),
-    //cookie: { secure: true }
-  }))
-}
-
-const locale = 'en';
-const intl = new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric', weekday: 'long' });
 
 declare global {
   namespace Express {
     interface Request {
-      context: DashboardContext
+      context: ApiContext
     }
   }
 }
 
-export const createApiContext = (injector: Injector) => {
-  const connection = injector.get(Connection)
-  const renderEngine = injector.get(RenderEngine)
-  const config = injector.get(CONFIG_TOKEN)
-
+export const createApiContextMiddleware = (connection: Connection) => {
   return async (req: http.IncomingMessage | express.Request | express.Router | any, res, next) => {
-    const context = new DashboardContext(req.session, connection);
+    const context = new ApiContext(req.session, connection);
     await context.init();
     req.context = context;
-
-    renderEngine.globalParams = {
-      debug: config.debug,
-      user: context.user,
-      syncInProgress: false,//context.user ? true : false,
-      yandexMetrikaID: config.yandexMetrikaID || undefined,
-      intl
-    }
 
     next()
   }
@@ -70,60 +40,39 @@ export class ResourceNotFoundError extends Error {
 export class BadRequestError extends Error {
 }
 
-const scopes = [
-  'team:read',
-  'channels:read',
-  'chat:write',
-  'users:read',
-  'users:write',
-  'groups:read',
-  'im:read',
-  'im:write',
-  'im:history',
-];
-
 export const apiExpressMiddleware = (injector: Injector): express.Router => {
   const router = express.Router()
-  useBodyParserAndSession(router, injector.get(REDIS_TOKEN));
-  router.use(createApiContext(injector));
 
-  const config = injector.get(CONFIG_TOKEN)
-  const authLink = `https://slack.com/oauth/v2/authorize?client_id=${config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${config.host}/auth`
-  const render = injector.get(RENDER_TOKEN);
+  router.use(bodyParser.json());
+  router.use(session({
+    secret: 'e7d3kd9-standup-slack-bot-session',
+    resave: true,
+    saveUninitialized: true,
+    store: new RedisConnectStore({client: injector.get(REDIS_TOKEN)}),
+    //cookie: { secure: true }
+  }))
 
-  const conn = injector.get(Connection)
-/*
-  router.get('/', async (req, res) => {
-    if (req.context.user) {
-      const teams = await conn.manager.getRepository(Team).createQueryBuilder('t')
-        .leftJoinAndSelect('t.timezone', 'tz')
-        .leftJoinAndSelect('t.createdBy', 'createdBy')
-        .leftJoinAndSelect('t.users', 'users')
-        //.andWhere('t.createdBy = :craetedBy', {craetedBy: req.context.user})
-        .getMany()
+  router.use(createApiContextMiddleware(injector.get(Connection)));
 
-      res.send(render('dashboard', {authLink, teams}));
-    } else {
-      res.send(render('welcome', {authLink}));
-    }
-  });*/
-
-  router.get('/auth/session', injector.get(OauthAuthorize).session);
-  router.get('/auth/logout', injector.get(OauthAuthorize).logout);
-  router.get('/auth', injector.get(OauthAuthorize).auth);
-  router.all('/team/create', injector.get(TeamController).create);
-  router.all('/team/:id', injector.get(TeamController).standups);
-  router.all('/team/:id/edit', injector.get(TeamController).edit);
-  router.all('/team/:id/stats', injector.get(TeamController).stats);
-  router.put('/team/:id/isEnabled', injector.get(TeamController).putIsEnabled);
-
-  //router.get('/sync', injector.get(SyncAction).handle);
+  const auto = injector.get(AuthController);
+  const team = injector.get(TeamController);
+  const user = injector.get(UsersController);
+  router.get('/auth/session', auto.session);
+  router.get('/auth/logout', auto.logout);
+  router.get('/auth', auto.auth);
+  router.all('/team/create', team.create);
+  router.all('/team/:id', team.standups);
+  router.all('/team/:id/edit', team.edit);
+  router.all('/team/:id/stats', team.stats);
+  router.put('/team/:id/isEnabled', team.putIsEnabled);
+  router.get('/team', team.list);
+  router.get('/user', user.listByWorkspace);
 
   router.use((req: express.Request, res: express.Response, next) => {
     res.status(404);
 
     if (req.accepts('html')) {
-      res.send(render('404'));
+      res.send('404');
       return;
     }
 
@@ -136,9 +85,9 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
       res.status(403);
 
       if (req.accepts('html')) {
-        res.send(render('welcome', {msg: "Access denied", authLink}));
+        res.send('');
       } else {
-        res.send("")
+        res.send('')
       }
     } else if (err instanceof BadRequestError) {
       res.sendStatus(400);
@@ -146,9 +95,9 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
       res.status(404);
 
       if (req.accepts('html')) {
-        res.send(render('404'));
+        res.send('');
       } else {
-        res.send("")
+        res.send('')
       }
     } else {
       logger.error("Catch express middleware error", {error: err})
@@ -158,11 +107,6 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
       }*/
     }
   })
-
-
-  //const channelsAction = Container.get(ChannelsAction)
-  //app.get('/channels', channelsAction.handle.bind(channelsAction));
-
 
   return router;
 }

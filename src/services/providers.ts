@@ -1,4 +1,4 @@
-import {Injector, Provider} from "injection-js";
+import {Provider} from "injection-js";
 import {
   CONFIG_TOKEN,
   EXPRESS_SLACK_API_TOKEN,
@@ -6,7 +6,6 @@ import {
   LOGGER_TOKEN,
   QUEUE_FACTORY_TOKEN, QUEUE_LIST,
   REDIS_TOKEN,
-  RENDER_TOKEN,
   TERMINATE,
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
@@ -14,7 +13,6 @@ import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
 import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
 import actions from "../http/controller";
 import {LogLevel, WebClient} from '@slack/web-api'
-import {RenderEngine} from "./RenderEngine";
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import {createEventAdapter} from "@slack/events-api";
 import entities from "../model";
@@ -25,7 +23,6 @@ import {TestTransport} from "../../test/services/transport";
 import {commands} from "../command";
 import {createLogger, format, Logger, transports} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
-import {apiExpressMiddleware} from "../http/apiExpressMiddleware";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import Queue from "bull";
@@ -150,18 +147,6 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
         lazyConnect: true
       }),
       deps: [CONFIG_TOKEN]
-    },
-    {
-      provide: RenderEngine,
-      useFactory: (config) => new RenderEngine(config.env === 'prod'),
-      deps: [CONFIG_TOKEN]
-    },
-    {
-      provide: RENDER_TOKEN,
-      useFactory: (renderEngine: RenderEngine) =>  {
-        return renderEngine.render.bind(renderEngine)
-      },
-      deps: [RenderEngine]
     },
     {
       provide: Connection,

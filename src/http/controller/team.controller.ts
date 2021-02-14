@@ -1,7 +1,6 @@
 import StandUp from "../../model/StandUp";
 import {Inject, Injectable} from 'injection-js';
 import {Connection} from "typeorm";
-import {RENDER_TOKEN} from "../../services/token";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../apiExpressMiddleware";
 import User from "../../model/User";
 import {RenderFn} from "../../services/providers";
@@ -111,7 +110,6 @@ export class TeamController {
 
   constructor(
     private connection: Connection,
-    @Inject(RENDER_TOKEN) private render: RenderFn
   ) {
   }
 
@@ -186,6 +184,18 @@ export class TeamController {
     return [];
   }
 
+  list: IHttpAction = async (req, res) => {
+    const teams = await this.connection.getRepository(Team).createQueryBuilder('t')
+      .leftJoinAndSelect('t.timezone', 'tz')
+      .leftJoinAndSelect('t.createdBy', 'createdBy')
+      .leftJoinAndSelect('t.users', 'users')
+      //.andWhere('t.createdBy = :craetedBy', {craetedBy: req.context.user})
+      .getMany()
+
+    res.send(teams);
+    res.setHeader('Content-Type', 'application/json');
+  }
+
   create: IHttpAction = async (req, res) => {
     if (!req.context.user) {
       throw new AccessDenyError();
@@ -208,7 +218,7 @@ export class TeamController {
       }
     }
 
-    res.send(this.render('team/form', {
+    res.send({
       timezones: await this.availableTimezones(),
       users: await this.availableUsers(req),
       channels: await this.availableChannels(req),
@@ -216,7 +226,7 @@ export class TeamController {
       activeMenu: 'settings',
       formData,
       errors: transformViewErrors(errors),
-    }))
+    })
   }
 
   edit: IHttpAction = async (req, res) => {
@@ -265,7 +275,7 @@ export class TeamController {
       //formData.questions = channel.questions.map(q => Object.assign(new QuestionFormDTO(), q))
     }
 
-    res.send(this.render('team/form', {
+    res.send({
       timezones: await this.availableTimezones(),
       users: await this.availableUsers(req),
       channels: await this.availableChannels(req),
@@ -273,7 +283,7 @@ export class TeamController {
       activeMenu: 'settings',
       formData,
       errors: transformViewErrors(errors),
-    }))
+    })
   }
 
   putIsEnabled: IHttpAction = async (req, res) => {
@@ -349,12 +359,12 @@ export class TeamController {
 
     const pageCount = Math.ceil(standUpsTotal / recordsPerPage)
 
-    res.send(this.render('standUps', {
+    res.send({
       //standUpList,
       standUps,
       activeMenu: 'reports',
       pageCount
-    }));
+    });
   }
 
   stats: IHttpAction = async (req, res) => {
@@ -362,6 +372,6 @@ export class TeamController {
       throw new AccessDenyError();
     }
 
-    res.send(this.render('team/stats', {}))
+    res.send({})
   }
 }

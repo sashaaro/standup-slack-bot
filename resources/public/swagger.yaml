@@ -38,6 +38,32 @@ paths:
         200:
           description: Success logout
           content: {}
+  /team:
+    get:
+      tags:
+        - team
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+  /user:
+    get:
+      tags:
+        - user
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
 components:
   schemas:
     User:
@@ -49,3 +75,13 @@ components:
         name:
           type: integer
           format: int64
+    Team:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        isEnabled:
+          type: boolean

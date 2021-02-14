@@ -1,14 +1,18 @@
 <div class="content">
   <div class="ui large menu">
-    <div class="ui container"></div>
+    <div class="ui container">
+      <a href="/" class="logo"></a>
+      <a class="item menu-title" href="/">
+      <div>
+        Standups
+        <div class="menu-title__sign">
+          <img src="https://a.slack-edge.com/80588/img/avatars-teams/ava_0025-34.png">for botenza.slack.com
+        </div>
+      </div>
+      </a>
+      <div class="right menu"><a class="item" routerLink="/team/create"><i class="icon plus"></i>Create standup</a><a class="item disabled" href="#"><i class="icon archive"></i>Archive</a><a class="item" href="/logout"><i class="icon sign-out"></i>Log out</a></div>
+    </div>
   </div>
-</div>
 
-<div class="row welcome">
-  <div class="logo"></div>
-  <div class="welcome__title">Standup Bot</div>
-  <a class="ui secondary basic button"
-     href="https://slack.com/oauth/v2/authorize?client_id=646242827008.988405770482&amp;scope=team:read,channels:read,chat:write,users:read,users:write,groups:read,im:read,im:write,im:history&amp;redirect_uri=https://stand-up-dev.botenza.com/api/auth"><i
-    class="icon color-slack large"></i><b>Add to Slack</b></a><a class="ui secondary basic button"
-                                                                 href="https://github.com/botenza" target="_blank"><i
-  class="icon github large"></i>github</a></div>
+  <router-outlet></router-outlet>
+</div>

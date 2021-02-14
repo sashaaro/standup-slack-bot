@@ -25,6 +25,10 @@ const server = http.createServer((request, response) => {
   request.pipe(proxy, {
     end: true
   });
+
+  request.on('error', error => {
+    response.end();
+  })
 });
 /*
 server.on('upgrade', (req, res) => {
