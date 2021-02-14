@@ -193,24 +193,39 @@ body {
 }
 
 .stand-up {
-  @include card;
   box-sizing: border-box;
 
-  &__date {
+  &__header {
+    @include card;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+
     display: flex;
     justify-content: space-between;
     font-weight: 700;
-    font-size: 24px;
-    margin-bottom: 15px;
+    font-size: 20px;
+
+    border-bottom: 1px rgba(34,36,38,.1) solid;
   }
 
-  margin-bottom: 25px;
+  &__content {
+    @include card;
+    padding-top: 5;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  margin-bottom: 15px;
 }
 
 .stand-up-item {
+  display: flex;
+  justify-content: space-between;
+
   &__content {
     display: flex;
-    margin-left: 20px;
     margin-bottom: 22px;
   }
 
@@ -228,7 +243,6 @@ body {
   }
 
   &__result {
-    margin-left: 20px;
     margin-bottom: 20px;
     padding-left: 12px;
     border-left: 4px solid;
@@ -252,12 +266,12 @@ body {
 
   &__question {
     font-weight: bold;
-    font-size: 22px;
-    margin-bottom: 18px;
+    font-size: 18px;
+    margin-bottom: 8px;
   }
 
   &__answer {
-    font-size: 18px;
+    font-size: 16px;
     font-style: italic;
   }
 

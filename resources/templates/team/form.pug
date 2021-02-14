@@ -57,7 +57,9 @@ block authorized_content
           .ui.input.large
             select.dropdown.search.ui.fluid(name="receivers[]", placeholder="Select receivers", multiple)
               each u in users
-                option(value=u.id, selected=formData.receivers.includes(u.id))= u.name
+                option(value=u.id, selected=formData.receivers.includes(u.id))
+                  img(src= u.profile.image_32)
+                  div= u.name
         .field(class=errors.reportSlackChannel ? 'error' : '')
           label
             span= 'Report channel'
@@ -70,11 +72,14 @@ block authorized_content
           i.save.icon
           | Save
       .column
-        h3.ui.header= "Questions"
+        h3.ui.header &nbsp
+        div
+          .field
+            label
+              span= "Questions"
         draggable(:list="questions", v-bind="dragOptions", handle=".icon.movable")
           .field(v-for="(question, index) in questions", v-bind:class="{ error: errors[index] && errors[index].text }")
             label
-              span= "#{{index +1}}"
               span.error= "{{ errors[index] && errors[index].text ? errors[index].text[0] : '' }} {{ errors[index] }}"
             .movable-input
               div
@@ -89,7 +94,6 @@ block authorized_content
               .question-options(v-if="question.options.length > 0")
                 div(v-for="(questionOption, optionIndex) in question.options")
                   label(v-bind:class="{ error: errors[index] && errors[index].options && errors[index].options[optionIndex].text.length }")
-                    span= "#{{optionIndex +1}}"
                     span.error= "{{ errors[index] && errors[index].options && errors[index].options[optionIndex].text[0] }}"
                   .ui.input.action.mini
                     input.form-control(type="hidden", v-if="questionOption.id", v-bind:name="'questions[' + index + '][options][' + optionIndex + '][id]'", v-model="questionOption.id", required, minlength=2)
