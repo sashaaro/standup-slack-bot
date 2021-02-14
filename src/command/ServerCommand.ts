@@ -1,7 +1,6 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  EXPRESS_DASHBOARD_TOKEN,
   EXPRESS_SLACK_API_TOKEN, IQueueFactory,
   LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, QUEUE_LIST, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
@@ -9,7 +8,7 @@ import {Connection} from "typeorm";
 import express from 'express'
 import 'express-async-errors';
 import http from "http";
-import {useStaticPublicFolder} from "../http/dashboardExpressMiddleware";
+import {apiExpressMiddleware, useStaticPublicFolder} from "../http/apiExpressMiddleware";
 import {Redis} from "ioredis";
 import {Logger} from "winston";
 import {Observable} from "rxjs";
@@ -34,14 +33,9 @@ export class ServerCommand implements yargs.CommandModule {
 
   builder(args: yargs.Argv) {
     return args
-      .option("t", {
-        alias: "type",
-        describe: "Type application",
-        demand: false
-      })
-      .option("l", {
-        alias: "listen",
-        describe: "Listen",
+      .option("p", {
+        alias: "port",
+        describe: "Listen port",
         demand: false
       })
       ;
@@ -49,20 +43,14 @@ export class ServerCommand implements yargs.CommandModule {
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    const type = args.type as string
-
-    if (type && !['ui','slack-api'].includes(type)) {
-      throw new Error('No application type ' + type)
-    }
-
     try {
-      await this.startServer(type, args.listen as string)
+      await this.startServer(args.port as string)
     } catch (e) {
       this.logger.error("Start server error", {error: e})
     }
   }
 
-  private async startServer(type?: string, listen?: string|number)
+  private async startServer(port?: string|number)
   {
     await this.connection.connect();
     try {
@@ -76,16 +64,12 @@ export class ServerCommand implements yargs.CommandModule {
 
     const expressApp = express()
 
-    if (!type || type === 'slack-api') {
-      this.slackEventListener.initSlackEvents();
-      expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
-    }
-    if (!type || type === 'ui') {
-      useStaticPublicFolder(expressApp);
-      expressApp.use('/', this.injector.get(EXPRESS_DASHBOARD_TOKEN));
-    }
+    this.slackEventListener.initSlackEvents();
+    expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
+    expressApp.use('/api/doc', express.static('./resources/public'));
+    expressApp.use('/api', apiExpressMiddleware(this.injector));
 
-    expressApp.get('/health-check', (request, response) => {
+    expressApp.get('/api/health-check', (request, response) => {
       const redis = this.injector.get(REDIS_TOKEN).status === 'connected';
       const postgres = this.injector.get(Connection).isConnected
 
@@ -94,17 +78,19 @@ export class ServerCommand implements yargs.CommandModule {
       response.send({redis, postgres});
     });
 
-    const options = {}
-    listen = listen || 3000
+    // todo fallback expressApp.use('/', () => {});
 
-    this.logger.debug(`Start server. Listen ${listen}`);
+    const options = {}
+    port = port || 3001
+
+    this.logger.debug(`Start server. Listen ${port}`);
     const server = http.createServer(options, expressApp)
 
-    if (fs.existsSync(listen as any)) {
-      fs.unlinkSync(listen as any);
+    if (fs.existsSync(port as any)) {
+      fs.unlinkSync(port as any);
     }
 
-    server.listen(listen)
+    server.listen(port)
       .on('error', (error) => {
         this.logger.error('Server error', {error});
         this.close();

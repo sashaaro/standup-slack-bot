@@ -28,10 +28,6 @@ export const useBodyParserAndSession = (app: express.Express | express.Router, c
   }))
 }
 
-export const useStaticPublicFolder = (app: express.Express) => {
-  app.use(express.static('./resources/public'));
-}
-
 const locale = 'en';
 const intl = new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric', weekday: 'long' });
 
@@ -43,7 +39,7 @@ declare global {
   }
 }
 
-export const createDashboardContext = (injector: Injector) => {
+export const createApiContext = (injector: Injector) => {
   const connection = injector.get(Connection)
   const renderEngine = injector.get(RenderEngine)
   const config = injector.get(CONFIG_TOKEN)
@@ -86,24 +82,17 @@ const scopes = [
   'im:history',
 ];
 
-export function bindThis(target: any, key: string) {
-  const origin = target[key];
-  target[key] = (...args) => {
-    return origin.call(target, ...args);
-  }
-}
-
-export const dashboardExpressMiddleware = (injector: Injector): express.Router => {
+export const apiExpressMiddleware = (injector: Injector): express.Router => {
   const router = express.Router()
   useBodyParserAndSession(router, injector.get(REDIS_TOKEN));
-  router.use(createDashboardContext(injector));
+  router.use(createApiContext(injector));
 
   const config = injector.get(CONFIG_TOKEN)
   const authLink = `https://slack.com/oauth/v2/authorize?client_id=${config.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${config.host}/auth`
   const render = injector.get(RENDER_TOKEN);
 
   const conn = injector.get(Connection)
-
+/*
   router.get('/', async (req, res) => {
     if (req.context.user) {
       const teams = await conn.manager.getRepository(Team).createQueryBuilder('t')
@@ -117,25 +106,18 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
     } else {
       res.send(render('welcome', {authLink}));
     }
-  });
+  });*/
 
-  router.get('/auth', injector.get(OauthAuthorize).handle);
-  router.get('/logout', (req, res) => {
-    const session = req.session;
-    session.destroy(err => {
-      if (err) {
-        logger.error('Destroy session error', {error: err})
-      }
-
-      return res.redirect('/');
-    })
-  });
+  router.get('/auth/session', injector.get(OauthAuthorize).session);
+  router.get('/auth/logout', injector.get(OauthAuthorize).logout);
+  router.get('/auth', injector.get(OauthAuthorize).auth);
   router.all('/team/create', injector.get(TeamController).create);
   router.all('/team/:id', injector.get(TeamController).standups);
   router.all('/team/:id/edit', injector.get(TeamController).edit);
   router.all('/team/:id/stats', injector.get(TeamController).stats);
   router.put('/team/:id/isEnabled', injector.get(TeamController).putIsEnabled);
-  router.get('/sync', injector.get(SyncAction).handle);
+
+  //router.get('/sync', injector.get(SyncAction).handle);
 
   router.use((req: express.Request, res: express.Response, next) => {
     res.status(404);
@@ -170,8 +152,10 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
       }
     } else {
       logger.error("Catch express middleware error", {error: err})
-      res.status(502);
-      res.send(render('502', {supportTelegram: config.supportTelegram}))
+      /*if (err.statusCode !== 'ERR_HTTP_HEADERS_SENT') {
+        res.status(502);
+        res.send(render('502', {supportTelegram: config.supportTelegram}))
+      }*/
     }
   })
 

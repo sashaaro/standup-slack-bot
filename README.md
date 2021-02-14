@@ -54,6 +54,11 @@ Sync slack data from api
 docker-compose exec serve ./cli.sh slack:sync
 ```
 
+Generate angular api module
+```shell
+docker-compose run --rm openapi-generator
+```
+
 Run jest tests
 ```bash
 cp .env.dist .env.dev

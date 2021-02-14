@@ -5,7 +5,7 @@ import {CONFIG_TOKEN, IQueueFactory, QUEUE_FACTORY_TOKEN} from "../../services/t
 import {ITransport} from "../../bot/models";
 import { Injectable, Inject } from 'injection-js';
 import {IAppConfig} from "../../services/providers";
-import {AccessDenyError} from "../dashboardExpressMiddleware";
+import {AccessDenyError} from "../apiExpressMiddleware";
 import {SlackBotTransport} from "../../slack/slack-bot-transport.service";
 
 @Injectable()

@@ -2,7 +2,7 @@ import StandUp from "../../model/StandUp";
 import {Inject, Injectable} from 'injection-js';
 import {Connection} from "typeorm";
 import {RENDER_TOKEN} from "../../services/token";
-import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
+import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../apiExpressMiddleware";
 import User from "../../model/User";
 import {RenderFn} from "../../services/providers";
 import {IHttpAction} from "./index";

@@ -1,0 +1,51 @@
+openapi: 3.0.1
+info:
+  title: Standup bot api
+  description: Standup bot api
+  contact:
+    email: sashaaro@gmail.com
+  version: 1.0.0
+tags:
+  - name: auth
+    description: Everything about auth
+servers:
+  - url: https://standup.botenza.com/api
+paths:
+  /auth/session:
+    get:
+      tags:
+        - auth
+      operationId: getSession
+      responses:
+        200:
+          description: Get session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        404:
+          description: Session not found
+          content: {}
+      x-codegen-request-body-name: body
+  /auth/logout:
+    get:
+      tags:
+        - auth
+      responses:
+        301:
+          description: Redirect
+          content: {}
+        200:
+          description: Success logout
+          content: {}
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: integer
+          format: int64

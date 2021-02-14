@@ -25,6 +25,17 @@ services:
   redis:
     image: redis:6.0.9-alpine
 
+  openapi-generator:
+    image: openapitools/openapi-generator-cli:v5.0.1
+    user: "1000"
+    volumes:
+      - .:/opt/app
+    environment:
+      JAVA_OPTS: >
+        -Dio.swagger.parser.util.RemoteUrl.trustAll=true -Dio.swagger.v3.parser.util.RemoteUrl.trustAll=true
+    command: generate -i http://serve:3000/api/doc/swagger.yaml -g typescript-angular -o /opt/app/frontend/src/api/auto -p modelPropertyNaming=original -p ngVersion11.0.0
+    working_dir: /opt/app
+
   tunnel:
     image: jpillora/chisel:latest
     network_mode: host

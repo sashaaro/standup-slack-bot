@@ -1,7 +1,6 @@
 import {Injector, Provider} from "injection-js";
 import {
   CONFIG_TOKEN,
-  EXPRESS_DASHBOARD_TOKEN,
   EXPRESS_SLACK_API_TOKEN,
   IQueueFactory,
   LOGGER_TOKEN,
@@ -26,7 +25,7 @@ import {TestTransport} from "../../test/services/transport";
 import {commands} from "../command";
 import {createLogger, format, Logger, transports} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
-import {dashboardExpressMiddleware} from "../http/dashboardExpressMiddleware";
+import {apiExpressMiddleware} from "../http/apiExpressMiddleware";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import Queue from "bull";
@@ -200,11 +199,6 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       provide: EXPRESS_SLACK_API_TOKEN,
       useFactory: createSlackApiExpress,
       deps: [CONFIG_TOKEN, QUEUE_FACTORY_TOKEN, SlackEventAdapter, LOGGER_TOKEN]
-    },
-    {
-      provide: EXPRESS_DASHBOARD_TOKEN,
-      useFactory: dashboardExpressMiddleware,
-      deps: [Injector]
     },
     {
       provide: LOGGER_TOKEN,

@@ -3,7 +3,7 @@ import { Injectable, Inject } from 'injection-js';
 import {Connection} from "typeorm";
 import {RENDER_TOKEN} from "../../services/token";
 import {ITeam} from "../../bot/models";
-import {AccessDenyError} from "../dashboardExpressMiddleware";
+import {AccessDenyError} from "../apiExpressMiddleware";
 
 @Injectable()
 export class ChannelsAction {

@@ -1,6 +1,6 @@
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
-import {CONFIG_TOKEN} from "../../services/token";
+import {CONFIG_TOKEN, LOGGER_TOKEN} from "../../services/token";
 import DashboardContext from "../../services/DashboardContext";
 import {IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
@@ -9,9 +9,10 @@ import SlackWorkspace from "../../model/SlackWorkspace";
 import {OauthAccessResponse} from "../../slack/model/ScopeGranted";
 import User from "../../model/User";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
-import {AccessDenyError, ResourceNotFoundError} from "../dashboardExpressMiddleware";
+import {AccessDenyError, ResourceNotFoundError} from "../apiExpressMiddleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
 import {SlackBotTransport} from "../../slack/slack-bot-transport.service";
+import {Logger} from "winston";
 
 @Injectable()
 export class OauthAuthorize {
@@ -19,14 +20,31 @@ export class OauthAuthorize {
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private connection: Connection,
     private webClient: WebClient,
+    @Inject(LOGGER_TOKEN) private logger: Logger,
     private slackTransport: SlackBotTransport,
   ) {
   }
 
-  handle: IHttpAction = async (req, res) => {
-    const context = req.context as DashboardContext
-    if (context.user) {
-      res.redirect('/');
+  session: IHttpAction = async (req, res) => {
+    res.send(req.context.user);
+    res.setHeader('Content-Type', 'application/json');
+    res.sendStatus(req.context.user ? 200 : 404);
+  }
+
+  logout = (req, res) => {
+    const session = req.session;
+    session.destroy(err => {
+      if (err) {
+        this.logger.error('Destroy session error', {error: err})
+      }
+
+      return res.redirect('/');
+    })
+  }
+
+  auth: IHttpAction = async (req, res) => {
+    if (req.context.user) {
+      res.redirect('/')
       return;
     }
 
@@ -86,7 +104,7 @@ export class OauthAuthorize {
     user.accessToken = response.access_token;
     user = await userRepository.save(user);
 
-    context.authenticate(response.authed_user, user);
+    req.context.authenticate(response.authed_user, user);
 
     return res.redirect('/')
   }
