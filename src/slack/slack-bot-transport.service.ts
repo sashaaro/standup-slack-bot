@@ -2,14 +2,13 @@ import {Inject, Injectable} from "injection-js";
 import {Observable, Subject} from "rxjs";
 import {IMessage, ITransport, IUser} from "../bot/models";
 import User from "../model/User";
-import {MessageResponse} from "./model/MessageResponse";
 import {ChannelRepository} from "../repository/ChannelRepository";
 import {Connection, DeepPartial} from "typeorm";
-import {ChannelLeft, MemberJoinedChannel, SlackChannel, SlackConversation} from "./model/SlackChannel";
-import {ScopeGranted, SlackIm} from "./model/ScopeGranted";
+import {SlackConversation} from "./model/SlackChannel";
+import {SlackIm} from "./model/ScopeGranted";
 import SlackWorkspace from "../model/SlackWorkspace";
 import {
-  ACTION_OPEN_DIALOG,
+  ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT,
   CALLBACK_STANDUP_SUBMIT,
   SlackStandUpProvider
 } from "./SlackStandUpProvider";
@@ -20,7 +19,6 @@ import groupBy from "lodash.groupby";
 import {
   ChatPostMessageArguments,
   WebAPICallResult,
-  WebAPIPlatformError,
   WebClient
 } from '@slack/web-api'
 import {ISlackUser} from "./model/SlackUser";
@@ -240,6 +238,41 @@ export class SlackBotTransport implements ITransport {
     }
   }
 
+  async openReport(standUp: StandUp, triggerId: string) {
+    if (false) {
+      // check in progress
+    }
+    const view = {
+      type: "modal",
+      title: {
+        "type": "plain_text",
+        "text": `Report #${standUp.team.name}`,
+        "emoji": true
+      },
+      "close": {
+        "type": "plain_text",
+        "text": "Cancel",
+        "emoji": true
+      },
+      //callback_id: CALLBACK_STANDUP_SUBMIT,
+      //private_metadata: JSON.stringify({standup: standUp.id}),
+      blocks: []
+    };
+
+    view.blocks.push({
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": `*!!!* sdfdsf'`
+      }
+    })
+
+    const args:any = {
+      view: view,
+      trigger_id: triggerId,
+    }
+    const r = await this.webClient.views.open(args)
+  }
   async openDialog(user: User, standUp: StandUp, triggerId: string) {
     const inProgress = !standUp.isFinished(); // has not standUp.endAt?!
 
@@ -250,7 +283,6 @@ export class SlackBotTransport implements ITransport {
     }
 
     const answers = standUp.answers.filter(a => a.user.id === user.id);
-    console.log(standUp)
 
     const view = {
       type: "modal",
@@ -273,56 +305,103 @@ export class SlackBotTransport implements ITransport {
       private_metadata: JSON.stringify({standup: standUp.id}),
       blocks: []
     };
+
+    if (!inProgress) {
+      delete view.submit
+    }
+
     for (const question of standUp.team.questions) {
+      const answer = answers.find(answer => answer.question.id === question.id);
+
       const hasOptions = question.options.length > 1;
       const element: any = {
         type: hasOptions ?  "static_select" : "plain_text_input",
         action_id: question.id.toString(),
       };
-      if (hasOptions) {
-        element.placeholder = {
-          "type": "plain_text",
-          "text": "Select an item",
-          "emoji": true
+
+
+      if (inProgress) {
+        if (hasOptions) {
+          element.placeholder = {
+            "type": "plain_text",
+            "text": "Select an item",
+            "emoji": true
+          }
+
+          element.options = question.options.map(pa => ({
+            text: {
+              "type": "plain_text",
+              "text": pa.text,
+              "emoji": true
+            },
+            value: pa.id.toString()
+          }));
+        } else {
+          element.multiline = true;
+          element.min_length = 2;
+          element.max_length = 500;
         }
 
-        element.options = question.options.map(pa => ({
-          text: {
+        if (answer) {
+          if (hasOptions) {
+            //element.value = answer.option.id
+            element.initial_option = element.options.find(option => option.value === answer.option.id.toString());
+            if (!element.initial_option) {
+              // TODO warming
+            }
+          } else {
+            element.initial_value = answer.answerMessage;
+          }
+        }
+
+        view.blocks.push({
+          type: "input",
+          label: {
             "type": "plain_text",
-            "text": pa.text,
+            "text": question.text,
             "emoji": true
           },
-          value: pa.id.toString()
-        }));
+          element,
+          //block_id: question.id.toString()
+        })
       } else {
-        element.multiline = true;
-        element.min_length = 2;
-        element.max_length = 500;
-      }
-
-      const answer = answers.find(answer => answer.question.id === question.id);
-      if (answer) {
-        if (hasOptions) {
-          //element.value = answer.option.id
-          element.initial_option = element.options.find(option => option.value === answer.option.id.toString());
-          if (!element.initial_option) {
-            // TODO warming
+        view.blocks.push({
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": `*${question.text}*\n${(hasOptions ? answer.option?.text : answer.answerMessage) || '-'}`
           }
-        } else {
-          element.initial_value = answer.answerMessage;
-        }
+        })
       }
 
+      const isLast = question === standUp.team.questions[standUp.team.questions.length]
+      if (!isLast) {
+        view.blocks.push({
+          type: "divider"
+        })
+      }
+    }
+
+    if (!inProgress) {
       view.blocks.push({
-        type: "input",
-        label: {
-          "type": "plain_text",
-          "text": question.text,
-          "emoji": true
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "Standup was in end"
         },
-        element,
-        //block_id: question.id.toString()
+        "accessory": {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Open report",
+            "emoji": true
+          },
+          "value": standUp.id.toString(),
+          "action_id": ACTION_OPEN_REPORT
+        }
       })
+    } else {
+      //markdown support todo // https://api.slack.com/reference/surfaces/formatting !
     }
 
     const args:any = {
@@ -439,36 +518,62 @@ export class SlackBotTransport implements ITransport {
   }
 
   async sendReport(standUp: StandUp) {
-    const attachments = []
+    let text = `Standup complete `
+
+    const blocks: any[] = [
+      {
+        type: "header",
+        "text": {
+          "type": "plain_text",
+          "text": text,
+          "emoji": true
+        }
+      }
+    ]
 
     const userAnswers = groupBy(standUp.answers, 'user.id');
-    for (const userID in userAnswers) {
-      const answers: AnswerRequest[] = userAnswers[userID];
-      if (answers.length === 0) {
-        // TODO skip message
-        continue;
+    const users = standUp.answers.map(a => a.user);
+    for (const user of standUp.team.users) {
+      let body = '';
+      for (const question of standUp.team.questions) {
+        // const index = standUp.team.questions.indexOf(question);
+        const answer = standUp.answers.find(a => a.user.id === user.id && a.question.id == question.id);
+        const hasOptions = question.options.length
+        body += `*${question.text}*\n${(hasOptions ? answer.option?.text : answer.answerMessage) || '-'}\n`
       }
 
-      const text = answers
-        .map(a => `*${a.question.text}*\n${a.answerMessage}`)
-        .join('\n')
+      blocks.push({
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": body
+        },
+        ...(user.profile?.image_192 ? {"accessory": {
+            "type": "image",
+            "image_url": user.profile.image_192,
+            "alt_text": "alt text for image"
+          }} : {})
+      })
 
-      attachments.push({
-        author_name: answers[0].user.name,
-        author_icon: answers[0].user.profile.image_24,
-        text
+      blocks.push({
+        type: "divider"
       })
     }
 
-    let text = `Standup complete `
-    // TODO link
-    if (attachments.length === 0) {
-      text += ' Nobody sent answers 🐥'
+
+    if (userAnswers.length === 0) {
+      blocks.push({
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": 'Nobody sent answers 🐥'
+        }
+      })
     }
     await this.postMessage({
       channel: standUp.team.reportSlackChannel,
       text,
-      attachments
+      blocks
     })
   }
 

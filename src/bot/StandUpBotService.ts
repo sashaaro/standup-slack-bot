@@ -280,7 +280,7 @@ export default class StandUpBotService {
 
     this.logger.debug('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop');
 
-    const interval$ = timer(millisecondsDelay, intervalMs)
+    const interval$ = timer(0, intervalMs)
       .pipe(
         takeUntil(this.terminate$),
         map(_ => new Date()),

@@ -10,7 +10,8 @@ export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
 export const CALLBACK_STANDUP_SUBMIT = 'standup-submit'
 
 export const ACTION_START = 'start'
-export const ACTION_OPEN_DIALOG = 'dialog'
+export const ACTION_OPEN_DIALOG = 'dialog'// TODO rename open_dialog
+export const ACTION_OPEN_REPORT = 'open_report'
 
 @Injectable()
 export class SlackStandUpProvider implements IStandUpProvider {
@@ -116,12 +117,18 @@ export class SlackStandUpProvider implements IStandUpProvider {
   async findStandUpsEndNowByDate(date: Date): Promise<StandUp[]> {
     return await this.connection.getRepository(StandUp).createQueryBuilder('st')
       .leftJoinAndSelect('st.team', 'team')
+      .leftJoinAndSelect('team.users', 'teamUsers')
+      .leftJoinAndSelect('team.questions', 'teamQuestions')
       .leftJoinAndSelect('st.answers', 'answers')
+      .leftJoinAndSelect('teamQuestions.options', 'options')
       .leftJoinAndSelect('answers.user', 'user')
       .leftJoinAndSelect('answers.question', 'question')
-      .where('date_trunc(\'minute\', st.endAt) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
+      .leftJoinAndSelect('answers.option', 'answersOption')
+      .limit(6)
+      //.where('date_trunc(\'minute\', st.endAt) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
       .andWhere('team.isEnabled = true')
-      .orderBy("question.index", "ASC")
+      .addOrderBy("st.endAt", "DESC")
+      .addOrderBy("question.index", "ASC")
       .getMany()
   }
 

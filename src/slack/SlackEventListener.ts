@@ -13,7 +13,12 @@ import {WebAPIPlatformError} from "@slack/web-api";
 import {SlackBotTransport} from "./slack-bot-transport.service";
 import {Connection} from "typeorm";
 import {SlackAction, ViewSubmission} from "./model/ViewSubmission";
-import {ACTION_OPEN_DIALOG, CALLBACK_STANDUP_SUBMIT, SlackStandUpProvider} from "./SlackStandUpProvider";
+import {
+  ACTION_OPEN_DIALOG,
+  ACTION_OPEN_REPORT,
+  CALLBACK_STANDUP_SUBMIT,
+  SlackStandUpProvider
+} from "./SlackStandUpProvider";
 import Question from "../model/Question";
 import StandUp from "../model/StandUp";
 import StandUpBotService from "../bot/StandUpBotService";
@@ -170,6 +175,24 @@ export class SlackEventListener {
       this.startConfirmSubject.next({user, date: msgDate})
       return
     }*/
+
+    const openReportAction = action.actions.find(a => a.action_id === ACTION_OPEN_REPORT);
+
+    if (openReportAction) {
+      const standUpId = parseInt(openReportAction.value);
+      if (!standUpId) {
+        throw new Error(`Standup standUpId is not defined ${openReportAction.value}`)
+      }
+
+      const standUp = await this.slackStandUpProvider.standUpByIdAndUser(user, standUpId);
+
+      if (!standUp) {
+        throw new Error(`Standup #${standUpId} is not found`)
+      }
+      this.slackBotTransport.openReport(standUp, action.trigger_id);
+
+      return;
+    }
 
     const openDialogAction = action.actions.find(a => a.action_id === ACTION_OPEN_DIALOG);
     if (!openDialogAction) {

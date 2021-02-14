@@ -5,6 +5,7 @@ import {StandupNotifyCommand} from "./StandupNotifyCommand";
 import {ServerCommand} from "./ServerCommand";
 import {MigrationGenerateCommand} from "./MigrationGenerateCommand";
 import * as yargs from "yargs";
+import {SyncSlackCommand} from "./SyncSlackCommand";
 
 export const commands: any = [
   DatabaseMigrateCommand,
@@ -12,5 +13,6 @@ export const commands: any = [
   QueueConsumeCommand,
   StandupNotifyCommand,
   ServerCommand,
-  MigrationGenerateCommand
+  MigrationGenerateCommand,
+  SyncSlackCommand
 ];

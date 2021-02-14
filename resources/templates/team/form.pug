@@ -113,6 +113,16 @@ block authorized_content
           each err in errors.questions
             div= err
 
+
+  .ui.search
+    input.prompt(type="text")
+    .results
+
+  #app
+    autocomplete(:search="search", placeholder="Search for a country", aria-label="Search for a country", @submit="handleSubmit")
+
+  script(src="https://unpkg.com/@trevoreyre/autocomplete-vue")
+
 block append scripts
   script.
     const formErrors = !{JSON.stringify(errors.questions || {})};
@@ -153,3 +163,42 @@ block append scripts
       }
     })
     $('select.dropdown.search').dropdown({fullTextSearch: true});
+
+    $('.ui.search')
+      .search({
+        apiSettings: {
+          url: '//api.github.com/search/repositories?q={query}'
+        },
+        fields: {
+          results: 'items',
+          title: 'name',
+        },
+        minCharacters: 3
+      })
+    ;
+
+    const countries = ['Russia', 'Belorus']
+
+    new Vue({
+      el: '#app',
+      components: {
+        Autocomplete
+      },
+      methods: {
+        search(input) {
+          if (input.length < 1) {
+            return []
+          }
+          return countries.filter(country => {
+            return country.toLowerCase()
+                    .startsWith(input.toLowerCase())
+          })
+        },
+        handleSubmit(results, selectedIndex) {
+          console.log(`${results.length} results`)
+          if (selectedIndex > -1) {
+            console.log(`Selected: ${results[selectedIndex]}`)
+          }
+        }
+      }
+    })

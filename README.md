@@ -49,6 +49,11 @@ Server
 ./cli.sh server:run
 ```
 
+Sync slack data from api
+```shell
+docker-compose exec serve ./cli.sh slack:sync
+```
+
 Run jest tests
 ```bash
 cp .env.dist .env.dev

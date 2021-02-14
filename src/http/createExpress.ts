@@ -7,7 +7,7 @@ import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import {IAppConfig, QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {IQueueFactory} from "../services/token";
 import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
-import {ACTION_OPEN_DIALOG, CALLBACK_STANDUP_SUBMIT} from "../slack/SlackStandUpProvider";
+import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from "../slack/SlackStandUpProvider";
 
 export const createLoggerMiddleware = (logger: Logger) => (req: express.Request, res: express.Response, next) => {
   (req.originalUrl.startsWith('/api/slack') && req.method === "POST" ? getRawBody(req) : Promise.resolve(null)).then(buff => {
@@ -51,7 +51,9 @@ export const createSlackApiExpress = (
       logger.error('Error put slack view submission to queue', {error})
     }
   })
-  slackInteractions.action({actionId: ACTION_OPEN_DIALOG},  async (response: SlackAction) => {
+  slackInteractions.action({actionId: new RegExp(
+      [ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT].join('|')
+    )},  async (response: SlackAction) => {
     try {
       const job = await queue.add(response);
     } catch (error) {

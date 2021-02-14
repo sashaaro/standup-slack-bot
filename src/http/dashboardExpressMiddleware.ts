@@ -133,6 +133,7 @@ export const dashboardExpressMiddleware = (injector: Injector): express.Router =
   router.all('/team/create', injector.get(TeamController).create);
   router.all('/team/:id', injector.get(TeamController).standups);
   router.all('/team/:id/edit', injector.get(TeamController).edit);
+  router.all('/team/:id/stats', injector.get(TeamController).stats);
   router.put('/team/:id/isEnabled', injector.get(TeamController).putIsEnabled);
   router.get('/sync', injector.get(SyncAction).handle);
 

@@ -356,4 +356,12 @@ export class TeamController {
       pageCount
     }));
   }
+
+  stats: IHttpAction = async (req, res) => {
+    if (!req.context.user) {
+      throw new AccessDenyError();
+    }
+
+    res.send(this.render('team/stats', {}))
+  }
 }
