@@ -57,6 +57,7 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
   const auto = injector.get(AuthController);
   const team = injector.get(TeamController);
   const user = injector.get(UsersController);
+
   router.get('/auth/session', auto.session);
   router.get('/auth/logout', auto.logout);
   router.get('/auth', auto.auth);

@@ -12,8 +12,9 @@ export class DatabaseMigrateCommand implements yargs.CommandModule {
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    await this.connection.connect();
-
+    if (!this.connection.isConnected) {
+      await this.connection.connect();
+    }
     const migrations = await this.connection.runMigrations();
     migrations.forEach(m => {
       console.log(m.instance);

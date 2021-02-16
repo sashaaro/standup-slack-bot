@@ -2,15 +2,24 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import {TeamsComponent} from "./pages/teams/teams.component";
 import {CreateTeamComponent} from "./pages/team/create-team/create-team.component";
+import {AuthorizedGuard} from "./guard/authorized.guard";
+import {WelcomeComponent} from "./pages/welcome/welcome.component";
 
 const routes: Routes = [
   {
+    path: 'welcome',
+    component: WelcomeComponent,
+    canActivate: [] // TODO GuestGuard
+  },
+  {
     path: '',
-    component: TeamsComponent
+    component: TeamsComponent,
+    canActivate: [AuthorizedGuard]
   },
   {
     path: 'team/create',
-    component: CreateTeamComponent
+    component: CreateTeamComponent,
+    canActivate: [AuthorizedGuard]
   }
 ];
 

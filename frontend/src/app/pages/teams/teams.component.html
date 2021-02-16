@@ -1,7 +1,7 @@
 <div *ngIf="teams.length === 0" class="no-stand-ups">No teams🐥<i class="icon bee"></i></div>
 
 <div class="team-list">
-  <div *ngFor="let team of teams" class="team" [class.team--disabled]="team.isEnabled">
+  <div *ngFor="let team of teams" class="team" [class.team--disabled]="!team.isEnabled">
     <div class="team__header">
       <a class="team__title">
         {{team.name}}
@@ -24,9 +24,7 @@
         </div>
       </div>
       <div class="team__users">
-        <div *ngFor="let user of team.users" class="team">
-          <img class="stand-up-item__image" [src]="user.profile.image_48"/>
-        </div>
+        <img *ngFor="let user of team.users" class="stand-up-item__image" [src]="user.profile.image_48"/>
       </div>
     </div>
     <div class="team__actions">

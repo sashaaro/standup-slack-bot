@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import {FormBuilder} from "@angular/forms";
+import {FormBuilder, Validators} from "@angular/forms";
 import {UserService} from "../../../../api/auto";
+import {log} from "../../../operator/log";
 
 @Component({
   selector: 'app-create-team',
@@ -10,19 +11,19 @@ import {UserService} from "../../../../api/auto";
 })
 export class CreateTeamComponent implements OnInit {
   form = this.fb.group({
-    name: [null],
-    timezone: [null],
-    startAt: [null],
-    duration: [null],
-    users: [null, []],
+    name: [null, Validators.required],
+    timezone: [null, Validators.required],
+    startAt: [null, Validators.required],
+    duration: [null, Validators.required],
+    users: [null],
     reportChannel: [null],
-    questions: [null, []],
+    questions: [null],
   })
   submitting = false;
   questions = [];
   options = [];
 
-  users$ = this.userService.userGet()
+  users$ = this.userService.userGet().pipe(log('users$'))
 
   constructor(
     private fb: FormBuilder,
@@ -39,4 +40,7 @@ export class CreateTeamComponent implements OnInit {
   addOption() {}
   removeOption(option) {}
 
+  submit() {
+    console.log(this.form.value)
+  }
 }

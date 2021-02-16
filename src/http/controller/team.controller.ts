@@ -192,8 +192,8 @@ export class TeamController {
       //.andWhere('t.createdBy = :craetedBy', {craetedBy: req.context.user})
       .getMany()
 
-    res.send(teams);
     res.setHeader('Content-Type', 'application/json');
+    res.send(teams);
   }
 
   create: IHttpAction = async (req, res) => {

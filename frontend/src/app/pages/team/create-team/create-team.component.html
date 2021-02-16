@@ -2,54 +2,54 @@
   <div class="ui column">
     <h3 class="ui header">Stan-up settings</h3>
 
-    <div class="field">
+    <div class="field" [class.error]="form.get('name').touched && form.get('name').invalid">
       <label>Name</label>
       <div class="ui input large">
-        <input class="form-control" formGroupName="name"/>
+        <input class="form-control" formControlName="name"/>
       </div>
     </div>
 
-    <div class="field">
+    <div class="field" [class.error]="form.get('timezone').touched && form.get('timezone').invalid">
       <label>Locale timezone</label>
       <div class="ui input large">
-        <input class="form-control" formGroupName="timezone"/>
+        <input class="form-control" formControlName="timezone"/>
       </div>
     </div>
 
     <div class="ui fields two">
-      <div class="field">
+      <div class="field" [class.error]="form.get('startAt').touched && form.get('startAt').invalid">
         <label>Start meeting (locale time)</label>
         <div class="ui input large">
-          <input class="form-control" type="time" step="60" formGroupName="startAt"/>
+          <input class="form-control" type="time" step="60" formControlName="startAt"/>
         </div>
       </div>
 
-      <div class="field">
+      <div class="field" [class.error]="form.get('duration').touched && form.get('duration').invalid">
         <label>Duration</label>
         <div class="ui input large">
-          <input class="form-control" formGroupName="duration"/>
+          <input class="form-control" formControlName="duration"/>
         </div>
       </div>
     </div>
 
 
-    <div class="field">
+    <div class="field" [class.error]="form.get('users').touched && form.get('users').invalid">
       <label>Participants</label>
       <div class="ui input large">
-        <select class="form-control" formGroupName="users" multiple="multiple">
+        <select class="form-control" formControlName="users" multiple="multiple">
           <option *ngFor="let user of (users$ | async)" [value]="user">{{ user.name }}</option>
         </select>
       </div>
     </div>
 
-    <div class="field">
+    <div class="field" [class.error]="form.get('reportChannel').touched && form.get('reportChannel').invalid">
       <label>Report channel</label>
       <div class="ui input large">
-        <input class="form-control" formGroupName="reportChannel"/>
+        <input class="form-control" formControlName="reportChannel"/>
       </div>
     </div>
 
-    <button class="ui large button fluid positive" [disabled]="form.invalid" [class.loading]="submitting">
+    <button class="ui large button fluid positive" [class.loading]="submitting" (click)="submit()">
       <i class="icon save"></i> Save
     </button>
   </div>
@@ -62,7 +62,7 @@
       <label>Questions</label>
     </div>
 
-    <div formGroupName="questions">
+    <div>
       <div class="ui action left icon input large">
         <input class="form-control"/>
         <div class="ui icon button teal" title="Add options" (click)="addOption()">

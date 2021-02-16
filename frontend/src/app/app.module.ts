@@ -11,6 +11,7 @@ import { WelcomeComponent } from './pages/welcome/welcome.component';
 import { TeamComponent } from './pages/team/team.component';
 import { CreateTeamComponent } from './pages/team/create-team/create-team.component';
 import {ReactiveFormsModule} from "@angular/forms";
+import {AuthorizedGuard} from "./guard/authorized.guard";
 
 @NgModule({
   declarations: [
@@ -28,12 +29,15 @@ import {ReactiveFormsModule} from "@angular/forms";
     AppRoutingModule,
     ReactiveFormsModule,
   ],
-  providers: [{
-    provide: Configuration,
-    useFactory: () => new Configuration({
-      basePath: location.href + 'api'
-    })
-  }],
+  providers: [
+    {
+      provide: Configuration,
+      useFactory: () => new Configuration({
+        basePath: location.origin + '/api'
+      })
+    },
+    AuthorizedGuard
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

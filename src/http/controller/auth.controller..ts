@@ -1,7 +1,6 @@
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {CONFIG_TOKEN, LOGGER_TOKEN} from "../../services/token";
-import ApiContext from "../../services/ApiContext";
 import {IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
 import {Connection} from "typeorm";
@@ -13,6 +12,7 @@ import {AccessDenyError, ResourceNotFoundError} from "../apiExpressMiddleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
 import {SlackBotTransport} from "../../slack/slack-bot-transport.service";
 import {Logger} from "winston";
+import {bind} from "../../services/utils";
 
 @Injectable()
 export class AuthController {
@@ -42,7 +42,8 @@ export class AuthController {
     })
   }
 
-  auth: IHttpAction = async (req, res) => {
+  @bind
+  async auth(req, res) {
     if (req.context.user) {
       res.redirect('/')
       return;
@@ -64,7 +65,7 @@ export class AuthController {
         client_id: this.config.slackClientID,
         client_secret: this.config.slackSecret,
         code: req.query.code as string,
-        redirect_uri: `${this.config.host}/auth`,
+        redirect_uri: `${this.config.host}/api/auth`,
       }) as any
     } catch (e) {
       if (e.error !== 'invalid_code') {

@@ -98,8 +98,9 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       }
     }
     await redisReady(this.redis);
-    await this.connection.connect();
-
+    if (!this.connection.isConnected) {
+      //await this.connection.connect();
+    }
 
     this.standUpBotService.listenTransport();
 

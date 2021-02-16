@@ -539,6 +539,11 @@ export class SlackBotTransport implements ITransport {
         // const index = standUp.team.questions.indexOf(question);
         const answer = standUp.answers.find(a => a.user.id === user.id && a.question.id == question.id);
         const hasOptions = question.options.length
+        if (!answer) {
+          this.logger.warn('Answer not found', {user: user.id, question: question.id});
+          return
+        }
+
         body += `*${question.text}*\n${(hasOptions ? answer.option?.text : answer.answerMessage) || '-'}\n`
       }
 

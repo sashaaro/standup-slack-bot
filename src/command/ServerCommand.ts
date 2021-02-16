@@ -52,7 +52,10 @@ export class ServerCommand implements yargs.CommandModule {
 
   private async startServer(port?: string|number)
   {
-    await this.connection.connect();
+    if (!this.connection.isConnected) {
+      await this.connection.connect();
+    }
+
     try {
       await this.redis.connect();
     } catch (e) {
@@ -60,6 +63,7 @@ export class ServerCommand implements yargs.CommandModule {
         throw e;
       }
     }
+
     await redisReady(this.redis);
 
     const expressApp = express()

@@ -13,8 +13,9 @@ export class DatabaseFixtureCommand implements yargs.CommandModule {
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    await this.connection.connect();
-
+    if (!this.connection.isConnected) {
+      await this.connection.connect();
+    }
     await initFixtures(this.connection)
     this.connection.close()
   }

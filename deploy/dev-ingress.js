@@ -5,14 +5,15 @@ const backendPort = 3001;
 const backendRoutePrefix = '/api'
 
 const server = http.createServer((request, response) => {
-  const isApi = request.url.startsWith(backendRoutePrefix);
   console.log('Request: ' + request.url)
+
+  const isApi = request.url.startsWith(backendRoutePrefix);
   const options = {
     hostname: 'localhost',
     port: isApi ? backendPort : frontendPort,
     path: request.url,
     method: request.method,
-    headers: request.headers
+    headers: request.headers,
   };
 
   const proxy = http.request(options, (res) => {
@@ -22,11 +23,23 @@ const server = http.createServer((request, response) => {
     });
   });
 
-  request.pipe(proxy, {
-    end: true
-  });
+  proxy.on('error', error => {
+    console.log('Error', error.code);
+    response.destroy(error);
+  })
+
+  proxy.on('abort', error => {
+    response.destroy(error);
+  })
+
+  if (proxy.writable) {
+    request.pipe(proxy, {
+      end: true
+    });
+  }
 
   request.on('error', error => {
+    console.log('Error', error)
     response.end();
   })
 });

@@ -37,7 +37,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
     const filename = timestamp + "-" + args.name + ".ts";
     let directory = 'src/migration';
 
-    await this.connection.connect();
+    if (!this.connection.isConnected) {
+      await this.connection.connect();
+    }
     const connection = this.connection
     const sqlInMemory = await connection.driver.createSchemaBuilder().log();
     const upSqls: string[] = [], downSqls: string[] = [];

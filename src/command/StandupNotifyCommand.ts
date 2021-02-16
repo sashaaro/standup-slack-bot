@@ -27,7 +27,9 @@ export class StandupNotifyCommand implements yargs.CommandModule {
   @bind
   async handler(args: yargs.Arguments<{}>) {
     this.logger.debug('Database connecting...');
-    await this.connection.connect();
+    if (!this.connection.isConnected) {
+      //await this.connection.connect();
+    }
     try {
       await this.redis.connect();
     } catch (e) {
