@@ -3,14 +3,20 @@
     <h3 class="ui header">Stan-up settings</h3>
 
     <div class="field" [class.error]="form.get('name').touched && form.get('name').invalid">
-      <label>Name</label>
+      <label>
+        <span>Name</span>
+        <app-error [control]="form.get('name')"></app-error>
+      </label>
       <div class="ui input large">
         <input class="form-control" formControlName="name"/>
       </div>
     </div>
 
     <div class="field" [class.error]="form.get('timezone').touched && form.get('timezone').invalid">
-      <label>Locale timezone</label>
+      <label>
+        <span>Locale timezone</span>
+        <app-error [control]="form.get('timezone')"></app-error>
+      </label>
       <div class="ui input large">
         <input class="form-control" formControlName="timezone"/>
       </div>
@@ -18,14 +24,20 @@
 
     <div class="ui fields two">
       <div class="field" [class.error]="form.get('startAt').touched && form.get('startAt').invalid">
-        <label>Start meeting (locale time)</label>
+        <label>
+          <span>Start meeting (locale time)</span>
+          <app-error [control]="form.get('startAt')"></app-error>
+        </label>
         <div class="ui input large">
           <input class="form-control" type="time" step="60" formControlName="startAt"/>
         </div>
       </div>
 
       <div class="field" [class.error]="form.get('duration').touched && form.get('duration').invalid">
-        <label>Duration</label>
+        <label>
+          <span>Duration</span>
+          <app-error [control]="form.get('duration')"></app-error>
+        </label>
         <div class="ui input large">
           <input class="form-control" formControlName="duration"/>
         </div>
@@ -34,7 +46,10 @@
 
 
     <div class="field" [class.error]="form.get('users').touched && form.get('users').invalid">
-      <label>Participants</label>
+      <label>
+        <span>Participants</span>
+        <app-error [control]="form.get('users')"></app-error>
+      </label>
       <div class="ui input large">
         <select class="form-control" formControlName="users" multiple="multiple">
           <option *ngFor="let user of (users$ | async)" [value]="user">{{ user.name }}</option>
@@ -43,7 +58,10 @@
     </div>
 
     <div class="field" [class.error]="form.get('reportChannel').touched && form.get('reportChannel').invalid">
-      <label>Report channel</label>
+      <label>
+        <span>Report channel</span>
+        <app-error [control]="form.get('reportChannel')"></app-error>
+      </label>
       <div class="ui input large">
         <input class="form-control" formControlName="reportChannel"/>
       </div>
@@ -59,13 +77,19 @@
     <h3 class="ui header">.</h3>
 
     <div class="field">
-      <label>Questions</label>
+      <label>
+        <span>Questions</span>
+        <app-error [control]="questionsControl"></app-error>
+      </label>
     </div>
 
-    <div>
+    <div *ngFor="let questionControl of questionsControl.controls" class="field">
       <div class="ui action left icon input large">
-        <input class="form-control"/>
-        <div class="ui icon button teal" title="Add options" (click)="addOption()">
+        <label>
+          <app-error [control]="questionControl.get('text')"></app-error>
+        </label>
+        <input class="form-control" [formControl]="questionControl.get('text')"/>
+        <div class="ui icon button teal" title="Add options" (click)="addOption(questionControl.get('options'))">
           <i class="icon list ol"></i>
         </div>
         <div class="ui icon button" (click)="remove()">
@@ -73,10 +97,10 @@
         </div>
       </div>
       <div class="question-options">
-        <div *ngFor="let option of options">
+        <div *ngFor="let option of questionControl.get('options').controls">
           <div class=" ui input action mini">
-            <input class="form-control" required minlength=2/>
-            <div class="ui icon button" (click)="removeOption(option)">
+            <input class="form-control" [formControl]="option" required minlength=2/>
+            <div class="ui icon button" (click)="removeOption(questionControl.get('options'), option)">
               <i class="icon trash"></i>
             </div>
           </div>

@@ -29,4 +29,8 @@ export class SessionService {
   auth() {
     return this.user$;
   }
+
+  logout() {
+    return this.authService.logout()
+  }
 }

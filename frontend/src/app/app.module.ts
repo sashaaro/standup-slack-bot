@@ -12,6 +12,7 @@ import { TeamComponent } from './pages/team/team.component';
 import { CreateTeamComponent } from './pages/team/create-team/create-team.component';
 import {ReactiveFormsModule} from "@angular/forms";
 import {AuthorizedGuard} from "./guard/authorized.guard";
+import { ErrorComponent } from './component/error/error.component';
 
 @NgModule({
   declarations: [
@@ -21,6 +22,7 @@ import {AuthorizedGuard} from "./guard/authorized.guard";
     WelcomeComponent,
     TeamComponent,
     CreateTeamComponent,
+    ErrorComponent,
   ],
   imports: [
     BrowserModule,

@@ -207,26 +207,25 @@ export class TeamController {
 
     const formData = new TeamFormDTO();
     let errors = [];
-    if (req.method === "POST") { // TODO check if standup in progress then not dave
-      errors = this.handleSubmitRequest(req, formData, team);
-      if (errors.length === 0) {
-        team.isEnabled = true;
-        await this.teamRepository.save(team);
-        // notification
-        res.redirect(`/team/${team.id}/edit`);
-        return;
-      }
+    errors = this.handleSubmitRequest(req, formData, team);
+    if (errors.length === 0) {
+      team.isEnabled = true;
+      await this.teamRepository.save(team);
+      // notification
+      res.send(team);
+    } else {
+      res.status(400);
+      res.send(errors); // TODO remove target
     }
 
-    res.send({
+/*    res.send({
       timezones: await this.availableTimezones(),
       users: await this.availableUsers(req),
       channels: await this.availableChannels(req),
       weekDays: weekDays,
-      activeMenu: 'settings',
       formData,
       errors: transformViewErrors(errors),
-    })
+    })*/
   }
 
   edit: IHttpAction = async (req, res) => {

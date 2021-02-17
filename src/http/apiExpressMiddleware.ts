@@ -59,14 +59,16 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
   const user = injector.get(UsersController);
 
   router.get('/auth/session', auto.session);
-  router.get('/auth/logout', auto.logout);
+  router.get('/auth/logout', auto.logout); // TODO DELETE /auth/session?!
   router.get('/auth', auto.auth);
-  router.all('/team/create', team.create);
+
+  router.post('/team', team.create);
+  router.get('/team', team.list);
+
   router.all('/team/:id', team.standups);
   router.all('/team/:id/edit', team.edit);
   router.all('/team/:id/stats', team.stats);
   router.put('/team/:id/isEnabled', team.putIsEnabled);
-  router.get('/team', team.list);
   router.get('/user', user.listByWorkspace);
 
   router.use((req: express.Request, res: express.Response, next) => {
@@ -82,6 +84,8 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
 
   const logger = injector.get(LOGGER_TOKEN);
   router.use((err, req, res, next) => {
+    logger.error("Catch express middleware error", {error: err})
+
     if (err instanceof AccessDenyError) {
       res.status(403);
 

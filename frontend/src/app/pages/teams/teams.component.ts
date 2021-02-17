@@ -7,7 +7,7 @@ import {TeamService} from "../../../api/auto";
   styleUrls: ['./teams.component.scss']
 })
 export class TeamsComponent implements OnInit {
-  teams$ = this.teamService.teamGet()
+  teams$ = this.teamService.getTeams()
   teams = []
 
   constructor(private teamService: TeamService) { }

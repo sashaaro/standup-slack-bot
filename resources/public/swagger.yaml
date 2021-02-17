@@ -31,6 +31,7 @@ paths:
     get:
       tags:
         - auth
+      operationId: logout
       responses:
         301:
           description: Redirect
@@ -42,6 +43,7 @@ paths:
     get:
       tags:
         - team
+      operationId: getTeams
       responses:
         200:
           description: Success
@@ -51,10 +53,35 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Team'
+    post:
+      tags:
+        - team
+      operationId: createTeam
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        400:
+          description: Fail
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValidationError'
   /user:
     get:
       tags:
         - user
+      operationId: getUsers
       responses:
         200:
           description: Success
@@ -85,3 +112,18 @@ components:
           type: string
         isEnabled:
           type: boolean
+    ValidationError:
+      type: object
+      properties:
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+        constraints:
+          type: object
+          additionalProperties:
+            type: string
+        property:
+          type: string
+        #value:
+        #  type: any
