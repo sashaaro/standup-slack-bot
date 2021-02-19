@@ -46,14 +46,15 @@ export class TeamFormComponent implements OnInit, OnChanges {
     });
 
     if ('team' in changes) {
-      if (this.form) {
+      if (this.team) {
         this.team.questions.forEach(q => {
           const questionControl = this.createQuestionControl()
           const optionsControl = questionControl.get('options') as FormArray
           q.options.forEach(o => optionsControl.push(this.createOptionControl()));
           this.questionsControl.push(questionControl)
         })
-        this.form.patchValue(this.team);
+        this.form.reset(this.team);
+        this.form.markAsPristine();
       } else {
         this.form.reset();
         this.questionsControl.push(this.createQuestionControl());
@@ -61,7 +62,10 @@ export class TeamFormComponent implements OnInit, OnChanges {
     }
   }
 
-  remove() {}
+  remove(qIndex: number) {
+    this.questionsControl.removeAt(qIndex);
+  }
+
   add() {
     this.questionsControl.push(
       this.createQuestionControl()
@@ -69,11 +73,11 @@ export class TeamFormComponent implements OnInit, OnChanges {
   }
 
   addOption(optionsControl: FormArray|any) {
-    optionsControl.push(new FormControl())
+    optionsControl.push(this.createOptionControl())
   }
 
-  removeOption(options: FormArray|any, optionControl: AbstractControl) {
-
+  removeOption(options: FormArray|any, index: number) {
+    options.removeAt(index)
   }
 
   submit() {

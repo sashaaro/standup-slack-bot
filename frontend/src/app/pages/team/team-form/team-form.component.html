@@ -2,7 +2,7 @@
   <div class="section">
     <mat-form-field appearance="outline" class="name">
       <mat-label>Name</mat-label>
-      <input matInput formControlName="name"/>
+      <input matInput autocomplete="off" formControlName="name"/>
       <mat-error>{{ form.get('name').errors }}</mat-error>
     </mat-form-field>
 
@@ -14,13 +14,13 @@
 
     <mat-form-field appearance="outline" class="start-at">
       <mat-label>Start meeting (locale time)</mat-label>
-      <input matInput type="time" step="60" formControlName="startAt"/>
+      <input matInput autocomplete="off" type="time" step="60" formControlName="startAt"/>
       <mat-error>{{ form.get('startAt').errors }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="duration">
       <mat-label>Duration</mat-label>
-      <input matInput formControlName="duration"/>
+      <input matInput autocomplete="off" formControlName="duration"/>
       <mat-error>{{ form.get('duration').errors }}</mat-error>
     </mat-form-field>
 
@@ -56,29 +56,40 @@
 
 
   <div class="section2">
-    <ng-container *ngFor="let questionControl of questionsControl.controls">
+    <ng-container *ngFor="let questionControl of questionsControl.controls; let qIndex = index">
       <mat-form-field appearance="outline" class="question">
-        <mat-label>Report channel</mat-label>
-        <input matInput [formControl]="questionControl.get('text')"/>
+        <mat-label>#{{ qIndex + 1 }}</mat-label>
+        <input matInput autocomplete="off" [formControl]="questionControl.get('text')"/>
+<!--        autocomplete-->
+        <button *ngIf="questionControl.get('options').length === 0" title="Add options" type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="addOption(questionControl.get('options'))">
+          <mat-icon>rule</mat-icon>
+        </button>
+        <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="remove(qIndex)">
+          <mat-icon>delete</mat-icon>
+        </button>
         <mat-error>{{ questionControl.errors }}</mat-error>
+        <mat-hint *ngIf="questionControl.get('text').dirty && questionControl.value.id">Be know Already exist question is changed. it would be effected charts</mat-hint>
       </mat-form-field>
 
       <div class="question-options">
-        <mat-form-field appearance="outline" *ngFor="let option of questionControl.get('options').controls" class="sm">
+        <mat-form-field appearance="outline" *ngFor="let option of questionControl.get('options').controls; let index = index" class="sm">
           <!--<mat-label>Question</mat-label>-->
-          <input matInput [formControl]="option.get('text')"/>
-          <mat-error (click)="removeOption(questionControl.get('options'), option)">{{ questionControl.errors }}</mat-error>
+          <input matInput autocomplete="off" [formControl]="option.get('text')"/>
+          <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="removeOption(questionControl.get('options'), index)">
+            <mat-icon>delete</mat-icon>
+          </button>
+          <mat-error>{{ questionControl.errors }}</mat-error>
         </mat-form-field>
 
 
-        <button class="add-option" color="primary" mat-flat-button (click)="addOption(questionControl.get('options'))">
+        <button *ngIf="questionControl.get('options').length > 0" type="button" class="add-option" color="primary" mat-flat-button (click)="addOption(questionControl.get('options'))">
           <i class="icon save"></i> Add option
         </button>
       </div>
 
     </ng-container>
 
-    <button class="add-question" color="primary" mat-flat-button (click)="add()">
+    <button type="button" class="add-question" color="primary" mat-flat-button (click)="add()">
       <i class="icon save"></i> Add question
     </button>
   </div>
