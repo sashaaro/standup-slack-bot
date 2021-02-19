@@ -285,18 +285,43 @@ export class TeamController {
     })
   }
 
-  putIsEnabled: IHttpAction = async (req, res) => {
+  get: IHttpAction = async (req, res) => {
     if (!req.context.user) {
       throw new AccessDenyError();
     }
 
     const id = parseInt(req.params.id)
-    if (!(id && isBoolean(req.body.isEnabled))) {
+    if (!id) {
       throw new BadRequestError();
     }
 
-    await this.teamRepository.update({id: id}, {isEnabled: req.body.isEnabled})
+    const team = await this.teamRepository.findOne(id);
+    if (!team) {
+      throw new BadRequestError();
+    }
 
+    res.send(team);
+    res.sendStatus(200);
+  }
+
+  toggle: IHttpAction = async (req, res) => {
+    if (!req.context.user) {
+      throw new AccessDenyError();
+    }
+
+    const id = parseInt(req.params.id)
+    if (!id) {
+      throw new BadRequestError();
+    }
+
+    const team = await this.teamRepository.findOne(id);
+    if (!team) {
+      throw new BadRequestError();
+    }
+
+    await this.teamRepository.update({id: team.id}, {isEnabled: !team.isEnabled})
+
+    res.send(team);
     res.sendStatus(204);
   }
 
@@ -361,7 +386,6 @@ export class TeamController {
     res.send({
       //standUpList,
       standUps,
-      activeMenu: 'reports',
       pageCount
     });
   }

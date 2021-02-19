@@ -1,13 +1,22 @@
+@import "~@ng-select/ng-select/themes/default.theme.css";
+
 /* You can add global styles to this file, and also import other style files */
-body {
-  background-color: #f2f2f2;
-}
+//body {
+//  background-color: #f2f2f2;
+//  margin: 0;
+//  height: 100%;
+//  font-family: Roboto;
+//}
 
 .content {
   width: 1127px;
   padding-top: 10px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.mat-form-field-appearance-outline.sm .mat-form-field-infix {
+  padding: 0.3em 0 0.7em 0;
 }
 
 .item.item--logo {
@@ -20,14 +29,6 @@ body {
 
 .movable-input .movable {
   margin-left: 5px;
-}
-
-.question-options {
-  padding-left: 50px;
-}
-
-.question-options > div {
-  padding-top: 20px;
 }
 
 .icon {
@@ -362,4 +363,11 @@ code {
 
 .field label .error {
   float: right;
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background-color: #f2f2f2;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
 }

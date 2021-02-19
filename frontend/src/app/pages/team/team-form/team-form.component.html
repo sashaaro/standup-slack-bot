@@ -1,0 +1,85 @@
+<form [formGroup]="form">
+  <div class="section">
+    <mat-form-field appearance="outline" class="name">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name"/>
+      <mat-error>{{ form.get('name').errors }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="timezone">
+      <mat-label>Locale timezone</mat-label>
+      <input matInput formControlName="timezone"/>
+      <mat-error>{{ form.get('timezone').errors }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="start-at">
+      <mat-label>Start meeting (locale time)</mat-label>
+      <input matInput type="time" step="60" formControlName="startAt"/>
+      <mat-error>{{ form.get('startAt').errors }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="duration">
+      <mat-label>Duration</mat-label>
+      <input matInput formControlName="duration"/>
+      <mat-error>{{ form.get('duration').errors }}</mat-error>
+    </mat-form-field>
+
+
+    <mat-form-field appearance="outline" class="users">
+      <mat-label>Participants</mat-label>
+      <input [matChipInputFor]="chipList">
+      <mat-chip-list formControlName="users" #chipList>
+        <mat-chip *ngFor="let user of (users$ | async)" [value]="user">
+          <img [src]="user.profile.image_24"/>
+          {{ user.name }}
+          <mat-icon matChipRemove>cancel</mat-icon>
+        </mat-chip>
+      </mat-chip-list>
+      <mat-error>{{ form.get('name').errors }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="channel">
+      <mat-label>Report channel</mat-label>
+      <mat-select formControlName="reportChannel">
+        <mat-option *ngFor="let user of (users$ | async)" [value]="user">
+          <img [src]="user.profile.image_24"/>
+          {{ user.name }}
+        </mat-option>
+      </mat-select>
+      <mat-error>{{ form.get('reportChannel').errors }}</mat-error>
+    </mat-form-field>
+
+    <button class="save" color="primary" mat-flat-button [class.loading]="submitting" (click)="submit()">
+      <i class="icon save"></i> Save
+    </button>
+  </div>
+
+
+  <div class="section2">
+    <ng-container *ngFor="let questionControl of questionsControl.controls">
+      <mat-form-field appearance="outline" class="question">
+        <mat-label>Report channel</mat-label>
+        <input matInput [formControl]="questionControl.get('text')"/>
+        <mat-error>{{ questionControl.errors }}</mat-error>
+      </mat-form-field>
+
+      <div class="question-options">
+        <mat-form-field appearance="outline" *ngFor="let option of questionControl.get('options').controls" class="sm">
+          <!--<mat-label>Question</mat-label>-->
+          <input matInput [formControl]="option.get('text')"/>
+          <mat-error (click)="removeOption(questionControl.get('options'), option)">{{ questionControl.errors }}</mat-error>
+        </mat-form-field>
+
+
+        <button class="add-option" color="primary" mat-flat-button (click)="addOption(questionControl.get('options'))">
+          <i class="icon save"></i> Add option
+        </button>
+      </div>
+
+    </ng-container>
+
+    <button class="add-question" color="primary" mat-flat-button (click)="add()">
+      <i class="icon save"></i> Add question
+    </button>
+  </div>
+</form>

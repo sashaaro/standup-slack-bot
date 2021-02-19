@@ -1,0 +1,83 @@
+form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-column-gap: 30px;
+}
+.section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template:
+    "name name"
+    "timezone timezone"
+    "start-at duration"
+    "users users"
+    "channel channel"
+;
+
+  grid-column-gap: 20px;
+  grid-row-gap: 0px;
+}
+
+.name {
+  grid-area: name;
+}
+
+.add-option {
+  width: 100%;
+  line-height: 28px;
+}
+
+.save, .add-question {
+  width: 100%;
+
+  line-height: 46px;
+}
+
+.question-options {
+  padding-left: 50px;
+}
+
+.question-options > div {
+  padding-top: 20px;
+}
+
+.timezone {
+  grid-area: timezone;
+}
+
+.start-at {
+  grid-area: start-at;
+}
+
+.duration {
+  grid-area: duration;
+}
+.users {
+  grid-area: users;
+}
+
+.channel {
+  grid-area: channel;
+}
+
+ng-select {
+  width: 100%;
+}
+
+.section2 {
+  mat-form-field {
+    width: 100%;
+  }
+
+  //  display: grid;
+  //  grid-template-columns: 1fr 1fr;
+  //  grid-template:
+  //    "report report"
+  //;
+  //
+  //  grid-column-gap: 20px;
+}
+//
+//.report {
+//  grid-area: report;
+//}

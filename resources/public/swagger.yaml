@@ -77,6 +77,70 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ValidationError'
+  /team/{id}:
+    get:
+      tags:
+        - team
+      operationId: getTeam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+    put:
+      tags:
+        - team
+      operationId: updateTeam
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+  /team/{id}/toggle:
+    patch:
+      tags:
+        - team
+      operationId: toggle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
   /user:
     get:
       tags:
@@ -112,6 +176,38 @@ components:
           type: string
         isEnabled:
           type: boolean
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+    Question:
+      type: object
+      properties:
+        id:
+          type: integer
+        index:
+          type: integer
+        text:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/Option'
+        isEnabled:
+          type: boolean
+        createdAt:
+          type: date
+    Option:
+      type: object
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        updatedAt:
+          type: date
+        createdAt:
+          type: date
     ValidationError:
       type: object
       properties:

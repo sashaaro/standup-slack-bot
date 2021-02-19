@@ -9,13 +9,15 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { Question } from './question';
+import { Option } from './option';
 
 
-export interface Team { 
+export interface Question { 
     id?: number;
-    title?: string;
+    index?: number;
+    text?: string;
+    options?: Array<Option>;
     isEnabled?: boolean;
-    questions?: Array<Question>;
+    createdAt?: string;
 }
 

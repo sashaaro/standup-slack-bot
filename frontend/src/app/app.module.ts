@@ -10,9 +10,21 @@ import { TeamsComponent } from './pages/teams/teams.component';
 import { WelcomeComponent } from './pages/welcome/welcome.component';
 import { TeamComponent } from './pages/team/team.component';
 import { CreateTeamComponent } from './pages/team/create-team/create-team.component';
-import {ReactiveFormsModule} from "@angular/forms";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {AuthorizedGuard} from "./guard/authorized.guard";
 import { ErrorComponent } from './component/error/error.component';
+import {NgSelectModule} from "@ng-select/ng-select";
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import {MatFormFieldModule} from "@angular/material/form-field";
+import {MatAutocompleteModule} from "@angular/material/autocomplete";
+import {MatInputModule} from "@angular/material/input";
+import {MatSelectModule} from "@angular/material/select";
+import {MatButtonModule} from "@angular/material/button";
+import {MatChipsModule} from "@angular/material/chips";
+import {MatIconModule} from "@angular/material/icon";
+import {MatSlideToggleModule} from "@angular/material/slide-toggle";
+import {EditTeamComponent} from "./pages/team/edit-team/edit-team.component";
+import { TeamFormComponent } from './pages/team/team-form/team-form.component';
 
 @NgModule({
   declarations: [
@@ -23,13 +35,26 @@ import { ErrorComponent } from './component/error/error.component';
     TeamComponent,
     CreateTeamComponent,
     ErrorComponent,
+    EditTeamComponent,
+    TeamFormComponent
   ],
   imports: [
     BrowserModule,
     HttpClientModule,
     ApiModule,
     AppRoutingModule,
+    FormsModule,
     ReactiveFormsModule,
+    NgSelectModule,
+    BrowserAnimationsModule,
+    MatFormFieldModule,
+    MatAutocompleteModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatChipsModule,
+    MatIconModule,
+    MatSlideToggleModule
   ],
   providers: [
     {

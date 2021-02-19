@@ -64,11 +64,10 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
 
   router.post('/team', team.create);
   router.get('/team', team.list);
-
-  router.all('/team/:id', team.standups);
+  router.get('/team/:id', team.get);
   router.all('/team/:id/edit', team.edit);
   router.all('/team/:id/stats', team.stats);
-  router.put('/team/:id/isEnabled', team.putIsEnabled);
+  router.patch('/team/:id/toggle', team.toggle);
   router.get('/user', user.listByWorkspace);
 
   router.use((req: express.Request, res: express.Response, next) => {

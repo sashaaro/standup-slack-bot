@@ -10,6 +10,8 @@ encoder.ts
 git_push.sh
 index.ts
 model/models.ts
+model/option.ts
+model/question.ts
 model/team.ts
 model/user.ts
 model/validationError.ts

@@ -1,15 +1,14 @@
-<div *ngIf="teams.length === 0" class="no-stand-ups">No teams🐥<i class="icon bee"></i></div>
+<div *ngIf="(teams$ | async)?.length === 0" class="no-stand-ups">No teams🐥<i class="icon bee"></i></div>
 
 <div class="team-list">
-  <div *ngFor="let team of teams" class="team" [class.team--disabled]="!team.isEnabled">
+  <div *ngFor="let team of (teams$ | async)" class="team" [class.team--disabled]="!team.isEnabled">
     <div class="team__header">
       <a class="team__title">
         {{team.name}}
         <span>{{ "(" + team.users?.length +  " participants)" }}</span>
       </a>
       <div class="ui toggle checkbox">
-        <input type="checkbox" [checked]="team.isEnabled"/>
-        <label>Activate</label>
+        <mat-slide-toggle [checked]="team.isEnabled" (change)="toggle($event, team)" title="Activate"></mat-slide-toggle>
       </div>
     </div>
     <div class="team__content">
@@ -28,7 +27,9 @@
       </div>
     </div>
     <div class="team__actions">
-      <a class="ui right floated primary button" [routerLink]="'/team/' + team.id + '/edit'">Edit settings</a>
+      <button class="save" color="primary" mat-flat-button [routerLink]="'/team/' + team.id + '/edit'">
+        <i class="icon save"></i> Edit settings
+      </button>
     </div>
   </div>
 </div>
