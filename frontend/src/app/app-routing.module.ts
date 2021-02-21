@@ -5,6 +5,7 @@ import {CreateTeamComponent} from "./pages/team/create-team/create-team.componen
 import {AuthorizedGuard} from "./guard/authorized.guard";
 import {WelcomeComponent} from "./pages/welcome/welcome.component";
 import {EditTeamComponent} from "./pages/team/edit-team/edit-team.component";
+import {StandupsComponent} from "./pages/standups/standups.component";
 
 const routes: Routes = [
   {
@@ -25,6 +26,11 @@ const routes: Routes = [
   {
     path: 'team/:id/edit',
     component: EditTeamComponent,
+    canActivate: [AuthorizedGuard]
+  },
+  {
+    path: 'team/:id/standups',
+    component: StandupsComponent,
     canActivate: [AuthorizedGuard]
   }
 ];

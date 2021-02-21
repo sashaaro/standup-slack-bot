@@ -16,7 +16,7 @@ export class StandupController {
       throw new AccessDenyError();
     }
 
-    const id = req.params.id
+    const teamID = req.params.id
 
 
     const standUpRepository = this.connection.getRepository(StandUp);
@@ -31,16 +31,19 @@ export class StandupController {
       .orderBy('st.endAt', 'DESC')
       .andWhere('st.endAt IS NOT NULL')
       .andWhere('userAnswer.standUp = st.id')
-      .andWhere('team.id = :teamID', {teamID: id})
+      //.andWhere('team.id = :teamID', {teamID})
 
-    const recordsPerPage = 3
+    let limit = parseInt(req.query.limit as string) || 3;
+    if (limit > 10) {
+      limit = 10;
+    }
     const page = parseInt(req.query.page as string) || 1;
 
-    const standUpsTotal = await qb.getCount();
+    const total = await qb.getCount();
 
     const standUps = await qb
-      .skip((page - 1) * recordsPerPage) // use offset method?!
-      .take(recordsPerPage) // use limit method?!
+      .skip((page - 1) * limit) // use offset method?!
+      .take(limit) // use limit method?!
       .getMany();
 
 
@@ -67,13 +70,10 @@ export class StandupController {
       })
     }*/
 
-    const pageCount = Math.ceil(standUpsTotal / recordsPerPage)
+    res.setHeader( 'X-Total', total)
+    res.setHeader('Access-Control-Allow-Headers', 'x-total')
 
-    res.send({
-      //standUpList,
-      standUps,
-      pageCount
-    });
+    res.send(standUps); // TODO hide accessToken!!
   }
 
 }

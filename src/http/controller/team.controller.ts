@@ -1,4 +1,3 @@
-import StandUp from "../../model/StandUp";
 import {Inject, Injectable} from 'injection-js';
 import {Connection} from "typeorm";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../apiExpressMiddleware";
@@ -88,7 +87,9 @@ export class TeamController {
       .leftJoinAndSelect('t.timezone', 'tz')
       .leftJoinAndSelect('t.createdBy', 'createdBy')
       .leftJoinAndSelect('t.users', 'users')
-      //.andWhere('t.createdBy = :craetedBy', {craetedBy: req.context.user})
+      // TODO .andWhere('t.createdBy = :craetedBy', {craetedBy: req.context.user})
+      .orderBy({'t.isEnabled': "DESC"})
+      // TODO desc createdAt
       .getMany()
 
     res.setHeader('Content-Type', 'application/json');

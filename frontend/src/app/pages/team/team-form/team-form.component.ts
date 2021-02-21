@@ -1,7 +1,6 @@
 import {
-  AfterContentInit, AfterViewInit,
+  AfterViewInit,
   Component,
-  ElementRef,
   Input,
   OnChanges,
   OnInit, QueryList,
@@ -9,7 +8,6 @@ import {
   ViewChildren
 } from '@angular/core';
 import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
-import {log} from "../../../operator/log";
 import {
   ChannelService,
   Team,
@@ -84,7 +82,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
      switchMap(questionId => NEVER)
    )
 
-  openOptionsIds = [];
+  openOptionsControls = [];
 
   constructor(
     private fb: FormBuilder,
@@ -192,11 +190,11 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     control.patchValue({text: event.value.trim()});
     optionsControl.push(control);
     event.input.value = '';
-    const index = this.openOptionsIds.indexOf(
+    const index = this.openOptionsControls.indexOf(
       optionsControl.parent.get('id').value
     )
     if (index !== -1) {
-      this.openOptionsIds.splice(index, 1);
+      this.openOptionsControls.splice(index, 1);
     }
   }
 
@@ -206,15 +204,15 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     if (this.form.invalid) {
       // TODO return
     }
-    const value = this.form.value;
+    const value = {...this.form.value};
 
     value.duration = Number.parseInt(value.duration, 10);
-    console.log(Array.isArray(value.questions))
-    console.log(value.questions.forEach)
-    for (const child of value.questions) {
-      console.log(child);
-    }
-    value.questions.forEach((q, i) => {q.index = i})
+
+    console.log(this.questionsControl.value)
+    value.questions = this.questionsControl.value.map((q, i) => {
+      q.index = i;
+      return q;
+    })
 
     (this.team ?
       this.teamService.updateTeam(this.team.id, value) :
@@ -248,7 +246,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   private createOptionControl() {
     return this.fb.group({
       id: this.fb.control(null),
-      text: this.fb.control(null, Validators.required),
+      text: this.fb.control(null, [Validators.required, Validators.minLength(1)]),
     });
   }
 

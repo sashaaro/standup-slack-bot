@@ -77,7 +77,7 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
   router.patch('/team/:id/toggle', team.toggle);
   router.get('/user', user.listByWorkspace);
   router.get('/channel', channel.listByWorkspace);
-  router.get('/standup', standup.list);
+  router.get('/team/:id/standup', standup.list);
   router.get('/option/history/:questionId', option.history);
 
   router.use((req: express.Request, res: express.Response, next) => {

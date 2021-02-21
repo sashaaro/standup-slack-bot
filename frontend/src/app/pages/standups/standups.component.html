@@ -1,0 +1,17 @@
+<div class="no-stand-ups">
+  No meetings
+  <i class="icon bee"></i>
+</div>
+<div class="stand-up-list">
+  <div class="stand-up" *ngFor="let standup of standups$|async">
+    <div class="stand-up__header">
+      {{ standup.startAt }}
+    </div>
+    <div class="stand-up__content">
+      <div class="stand-up-item">
+        11
+        <!--<div *ngIf="let user of standup.team.users"></div>-->
+      </div>
+    </div>
+  </div>
+</div>

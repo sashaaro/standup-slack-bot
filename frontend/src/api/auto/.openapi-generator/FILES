@@ -4,6 +4,7 @@ api.module.ts
 api/api.ts
 api/auth.service.ts
 api/channel.service.ts
+api/standup.service.ts
 api/team.service.ts
 api/timezone.service.ts
 api/user.service.ts
@@ -15,6 +16,7 @@ model/channel.ts
 model/models.ts
 model/option.ts
 model/question.ts
+model/standup.ts
 model/team.ts
 model/timezone.ts
 model/timezoneUtcOffset.ts

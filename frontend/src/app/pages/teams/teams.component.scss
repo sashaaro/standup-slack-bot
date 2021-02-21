@@ -1,0 +1,165 @@
+@import "../../../mixin";
+
+.team {
+  @include card;
+  @include clearfix;
+
+  position: relative;
+
+  &--disabled {
+    opacity: 0.3;
+    a {
+      pointer-events: none;
+      cursor: default;
+    }
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 15px;
+  }
+
+  &__title {
+    font-weight: 700;
+    font-size: 24px;
+    span {
+      font-weight: normal;
+      font-size: 18px;
+      color: initial;
+      margin-left: 10px;
+    }
+  }
+
+  &__content {
+    display: flex;
+    justify-content: space-between;
+    margin-right: 150px;
+  }
+
+  &__info {
+    & > div {
+      margin-bottom: 10px;
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  &__time {
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  &__actions {
+    position: absolute;
+    right: 24px;
+    bottom: 20px;
+  }
+
+  &__users {
+    display: flex;
+    padding-left: 30px;
+    max-width: 200px;
+    overflow-x: hidden;
+  }
+
+  &__user {
+    margin-left: -30px;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    border: 4px white solid
+  }
+
+  &__created {
+    font-size: 16px;
+  }
+
+  margin-bottom: 18px;
+}
+
+.stand-up {
+  box-sizing: border-box;
+
+  &__header {
+    @include card;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 20px;
+
+    border-bottom: 1px rgba(34,36,38,.1) solid;
+  }
+
+  &__content {
+    @include card;
+    padding-top: 5;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  margin-bottom: 15px;
+}
+
+.stand-up-item {
+  display: flex;
+  justify-content: space-between;
+
+  &__content {
+    display: flex;
+    margin-bottom: 22px;
+  }
+
+  &__name {
+    font-weight: bold;
+    font-size: 24px;
+    margin-left: 10px;
+    margin-top: 12px;
+  }
+
+  &__result {
+    margin-bottom: 20px;
+    padding-left: 12px;
+    border-left: 4px solid;
+    /* https://semantic-ui.com/usage/theming.html*/
+    &--0 {
+      border-left-color: #00a6a6;
+    }
+    &--1 {
+      border-left-color: #0E6EB8;
+    }
+    &--2 {
+      border-left-color: #EE82EE;
+    }
+    &--3 {
+      border-left-color: #016936;
+    }
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__question {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  &__answer {
+    font-size: 16px;
+    font-style: italic;
+  }
+
+  margin-bottom: 10px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+}

@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 
 import { AuthService } from './api/auth.service';
 import { ChannelService } from './api/channel.service';
+import { StandupService } from './api/standup.service';
 import { TeamService } from './api/team.service';
 import { TimezoneService } from './api/timezone.service';
 import { UserService } from './api/user.service';

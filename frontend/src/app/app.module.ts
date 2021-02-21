@@ -28,6 +28,7 @@ import { TeamFormComponent } from './pages/team/team-form/team-form.component';
 import { FormatTimezonePipe } from './pipe/format-timezone.pipe';
 import {DragDropModule} from "@angular/cdk/drag-drop";
 import {ContenteditableDirective} from "./component/contenteditable.directive";
+import { StandupsComponent } from './pages/standups/standups.component';
 
 @NgModule({
   declarations: [
@@ -42,6 +43,7 @@ import {ContenteditableDirective} from "./component/contenteditable.directive";
     TeamFormComponent,
     FormatTimezonePipe,
     ContenteditableDirective,
+    StandupsComponent,
   ],
   imports: [
     BrowserModule,
