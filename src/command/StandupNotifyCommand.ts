@@ -41,7 +41,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     await redisReady(this.redis);
 
     this.standUpBotService.finishStandUp$.subscribe((standUp: StandUp) => {
-      if (standUp.team.reportSlackChannel) {
+      if (standUp.team.reportChannel) {
         this.slackTransport.sendReport(standUp)
       }
     });

@@ -1,11 +1,16 @@
 import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {log} from "../../../operator/log";
-import {Team, TeamService, UserService, ValidationError} from "../../../../api/auto";
-import {untilDestroyed} from "@ngneat/until-destroy";
+import {ChannelService, Team, TeamService, TimezoneService, UserService, ValidationError} from "../../../../api/auto";
+import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Router} from "@angular/router";
 
+export const weekDays = [
+  'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
+];
+
+@UntilDestroy()
 @Component({
   selector: 'app-team-form',
   templateUrl: './team-form.component.html',
@@ -19,7 +24,7 @@ export class TeamFormComponent implements OnInit, OnChanges {
   form = this.fb.group({
     name: [null, Validators.required],
     timezone: [null, Validators.required],
-    startAt: [null, Validators.required],
+    start: [null, Validators.required],
     duration: [null, Validators.required],
     users: [null],
     reportChannel: [null],
@@ -29,11 +34,15 @@ export class TeamFormComponent implements OnInit, OnChanges {
   submitting = false;
 
   users$ = this.userService.getUsers()
+  timezones$ = this.timezoneService.getTimezones()
+  channels$ = this.channelService.getChannels()
 
   constructor(
     private fb: FormBuilder,
     private userService: UserService,
     private teamService: TeamService,
+    private timezoneService: TimezoneService,
+    private channelService: ChannelService,
     private router: Router
   ) {
   }
@@ -52,7 +61,8 @@ export class TeamFormComponent implements OnInit, OnChanges {
           const optionsControl = questionControl.get('options') as FormArray
           q.options.forEach(o => optionsControl.push(this.createOptionControl()));
           this.questionsControl.push(questionControl)
-        })
+        });
+
         this.form.reset(this.team);
         this.form.markAsPristine();
       } else {
@@ -139,5 +149,9 @@ export class TeamFormComponent implements OnInit, OnChanges {
         }
       }
     })
+  }
+
+  compareWithById(a, b) {
+    return a.id === b.id;
   }
 }

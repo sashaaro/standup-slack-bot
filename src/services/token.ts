@@ -1,5 +1,5 @@
 import {InjectionToken} from 'injection-js';
-import {IAppConfig, RenderFn} from "./providers";
+import {IAppConfig} from "./providers";
 import {Queue} from "bull";
 import {Redis} from "ioredis";
 import express from 'express'

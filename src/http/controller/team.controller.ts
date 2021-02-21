@@ -3,7 +3,6 @@ import {Inject, Injectable} from 'injection-js';
 import {Connection} from "typeorm";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../apiExpressMiddleware";
 import User from "../../model/User";
-import {RenderFn} from "../../services/providers";
 import {IHttpAction} from "./index";
 import Timezone from "../../model/Timezone";
 import {Expose, plainToClassFromExist, Transform, Type} from "class-transformer";
@@ -21,7 +20,6 @@ import {
 } from "class-validator";
 import Question from "../../model/Question";
 import {Team} from "../../model/Team";
-import {Channel} from "../../model/Channel";
 import {Request} from "express";
 import QuestionOption from "../../model/QuestionOption";
 import {TransformFnParams} from "class-transformer/types/interfaces";
@@ -56,10 +54,6 @@ class QuestionFormDTO {
 }
 
 
-export const weekDays = [
-  'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
-];
-
 export class TeamFormDTO {
   @Expose()
   @IsNotEmpty()
@@ -90,7 +84,7 @@ export class TeamFormDTO {
   receivers: string[] = [];
   @IsNotEmpty()
   @Type(() => String)
-  reportSlackChannel: string
+  reportChannel: string
 }
 
 export const transformViewErrors = (errors: ValidationError[], err?: any[]) => {
@@ -113,24 +107,6 @@ export class TeamController {
   ) {
   }
 
-  private async availableChannels(req: Request): Promise<Channel[]> {
-    return await this.connection.getRepository(Channel).find({
-      workspace: req.context.user.workspace,
-      isEnabled: true,
-      isArchived: false
-    });
-  }
-
-  private async availableUsers(req: Request): Promise<User[]> {
-    return await this.connection.getRepository(User).find({
-      workspace: req.context.user.workspace
-    })
-  }
-
-  private async availableTimezones(): Promise<Timezone[]> {
-    return await this.connection.getRepository(Timezone).find();
-  }
-
   private handleSubmitRequest(req: Request, formData: TeamFormDTO, team: Team): ValidationError[]
   {
     plainToClassFromExist(formData, req.body);
@@ -142,7 +118,7 @@ export class TeamController {
     team.name = formData.name;
     team.start = formData.start;
     team.duration = formData.duration;
-    team.reportSlackChannel = formData.reportSlackChannel;
+    team.reportChannel = formData.reportChannel;
     team.users = (formData.receivers || []).map(r => this.connection.manager.create(User, {id: r}));
 
     const questions = team.questions;
@@ -274,15 +250,19 @@ export class TeamController {
       //formData.questions = channel.questions.map(q => Object.assign(new QuestionFormDTO(), q))
     }
 
-    res.send({
-      timezones: await this.availableTimezones(),
-      users: await this.availableUsers(req),
-      channels: await this.availableChannels(req),
-      weekDays,
-      activeMenu: 'settings',
-      formData,
-      errors: transformViewErrors(errors),
-    })
+    res.setHeader('Content-Type', 'application/json');
+    if (errors.length === 0) {
+      res.send(team);
+      res.sendStatus(204);
+    } else {
+      res.send(errors); // transformViewErrors()
+      res.sendStatus(400);
+    }
+  }
+
+  timezone: IHttpAction = async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(await this.connection.getRepository(Timezone).find())
   }
 
   get: IHttpAction = async (req, res) => {
@@ -295,7 +275,7 @@ export class TeamController {
       throw new BadRequestError();
     }
 
-    const team = await this.teamRepository.findOne(id);
+    const team = await this.teamRepository.findOne(id, {relations: ['timezone', 'reportChannel']});
     if (!team) {
       throw new BadRequestError();
     }

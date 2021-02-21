@@ -8,14 +8,16 @@
 
     <mat-form-field appearance="outline" class="timezone">
       <mat-label>Locale timezone</mat-label>
-      <input matInput formControlName="timezone"/>
+      <mat-select formControlName="timezone" [compareWith]="compareWithById">
+        <mat-option *ngFor="let timezone of (timezones$ | async)" [value]="timezone">{{ timezone | formatTimezone }}</mat-option>
+      </mat-select>
       <mat-error>{{ form.get('timezone').errors }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="start-at">
       <mat-label>Start meeting (locale time)</mat-label>
-      <input matInput autocomplete="off" type="time" step="60" formControlName="startAt"/>
-      <mat-error>{{ form.get('startAt').errors }}</mat-error>
+      <input matInput autocomplete="off" type="time" step="60" formControlName="start"/>
+      <mat-error>{{ form.get('start').errors }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="duration">
@@ -35,16 +37,13 @@
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
       </mat-chip-list>
-      <mat-error>{{ form.get('name').errors }}</mat-error>
+      <mat-error>{{ form.get('users').errors }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="channel">
       <mat-label>Report channel</mat-label>
-      <mat-select formControlName="reportChannel">
-        <mat-option *ngFor="let user of (users$ | async)" [value]="user">
-          <img [src]="user.profile.image_24"/>
-          {{ user.name }}
-        </mat-option>
+      <mat-select formControlName="reportChannel" [compareWith]="compareWithById">
+        <mat-option *ngFor="let channel of (channels$ | async)" [value]="channel">{{ channel.name }}</mat-option>
       </mat-select>
       <mat-error>{{ form.get('reportChannel').errors }}</mat-error>
     </mat-form-field>

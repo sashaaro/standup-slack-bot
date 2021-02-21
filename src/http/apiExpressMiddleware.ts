@@ -9,7 +9,8 @@ import {LOGGER_TOKEN, REDIS_TOKEN} from "../services/token";
 import {AuthController} from "./controller/auth.controller.";
 import http from "http";
 import {TeamController} from "./controller/team.controller";
-import {UsersController} from "./controller/users.controller";
+import {UserController} from "./controller/user.controller";
+import {ChannelController} from "./controller/channel.controller";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -56,7 +57,8 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
 
   const auto = injector.get(AuthController);
   const team = injector.get(TeamController);
-  const user = injector.get(UsersController);
+  const user = injector.get(UserController);
+  const channel = injector.get(ChannelController);
 
   router.get('/auth/session', auto.session);
   router.get('/auth/logout', auto.logout); // TODO DELETE /auth/session?!
@@ -65,10 +67,12 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
   router.post('/team', team.create);
   router.get('/team', team.list);
   router.get('/team/:id', team.get);
-  router.all('/team/:id/edit', team.edit);
+  router.put('/team/:id', team.edit);
+  router.get('/timezone', team.timezone);
   router.all('/team/:id/stats', team.stats);
   router.patch('/team/:id/toggle', team.toggle);
   router.get('/user', user.listByWorkspace);
+  router.get('/channel', channel.listByWorkspace);
 
   router.use((req: express.Request, res: express.Response, next) => {
     res.status(404);

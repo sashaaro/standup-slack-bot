@@ -115,12 +115,20 @@ paths:
             format: int64
             minimum: 1
       responses:
-        200:
+        204:
           description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Team'
+        400:
+          description: Fail
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValidationError'
   /team/{id}/toggle:
     patch:
       tags:
@@ -155,6 +163,34 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+  /timezone:
+    get:
+      tags:
+        - timezone
+      operationId: getTimezones
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Timezone'
+  /channel:
+    get:
+      tags:
+        - channel
+      operationId: getChannels
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Channel'
 components:
   schemas:
     User:
@@ -176,6 +212,10 @@ components:
           type: string
         isEnabled:
           type: boolean
+        timezone:
+          $ref: '#/components/schemas/Timezone'
+        reportChannel:
+          $ref: '#/components/schemas/Channel'
         questions:
           type: array
           items:
@@ -223,3 +263,28 @@ components:
           type: string
         #value:
         #  type: any
+    Timezone:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: integer
+          format: int64
+        utc_offset:
+          type: object
+          properties:
+            hours:
+              type: integer
+            minutes:
+              type: integer
+    Channel:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: integer
+          format: int64

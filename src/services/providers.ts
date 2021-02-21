@@ -54,7 +54,6 @@ export interface IAppConfig {
   logDir?: string
 }
 
-export type RenderFn = (templateName: string, params?: object) => string;
 
 const migrationDir = __dirname + '/../migration';
 const defaultConnectionOptions: ConnectionOptions = {

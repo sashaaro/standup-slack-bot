@@ -1,7 +1,11 @@
 export * from './auth.service';
 import { AuthService } from './auth.service';
+export * from './channel.service';
+import { ChannelService } from './channel.service';
 export * from './team.service';
 import { TeamService } from './team.service';
+export * from './timezone.service';
+import { TimezoneService } from './timezone.service';
 export * from './user.service';
 import { UserService } from './user.service';
-export const APIS = [AuthService, TeamService, UserService];
+export const APIS = [AuthService, ChannelService, TeamService, TimezoneService, UserService];

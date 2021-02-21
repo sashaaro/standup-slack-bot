@@ -576,7 +576,7 @@ export class SlackBotTransport implements ITransport {
       })
     }
     await this.postMessage({
-      channel: standUp.team.reportSlackChannel,
+      channel: standUp.team.reportChannel,
       text,
       blocks
     })

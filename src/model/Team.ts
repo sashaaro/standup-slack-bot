@@ -13,6 +13,7 @@ import SlackWorkspace from "./SlackWorkspace";
 import Question from "./Question";
 import {ITeam} from "../bot/models";
 import Timezone from "./Timezone";
+import {Channel} from "./Channel";
 
 @Entity()
 export class Team implements ITeam {
@@ -58,8 +59,11 @@ export class Team implements ITeam {
   @Column({default: 30})
   duration: number
 
-  @Column({nullable: false})
-  reportSlackChannel: string
+  @ManyToOne(type => Channel, null, {
+    eager: true,
+    nullable: false
+  })
+  reportChannel: string
 
   untilTime()
   {

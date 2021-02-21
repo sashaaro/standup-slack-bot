@@ -26,7 +26,7 @@ export class AuthController {
   }
 
   session: IHttpAction = async (req, res) => {
-    res.send(req.context.user);
+    res.send(req.context.user || JSON.stringify({}));
     res.setHeader('Content-Type', 'application/json');
     res.sendStatus(req.context.user ? 200 : 404);
   }

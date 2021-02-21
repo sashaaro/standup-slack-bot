@@ -9,7 +9,7 @@ import {authorized, bind} from "../../services/utils";
 import {Request, Response} from "express";
 
 @Injectable()
-export class UsersController {
+export class UserController {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private connection: Connection,

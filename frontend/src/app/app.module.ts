@@ -25,6 +25,7 @@ import {MatIconModule} from "@angular/material/icon";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {EditTeamComponent} from "./pages/team/edit-team/edit-team.component";
 import { TeamFormComponent } from './pages/team/team-form/team-form.component';
+import { FormatTimezonePipe } from './pipe/format-timezone.pipe';
 
 @NgModule({
   declarations: [
@@ -36,7 +37,8 @@ import { TeamFormComponent } from './pages/team/team-form/team-form.component';
     CreateTeamComponent,
     ErrorComponent,
     EditTeamComponent,
-    TeamFormComponent
+    TeamFormComponent,
+    FormatTimezonePipe
   ],
   imports: [
     BrowserModule,

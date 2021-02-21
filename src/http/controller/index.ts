@@ -1,7 +1,8 @@
 import {Request, Response} from "express";
 import {AuthController} from "./auth.controller.";
 import {TeamController} from "./team.controller";
-import {UsersController} from "./users.controller";
+import {UserController} from "./user.controller";
+import {ChannelController} from "./channel.controller";
 
 export const templateDirPath = './resources/templates'
 
@@ -13,7 +14,8 @@ export interface IHttpAction {
 const actions = [
   AuthController,
   TeamController,
-  UsersController
+  UserController,
+  ChannelController
 ];
 
 export default actions;

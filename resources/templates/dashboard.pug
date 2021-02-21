@@ -21,7 +21,7 @@ block authorized_content
               i.clock.outline.icon
               = "Time: " + team.start + " - " + team.untilTime() + " (" + team.timezone.name + "). Duration " + team.duration + " minutes"
             // div= "Meetings passed: 32"
-            // div= "Report to #" + team.reportSlackChannel
+            // div= "Report to #" + team.reportChannel
             .team__created
               i.icon.pencil.alternate
               ="Created by " + team.createdBy.name + " at " + intl.format(team.createdAt)

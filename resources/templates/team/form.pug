@@ -60,14 +60,14 @@ block authorized_content
                 option(value=u.id, selected=formData.receivers.includes(u.id))
                   img(src= u.profile.image_32)
                   div= u.name
-        .field(class=errors.reportSlackChannel ? 'error' : '')
+        .field(class=errors.reportChannel ? 'error' : '')
           label
             span= 'Report channel'
-            span.error= errors.reportSlackChannel ? errors.reportSlackChannel[0] : ''
+            span.error= errors.reportChannel ? errors.reportChannel[0] : ''
           .ui.input.large
-            select.dropdown.search.ui.fluid(name="reportSlackChannel", placeholder="Select channel")
+            select.dropdown.search.ui.fluid(name="reportChannel", placeholder="Select channel")
               each u in channels
-                option(value=u.id, selected=formData.reportSlackChannel === u.id)= u.name
+                option(value=u.id, selected=formData.reportChannel === u.id)= u.name
         button.ui.large.button.fluid.positive(type="submit", v-bind:disabled="questions.length === 0 || submitting", v-bind:class="{loading: submitting}")
           i.save.icon
           | Save
