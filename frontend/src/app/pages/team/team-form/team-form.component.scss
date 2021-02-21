@@ -33,9 +33,10 @@ form {
   line-height: 46px;
 }
 
-.question-options {
+.options {
   padding-left: 50px;
   padding-bottom: 30px;
+  box-sizing: border-box;
 }
 
 .timezone {

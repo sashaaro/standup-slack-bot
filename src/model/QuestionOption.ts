@@ -2,9 +2,11 @@ import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, BeforeU
 import Question from "./Question";
 import {IQuestionOption} from "../bot/models";
 import {IsNotEmpty, IsString} from "class-validator";
+import {Expose} from "class-transformer";
 
 @Entity()
 export default class QuestionOption implements IQuestionOption {
+  @Expose()
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -13,6 +15,7 @@ export default class QuestionOption implements IQuestionOption {
   })
   question: Question;
 
+  @Expose()
   @IsNotEmpty()
   @IsString()
   @Column({nullable: false})

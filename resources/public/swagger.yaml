@@ -265,8 +265,6 @@ components:
             type: string
         property:
           type: string
-        #value:
-        #  type: any
     Timezone:
       type: object
       properties:

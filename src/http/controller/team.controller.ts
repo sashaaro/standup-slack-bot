@@ -8,6 +8,15 @@ import {plainToClassFromExist} from "class-transformer";
 import { validateSync, ValidationError } from "class-validator";
 import {Team} from "../../model/Team";
 
+const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
+  return errors.map(error => {
+    delete error.target
+    delete error.value
+    clearFromTarget(error.children)
+    return error;
+  })
+};
+
 @Injectable()
 export class TeamController {
   teamRepository = this.connection.getRepository(Team)
@@ -19,11 +28,12 @@ export class TeamController {
 
   private handleRequest(plainObject: object, team: Team): ValidationError[]
   {
-    console.log(team.questions);
-    plainToClassFromExist(team, plainObject);
-    console.log(team.questions);
+    plainToClassFromExist(team, plainObject, {
+      strategy: 'excludeAll'
+    });
     const errors = validateSync(team);
-    return errors;
+
+    return clearFromTarget(errors) as ValidationError[];// TODO
     /*if (errors.length > 0) {
       return errors
     }
@@ -114,12 +124,26 @@ export class TeamController {
 
     const id = req.params.id as number|any
 
-    const team = await this.teamRepository.findOne({
-      id: id,
-      isEnabled: true
-    }, {
-      relations: ['timezone', 'questions', 'workspace', 'users', 'questions.options']
-    })
+    const team = await this.teamRepository
+      // .findOne({
+      //   id: id,
+      //   isEnabled: true
+      // }, {
+      //   relations: ['timezone', 'questions', 'workspace', 'users', 'questions.options']
+      // })
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.timezone', 'timezone')
+      .leftJoinAndSelect('t.questions', 'questions')
+      .leftJoinAndSelect('t.workspace', 'workspace')
+      .leftJoinAndSelect('t.reportChannel', 'reportChannel')
+      .leftJoinAndSelect('t.users', 'users')
+      .leftJoinAndSelect('questions.options', 'options')
+      .leftJoinAndSelect('t.createdBy', 'createdBy')
+      .where("t.id = :id", {id: id})
+      .andWhere("createdBy.id = :me", {me: req.context.user.id})
+      .andWhere('t.isEnabled = :isEnabled', {isEnabled: true})
+      .orderBy("questions.index", "ASC")
+      .getOne();
 
     if (!team) {
       throw new ResourceNotFoundError('Team is not found');

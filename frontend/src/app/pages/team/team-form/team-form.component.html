@@ -57,7 +57,6 @@
           </mat-option>
         </mat-autocomplete>
 
-
         <mat-error>{{ usersControl.errors }}</mat-error>
       </mat-form-field>
 
@@ -81,7 +80,6 @@
       <mat-form-field appearance="outline" class="question">
         <mat-label>#{{ qIndex + 1 }}</mat-label>
         <input matInput autocomplete="off" [formControl]="questionControl.get('text')"/>
-<!--        autocomplete-->
         <button *ngIf="!(questionControl.get('options').length > 0 || openOptionsIds.includes(questionControl.get('id').value))"
                 title="Add options"
                 type="button"
@@ -94,12 +92,15 @@
         <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="questionsControl.removeAt(qIndex)">
           <mat-icon>delete</mat-icon>
         </button>
-        <mat-error>{{ questionControl.errors }}</mat-error>
-        <mat-hint *ngIf="questionControl.get('text').dirty && questionControl.value.id">Be know Already exist question is changed. it would be effected charts</mat-hint>
+        <mat-error>{{ questionControl.get('text').getError('custom') }}</mat-error>
+        <mat-hint *ngIf="questionControl.get('text').dirty && questionControl.valid && questionControl.value.id">
+          Be know Already exist question is changed. it would be effected charts
+        </mat-hint>
       </mat-form-field>
 
-      <div>
-        <mat-chip-list #optionList *ngIf="questionControl.get('options').length > 0 || openOptionsIds.includes(questionControl.get('id').value)">
+      <mat-form-field appearance="outline" class="options" *ngIf="questionControl.get('options').length > 0 || openOptionsIds.includes(questionControl.get('id').value)">
+        <mat-label>Options (Pass enter)</mat-label>
+        <mat-chip-list #optionList>
           <div cdkDropList cdkDropListOrientation="horizontal" cdkDropList (cdkDropListDropped)="dropUser(questionControl.get('options'), $event)">
             <mat-chip
               *ngFor="let option of questionControl.get('options').controls; let optionIndex = index"
@@ -121,18 +122,21 @@
             placeholder="New option..."
             (focus)="focusQuestion(questionControl.get('id').value)"
             [matChipInputFor]="optionList"
+            [matChipInputAddOnBlur]="true"
             (matChipInputTokenEnd)="addOption(questionControl.get('options'), $event)"
           />
-
-
         </mat-chip-list>
-      </div>
 
+        <mat-error>{{ questionControl.get('options').getError('custom') }}</mat-error>
+      </mat-form-field>
+
+      <mat-error>{{ questionControl.getError('custom') }}</mat-error>
     </ng-container>
-
     <button type="button" class="add-question" color="primary" mat-flat-button (click)="add()">
       <i class="icon save"></i> Add question
     </button>
+    <mat-error>{{ questionsControl.getError('custom') }}</mat-error>
+
   </div>
 </form>
 

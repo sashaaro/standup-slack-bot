@@ -15,7 +15,18 @@ import {ITeam} from "../bot/models";
 import Timezone from "./Timezone";
 import {Channel} from "./Channel";
 import {Expose, Type} from "class-transformer";
-import {IsInt, IsMilitaryTime, IsNotEmpty, Max, MaxLength, Min, MinLength, ValidateNested} from "class-validator";
+import {
+  ArrayMinSize,
+  IsArray,
+  IsInt,
+  IsMilitaryTime,
+  IsNotEmpty, Length,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+  ValidateNested
+} from "class-validator";
 
 @Entity()
 export class Team implements ITeam {
@@ -56,6 +67,8 @@ export class Team implements ITeam {
   @Expose()
   @Type(() => Question)
   @IsNotEmpty()
+  @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested()
   @OneToMany(type => Question, question => question.team, {
     eager: true,
@@ -63,6 +76,7 @@ export class Team implements ITeam {
   })
   questions: Question[];
 
+  @Expose()
   @ManyToOne(type => Timezone, null, {
     eager: true
   })
@@ -74,6 +88,7 @@ export class Team implements ITeam {
   @Column({default: '11:00'})
   start: string
 
+  @Expose()
   @IsNotEmpty()
   @IsInt()
   @Min(2)
@@ -81,6 +96,7 @@ export class Team implements ITeam {
   @Column({default: 30})
   duration: number
 
+  @Expose()
   @ManyToOne(type => Channel, null, {
     eager: true,
     nullable: false

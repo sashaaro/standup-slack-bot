@@ -97,7 +97,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   ) {
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     this.questionsControl.controls.forEach((_, index) => {
@@ -205,9 +206,15 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     if (this.form.invalid) {
       // TODO return
     }
+    const value = this.form.value;
 
-    const value = this.form.value as Team|any;
-    value.duration = Number.parseInt(value.duration, 10) as number
+    value.duration = Number.parseInt(value.duration, 10);
+    console.log(Array.isArray(value.questions))
+    console.log(value.questions.forEach)
+    for (const child of value.questions) {
+      console.log(child);
+    }
+    value.questions.forEach((q, i) => {q.index = i})
 
     (this.team ?
       this.teamService.updateTeam(this.team.id, value) :
@@ -223,7 +230,6 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       if (400 === e.status) {
         const errors = e.error as ValidationError[];
         this.applyFormErrors(errors, this.form);
-        console.log(this.form.get('name').errors)
       }
     })
   }
@@ -254,8 +260,12 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
         console.warn('Errors are not assigned to undefined control');
         return;
       }
-      // for (const constraint in error.constraints) {}
-      control.setErrors(error.constraints)
+
+      const customError = error.constraints ? Array.from(Object.values(error.constraints)).shift() : null;
+      if (customError) {
+        control.setErrors({...control.errors, custom: customError})
+      }
+
       if (error.children.length > 0) {
         if (control instanceof FormGroup || control instanceof FormArray) {
           this.applyFormErrors(error.children, control);
