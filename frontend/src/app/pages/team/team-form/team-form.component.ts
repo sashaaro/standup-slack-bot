@@ -1,14 +1,44 @@
-import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
+import {
+  AfterContentInit, AfterViewInit,
+  Component,
+  ElementRef,
+  Input,
+  OnChanges,
+  OnInit, QueryList,
+  SimpleChanges,
+  ViewChildren
+} from '@angular/core';
 import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {log} from "../../../operator/log";
-import {ChannelService, Team, TeamService, TimezoneService, UserService, ValidationError} from "../../../../api/auto";
+import {
+  ChannelService,
+  Team,
+  TeamService,
+  TimezoneService,
+  User,
+  UserService,
+  ValidationError
+} from "../../../../api/auto";
 import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Router} from "@angular/router";
+import {combineLatest, NEVER, of, Subject} from "rxjs";
+import {distinct, map, mergeMap, startWith, switchMap} from "rxjs/operators";
+import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
+import {MatChip, MatChipInputEvent} from "@angular/material/chips";
+import {BACKSPACE} from "@angular/cdk/keycodes";
+import {FocusMonitor} from "@angular/cdk/a11y";
 
 export const weekDays = [
   'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
 ];
+
+const valueChanges = (control: AbstractControl) => {
+  return control.valueChanges.pipe(
+    startWith(null),
+    map(_ => control.value)
+  )
+}
 
 @UntilDestroy()
 @Component({
@@ -16,26 +46,45 @@ export const weekDays = [
   templateUrl: './team-form.component.html',
   styleUrls: ['./team-form.component.scss']
 })
-export class TeamFormComponent implements OnInit, OnChanges {
+export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() team?: Team
 
   questionsControl: FormArray = new FormArray([])
-
+  usersControl = new FormControl([], [Validators.required, Validators.minLength(1)]);
   form = this.fb.group({
     name: [null, Validators.required],
     timezone: [null, Validators.required],
     start: [null, Validators.required],
-    duration: [null, Validators.required],
-    users: [null],
+    duration: [null, [Validators.required, control => Number.isNaN(Number.parseInt(control.value, 10)) ? {required: true} : null]],
+    users: this.usersControl,
     reportChannel: [null],
     questions: this.questionsControl,
   })
 
-  submitting = false;
+  @ViewChildren(MatChip) chips: QueryList<MatChip>;
 
+  submitting = false;
   users$ = this.userService.getUsers()
+
+  autocompleteUsers$ =
+    combineLatest([
+      this.users$,
+      valueChanges(this.usersControl).pipe(
+        map(selected => (selected || []).map(s => s.id))
+      ),
+    ]).pipe(
+      map(([users, selected]) => users.filter(u => !selected.includes(u.id)))
+    )
+
   timezones$ = this.timezoneService.getTimezones()
   channels$ = this.channelService.getChannels()
+
+  focusQuestion$ = new Subject<number>();
+   autocompleteOptions$ = this.focusQuestion$.pipe(
+     switchMap(questionId => NEVER)
+   )
+
+  openOptionsIds = [];
 
   constructor(
     private fb: FormBuilder,
@@ -43,6 +92,7 @@ export class TeamFormComponent implements OnInit, OnChanges {
     private teamService: TeamService,
     private timezoneService: TimezoneService,
     private channelService: ChannelService,
+    private _focusMonitor: FocusMonitor,
     private router: Router
   ) {
   }
@@ -72,8 +122,56 @@ export class TeamFormComponent implements OnInit, OnChanges {
     }
   }
 
-  remove(qIndex: number) {
-    this.questionsControl.removeAt(qIndex);
+
+  ngAfterViewInit() {
+    this.chips.changes
+      .pipe(
+        mergeMap(list => of(...list.toArray())),
+        distinct(),
+        untilDestroyed(this)
+      )
+      .subscribe((chip: MatChip) => {
+        this._focusMonitor.stopMonitoring(chip._elementRef)
+        this.patchChip(chip)
+      })
+  }
+
+  focusQuestion(questionId) {
+    this.focusQuestion$.next(questionId)
+  }
+
+  private patchChip(chip: MatChip) {
+    const origin = chip._handleKeydown
+    chip._handleKeydown = function (...args) {
+      if (BACKSPACE === args[0].keyCode) {
+        // TODO avoid prevent default behavior for contenteditable
+        return;
+      }
+      origin.call(this, ...args)
+    }
+    chip._handleKeydown.bind(chip);
+  }
+
+  remove(control: AbstractControl, value) {
+    const list = [...control.value];
+    list.splice(this.usersControl.value.indexOf(this.usersControl.value), 1)
+    control.setValue(list);
+  }
+
+  focus(element: HTMLInputElement) {
+    if (window.getSelection) {
+      const s = window.getSelection();
+      const r = document.createRange()
+      const position = element.textContent.length
+      r.setStart(element.childNodes[0], position);
+      r.collapse(true)
+
+      //r.setEnd(element, position);
+      s.removeAllRanges();
+      s.addRange(r);
+    } else {
+      element.focus({});
+    }
   }
 
   add() {
@@ -82,12 +180,23 @@ export class TeamFormComponent implements OnInit, OnChanges {
     )
   }
 
-  addOption(optionsControl: FormArray|any) {
-    optionsControl.push(this.createOptionControl())
+  dropUser(control: AbstractControl, event: CdkDragDrop<User>) {
+    const list = [...control.value]
+    moveItemInArray(list, event.previousIndex, event.currentIndex)
+    control.setValue(list)
   }
 
-  removeOption(options: FormArray|any, index: number) {
-    options.removeAt(index)
+  addOption(optionsControl: FormArray|any, event: MatChipInputEvent) {
+    const control = this.createOptionControl();
+    control.patchValue({text: event.value.trim()});
+    optionsControl.push(control);
+    event.input.value = '';
+    const index = this.openOptionsIds.indexOf(
+      optionsControl.parent.get('id').value
+    )
+    if (index !== -1) {
+      this.openOptionsIds.splice(index, 1);
+    }
   }
 
   submit() {
@@ -97,13 +206,19 @@ export class TeamFormComponent implements OnInit, OnChanges {
       // TODO return
     }
 
+    const value = this.form.value as Team|any;
+    value.duration = Number.parseInt(value.duration, 10) as number
+
     (this.team ?
-      this.teamService.createTeam(this.form.value) :
-      this.teamService.updateTeam(this.team.id, this.form.value)).pipe(
+      this.teamService.updateTeam(this.team.id, value) :
+      this.teamService.createTeam(value)
+    ).pipe(
       untilDestroyed(this)
     ).subscribe(team => {
       // todo notification
-      this.router.navigateByUrl('/')
+      // this.team = team;
+      //this.router.navigateByUrl('/')
+      location.reload();
     }, (e: HttpErrorResponse) => {
       if (400 === e.status) {
         const errors = e.error as ValidationError[];
@@ -152,6 +267,6 @@ export class TeamFormComponent implements OnInit, OnChanges {
   }
 
   compareWithById(a, b) {
-    return a.id === b.id;
+    return a?.id === b?.id;
   }
 }

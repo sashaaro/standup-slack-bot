@@ -14,10 +14,12 @@ import { Channel } from './channel';
 import { Question } from './question';
 
 
-export interface Team {
+export interface Team { 
     id?: number;
     title?: string;
     isEnabled?: boolean;
+    start?: string;
+    duration?: number;
     timezone?: Timezone;
     reportChannel?: Channel;
     questions?: Array<Question>;

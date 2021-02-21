@@ -1,6 +1,7 @@
 import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, BeforeUpdate} from "typeorm";
 import Question from "./Question";
 import {IQuestionOption} from "../bot/models";
+import {IsNotEmpty, IsString} from "class-validator";
 
 @Entity()
 export default class QuestionOption implements IQuestionOption {
@@ -12,6 +13,8 @@ export default class QuestionOption implements IQuestionOption {
   })
   question: Question;
 
+  @IsNotEmpty()
+  @IsString()
   @Column({nullable: false})
   text: string
 

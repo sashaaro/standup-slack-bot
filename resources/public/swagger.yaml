@@ -212,6 +212,10 @@ components:
           type: string
         isEnabled:
           type: boolean
+        start:
+          type: string
+        duration:
+          type: integer
         timezone:
           $ref: '#/components/schemas/Timezone'
         reportChannel:

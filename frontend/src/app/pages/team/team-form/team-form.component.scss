@@ -35,10 +35,7 @@ form {
 
 .question-options {
   padding-left: 50px;
-}
-
-.question-options > div {
-  padding-top: 20px;
+  padding-bottom: 30px;
 }
 
 .timezone {
@@ -81,3 +78,31 @@ ng-select {
 //.report {
 //  grid-area: report;
 //}
+
+[contenteditable] {
+  outline: none
+}
+
+.option-actions {
+  font-size: 18px;
+  mat-icon {
+    margin-left: 8px;
+    opacity: .4;
+  }
+
+  .cdk-drag-handle {
+    cursor: move;
+  }
+}
+
+.user-pic {
+  border-radius: 9px;
+  margin-right: 8px;
+}
+
+.user-chip-list {
+  .mat-chip::ng-deep {
+    box-shadow: unset !important;
+  }
+}
+

@@ -3,6 +3,8 @@ import {AuthController} from "./auth.controller.";
 import {TeamController} from "./team.controller";
 import {UserController} from "./user.controller";
 import {ChannelController} from "./channel.controller";
+import {StandupController} from "./standup.controllert";
+import {OptionController} from "./option.controller";
 
 export const templateDirPath = './resources/templates'
 
@@ -15,7 +17,9 @@ const actions = [
   AuthController,
   TeamController,
   UserController,
-  ChannelController
+  ChannelController,
+  StandupController,
+  OptionController
 ];
 
 export default actions;

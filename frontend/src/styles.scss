@@ -371,3 +371,22 @@ body {
   background-color: #f2f2f2;
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }
+
+.mat-standard-chip {
+  height: initial!important;
+}
+
+.users {
+  .mat-option {
+    height: 40px !important;
+    border-bottom: 1px solid rgba(34,36,38,.15);
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .mat-option-text {
+    display: flex !important;
+    align-items: center !important;
+  }
+}

@@ -1,56 +1,78 @@
 <form [formGroup]="form">
-  <div class="section">
-    <mat-form-field appearance="outline" class="name">
-      <mat-label>Name</mat-label>
-      <input matInput autocomplete="off" formControlName="name"/>
-      <mat-error>{{ form.get('name').errors }}</mat-error>
-    </mat-form-field>
+  <div>
+    <div class="section">
+      <mat-form-field appearance="outline" class="name">
+        <mat-label>Name</mat-label>
+        <input matInput autocomplete="off" formControlName="name"/>
+        <mat-error>{{ form.get('name').errors }}</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline" class="timezone">
-      <mat-label>Locale timezone</mat-label>
-      <mat-select formControlName="timezone" [compareWith]="compareWithById">
-        <mat-option *ngFor="let timezone of (timezones$ | async)" [value]="timezone">{{ timezone | formatTimezone }}</mat-option>
-      </mat-select>
-      <mat-error>{{ form.get('timezone').errors }}</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline" class="timezone">
+        <mat-label>Locale timezone</mat-label>
+        <mat-select formControlName="timezone" [compareWith]="compareWithById">
+          <mat-option *ngFor="let timezone of (timezones$ | async)" [value]="timezone">{{ timezone | formatTimezone }}</mat-option>
+        </mat-select>
+        <mat-error>{{ form.get('timezone').errors }}</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline" class="start-at">
-      <mat-label>Start meeting (locale time)</mat-label>
-      <input matInput autocomplete="off" type="time" step="60" formControlName="start"/>
-      <mat-error>{{ form.get('start').errors }}</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline" class="start-at">
+        <mat-label>Start meeting (locale time)</mat-label>
+        <input matInput autocomplete="off" type="time" step="60" formControlName="start"/>
+        <mat-error>{{ form.get('start').errors }}</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline" class="duration">
-      <mat-label>Duration</mat-label>
-      <input matInput autocomplete="off" formControlName="duration"/>
-      <mat-error>{{ form.get('duration').errors }}</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline" class="duration">
+        <mat-label>Duration</mat-label>
+        <input matInput autocomplete="off" formControlName="duration"/>
+        <mat-error>{{ form.get('duration').errors }}</mat-error>
+      </mat-form-field>
 
 
-    <mat-form-field appearance="outline" class="users">
-      <mat-label>Participants</mat-label>
-      <input [matChipInputFor]="chipList">
-      <mat-chip-list formControlName="users" #chipList>
-        <mat-chip *ngFor="let user of (users$ | async)" [value]="user">
-          <img [src]="user.profile.image_24"/>
-          {{ user.name }}
-          <mat-icon matChipRemove>cancel</mat-icon>
-        </mat-chip>
-      </mat-chip-list>
-      <mat-error>{{ form.get('users').errors }}</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline" class="users">
+        <mat-label>Participants</mat-label>
 
-    <mat-form-field appearance="outline" class="channel">
-      <mat-label>Report channel</mat-label>
-      <mat-select formControlName="reportChannel" [compareWith]="compareWithById">
-        <mat-option *ngFor="let channel of (channels$ | async)" [value]="channel">{{ channel.name }}</mat-option>
-      </mat-select>
-      <mat-error>{{ form.get('reportChannel').errors }}</mat-error>
-    </mat-form-field>
+        <mat-chip-list class="user-chip-list" formControlName="users" [compareWith]="compareWithById" #chipList>
+          <div>
+            <mat-chip
+              *ngFor="let user of usersControl.value"
+              [selected]="false" removable
+              (removed)="remove(usersControl, $event.chip.value)"
+              disableRipple
+            >
+            <img class="user-pic" [src]="user.profile.image_24"/>
+              {{ user.name }}
+              <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+          </div>
+          <input
+            placeholder="Search user..."
+            [matAutocomplete]="auto"
+            [matChipInputFor]="chipList"/>
+        </mat-chip-list>
 
-    <button class="save" color="primary" mat-flat-button [class.loading]="submitting" (click)="submit()">
-      <i class="icon save"></i> Save
-    </button>
+        <mat-autocomplete class="users" #auto="matAutocomplete" (optionSelected)="usersControl.value.push($event.option.value);">
+          <mat-option *ngFor="let user of (autocompleteUsers$ | async)" [value]="user">
+            <img class="user-pic" [src]="user.profile.image_24"/>
+            {{ user.name }}
+          </mat-option>
+        </mat-autocomplete>
+
+
+        <mat-error>{{ usersControl.errors }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="channel">
+        <mat-label>Report channel</mat-label>
+        <mat-select formControlName="reportChannel" [compareWith]="compareWithById">
+          <mat-option *ngFor="let channel of (channels$ | async)" [value]="channel">{{ channel.name }}</mat-option>
+        </mat-select>
+        <mat-error>{{ form.get('reportChannel').errors }}</mat-error>
+      </mat-form-field>
+
+      <button class="save" color="primary" mat-flat-button [class.loading]="submitting" (click)="submit()">
+        <i class="icon save"></i> Save
+      </button>
+    </div>
   </div>
 
 
@@ -60,30 +82,50 @@
         <mat-label>#{{ qIndex + 1 }}</mat-label>
         <input matInput autocomplete="off" [formControl]="questionControl.get('text')"/>
 <!--        autocomplete-->
-        <button *ngIf="questionControl.get('options').length === 0" title="Add options" type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="addOption(questionControl.get('options'))">
+        <button *ngIf="!(questionControl.get('options').length > 0 || openOptionsIds.includes(questionControl.get('id').value))"
+                title="Add options"
+                type="button"
+                mat-button
+                matSuffix mat-icon-button aria-label="Clear"
+                (click)="openOptionsIds.push(questionControl.get('id').value)"
+          >
           <mat-icon>rule</mat-icon>
         </button>
-        <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="remove(qIndex)">
+        <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="questionsControl.removeAt(qIndex)">
           <mat-icon>delete</mat-icon>
         </button>
         <mat-error>{{ questionControl.errors }}</mat-error>
         <mat-hint *ngIf="questionControl.get('text').dirty && questionControl.value.id">Be know Already exist question is changed. it would be effected charts</mat-hint>
       </mat-form-field>
 
-      <div class="question-options">
-        <mat-form-field appearance="outline" *ngFor="let option of questionControl.get('options').controls; let index = index" class="sm">
-          <!--<mat-label>Question</mat-label>-->
-          <input matInput autocomplete="off" [formControl]="option.get('text')"/>
-          <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="removeOption(questionControl.get('options'), index)">
-            <mat-icon>delete</mat-icon>
-          </button>
-          <mat-error>{{ questionControl.errors }}</mat-error>
-        </mat-form-field>
+      <div>
+        <mat-chip-list #optionList *ngIf="questionControl.get('options').length > 0 || openOptionsIds.includes(questionControl.get('id').value)">
+          <div cdkDropList cdkDropListOrientation="horizontal" cdkDropList (cdkDropListDropped)="dropUser(questionControl.get('options'), $event)">
+            <mat-chip
+              *ngFor="let option of questionControl.get('options').controls; let optionIndex = index"
+              cdkDrag
+              removable
+              disableRipple
+              [selected]="false"
+              (removed)="questionControl.get('options').removeAt(optionIndex);"
+            >
+              <div #optionText contenteditable="true" [formControl]="option.get('text')"></div>
+              <div class="option-actions">
+                <mat-icon (click)="focus(optionText)" inline>edit</mat-icon>
+                <mat-icon cdkDragHandle inline>open_with</mat-icon>
+                <mat-icon matChipRemove>cancel</mat-icon>
+              </div>
+            </mat-chip>
+          </div>
+          <input
+            placeholder="New option..."
+            (focus)="focusQuestion(questionControl.get('id').value)"
+            [matChipInputFor]="optionList"
+            (matChipInputTokenEnd)="addOption(questionControl.get('options'), $event)"
+          />
 
 
-        <button *ngIf="questionControl.get('options').length > 0" type="button" class="add-option" color="primary" mat-flat-button (click)="addOption(questionControl.get('options'))">
-          <i class="icon save"></i> Add option
-        </button>
+        </mat-chip-list>
       </div>
 
     </ng-container>
@@ -93,3 +135,13 @@
     </button>
   </div>
 </form>
+
+<ng-template>
+  <input matAutocomplete]="optionsAutocomplete"/>
+  <mat-autocomplete #optionsAutocomplete="matAutocomplete" (optionSelected)="usersControl.value.push($event.option.value);">
+    <mat-option *ngFor="let user of (autocompleteOptions$ | async)" [value]="user">
+      <img [src]="user.profile.image_24"/>
+      {{ user.name }}
+    </mat-option>
+  </mat-autocomplete>
+</ng-template>

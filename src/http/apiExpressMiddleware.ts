@@ -11,6 +11,8 @@ import http from "http";
 import {TeamController} from "./controller/team.controller";
 import {UserController} from "./controller/user.controller";
 import {ChannelController} from "./controller/channel.controller";
+import {StandupController} from "./controller/standup.controllert";
+import {OptionController} from "./controller/option.controller";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -59,6 +61,8 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
   const team = injector.get(TeamController);
   const user = injector.get(UserController);
   const channel = injector.get(ChannelController);
+  const standup = injector.get(StandupController);
+  const option = injector.get(OptionController);
 
   router.get('/auth/session', auto.session);
   router.get('/auth/logout', auto.logout); // TODO DELETE /auth/session?!
@@ -73,6 +77,8 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
   router.patch('/team/:id/toggle', team.toggle);
   router.get('/user', user.listByWorkspace);
   router.get('/channel', channel.listByWorkspace);
+  router.get('/standup', standup.list);
+  router.get('/option/history/:questionId', option.history);
 
   router.use((req: express.Request, res: express.Response, next) => {
     res.status(404);
@@ -100,7 +106,7 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
     } else if (err instanceof BadRequestError) {
       res.sendStatus(400);
     } else if (err instanceof ResourceNotFoundError) {
-      res.status(404);
+      res.sendStatus(404);
 
       if (req.accepts('html')) {
         res.send('');

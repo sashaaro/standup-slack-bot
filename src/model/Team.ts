@@ -14,12 +14,18 @@ import Question from "./Question";
 import {ITeam} from "../bot/models";
 import Timezone from "./Timezone";
 import {Channel} from "./Channel";
+import {Expose, Type} from "class-transformer";
+import {IsInt, IsMilitaryTime, IsNotEmpty, Max, MaxLength, Min, MinLength, ValidateNested} from "class-validator";
 
 @Entity()
 export class Team implements ITeam {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Expose()
+  @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(40)
   @Column()
   name: string;
 
@@ -38,11 +44,19 @@ export class Team implements ITeam {
   })
   workspace: SlackWorkspace;
 
+  @Expose()
+  @Type(() => User)
+  // @Min(1)
+  @IsNotEmpty()
   @ManyToMany(type => User, user => user.teams, {
     cascade: ["insert", "update"],
   })
   users: Array<User>
 
+  @Expose()
+  @Type(() => Question)
+  @IsNotEmpty()
+  @ValidateNested()
   @OneToMany(type => Question, question => question.team, {
     eager: true,
     cascade: true
@@ -54,8 +68,16 @@ export class Team implements ITeam {
   })
   timezone: Timezone;
 
+  @Expose()
+  @IsNotEmpty()
+  @IsMilitaryTime({message: 'must be a valid in the format HH:MM'})
   @Column({default: '11:00'})
   start: string
+
+  @IsNotEmpty()
+  @IsInt()
+  @Min(2)
+  @Max(59, {message: 'must not be greater than 59'})
   @Column({default: 30})
   duration: number
 
@@ -63,6 +85,8 @@ export class Team implements ITeam {
     eager: true,
     nullable: false
   })
+  @IsNotEmpty()
+  @Type(() => SlackWorkspace)
   reportChannel: string
 
   untilTime()
