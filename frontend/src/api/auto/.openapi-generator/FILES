@@ -17,6 +17,8 @@ model/models.ts
 model/option.ts
 model/question.ts
 model/standup.ts
+model/standupQuestions.ts
+model/standupUsers.ts
 model/team.ts
 model/timezone.ts
 model/timezoneUtcOffset.ts

@@ -1,17 +1,30 @@
-<div class="no-stand-ups">
-  No meetings
-  <i class="icon bee"></i>
-</div>
 <div class="stand-up-list">
-  <div class="stand-up" *ngFor="let standup of standups$|async">
-    <div class="stand-up__header">
-      {{ standup.startAt }}
-    </div>
-    <div class="stand-up__content">
-      <div class="stand-up-item">
-        11
-        <!--<div *ngIf="let user of standup.team.users"></div>-->
+  <ng-container *ngIf="standups$|async as standups">
+    <div *ngFor="let standup of standups" class="stand-up">
+      <div class="stand-up__header">{{ standup.startAt|date }}</div>
+      <div class="stand-up__content">
+        <div *ngFor="let user of standup.users" class="stand-up-item">
+          <div *ngIf="user.questions.length === 0">No answers 🐥</div>
+
+          <div>
+            <div *ngFor="let question of user.questions; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index">
+              <div class="stand-up-item__question">{{ question.text }}</div>
+              <div class="stand-up-item__answer">{{ question.option }}</div>
+              <div class="stand-up-item__answer">{{ question.answer }}</div>
+            </div>
+          </div>
+
+          <div class="stand-up-item__content">
+            <img [src]="user.image"/>
+            <div class="stand-up-item__name"> {{ user.name }}</div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+
+    <div class="no-stand-ups" *ngIf="standups.length === 0">
+      No meetings
+      <i class="icon bee"></i>
+    </div>
+  </ng-container>
 </div>

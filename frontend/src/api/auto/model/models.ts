@@ -2,6 +2,8 @@ export * from './channel';
 export * from './option';
 export * from './question';
 export * from './standup';
+export * from './standupQuestions';
+export * from './standupUsers';
 export * from './team';
 export * from './timezone';
 export * from './timezoneUtcOffset';

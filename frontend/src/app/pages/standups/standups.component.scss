@@ -1,0 +1,93 @@
+@import "../../../mixin";
+
+.stand-up {
+  box-sizing: border-box;
+
+  &__header {
+    @include card;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 20px;
+
+    border-bottom: 1px rgba(34,36,38,.1) solid;
+  }
+
+  &__content {
+    @include card;
+    padding: 25px 45px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  margin-bottom: 25px;
+}
+
+.stand-up-item {
+  display: flex;
+  justify-content: space-between;
+
+  &__content {
+    align-self: flex-start;
+    display: flex;
+    width: 190px;
+    align-items: center;
+    img {
+      border-radius: 7px;
+    }
+  }
+
+  &__name {
+    font-weight: bold;
+    font-size: 24px;
+    margin-left: 15px;
+  }
+
+  &__result {
+    margin-bottom: 20px;
+    padding-left: 12px;
+    border-left: 4px solid;
+    /* https://semantic-ui.com/usage/theming.html*/
+    &--0 {
+      border-left-color: #00a6a6;
+    }
+    &--1 {
+      border-left-color: #0E6EB8;
+    }
+    &--2 {
+      border-left-color: #EE82EE;
+    }
+    &--3 {
+      border-left-color: #016936;
+    }
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__question {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  &__answer {
+    font-size: 16px;
+    font-style: italic;
+  }
+
+  padding-bottom: 25px;
+  border-bottom: 1px rgba(34, 36, 38, 0.1) solid;
+  margin-bottom: 25px;
+
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+}

@@ -42,3 +42,15 @@ export function bind<T extends Function>(
     },
   };
 }
+
+export function groupBy<T = any>(list: T[], by: (item: T) => string|number): {[index: keyof T]: T} {
+  const group = {};
+  list.forEach(i => {
+    const v = by(i)
+    if (!group[v]) {
+      group[v] = [];
+    }
+    group[v].push(i);
+  });
+  return group;
+}
