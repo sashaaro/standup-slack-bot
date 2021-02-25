@@ -1,6 +1,5 @@
 .content {
   width: 1127px;
-  padding-top: 10px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -91,4 +90,33 @@
   height: 100%;
   width: 1px;
   background: rgba(34,36,38,.1);
+}
+
+
+.logo {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+  /* https://www.flaticon.com/free-icon/robot_270137 */
+  background-image: url("/assets/logo.png");
+  width: 32px;
+
+  margin-left: 5px;
+}
+
+
+.menu-title__sign {
+  color: #919193;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.menu-title__sign img {
+  display: inline;
+  vertical-align: sub;
+  width: 1.2em;
+  height: 1.2em;
+  border-radius: 3px;
+  border: 1px solid #b3b3b3;
+  margin-right: 3px;
 }

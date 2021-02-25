@@ -1,5 +1,14 @@
 @import "../../../mixin";
 
+.no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 32px;
+  height: 250px;
+}
+
 .stand-up {
   box-sizing: border-box;
 

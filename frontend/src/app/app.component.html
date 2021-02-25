@@ -1,25 +1,25 @@
 <div class="content">
-  <div class="ui large menu" *ngIf="ready">
+  <div class="ui large menu" *ngIf="routerOutlet.isActivated">
     <div class="ui container">
       <a routerLink="/" class="logo"></a>
       <a class="item menu-title" routerLink="/">
         <div>
-          Standups
-          <div class="menu-title__sign">
-            <img src="https://a.slack-edge.com/80588/img/avatars-teams/ava_0025-34.png">for botenza.slack.com
+          Standups bot
+          <div class="menu-title__sign" *ngIf="user$ | async as user">
+            for {{ user?.workspace?.domain }}.slack.com
           </div>
         </div>
       </a>
       <div class="right menu">
         <a class="item" routerLink="/team/create" routerLinkActive #rla="routerLinkActive" [class.active]="rla.isActive">
-          <i class="icon plus"></i>Create standup
+          Create standup
         </a>
-        <a class="item disabled" routerLink="/archive" routerLinkActive #rla="routerLinkActive" [class.active]="rla.isActive">
-          <i class="icon archive"></i>Archive
+        <a class="item disabled" routerLink="/archive" routerLinkActive #rla1="routerLinkActive" [class.active]="rla1.isActive">
+          Archive
         </a>
-        <a class="item" (click)="logout()"><i class="icon sign-out"></i>Log out</a></div>
+        <a class="item" (click)="logout()">Logout</a></div>
     </div>
   </div>
 
-  <router-outlet (activate)="onActivateRoute($event)"></router-outlet>
+  <router-outlet #routerOutlet="outlet"></router-outlet>
 </div>

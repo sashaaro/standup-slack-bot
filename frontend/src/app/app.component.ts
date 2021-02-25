@@ -1,6 +1,5 @@
 import {Component, OnInit} from '@angular/core';
 import {SessionService} from "./service/session.service";
-import {log} from "./operator/log";
 import {Router} from "@angular/router";
 
 @Component({
@@ -9,7 +8,7 @@ import {Router} from "@angular/router";
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  ready = false;
+  user$ = this.sessionService.auth()
 
   constructor(
     private sessionService: SessionService,
@@ -18,18 +17,11 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.sessionService.auth().pipe(log('session')).subscribe(user => {
-      console.log(11);
-    })
   }
 
   logout() {
     this.sessionService.logout().subscribe(_ => {
       this.router.navigateByUrl('/welcome');
     })
-  }
-
-  onActivateRoute(event) {
-    this.ready = true;
   }
 }

@@ -9,13 +9,6 @@
 //  font-family: Roboto;
 //}
 
-.content {
-  width: 1127px;
-  padding-top: 10px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
 .mat-form-field-appearance-outline.sm .mat-form-field-infix {
   padding: 0.3em 0 0.7em 0;
 }
@@ -41,16 +34,6 @@
   }
 }
 
-.logo {
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center center;
-  /* https://www.flaticon.com/free-icon/robot_270137 */
-  background-image: url("/assets/logo.png");
-  width: 50px;
-
-  margin-left: 5px;
-}
 
 .icon.color-slack {
   background-image: url("/assets/slack.svg");
@@ -92,32 +75,18 @@
   }
 }
 
-.menu-title__sign {
-  color: #919193;
-  font-weight: 500;
-  font-size: 13px;
-}
-
-.menu-title__sign img {
-  display: inline;
-  vertical-align: sub;
-  width: 1.4em;
-  height: 1.4em;
-  border-radius: 4px;
-  border: 1px solid #b3b3b3;
-  margin-right: 3px;
-}
-
-
 .menu .item.active > .icon {
   animation: icon-loading 18s linear infinite;
 }
 
-.no-stand-ups {
-  text-align: center;
-  font-size: 33px;
-  margin-top: 50px;
-  /*font-weight: 600;*/
+
+.module {
+  display: block;
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15);
+  position: relative;
 }
 
 #pagination {
@@ -198,6 +167,10 @@ body {
   background-image: url("https://html5book.ru/wp-content/uploads/2015/06/background28.jpg");
   background-size: 270px ;
   font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+* {
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
 }
 
 .mat-standard-chip {

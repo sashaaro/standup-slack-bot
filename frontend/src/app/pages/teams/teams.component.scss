@@ -6,27 +6,50 @@
 
   &__list {
     display: flex;
-    padding-left: 30px;
+    padding-left: 14px;
   }
 
   &__count {
     white-space: nowrap;
-    font-weight: 500;
+    font-weight: 600;
     margin-right: 7px;
   }
 
   &__item {
-    margin-left: -21px;
-    width: 32px;
-    height: 32px;
+    margin-left: -14px;
+    width: 26px;
+    height: 26px;
     border-radius: 16px;
     border: 2px white solid
+  }
+}
+
+.desc {
+  display: flex;
+  align-items: center;
+  &__time {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    mat-icon {
+      margin-right: 5px;
+    }
+  }
+  > * {
+    margin-right: 8px;
+  }
+  img {
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
   }
 }
 
 .team {
   @include card;
   @include clearfix;
+
+  padding: 16px 20px;
 
   cursor: pointer;
 
@@ -42,17 +65,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    margin-bottom: 7px;
   }
 
   &__title {
-    font-weight: 700;
-    font-size: 24px;
-    span {
-      font-weight: normal;
-      font-size: 18px;
-      color: initial;
-      margin-left: 10px;
-    }
+    font-size: 20px;
   }
 
   &__content {
@@ -60,19 +78,8 @@
     justify-content: space-between;
   }
 
-  &__info {
+  &__desc {
     flex-grow: 1;
-    & > div {
-      margin-bottom: 10px;
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-  }
-
-  &__time {
-    font-size: 16px;
-    font-weight: bold;
   }
 
   &__actions {
@@ -87,7 +94,7 @@
   }
 
   &__users {
-    margin-right: 60px;
+    margin-right: 30px;
   }
 
   &__created {

@@ -9,21 +9,18 @@
       </div>
     </div>
     <div class="team__content">
-      <div class="team__info">
-<!--        <div class="team__time">-->
-<!--          <i class="icon clock outline"></i>-->
-<!--          TODO-->
-<!--        </div>-->
-<!--        <div class="team__created">-->
-<!--          <i class="icon pencil alternate"></i>-->
-<!--          TODO-->
-<!--        </div>-->
+      <div class="team__desc desc">
+        <div class="desc__time"><mat-icon>schedule</mat-icon>{{ team.start }}.</div>
+        <div>(duration {{ team.duration }} minutes)</div>
+<!--        <img [src]="team.createdBy.profile.image_24"/>-->
+<!--        <div>{{ team.createdBy.name }}</div>-->
+<!--          {{ team.questions.length }} questions-->
       </div>
       <div class="team__users users">
         <div class="users__count">{{ team.users?.length }} respondents</div>
 
         <div class="users__list">
-          <img *ngFor="let user of team.users" class="users__item" [src]="user.profile.image_48"/>
+          <img *ngFor="let user of team.users" class="users__item" [src]="user.profile.image_24"/>
         </div>
 
       </div>
