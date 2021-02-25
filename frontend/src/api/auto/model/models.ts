@@ -1,4 +1,5 @@
 export * from './channel';
+export * from './inlineObject';
 export * from './option';
 export * from './question';
 export * from './standup';

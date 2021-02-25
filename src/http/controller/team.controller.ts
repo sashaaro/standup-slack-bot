@@ -1,11 +1,11 @@
-import {Inject, Injectable} from 'injection-js';
+import {Injectable} from 'injection-js';
 import {Connection} from "typeorm";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../apiExpressMiddleware";
 import {IHttpAction} from "./index";
 import Timezone from "../../model/Timezone";
 import {plainToClassFromExist} from "class-transformer";
-import { validateSync, ValidationError } from "class-validator";
-import {Team} from "../../model/Team";
+import {validateSync, ValidationError} from "class-validator";
+import {Team, TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, TEAM_STATUS_DEACTIVATED} from "../../model/Team";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -31,7 +31,7 @@ export class TeamController {
       .leftJoinAndSelect('t.createdBy', 'createdBy')
       .leftJoinAndSelect('t.users', 'users')
       .andWhere('t.createdById = :createdBy', {createdBy: req.context.user.id})
-      .addOrderBy('t.isEnabled', "DESC")
+      .andWhere('t.status != :exceptStatus', {exceptStatus: TEAM_STATUS_ACHIEVED})
       // TODO .addOrderBy('t.createdAt', "DESC")
       .getMany()
 
@@ -61,7 +61,7 @@ export class TeamController {
     const errors = this.handleRequest(req.body, team);
 
     if (errors.length === 0) {
-      team.isEnabled = true;
+      team.status = TEAM_STATUS_ACTIVATED;
       await this.teamRepository.save(team);
       res.send(team);
     } else {
@@ -89,7 +89,7 @@ export class TeamController {
       .leftJoinAndSelect('t.createdBy', 'createdBy')
       .where("t.id = :id", {id: id})
       .andWhere("createdBy.id = :me", {me: req.context.user.id})
-      .andWhere('t.isEnabled = :isEnabled', {isEnabled: true})
+      .andWhere('t.status = :status', {status: TEAM_STATUS_ACTIVATED})
       .orderBy("questions.index", "ASC")
       .getOne();
 
@@ -138,7 +138,7 @@ export class TeamController {
     res.send(team);
   }
 
-  toggle: IHttpAction = async (req, res) => {
+  status: IHttpAction = async (req, res) => {
     if (!req.context.user) {
       throw new AccessDenyError();
     }
@@ -148,12 +148,17 @@ export class TeamController {
       throw new BadRequestError();
     }
 
+    const status = parseInt(req.body.status)
+    if (![TEAM_STATUS_ACTIVATED, TEAM_STATUS_DEACTIVATED, TEAM_STATUS_ACHIEVED].includes(status)) {
+      throw new BadRequestError();
+    }
+
     const team = await this.teamRepository.findOne(id);
     if (!team) {
       throw new BadRequestError();
     }
 
-    await this.teamRepository.update({id: team.id}, {isEnabled: !team.isEnabled})
+    await this.teamRepository.update({id: team.id}, {status: status})
 
     res.status(204).send(team);
   }

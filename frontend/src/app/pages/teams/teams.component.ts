@@ -24,8 +24,11 @@ export class TeamsComponent implements OnInit {
   }
 
   toggle(e: MatSlideToggleChange, team: Team) {
-    this.teamService.toggle(team.id).subscribe(t => {
-      team.isEnabled = t.isEnabled;
+    this.teamService.updateStatus(team.id, {
+      status: team.status === 1 ? 2 : 1
+    }).subscribe(t => {
+      team.status = t.status;
+      // TODO notification
     })
   }
 }

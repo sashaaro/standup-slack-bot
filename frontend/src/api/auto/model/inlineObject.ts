@@ -9,19 +9,9 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { Timezone } from './timezone';
-import { Channel } from './channel';
-import { Question } from './question';
 
 
-export interface Team { 
-    id?: number;
-    title?: string;
+export interface InlineObject { 
     status?: number;
-    start?: string;
-    duration?: number;
-    timezone?: Timezone;
-    reportChannel?: Channel;
-    questions?: Array<Question>;
 }
 

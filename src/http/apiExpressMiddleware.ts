@@ -74,7 +74,7 @@ export const apiExpressMiddleware = (injector: Injector): express.Router => {
   router.put('/team/:id', team.edit);
   router.get('/timezone', team.timezone);
   router.all('/team/:id/stats', team.stats);
-  router.patch('/team/:id/toggle', team.toggle);
+  router.patch('/team/:id/status', team.stats);
   router.get('/user', user.listByWorkspace);
   router.get('/channel', channel.listByWorkspace);
   router.get('/team/:id/standup', standup.list);

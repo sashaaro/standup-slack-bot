@@ -17,6 +17,7 @@ import { HttpClient, HttpHeaders, HttpParams,
 import { CustomHttpParameterCodec }                          from '../encoder';
 import { Observable }                                        from 'rxjs';
 
+import { InlineObject } from '../model/models';
 import { Team } from '../model/models';
 import { ValidationError } from '../model/models';
 
@@ -222,15 +223,16 @@ export class TeamService {
 
     /**
      * @param id 
+     * @param inlineObject 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public toggle(id: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Team>;
-    public toggle(id: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Team>>;
-    public toggle(id: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Team>>;
-    public toggle(id: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
+    public updateStatus(id: number, inlineObject?: InlineObject, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Team>;
+    public updateStatus(id: number, inlineObject?: InlineObject, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Team>>;
+    public updateStatus(id: number, inlineObject?: InlineObject, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Team>>;
+    public updateStatus(id: number, inlineObject?: InlineObject, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (id === null || id === undefined) {
-            throw new Error('Required parameter id was null or undefined when calling toggle.');
+            throw new Error('Required parameter id was null or undefined when calling updateStatus.');
         }
 
         let headers = this.defaultHeaders;
@@ -248,13 +250,22 @@ export class TeamService {
         }
 
 
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            headers = headers.set('Content-Type', httpContentTypeSelected);
+        }
+
         let responseType: 'text' | 'json' = 'json';
         if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
             responseType = 'text';
         }
 
-        return this.httpClient.patch<Team>(`${this.configuration.basePath}/team/${encodeURIComponent(String(id))}/toggle`,
-            null,
+        return this.httpClient.patch<Team>(`${this.configuration.basePath}/team/${encodeURIComponent(String(id))}/status`,
+            inlineObject,
             {
                 responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,

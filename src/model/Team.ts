@@ -28,6 +28,10 @@ import {
   ValidateNested
 } from "class-validator";
 
+export const TEAM_STATUS_ACTIVATED = 1;
+export const TEAM_STATUS_DEACTIVATED = 2;
+export const TEAM_STATUS_ACHIEVED = 3;
+
 @Entity()
 export class Team implements ITeam {
   @PrimaryGeneratedColumn()
@@ -40,8 +44,8 @@ export class Team implements ITeam {
   @Column()
   name: string;
 
-  @Column({default: true})
-  isEnabled: boolean;
+  @Column({default: TEAM_STATUS_ACTIVATED, asExpression: 'smallint'})
+  status: number = TEAM_STATUS_ACTIVATED;
 
   @ManyToOne(type => User, null, {
     eager: true,

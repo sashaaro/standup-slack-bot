@@ -3,7 +3,7 @@ import {Brackets, Connection, SelectQueryBuilder} from "typeorm";
 import StandUp from "../model/StandUp";
 import AnswerRequest from "../model/AnswerRequest";
 import {IAnswerRequest, IStandUp, IStandUpProvider, IUser} from "../bot/models";
-import {Team} from "../model/Team";
+import {Team, TEAM_STATUS_ACTIVATED} from "../model/Team";
 import QuestionOption from "../model/QuestionOption";
 
 export const CALLBACK_PREFIX_STANDUP_INVITE = 'standup_invite'
@@ -28,7 +28,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
       .innerJoinAndSelect('team.timezone', 'timezone')
       .innerJoin( 'pg_timezone_names', 'pg_timezone', 'timezone.name = pg_timezone.name')
       .where(`(team.start::time - pg_timezone.utc_offset) = :startedAt::time`)
-      .andWhere('team.isEnabled = true')
+      .andWhere('team.status = :status', {status: TEAM_STATUS_ACTIVATED})
       .setParameter('startedAt', time)
       .getMany();
   }
@@ -126,7 +126,7 @@ export class SlackStandUpProvider implements IStandUpProvider {
       .leftJoinAndSelect('answers.option', 'answersOption')
       .limit(6)
       //.where('date_trunc(\'minute\', st.endAt) = date_trunc(\'minute\', CURRENT_TIMESTAMP)')
-      .andWhere('team.isEnabled = true')
+      .andWhere('team.status = :status', {status: TEAM_STATUS_ACTIVATED})
       .addOrderBy("st.endAt", "DESC")
       .addOrderBy("question.index", "ASC")
       .getMany()
