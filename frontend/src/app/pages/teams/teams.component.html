@@ -3,34 +3,41 @@
 
   <div *ngFor="let team of teams" class="team" [routerLink]="'/team/' + team.id + '/standups'" [class.team--disabled]="!team.isEnabled">
     <div class="team__header">
-      <a class="team__title">
-        {{team.name}}
-        <span>{{ "(" + team.users?.length +  " participants)" }}</span>
-      </a>
+      <a class="team__title">{{ team.name }}</a>
       <div class="ui toggle checkbox">
         <mat-slide-toggle [checked]="team.isEnabled" (change)="toggle($event, team)" title="Activate"></mat-slide-toggle>
       </div>
     </div>
     <div class="team__content">
       <div class="team__info">
-        <div class="team__time">
-          <i class="icon clock outline"></i>
-          TODO
-        </div>
-        <div class="team__created">
-          <i class="icon pencil alternate"></i>
-          TODO
-        </div>
+<!--        <div class="team__time">-->
+<!--          <i class="icon clock outline"></i>-->
+<!--          TODO-->
+<!--        </div>-->
+<!--        <div class="team__created">-->
+<!--          <i class="icon pencil alternate"></i>-->
+<!--          TODO-->
+<!--        </div>-->
       </div>
-      <div class="team__users">
-        <img *ngFor="let user of team.users" class="team__user" [src]="user.profile.image_48"/>
+      <div class="team__users users">
+        <div class="users__count">{{ team.users?.length }} respondents</div>
+
+        <div class="users__list">
+          <img *ngFor="let user of team.users" class="users__item" [src]="user.profile.image_48"/>
+        </div>
+
+      </div>
+
+      <div class="team__actions">
+        <button color="primary" title="settings" mat-flat-button [routerLink]="'/team/' + team.id + '/edit'">
+          <mat-icon>settings</mat-icon>
+        </button>
+        <button title="achieve" color="warn" mat-flat-button [routerLink]="'/team/' + team.id + '/edit'">
+          <mat-icon>restore_from_trash</mat-icon>
+        </button>
       </div>
     </div>
-    <div class="team__actions">
-      <button class="save" color="primary" mat-flat-button [routerLink]="'/team/' + team.id + '/edit'">
-        <i class="icon save"></i> Edit settings
-      </button>
-    </div>
+
   </div>
 </div>
 

@@ -1,47 +1,44 @@
-<div class="stand-up-list">
-  <ng-container *ngIf="response$|async as response">
-    <div *ngFor="let standup of response.standups | paginate: {itemsPerPage: itemsPerPage, currentPage: page, totalItems: response.total}" class="stand-up">
-      <div class="stand-up__header">{{ standup.startAt|date }}</div>
-      <div class="stand-up__content">
-        <div *ngFor="let user of standup.users" class="stand-up-item">
-          <div *ngIf="user.questions.length === 0">No answers 🐥</div>
+<div class="stand-up-list" *appAsync="response$; placeholder: true; let response">
+  <div *ngFor="let standup of response.standups | paginate: {itemsPerPage: itemsPerPage, currentPage: page, totalItems: response.total}" class="stand-up">
+    <div class="stand-up__header">{{ standup.startAt|date }}</div>
+    <div class="stand-up__content">
+      <div *ngFor="let user of standup.users" class="stand-up-item">
+        <div *ngIf="user.questions.length === 0">No answers 🐥</div>
 
-          <div>
-            <div *ngFor="let question of user.questions; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index">
-              <div class="stand-up-item__question">{{ question.text }}</div>
-              <div class="stand-up-item__answer">{{ question.option }}</div>
-              <div class="stand-up-item__answer">{{ question.answer }}</div>
-            </div>
+        <div>
+          <div *ngFor="let question of user.questions; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index">
+            <div class="stand-up-item__question">{{ question.text }}</div>
+            <div class="stand-up-item__answer">{{ question.option }}</div>
+            <div class="stand-up-item__answer">{{ question.answer }}</div>
           </div>
+        </div>
 
-          <div class="stand-up-item__content">
-            <img [src]="user.image"/>
-            <div class="stand-up-item__name"> {{ user.name }}</div>
-          </div>
+        <div class="stand-up-item__content">
+          <img [src]="user.image"/>
+          <div class="stand-up-item__name"> {{ user.name }}</div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="no-stand-ups" *ngIf="response.standups.length === 0">
-      No meetings
-      <i class="icon bee"></i>
-    </div>
+  <div class="no-stand-ups" *ngIf="response.standups.length === 0">
+    No meetings
+    <i class="icon bee"></i>
+  </div>
 
 
-    <pagination-template class="ui pagination menu" #p="paginationApi" (pageChange)="page = $event; pageChanged($event)">
-      <a class="item pagination-previous" [class.disabled]="p.isFirstPage()" *ngIf="!p.isFirstPage()" (click)="p.previous()"> < </a>
+  <pagination-template class="ui pagination menu" #p="paginationApi" (pageChange)="page = $event; pageChanged($event)">
+    <a class="item pagination-previous" [class.disabled]="p.isFirstPage()" *ngIf="!p.isFirstPage()" (click)="p.previous()"> < </a>
 
-      <ng-container *ngFor="let page of p.pages" [class.current]="p.getCurrent() === page.value">
-        <a class="item" (click)="p.setCurrent(page.value)" *ngIf="p.getCurrent() !== page.value">
-          {{ page.label }}
-        </a>
-        <div class="item active" *ngIf="p.getCurrent() === page.value">
-          {{ page.label }}
-        </div>
-      </ng-container>
+    <ng-container *ngFor="let page of p.pages" [class.current]="p.getCurrent() === page.value">
+      <a class="item" (click)="p.setCurrent(page.value)" *ngIf="p.getCurrent() !== page.value">
+        {{ page.label }}
+      </a>
+      <div class="item active" *ngIf="p.getCurrent() === page.value">
+        {{ page.label }}
+      </div>
+    </ng-container>
 
-      <a class="pagination-next" [class.disabled]="p.isLastPage()" *ngIf="!p.isLastPage()" (click)="p.next()"> > </a>
-    </pagination-template>
-
-  </ng-container>
+    <a class="pagination-next" [class.disabled]="p.isLastPage()" *ngIf="!p.isLastPage()" (click)="p.next()"> > </a>
+  </pagination-template>
 </div>
