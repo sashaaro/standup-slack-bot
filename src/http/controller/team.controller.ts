@@ -159,8 +159,8 @@ export class TeamController {
     }
 
     await this.teamRepository.update({id: team.id}, {status: status})
-
-    res.status(204).send(team);
+    team.status = status;
+    res.status(200).send(team);
   }
 
   stats: IHttpAction = async (req, res) => {

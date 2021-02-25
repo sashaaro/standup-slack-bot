@@ -29,7 +29,7 @@
         <button color="primary" title="settings" mat-flat-button [routerLink]="'/team/' + team.id + '/edit'">
           <mat-icon>settings</mat-icon>
         </button>
-        <button title="achieve" color="warn" mat-flat-button [routerLink]="'/team/' + team.id + '/edit'">
+        <button title="achieve" color="warn" mat-flat-button (click)="$event.stopPropagation(); achieve(team)">
           <mat-icon>restore_from_trash</mat-icon>
         </button>
       </div>
