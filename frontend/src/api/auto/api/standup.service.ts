@@ -86,15 +86,22 @@ export class StandupService {
 
     /**
      * @param teamId 
+     * @param page 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getStandups(teamId: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Standup>>;
-    public getStandups(teamId: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Standup>>>;
-    public getStandups(teamId: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Standup>>>;
-    public getStandups(teamId: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
+    public getStandups(teamId: number, page?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Standup>>;
+    public getStandups(teamId: number, page?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Standup>>>;
+    public getStandups(teamId: number, page?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Standup>>>;
+    public getStandups(teamId: number, page?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (teamId === null || teamId === undefined) {
             throw new Error('Required parameter teamId was null or undefined when calling getStandups.');
+        }
+
+        let queryParameters = new HttpParams({encoder: this.encoder});
+        if (page !== undefined && page !== null) {
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>page, 'page');
         }
 
         let headers = this.defaultHeaders;
@@ -119,6 +126,7 @@ export class StandupService {
 
         return this.httpClient.get<Array<Standup>>(`${this.configuration.basePath}/team/${encodeURIComponent(String(teamId))}/standup`,
             {
+                params: queryParameters,
                 responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,

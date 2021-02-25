@@ -218,3 +218,52 @@ body {
     align-items: center !important;
   }
 }
+
+
+.loader-container {
+  display: block;
+  position: relative;
+}
+
+//*,:after,:before{-webkit-box-sizing:inherit;box-sizing:inherit;}
+//a{background-color:transparent;-webkit-text-decoration-skip:objects;}
+//a{color:#4183c4;text-decoration:none;}
+//a:hover{color:#1e70bf;text-decoration:none;}
+//::-webkit-selection{background-color:#cce2ff;color:rgba(0,0,0,.87);}
+//::-moz-selection{background-color:#cce2ff;color:rgba(0,0,0,.87);}
+//::selection{background-color:#cce2ff;color:rgba(0,0,0,.87);}
+//body ::-webkit-scrollbar{-webkit-appearance:none;width:10px;height:10px;}
+//body ::-webkit-scrollbar-track{background:rgba(0,0,0,.1);border-radius:0;}
+//body ::-webkit-scrollbar-thumb{cursor:pointer;border-radius:5px;background:rgba(0,0,0,.25);-webkit-transition:color .2s ease;transition:color .2s ease;}
+//body ::-webkit-scrollbar-thumb:hover{background:rgba(128,135,139,.8);}
+//.ui.menu{display:-webkit-box;display:-ms-flexbox;display:flex;margin:1rem 0;font-family:Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;background:#fff;font-weight:400;border:1px solid rgba(34,36,38,.15);-webkit-box-shadow:0 1px 2px 0 rgba(34,36,38,.15);box-shadow:0 1px 2px 0 rgba(34,36,38,.15);border-radius:.28571429rem;min-height:2.85714286em;}
+//.ui.menu:after{content:'';display:block;height:0;clear:both;visibility:hidden;}
+//.ui.menu:last-child{margin-bottom:0;}
+//.ui.menu:not(.vertical) .item{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;}
+//.ui.menu .item{position:relative;vertical-align:middle;line-height:1;text-decoration:none;-webkit-tap-highlight-color:transparent;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:0 0 auto;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;background:0 0;padding:.92857143em 1.14285714em;text-transform:none;color:rgba(0,0,0,.87);font-weight:400;-webkit-transition:background .1s ease,color .1s ease,-webkit-box-shadow .1s ease;transition:background .1s ease,color .1s ease,-webkit-box-shadow .1s ease;transition:background .1s ease,box-shadow .1s ease,color .1s ease;transition:background .1s ease,box-shadow .1s ease,color .1s ease,-webkit-box-shadow .1s ease;}
+//.ui.menu>.item:first-child{border-radius:.28571429rem 0 0 .28571429rem;}
+//.ui.menu .item:before{position:absolute;content:'';top:0;right:0;height:100%;width:1px;background:rgba(34,36,38,.1);}
+//.ui.menu a.item:hover{cursor:pointer;background:rgba(0,0,0,.03);color:rgba(0,0,0,.95);}
+//.ui.menu a.item:active{background:rgba(0,0,0,.03);color:rgba(0,0,0,.95);}
+//.ui.menu .active.item{background:rgba(0,0,0,.05);color:rgba(0,0,0,.95);font-weight:400;-webkit-box-shadow:none;box-shadow:none;}
+//.ui.menu .active.item:hover{background-color:rgba(0,0,0,.05);color:rgba(0,0,0,.95);}
+//.ui.menu .item.disabled,.ui.menu .item.disabled:hover{cursor:default!important;background-color:transparent!important;color:rgba(40,40,40,.3)!important;}
+//.ui.pagination.menu{margin:0;display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;vertical-align:middle;}
+//.ui.pagination.menu .item:last-child{border-radius:0 .28571429rem .28571429rem 0;}
+//.ui.pagination.menu .item:last-child:before{display:none;}
+//.ui.pagination.menu .item{min-width:3em;text-align:center;}
+//.ui.pagination.menu .active.item{border-top:none;padding-top:.92857143em;background-color:rgba(0,0,0,.05);color:rgba(0,0,0,.95);-webkit-box-shadow:none;box-shadow:none;}
+//.ui.menu{font-size:1rem;}
+///*! CSS Used fontfaces */
+//@font-face{font-family:'Lato';font-style:italic;font-weight:400;src:url(https://fonts.gstatic.com/s/lato/v17/S6u8w4BMUTPHjxsAUi-qJCY.woff2) format('woff2');unicode-range:U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+//@font-face{font-family:'Lato';font-style:italic;font-weight:400;src:url(https://fonts.gstatic.com/s/lato/v17/S6u8w4BMUTPHjxsAXC-q.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+//@font-face{font-family:'Lato';font-style:italic;font-weight:700;src:url(https://fonts.gstatic.com/s/lato/v17/S6u_w4BMUTPHjxsI5wq_FQft1dw.woff2) format('woff2');unicode-range:U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+//@font-face{font-family:'Lato';font-style:italic;font-weight:700;src:url(https://fonts.gstatic.com/s/lato/v17/S6u_w4BMUTPHjxsI5wq_Gwft.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+//@font-face{font-family:'Lato';font-style:normal;font-weight:400;src:url(https://fonts.gstatic.com/s/lato/v17/S6uyw4BMUTPHjxAwXjeu.woff2) format('woff2');unicode-range:U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+//@font-face{font-family:'Lato';font-style:normal;font-weight:400;src:url(https://fonts.gstatic.com/s/lato/v17/S6uyw4BMUTPHjx4wXg.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+//@font-face{font-family:'Lato';font-style:normal;font-weight:700;src:url(https://fonts.gstatic.com/s/lato/v17/S6u9w4BMUTPHh6UVSwaPGR_p.woff2) format('woff2');unicode-range:U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;}
+//@font-face{font-family:'Lato';font-style:normal;font-weight:700;src:url(https://fonts.gstatic.com/s/lato/v17/S6u9w4BMUTPHh6UVSwiPGQ.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+//@font-face{font-family:'Lato';src:url(https://semantic-ui.com/fonts/lato/Lato-Regular.woff2) format('woff2');font-style:normal;font-weight:normal;}
+//@font-face{font-family:'Lato';src:url(https://semantic-ui.com/fonts/lato/Lato-Italic.woff2) format('woff2');font-style:italic;font-weight:normal;}
+//@font-face{font-family:'Lato';src:url(https://semantic-ui.com/fonts/lato/Lato-Bold.woff2) format('woff2');font-style:normal;font-weight:700;}
+//@font-face{font-family:'Lato';src:url(https://semantic-ui.com/fonts/lato/Lato-BoldItalic.woff2) format('woff2');font-style:italic;font-weight:700;}

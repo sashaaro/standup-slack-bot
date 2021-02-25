@@ -1,5 +1,9 @@
 @import "../../../mixin";
 
+.team-list {
+  min-height: 250px;
+}
+
 .team {
   @include card;
   @include clearfix;

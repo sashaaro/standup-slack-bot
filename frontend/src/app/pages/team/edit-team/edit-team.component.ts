@@ -1,4 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  Component,
+  OnInit
+} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
 import {map, switchMap} from "rxjs/operators";
 import {UntilDestroy} from "@ngneat/until-destroy";
@@ -13,12 +16,14 @@ import {TeamService} from "../../../../api/auto";
 export class EditTeamComponent implements OnInit {
   team$ = this.activatedRoute.params.pipe(
     map(params => params.id),
-    switchMap(teamId => this.teamService.getTeam(teamId))
+    switchMap(teamId => this.teamService.getTeam(teamId)),
   )
   constructor(
     private activatedRoute: ActivatedRoute,
     private teamService: TeamService,
-  ) { }
+  ) {
+
+  }
 
   ngOnInit(): void {
 

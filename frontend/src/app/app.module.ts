@@ -29,6 +29,9 @@ import { FormatTimezonePipe } from './pipe/format-timezone.pipe';
 import {DragDropModule} from "@angular/cdk/drag-drop";
 import {ContenteditableDirective} from "./component/contenteditable.directive";
 import { StandupsComponent } from './pages/standups/standups.component';
+import {NgxPaginationModule} from "ngx-pagination";
+import { AsyncDirective } from './component/async.directive';
+import { LoaderComponent } from './component/loader/loader.component';
 
 @NgModule({
   declarations: [
@@ -44,6 +47,8 @@ import { StandupsComponent } from './pages/standups/standups.component';
     FormatTimezonePipe,
     ContenteditableDirective,
     StandupsComponent,
+    AsyncDirective,
+    LoaderComponent,
   ],
   imports: [
     BrowserModule,
@@ -63,6 +68,7 @@ import { StandupsComponent } from './pages/standups/standups.component';
     MatIconModule,
     MatSlideToggleModule,
     DragDropModule,
+    NgxPaginationModule
   ],
   providers: [
     {

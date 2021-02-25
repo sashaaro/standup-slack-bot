@@ -1,6 +1,6 @@
 <div class="stand-up-list">
-  <ng-container *ngIf="standups$|async as standups">
-    <div *ngFor="let standup of standups" class="stand-up">
+  <ng-container *ngIf="response$|async as response">
+    <div *ngFor="let standup of response.standups | paginate: {itemsPerPage: itemsPerPage, currentPage: page, totalItems: response.total}" class="stand-up">
       <div class="stand-up__header">{{ standup.startAt|date }}</div>
       <div class="stand-up__content">
         <div *ngFor="let user of standup.users" class="stand-up-item">
@@ -22,9 +22,26 @@
       </div>
     </div>
 
-    <div class="no-stand-ups" *ngIf="standups.length === 0">
+    <div class="no-stand-ups" *ngIf="response.standups.length === 0">
       No meetings
       <i class="icon bee"></i>
     </div>
+
+
+    <pagination-template class="ui pagination menu" #p="paginationApi" (pageChange)="page = $event; pageChanged($event)">
+      <a class="item pagination-previous" [class.disabled]="p.isFirstPage()" *ngIf="!p.isFirstPage()" (click)="p.previous()"> < </a>
+
+      <ng-container *ngFor="let page of p.pages" [class.current]="p.getCurrent() === page.value">
+        <a class="item" (click)="p.setCurrent(page.value)" *ngIf="p.getCurrent() !== page.value">
+          {{ page.label }}
+        </a>
+        <div class="item active" *ngIf="p.getCurrent() === page.value">
+          {{ page.label }}
+        </div>
+      </ng-container>
+
+      <a class="pagination-next" [class.disabled]="p.isLastPage()" *ngIf="!p.isLastPage()" (click)="p.next()"> > </a>
+    </pagination-template>
+
   </ng-container>
 </div>

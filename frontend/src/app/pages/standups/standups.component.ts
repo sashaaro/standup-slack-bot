@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import {map, publishReplay, refCount, share, switchMap} from "rxjs/operators";
-import {ActivatedRoute} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 import {Standup, StandupService} from "../../../api/auto";
 import {HttpResponse} from "@angular/common/http";
+import {combineLatest} from "rxjs";
 
 @Component({
   selector: 'app-standups',
@@ -10,22 +11,25 @@ import {HttpResponse} from "@angular/common/http";
   styleUrls: ['./standups.component.scss']
 })
 export class StandupsComponent implements OnInit {
-  response$ = this.activatedRoute.params.pipe(
-    map(params => params.id),
-    switchMap(teamId => this.standupService.getStandups(teamId, 'response')),
+  response$ =
+    combineLatest([
+      this.activatedRoute.params.pipe(map(params => params.id)),
+      this.activatedRoute.queryParams.pipe(map(params => params.page || 1)),
+    ]).pipe(
+    switchMap(([teamId, page]) => this.standupService.getStandups(teamId, page, 'response')),
     map((response: HttpResponse<Standup[]>) => ({
-      list: response.body,
+      standups: response.body,
       total: Number.parseInt(response.headers.get('x-total')) || 3
     })),
     publishReplay(1),
     refCount()
   )
-  standups$ = this.response$.pipe(
-    map(({list}) => list)
-  )
 
+  page: number;
+  itemsPerPage = 5;
 
   constructor(
+    private router: Router,
     private activatedRoute: ActivatedRoute,
     private standupService: StandupService,
   ) { }
@@ -34,4 +38,7 @@ export class StandupsComponent implements OnInit {
     // TODO const pageCount = Math.ceil(total / limit)
   }
 
+  pageChanged(page) {
+    this.router.navigate([], {queryParams: {page}})
+  }
 }

@@ -1,1 +1,3 @@
-<app-team-form [team]="team$ | async"></app-team-form>
+<div *appAsync="team$; let team" class="module">
+  <app-team-form [team]="team"></app-team-form>
+</div>

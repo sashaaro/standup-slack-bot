@@ -204,6 +204,13 @@ paths:
            type: integer
            format: int64
            minimum: 1
+       - name: page
+         in: query
+         required: false
+         schema:
+           type: integer
+           minimum: 1
+           default: 5
      responses:
        200:
          description: Success

@@ -1,7 +1,7 @@
-<div *ngIf="(teams$ | async)?.length === 0" class="no-stand-ups">No teams🐥<i class="icon bee"></i></div>
+<div class="team-list" *appAsync="teams$; placeholder: true; let teams">
+  <div *ngIf="teams.length === 0" class="no-stand-ups">No teams🐥<i class="icon bee"></i></div>
 
-<div class="team-list">
-  <div *ngFor="let team of (teams$ | async)" class="team" [routerLink]="'/team/' + team.id + '/standups'" [class.team--disabled]="!team.isEnabled">
+  <div *ngFor="let team of teams" class="team" [routerLink]="'/team/' + team.id + '/standups'" [class.team--disabled]="!team.isEnabled">
     <div class="team__header">
       <a class="team__title">
         {{team.name}}

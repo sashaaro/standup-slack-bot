@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {Team, TeamService} from "../../../api/auto";
-import {map, publishReplay, refCount, switchMap} from "rxjs/operators";
+import {delay, map, publishReplay, refCount, switchMap} from "rxjs/operators";
 import {MatSlideToggleChange} from "@angular/material/slide-toggle";
 
 @Component({
@@ -11,7 +11,7 @@ import {MatSlideToggleChange} from "@angular/material/slide-toggle";
 export class TeamsComponent implements OnInit {
   teams$ = this.teamService.getTeams().pipe(
     publishReplay(1),
-    refCount(),
+    refCount()
   )
 
 

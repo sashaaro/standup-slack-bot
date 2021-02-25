@@ -47,7 +47,9 @@ const valueChanges = (control: AbstractControl) => {
 export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() team?: Team
 
-  questionsControl: FormArray = new FormArray([])
+  questionsControl: FormArray = new FormArray([
+    this.createQuestionControl()
+  ])
   usersControl = new FormControl([], [Validators.required, Validators.minLength(1)]);
   form = this.fb.group({
     name: [null, Validators.required],
@@ -85,13 +87,13 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   openOptionsControls = [];
 
   constructor(
+    private router: Router,
     private fb: FormBuilder,
     private userService: UserService,
     private teamService: TeamService,
     private timezoneService: TimezoneService,
     private channelService: ChannelService,
     private _focusMonitor: FocusMonitor,
-    private router: Router
   ) {
   }
 
@@ -99,11 +101,9 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    this.questionsControl.controls.forEach((_, index) => {
-      this.questionsControl.removeAt(index)
-    });
-
     if ('team' in changes) {
+      this.questionsControl.clear();
+
       if (this.team) {
         this.team.questions.forEach(q => {
           const questionControl = this.createQuestionControl()
@@ -199,20 +199,19 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   submit() {
-    this.form.markAllAsTouched();
-
+    this.form.updateValueAndValidity();
     if (this.form.invalid) {
-      // TODO return
+      this.form.markAllAsTouched();
+      //return;
     }
     const value = {...this.form.value};
 
     value.duration = Number.parseInt(value.duration, 10);
 
+    //console.log(this.questionsControl.value.map(() =>{}))
     console.log(this.questionsControl.value)
-    value.questions = this.questionsControl.value.map((q, i) => {
-      q.index = i;
-      return q;
-    })
+    value.questions = this.questionsControl.value//.splice()
+    //value.questions = value.questions.map((q, index) => ({...q, index}))
 
     (this.team ?
       this.teamService.updateTeam(this.team.id, value) :
@@ -222,7 +221,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     ).subscribe(team => {
       // todo notification
       // this.team = team;
-      //this.router.navigateByUrl('/')
+      this.router.navigateByUrl('/')
       location.reload();
     }, (e: HttpErrorResponse) => {
       if (400 === e.status) {

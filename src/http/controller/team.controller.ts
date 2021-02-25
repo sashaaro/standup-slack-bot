@@ -25,6 +25,20 @@ export class TeamController {
   ) {
   }
 
+  list: IHttpAction = async (req, res) => {
+    const teams = await this.connection.getRepository(Team).createQueryBuilder('t')
+      .leftJoinAndSelect('t.timezone', 'tz')
+      .leftJoinAndSelect('t.createdBy', 'createdBy')
+      .leftJoinAndSelect('t.users', 'users')
+      .andWhere('t.createdById = :createdBy', {createdBy: req.context.user.id})
+      .addOrderBy('t.isEnabled', "DESC")
+      // TODO .addOrderBy('t.createdAt', "DESC")
+      .getMany()
+
+    res.setHeader('Content-Type', 'application/json');
+    res.send(teams);
+  }
+
   private handleRequest(plainObject: object, team: Team): ValidationError[]
   {
     plainToClassFromExist(team, plainObject, {
@@ -33,67 +47,6 @@ export class TeamController {
     const errors = validateSync(team);
 
     return clearFromTarget(errors) as ValidationError[];// TODO
-    /*if (errors.length > 0) {
-      return errors
-    }
-    team.timezone = this.connection.manager.create(Timezone, {id: formData.timezone}) || team.timezone;
-    team.name = formData.name;
-    team.start = formData.start;
-    team.duration = formData.duration;
-    team.reportChannel = formData.reportChannel;
-    team.users = (formData.receivers || []).map(r => this.connection.manager.create(User, {id: r}));
-
-    const questions = team.questions;
-    team.questions = [];
-    formData.questions.forEach(q => {
-      let question;
-      if (q.id) {
-        question = questions.find((qu) => qu.id === q.id)
-        question = {...question, ...q}
-      }
-
-      if (!question) {
-        question = this.connection.manager.create(Question, {...q, team})
-      }
-      const options = question.options;
-      question.options = []
-      q.options.forEach(o => {
-        let option;
-        if (o.id && !o.isNew) {
-          option = options.find((op) => op.id === o.id);
-          option = {...option, text: o.text}
-        }
-        if (!option) {
-          option = this.connection.manager.create(QuestionOption, {
-            id: o.id,
-            text: o.text,
-            question
-          })
-        }
-        if (o.isNew) {
-          delete option.id;
-        }
-        question.options.push(option)
-      })
-      team.questions.push(question);
-    })
-
-    team.questions.map((q, index) => q.index = index); // recalculate question index
-    return [];*/
-  }
-
-  list: IHttpAction = async (req, res) => {
-    const teams = await this.connection.getRepository(Team).createQueryBuilder('t')
-      .leftJoinAndSelect('t.timezone', 'tz')
-      .leftJoinAndSelect('t.createdBy', 'createdBy')
-      .leftJoinAndSelect('t.users', 'users')
-      // TODO .andWhere('t.createdBy = :craetedBy', {craetedBy: req.context.user})
-      .orderBy({'t.isEnabled': "DESC"})
-      // TODO desc createdAt
-      .getMany()
-
-    res.setHeader('Content-Type', 'application/json');
-    res.send(teams);
   }
 
   create: IHttpAction = async (req, res) => {
@@ -109,12 +62,11 @@ export class TeamController {
 
     if (errors.length === 0) {
       team.isEnabled = true;
-      //await this.teamRepository.save(team);
-      // notification
+      await this.teamRepository.save(team);
       res.send(team);
     } else {
       res.status(400);
-      res.send(errors); // TODO remove target
+      res.send(errors);
     }
   }
 
@@ -126,12 +78,7 @@ export class TeamController {
     const id = req.params.id as number|any
 
     const team = await this.teamRepository
-      // .findOne({
-      //   id: id,
-      //   isEnabled: true
-      // }, {
-      //   relations: ['timezone', 'questions', 'workspace', 'users', 'questions.options']
-      // })
+      // .findOne({id: id, isEnabled: true}, {relations: ['timezone', 'questions', 'workspace', 'users', 'questions.options']})
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.timezone', 'timezone')
       .leftJoinAndSelect('t.questions', 'questions')
