@@ -24,19 +24,16 @@ services:
       - slack-api_sock:/tmp/slack-api
 
   ui:
-    <<: *base-image
-    command: ["server:run", "--type=ui", "--listen=/tmp/node.sock", "--env=prod"]
-    user: 1000:1000
-    depends_on:
-      - postgres
-      - redis
-    volumes:
-      - ui_sock:/tmp
-      - ./var:/opt/app/var
+    image: standup-slack-bot-ui:latest
+    build:
+      dockerfile: frontend/deploy/Dockerfile
+      context: frontend
+    #volumes:
+    #  - sock:/tmp ?! nginx logs?
 
-  slack-api:
+  api:
     <<: *base-image
-    command: ["server:run", "--type=slack-api", "--listen=/tmp/node.sock", "--env=prod"]
+    command: ["server:run", "--listen=/tmp/node.sock", "--env=prod"]
     user: 1000:1000
     depends_on:
       - postgres
