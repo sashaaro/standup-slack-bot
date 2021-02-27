@@ -6,6 +6,8 @@ import Timezone from "../../model/Timezone";
 import {plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";
 import {Team, TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, TEAM_STATUS_DEACTIVATED} from "../../model/Team";
+import Question from "../../model/Question";
+import QuestionOption from "../../model/QuestionOption";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -104,12 +106,97 @@ export class TeamController {
     const errors = this.handleRequest(req.body, team);
 
     if (errors.length === 0) {
-      await this.teamRepository.save(team);
+      await this.teamRepository.manager.transaction(async manager => {
+        await manager.getRepository(Team)
+          .createQueryBuilder()
+          .update({
+            name: team.name,
+            duration: team.duration,
+            timezone: team.timezone,
+            start: team.start,
+            reportChannel: team.reportChannel,
+            // users: team.users
+          })
+          .where({id: team.id})
+          .execute();
+
+        await manager.connection.query(
+          `DELETE FROM user_teams_team WHERE "teamId" = $1 AND "userId" NOT IN (${team.users.map((u, i) => `$${i + 2}`).join(',')})`, [
+          team.id,
+          ...team.users.map(u => u.id)
+        ]);
+        await manager.query(
+          `INSERT INTO user_teams_team ("teamId", "userId") VALUES ${team.users.map((u, i) => `($1, $${i + 2})`).join(',')} ON CONFLICT DO NOTHING`,
+          [
+          team.id,
+          ...team.users.map(u => u.id)
+        ]);
+
+        const questionRepository = manager.getRepository(Question)
+        const optionsRepository = manager.getRepository(QuestionOption)
+
+        const newQuestions = team.questions.filter(q => !q.id)
+        const existQuestions = team.questions.filter(q => !!q.id)
+
+        if (existQuestions.length) {
+          await questionRepository // mark as disabled removed questions
+            .createQueryBuilder()
+            .update(Question, {isEnabled: false})
+            .where('teamId = :team', {team: team.id})
+            .andWhere('id NOT IN(:...questions)', {questions: existQuestions.map(q => q.id)})
+            .execute();
+        }
+        await Promise.all(existQuestions.map(q => questionRepository
+          .createQueryBuilder()
+          .update(Question, {text: q.text})
+          .where({id: q.id})
+          .execute())
+        )
+
+        await Promise.all(newQuestions.map(q => {
+          // TODO find same.. in
+          q.team = team;
+          return questionRepository.insert(q);
+        }));
+
+        for (const q of team.questions.filter(q => q.options.length)) {
+          const options = q.options
+
+          const newOptions = options.filter(o => !o.id);
+          const existOptions = options.filter(o => !!o.id)
+
+          if (existOptions.length) {
+            await optionsRepository // mark as disabled removed options
+              .createQueryBuilder()
+              .update(QuestionOption, {isEnabled: false})
+              .where({question: q})
+              .andWhere('id NOT IN(:...options)', {options: existOptions.map(o => o.id)})
+              .execute()
+          }
+
+          await Promise.all(existOptions.map(o => questionRepository
+              .createQueryBuilder()
+              .update(QuestionOption, {text: o.text})
+              .where({id: o.id})
+              .execute()
+          ));
+
+          await Promise.all(newOptions.map(o => {
+            // TODO find same
+            o.question = q;
+            return optionsRepository.insert(o);
+          }))
+        }
+      })
     }
 
     res.setHeader('Content-Type', 'application/json');
     if (errors.length === 0) {
-      res.status(204).send(team);
+      // load team from db?!
+      team.questions.forEach(q => delete q.team);
+      team.questions.forEach(q => q.options.forEach(o => delete o.question));// remove cycle deps for correct stringify
+
+      res.send(team);
     } else {
       res.status(400).send(errors);
     }
@@ -130,10 +217,15 @@ export class TeamController {
       throw new BadRequestError();
     }
 
-    const team = await this.teamRepository.findOne(id, {relations: ['timezone', 'reportChannel', 'users']});
+    const team = await this.teamRepository.findOne(id, {relations: ['questions', 'timezone', 'reportChannel', 'users']});
     if (!team) {
       throw new BadRequestError();
     }
+
+    team.questions = team.questions.filter(q => q.isEnabled)
+    team.questions.forEach(q => {
+      q.options = q.options.filter(o => o.isEnabled) // TODO sql
+    })
 
     res.send(team);
   }

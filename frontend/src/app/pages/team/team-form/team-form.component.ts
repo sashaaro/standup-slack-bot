@@ -20,8 +20,8 @@ import {
 import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Router} from "@angular/router";
-import {combineLatest, NEVER, of, Subject} from "rxjs";
-import {distinct, map, mergeMap, startWith, switchMap} from "rxjs/operators";
+import {BehaviorSubject, combineLatest, NEVER, of, Subject} from "rxjs";
+import {distinct, map, mergeMap, startWith, switchMap, tap} from "rxjs/operators";
 import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
 import {MatChip, MatChipInputEvent} from "@angular/material/chips";
 import {BACKSPACE} from "@angular/cdk/keycodes";
@@ -85,6 +85,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
    )
 
   openOptionsControls = [];
+  submit$ = new BehaviorSubject(false);
 
   constructor(
     private router: Router,
@@ -202,32 +203,34 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     this.form.updateValueAndValidity();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      //return;
+      return;
     }
-    const value = {...this.form.value};
+    const value = this.form.value; //{...this.form.value};
 
     value.duration = Number.parseInt(value.duration, 10);
-
-    //console.log(this.questionsControl.value.map(() =>{}))
-    console.log(this.questionsControl.value)
-    value.questions = this.questionsControl.value//.splice()
-    //value.questions = value.questions.map((q, index) => ({...q, index}))
+    value.questions = value.questions.map((q, index) => ({...q, index}));
+    value.questions.forEach((q) => q.text = q.text?.trim());
+    value.users = value.users.map(u => ({id: u.id}));
+    value.timezone = {id: value.timezone.id};
 
     (this.team ?
       this.teamService.updateTeam(this.team.id, value) :
       this.teamService.createTeam(value)
     ).pipe(
+      tap(_ => this.submit$.next(true)),
       untilDestroyed(this)
     ).subscribe(team => {
       // todo notification
-      // this.team = team;
-      this.router.navigateByUrl('/')
-      location.reload();
+      this.team = team;
+      //this.router.navigateByUrl('/')
     }, (e: HttpErrorResponse) => {
       if (400 === e.status) {
         const errors = e.error as ValidationError[];
         this.applyFormErrors(errors, this.form);
       }
+      this.submit$.next(false)
+    }, () => {
+      this.submit$.next(false)
     })
   }
 

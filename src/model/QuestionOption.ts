@@ -2,7 +2,8 @@ import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, BeforeU
 import Question from "./Question";
 import {IQuestionOption} from "../bot/models";
 import {IsNotEmpty, IsString} from "class-validator";
-import {Expose} from "class-transformer";
+import {Exclude, Expose, Transform} from "class-transformer";
+import {TransformFnParams} from "class-transformer/types/interfaces";
 
 @Entity()
 export default class QuestionOption implements IQuestionOption {
@@ -15,7 +16,12 @@ export default class QuestionOption implements IQuestionOption {
   })
   question: Question;
 
+  @Exclude()
+  @Column({default: true})
+  isEnabled: boolean = true;
+
   @Expose()
+  @Transform((params: TransformFnParams) => params.value?.trim()) // TODO not working?
   @IsNotEmpty()
   @IsString()
   @Column({nullable: false})

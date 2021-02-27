@@ -3,9 +3,11 @@ import User from "./User";
 import {SlackTeam} from "../slack/model/SlackTeam";
 import {Team} from "./Team";
 import {Channel} from "./Channel";
+import {Expose} from "class-transformer";
 
 @Entity()
 class SlackWorkspace {
+  @Expose()
   @PrimaryColumn()
   id: string;
 
@@ -18,9 +20,7 @@ class SlackWorkspace {
   @OneToMany(type => User, user => user.workspace)
   users: User[]
 
-  @OneToMany(type => Team, team => team.workspace, {
-    eager: true
-  })
+  @OneToMany(type => Team, team => team.workspace)
   team: Team[]
 
   @OneToMany(type => Channel, ch => ch.workspace)

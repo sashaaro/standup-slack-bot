@@ -276,8 +276,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Option'
-        isEnabled:
-          type: boolean
         createdAt:
           type: date
     Option:

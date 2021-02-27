@@ -1,5 +1,6 @@
 import {Column, Entity, PrimaryGeneratedColumn} from "typeorm";
 import {ITimezone} from "../bot/models";
+import {Expose} from "class-transformer";
 
 export interface IPostgresInterval {
   years?: number;
@@ -18,6 +19,7 @@ export interface IPostgresInterval {
 
 @Entity()
 class Timezone implements ITimezone{
+  @Expose()
   @PrimaryGeneratedColumn()
   id: number;
 

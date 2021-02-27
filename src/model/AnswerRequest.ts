@@ -30,7 +30,7 @@ class AnswerRequest implements IAnswerRequest {
   answerMessage: string
 
   @ManyToOne(type => QuestionOption)
-  option: QuestionOption;
+  option: QuestionOption; // TODO multiple
 
   @Column()
   createdAt: Date;

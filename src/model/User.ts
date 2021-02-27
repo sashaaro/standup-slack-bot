@@ -5,6 +5,7 @@ import {Channel} from "./Channel";
 import {IUser} from "../bot/models";
 import {Team} from "./Team";
 import AnswerRequest from "./AnswerRequest";
+import {Exclude, Expose} from "class-transformer";
 
 class Profile implements SlackUserProfile {
   title: string;
@@ -33,6 +34,7 @@ class Profile implements SlackUserProfile {
 
 @Entity()
 export default class User implements IUser {
+  @Expose()
   @PrimaryColumn()
   id: string;
 
@@ -41,10 +43,7 @@ export default class User implements IUser {
   })
   name: string;
 
-  @ManyToOne(type => SlackWorkspace, team => team.users, {
-    eager: true,
-    nullable: false
-  })
+  @ManyToOne(type => SlackWorkspace, team => team.users, {nullable: false})
   workspace: SlackWorkspace;
 
   @Column({
@@ -53,21 +52,18 @@ export default class User implements IUser {
   })
   im: string;
 
+  @Exclude()
   @Column({nullable: true})
   accessToken: string;
 
   @Column('json', {default: new Profile()})
   profile: SlackUserProfile = new Profile();
 
-  @ManyToMany(type => Team, channel => channel.users, {
-    eager: true,
-  })
+  @ManyToMany(type => Team, team => team.users)
   @JoinTable()
   teams: Team[];
 
-  @ManyToMany(type => Channel, channel => channel.users, {
-    eager: true,
-  })
+  @ManyToMany(type => Channel, channel => channel.users)
   @JoinTable()
   channels: Channel[];
 

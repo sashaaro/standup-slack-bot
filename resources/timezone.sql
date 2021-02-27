@@ -89,7 +89,6 @@ INSERT INTO timezone ("utc_offset", "name") VALUES
     (make_interval(0,0,0,0,+03,30),   'Asia/Tehran'),
     (make_interval(0,0,0,0,+04,00),   'Asia/Muscat'),
     (make_interval(0,0,0,0,+04,00),   'Asia/Baku'),
-    (make_interval(0,0,0,0,+04,00),   'Asia/Muscat'),
     (make_interval(0,0,0,0,+04,00),   'Asia/Tbilisi'),
     (make_interval(0,0,0,0,+04,00),   'Asia/Yerevan'),
     (make_interval(0,0,0,0,+04,30),   'Asia/Kabul'),

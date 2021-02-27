@@ -2,7 +2,7 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Column,
-  Entity,
+  Entity, JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
@@ -27,6 +27,7 @@ import {
   MinLength,
   ValidateNested
 } from "class-validator";
+import {JoinColumn} from "typeorm/browser";
 
 export const TEAM_STATUS_ACTIVATED = 1;
 export const TEAM_STATUS_DEACTIVATED = 2;
@@ -64,8 +65,13 @@ export class Team implements ITeam {
   // @Min(1)
   @IsNotEmpty()
   @ManyToMany(type => User, user => user.teams, {
-    cascade: ["insert", "update"],
+    //cascade: ["insert", "update"],
   })
+  // @JoinTable({
+  //   name: 'user_teams_team',
+  //   joinColumn: {name: 'teamId'},
+  //   inverseJoinColumn: 'userId',
+  // })
   users: Array<User>
 
   @Expose()
@@ -75,14 +81,15 @@ export class Team implements ITeam {
   @ArrayMinSize(1)
   @ValidateNested()
   @OneToMany(type => Question, question => question.team, {
-    eager: true,
     cascade: true
   })
   questions: Question[];
 
   @Expose()
+  @Type(() => Timezone)
   @ManyToOne(type => Timezone, null, {
-    eager: true
+    eager: true,
+    nullable: false
   })
   timezone: Timezone;
 
@@ -101,12 +108,12 @@ export class Team implements ITeam {
   duration: number
 
   @Expose()
+  @Type(() => SlackWorkspace)
+  @IsNotEmpty()
   @ManyToOne(type => Channel, null, {
     eager: true,
     nullable: false
   })
-  @IsNotEmpty()
-  @Type(() => SlackWorkspace)
   reportChannel: string
 
   untilTime()
