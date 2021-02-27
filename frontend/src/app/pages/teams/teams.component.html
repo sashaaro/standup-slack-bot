@@ -26,10 +26,13 @@
       </div>
 
       <div class="team__actions">
-        <button color="primary" title="settings" mat-flat-button [routerLink]="'/team/' + team.id + '/edit'">
+        <button mat-flat-button color="accent" title="charts"  [routerLink]="'/team/' + team.id + '/stat'">
+          <mat-icon>show_chart</mat-icon>
+        </button>
+        <button mat-flat-button color="primary" title="settings"  [routerLink]="'/team/' + team.id + '/edit'">
           <mat-icon>settings</mat-icon>
         </button>
-        <button title="achieve" color="warn" mat-flat-button (click)="$event.stopPropagation(); achieve(team)">
+        <button mat-flat-button title="achieve" color="warn" (click)="$event.stopPropagation(); achieve(team)">
           <mat-icon>restore_from_trash</mat-icon>
         </button>
       </div>

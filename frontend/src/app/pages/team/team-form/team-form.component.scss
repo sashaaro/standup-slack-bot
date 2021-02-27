@@ -28,8 +28,8 @@ form {
 }
 
 .options {
-  padding-left: 50px;
-  padding-bottom: 30px;
+  padding-left: 35px;
+  padding-bottom: 0;
   box-sizing: border-box;
 }
 
@@ -84,10 +84,14 @@ ng-select {
     margin-left: 8px;
     opacity: .4;
   }
+}
 
-  .cdk-drag-handle {
-    cursor: move;
-  }
+.cdk-drag-handle {
+  cursor: grab;
+}
+
+.question-item {
+  width: 100%;
 }
 
 .user-pic {
@@ -100,4 +104,10 @@ ng-select {
     box-shadow: unset !important;
   }
 }
-
+.mat-standard-chip::ng-deep {
+  // margin: 0 4px !important;
+  padding-top: 3px !important;
+  padding-bottom: 4px !important;
+  padding-right: 7px !important;
+  padding-left: 10px !important;
+}

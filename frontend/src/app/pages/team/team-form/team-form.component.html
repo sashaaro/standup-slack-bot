@@ -76,62 +76,77 @@
 
 
   <div class="section2">
-    <ng-container *ngFor="let questionControl of questionsControl.controls; let qIndex = index">
-      <mat-form-field appearance="outline" class="question">
-        <mat-label>#{{ qIndex + 1 }}</mat-label>
-        <input matInput autocomplete="off" [formControl]="questionControl.get('text')"/>
-        <button *ngIf="!(questionControl.get('options').length > 0 || openOptionsControls.includes(questionControl))"
-                title="Add options"
-                type="button"
-                mat-button
-                matSuffix mat-icon-button aria-label="Clear"
-                (click)="openOptionsControls.push(questionControl)"
+    <div cdkDropList  (cdkDropListDropped)="drop(questionsControl, $event)">
+      <div *ngFor="let questionControl of questionsControl.controls; let qIndex = index" class="question-item" cdkDrag>
+        <mat-form-field appearance="outline" class="question">
+          <mat-label>#{{ qIndex + 1 }}</mat-label>
+          <input matInput autocomplete="off" [formControl]="questionControl.get('text')"/>
+          <button *ngIf="!(questionControl.get('options').length > 0 || openOptionsControls.includes(questionControl))"
+                  title="Add options"
+                  type="button"
+                  mat-button
+                  matSuffix mat-icon-button aria-label="Clear"
+                  (click)="openOptionsControls.push(questionControl)"
           >
-          <mat-icon>rule</mat-icon>
-        </button>
-        <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="questionsControl.removeAt(qIndex)">
-          <mat-icon>delete</mat-icon>
-        </button>
-        <mat-error>{{ questionControl.get('text').getError('custom') }}</mat-error>
-        <mat-hint *ngIf="questionControl.get('text').dirty && questionControl.valid && questionControl.value.id">
-          Be know Already exist question is changed. it would be effected charts
-        </mat-hint>
-      </mat-form-field>
+            <mat-icon>rule</mat-icon>
+          </button>
+          <button type="button" mat-button matSuffix mat-icon-button aria-label="Drag" cdkDragHandle>
+            <mat-icon>drag_indicator</mat-icon>
+          </button>
+          <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="questionsControl.removeAt(qIndex)">
+            <mat-icon>delete</mat-icon>
+          </button>
+          <mat-error>{{ questionControl.get('text').getError('custom') }}</mat-error>
+          <mat-hint *ngIf="true">
+            <mat-icon>update</mat-icon>
+            <mat-icon>help</mat-icon>
+            <mat-icon>warning</mat-icon>
+            We updated existed question. Which already have answer.
+          </mat-hint>
+          <mat-hint *ngIf="questionControl.get('text').dirty && questionControl.valid && questionControl.value.id">
+            Be know Already exist question is changed. it would be effected charts
+          </mat-hint>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="options" *ngIf="questionControl.get('options').length > 0 || openOptionsControls.includes(questionControl)">
-        <mat-label>Options (Pass enter)</mat-label>
-        <mat-chip-list #optionList>
-          <div cdkDropList cdkDropListOrientation="horizontal" cdkDropList (cdkDropListDropped)="dropUser(questionControl.get('options'), $event)">
-            <mat-chip
-              *ngFor="let option of questionControl.get('options').controls; let optionIndex = index"
-              cdkDrag
-              removable
-              disableRipple
-              [selected]="false"
-              (removed)="questionControl.get('options').removeAt(optionIndex);"
-            >
-              <div #optionText contenteditable="true" [formControl]="option.get('text')"></div>
-              <div class="option-actions">
-                <mat-icon (click)="focus(optionText)" inline>edit</mat-icon>
-                <mat-icon cdkDragHandle inline>open_with</mat-icon>
-                <mat-icon matChipRemove>cancel</mat-icon>
-              </div>
-            </mat-chip>
-          </div>
-          <input
-            placeholder="New option..."
-            (focus)="focusQuestion(questionControl.get('id').value)"
-            [matChipInputFor]="optionList"
-            [matChipInputAddOnBlur]="true"
-            (matChipInputTokenEnd)="addOption(questionControl.get('options'), $event)"
-          />
-        </mat-chip-list>
+        <mat-form-field appearance="outline" class="options" *ngIf="questionControl.get('options').length > 0 || openOptionsControls.includes(questionControl)">
+          <mat-label>Options (Pass enter)</mat-label>
+          <mat-chip-list #optionList>
+            <div cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="drop(questionControl.get('options'), $event)">
+              <mat-chip
+                *ngFor="let option of questionControl.get('options').controls; let optionIndex = index"
+                cdkDrag
+                removable
+                disableRipple
+                [selected]="false"
+                (removed)="questionControl.get('options').removeAt(optionIndex);"
+              >
+                <div #optionText contenteditable="true" [formControl]="option.get('text')"></div>
+                <div class="option-actions">
+                  <mat-icon (click)="focus(optionText)" inline>edit</mat-icon>
+                  <mat-icon cdkDragHandle inline>drag_indicator</mat-icon>
+                  <mat-icon matChipRemove>cancel</mat-icon>
+                </div>
+              </mat-chip>
+            </div>
+            <input
+              placeholder="New option..."
+              (focus)="focusQuestion(questionControl.get('id').value)"
+              [matChipInputFor]="optionList"
+              [matChipInputAddOnBlur]="true"
+              (matChipInputTokenEnd)="addOption(questionControl.get('options'), $event)"
+            />
 
-        <mat-error>{{ questionControl.get('options').getError('custom') }}</mat-error>
-      </mat-form-field>
+            <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="questionControl.get('options').clear(); openOptionsControls.splice(openOptionsControls.indexOf(questionControl), 1)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </mat-chip-list>
 
-      <mat-error>{{ questionControl.getError('custom') }}</mat-error>
-    </ng-container>
+          <mat-error>{{ questionControl.get('options').getError('custom') }}</mat-error>
+        </mat-form-field>
+
+        <mat-error>{{ questionControl.getError('custom') }}</mat-error>
+      </div>
+    </div>
     <button type="button" class="add-question" color="primary" mat-flat-button [disabled]="submit$ | async" (click)="add()">
       <i class="icon save"></i> Add question
     </button>

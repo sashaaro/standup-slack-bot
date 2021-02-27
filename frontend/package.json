@@ -23,6 +23,7 @@
     "@angular/router": "~11.2.0",
     "@ng-select/ng-select": "^6.1.0",
     "@ngneat/until-destroy": "^8.0.3",
+    "chart.js": "^2.9.4",
     "ngx-pagination": "^5.0.0",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",

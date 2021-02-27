@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {Team, TeamService} from "../../../api/auto";
-import {delay, map, publishReplay, refCount, startWith, switchMap} from "rxjs/operators";
+import {publishReplay, refCount, startWith, switchMap} from "rxjs/operators";
 import {MatSlideToggleChange} from "@angular/material/slide-toggle";
 import {Subject} from "rxjs";
 

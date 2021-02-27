@@ -43,6 +43,10 @@
   font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;
   background: #fff;
   border-radius: .28571429rem;
+
+  mat-icon[inline] {
+    vertical-align: middle;
+  }
 }
 
 .ui.menu .item {

@@ -22,7 +22,7 @@ import {HttpErrorResponse} from "@angular/common/http";
 import {Router} from "@angular/router";
 import {BehaviorSubject, combineLatest, NEVER, of, Subject} from "rxjs";
 import {distinct, map, mergeMap, startWith, switchMap, tap} from "rxjs/operators";
-import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
+import {CdkDragDrop, CdkDragStart, moveItemInArray} from "@angular/cdk/drag-drop";
 import {MatChip, MatChipInputEvent} from "@angular/material/chips";
 import {BACKSPACE} from "@angular/cdk/keycodes";
 import {FocusMonitor} from "@angular/cdk/a11y";
@@ -153,6 +153,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   remove(control: AbstractControl, value) {
+    // TODO confirm
+    // TODO add hint would not be remove until you submit form
     const list = [...control.value];
     list.splice(this.usersControl.value.indexOf(this.usersControl.value), 1)
     control.setValue(list);
@@ -180,15 +182,19 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     )
   }
 
-  dropUser(control: AbstractControl, event: CdkDragDrop<User>) {
+  drop(control: AbstractControl, event: CdkDragDrop<User>) {
     const list = [...control.value]
     moveItemInArray(list, event.previousIndex, event.currentIndex)
     control.setValue(list)
   }
 
   addOption(optionsControl: FormArray|any, event: MatChipInputEvent) {
+    const value = event.value.trim()
+    if (!value) {
+      return;
+    }
     const control = this.createOptionControl();
-    control.patchValue({text: event.value.trim()});
+    control.patchValue({text: value});
     optionsControl.push(control);
     event.input.value = '';
     const index = this.openOptionsControls.indexOf(

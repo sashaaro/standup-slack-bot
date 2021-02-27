@@ -32,6 +32,7 @@ import { StandupsComponent } from './pages/standups/standups.component';
 import {NgxPaginationModule} from "ngx-pagination";
 import { AsyncDirective } from './component/async.directive';
 import { LoaderComponent } from './component/loader/loader.component';
+import { StatTeamComponent } from './pages/team/stat-team/stat-team.component';
 
 @NgModule({
   declarations: [
@@ -49,6 +50,7 @@ import { LoaderComponent } from './component/loader/loader.component';
     StandupsComponent,
     AsyncDirective,
     LoaderComponent,
+    StatTeamComponent,
   ],
   imports: [
     BrowserModule,
