@@ -1,6 +1,10 @@
 <div class="stand-up-list" *appAsync="response$; placeholder: true; let response">
   <div *ngFor="let standup of response.standups | paginate: {itemsPerPage: itemsPerPage, currentPage: page, totalItems: response.total}" class="stand-up">
-    <div class="stand-up__header">{{ standup.startAt|date }}</div>
+    <div class="stand-up__header">
+      {{ standup.startAt|date }}
+<!--      if !standUp.isFinished()-->
+<!--      a.ui.teal.label= 'In progress'-->
+    </div>
     <div class="stand-up__content">
       <div *ngFor="let user of standup.users" class="stand-up-item">
         <div *ngIf="user.questions.length === 0">No answers 🐥</div>

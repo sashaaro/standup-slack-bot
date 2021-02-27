@@ -6,12 +6,9 @@ import {ChannelController} from "./channel.controller";
 import {StandupController} from "./standup.controllert";
 import {OptionController} from "./option.controller";
 
-export const templateDirPath = './resources/templates'
-
 export interface IHttpAction {
   (req: Request, res: Response): void
 }
-
 
 const actions = [
   AuthController,

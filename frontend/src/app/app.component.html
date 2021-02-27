@@ -33,3 +33,9 @@
 
   <router-outlet #routerOutlet="outlet"></router-outlet>
 </div>
+
+<ng-template #error502>
+  <div class="auth-block">
+    Sorry, something going wrong. Support in <a href='https://t.me/{{ supportTelegram }}'>telegram</a>
+  </div>
+</ng-template>

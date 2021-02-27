@@ -117,10 +117,4 @@ export class Team implements ITeam {
     nullable: false
   })
   reportChannel: string
-
-  untilTime()
-  {
-    const time = new Date(new Date('2020.01.01 ' + this.start).getTime() + this.duration * 60 * 1000);
-    return time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0')
-  }
 }

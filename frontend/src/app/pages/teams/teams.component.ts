@@ -66,4 +66,9 @@ export class TeamsComponent implements OnInit {
       this.manualUpdate.next();
     })
   }
+
+  untilTime(team: Team) { // TODO pipe
+    const time = new Date(new Date('2020.01.01 ' + team.start).getTime() + team.duration * 60 * 1000); // TODO
+    return time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0')
+  }
 }

@@ -4,9 +4,6 @@ import {ServerCommand} from "./ServerCommand";
 import {StandupNotifyCommand} from "./StandupNotifyCommand";
 import {QueueConsumeCommand} from "./QueueConsumeCommand";
 import {bind} from "../services/utils";
-import {SlackBotTransport} from "../slack/slack-bot-transport.service";
-import {Connection} from "typeorm";
-import SlackWorkspace from "../model/SlackWorkspace";
 
 export class DevCommand implements yargs.CommandModule {
   command = 'dev';

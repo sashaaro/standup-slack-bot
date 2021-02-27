@@ -10,11 +10,15 @@
     </div>
     <div class="team__content">
       <div class="team__desc desc">
-        <div class="desc__time"><mat-icon>schedule</mat-icon>{{ team.start }}.</div>
+        <div class="desc__time">
+          <mat-icon>schedule</mat-icon>{{ team.start }} - {{ untilTime(team) }}.
+        </div>
         <div>(duration {{ team.duration }} minutes)</div>
+        <div>({{ team.timezone.name }})</div>
 <!--        <img [src]="team.createdBy.profile.image_24"/>-->
 <!--        <div>{{ team.createdBy.name }}</div>-->
 <!--          {{ team.questions.length }} questions-->
+<!--        ="Created by " + team.createdBy.name + " at " + intl.format(team.createdAt)-->
       </div>
       <div class="team__users users">
         <div class="users__count">{{ team.users?.length }} respondents</div>

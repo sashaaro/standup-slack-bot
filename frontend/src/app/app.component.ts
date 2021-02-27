@@ -9,6 +9,7 @@ import {Router} from "@angular/router";
 })
 export class AppComponent implements OnInit {
   user$ = this.sessionService.user$
+  supportTelegram = '' // TODO
 
   constructor(
     private sessionService: SessionService,
