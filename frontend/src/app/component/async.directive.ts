@@ -66,6 +66,7 @@ export class AsyncDirective<T> implements OnInit {
         this.render.removeChild(rootRef, loader.location.nativeElement);
         if (placeholderViewRef) {
           placeholderViewRef.destroy();
+          placeholderViewRef = null;
           viewRef = this.containerRef.createEmbeddedView(this.templateRef, this.context);
         }
 

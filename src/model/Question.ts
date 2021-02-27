@@ -29,6 +29,8 @@ class Question implements IQuestion {
   @Column({default: true})
   isEnabled: boolean = true;
 
+  // TODO ?! isOptional: boolean = false;
+
   @Expose()
   @Type(() => QuestionOption)
   @Transform((params: TransformFnParams) => params.value || [])

@@ -98,13 +98,6 @@
 
 
 .logo {
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center center;
-  /* https://www.flaticon.com/free-icon/robot_270137 */
-  background-image: url("/assets/logo.png");
-  width: 32px;
-
   margin-left: 5px;
 }
 
@@ -113,6 +106,11 @@
   color: #919193;
   font-size: 12px;
   font-weight: 600;
+
+  a {
+    color: #919193;
+    text-decoration: none;
+  }
 }
 
 .menu-title__sign img {

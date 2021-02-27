@@ -14,12 +14,12 @@ export class StandupsComponent implements OnInit {
   response$ =
     combineLatest([
       this.activatedRoute.params.pipe(map(params => params.id)),
-      this.activatedRoute.queryParams.pipe(map(params => params.page || 1)),
+      this.activatedRoute.queryParams.pipe(map(params => params.page || 3)),
     ]).pipe(
     switchMap(([teamId, page]) => this.standupService.getStandups(teamId, page, 'response')),
     map((response: HttpResponse<Standup[]>) => ({
       standups: response.body,
-      total: Number.parseInt(response.headers.get('x-total')) || 3
+      total: Number.parseInt(response.headers.get('x-total')) || 0
     })),
     publishReplay(1),
     refCount()

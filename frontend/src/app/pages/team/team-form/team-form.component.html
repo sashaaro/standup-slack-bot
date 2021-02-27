@@ -29,7 +29,7 @@
 
 
       <mat-form-field appearance="outline" class="users">
-        <mat-label>Participants</mat-label>
+        <mat-label>Respondents</mat-label>
 
         <mat-chip-list class="user-chip-list" formControlName="users" [compareWith]="compareWithById" #chipList>
           <div>
@@ -67,11 +67,11 @@
         </mat-select>
         <mat-error>{{ form.get('reportChannel').errors }}</mat-error>
       </mat-form-field>
-
-      <button class="save" color="primary" mat-flat-button [class.loading]="submitting" (click)="submit()">
-        <i class="icon save"></i> Save
-      </button>
     </div>
+
+    <button class="submit" color="primary" mat-flat-button [class.loading]="submitting" (click)="submit()">
+      <i class="icon save"></i> Save settings
+    </button>
   </div>
 
 

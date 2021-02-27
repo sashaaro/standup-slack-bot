@@ -26,8 +26,10 @@
   </div>
 
 
-  <pagination-template class="ui pagination menu" #p="paginationApi" (pageChange)="page = $event; pageChanged($event)">
-    <a class="item pagination-previous" [class.disabled]="p.isFirstPage()" *ngIf="!p.isFirstPage()" (click)="p.previous()"> < </a>
+  <pagination-template class="ui pagination menu" *ngIf="response.total > 0" #p="paginationApi" (pageChange)="page = $event; pageChanged($event)">
+    <a class="item pagination-previous" [class.disabled]="p.isFirstPage()" *ngIf="!p.isFirstPage()" (click)="p.previous()">
+      <mat-icon inline>navigate_before</mat-icon>
+    </a>
 
     <ng-container *ngFor="let page of p.pages" [class.current]="p.getCurrent() === page.value">
       <a class="item" (click)="p.setCurrent(page.value)" *ngIf="p.getCurrent() !== page.value">
@@ -38,6 +40,8 @@
       </div>
     </ng-container>
 
-    <a class="pagination-next" [class.disabled]="p.isLastPage()" *ngIf="!p.isLastPage()" (click)="p.next()"> > </a>
+    <a class="item pagination-next" [class.disabled]="p.isLastPage()" *ngIf="!p.isLastPage()" (click)="p.next()">
+      <mat-icon inline>navigate_next</mat-icon>
+    </a>
   </pagination-template>
 </div>

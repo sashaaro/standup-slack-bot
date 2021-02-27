@@ -1,13 +1,19 @@
 @import "~@ng-select/ng-select/themes/default.theme.css";
 @import "./mixin";
 
-/* You can add global styles to this file, and also import other style files */
-//body {
-//  background-color: #f2f2f2;
-//  margin: 0;
-//  height: 100%;
-//  font-family: Roboto;
-//}
+
+body {
+  margin: 0;
+  background-color: #f2f2f2;
+  background-image: url("https://html5book.ru/wp-content/uploads/2015/06/background28.jpg");
+  background-size: 270px ;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+* {
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
 
 .mat-form-field-appearance-outline.sm .mat-form-field-infix {
   padding: 0.3em 0 0.7em 0;
@@ -46,23 +52,6 @@
   background-color: rgba(0, 0, 0, .05);
 }
 
-.welcome {
-  width: 300px;
-  margin: 50px auto;
-  text-align: center;
-}
-
-.welcome__title {
-  font-size: 35px;
-  font-weight: 800;
-  margin-top: 30px;
-  margin-bottom: 50px;
-}
-
-.welcome .logo {
-  height: 50px;
-  margin: 0 auto 10px auto;
-}
 
 .ui.menu .item {
   &.menu-title {
@@ -82,6 +71,8 @@
 
 .module {
   display: block;
+  width: 100%;
+  box-sizing: border-box;
   background: white;
   padding: 10px;
   border-radius: 10px;
@@ -160,18 +151,6 @@ code {
   float: right;
 }
 
-html, body { height: 100%; }
-body {
-  margin: 0;
-  background-color: #f2f2f2;
-  background-image: url("https://html5book.ru/wp-content/uploads/2015/06/background28.jpg");
-  background-size: 270px ;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-}
-
-* {
-  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
-}
 
 .mat-standard-chip {
   height: initial!important;
@@ -206,6 +185,40 @@ body {
     cursor: grabbing!important;
   }
 }
+
+.logo {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+  /* https://www.flaticon.com/free-icon/robot_270137 */
+  background-image: url("/assets/logo.png");
+  width: 32px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  box-shadow: 0 1px 2px 0 rgb(34 36 38 / 15%);
+  font-size: 20px;
+
+  .item {
+    position: relative;
+    padding: 8px 12px;
+    cursor: pointer;
+
+    &:before {
+      position: absolute;
+      content: "";
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: 1px;
+      background: rgba(34, 36, 38, 0.1);
+    }
+  }
+}
+
 
 //*,:after,:before{-webkit-box-sizing:inherit;box-sizing:inherit;}
 //a{background-color:transparent;-webkit-text-decoration-skip:objects;}

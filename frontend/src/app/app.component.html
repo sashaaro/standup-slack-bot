@@ -1,19 +1,22 @@
 <div class="content">
-  <div class="ui large menu" *ngIf="routerOutlet.isActivated">
+  <div class="ui large menu" *ngIf="user$ | async as user">
     <div class="ui container">
-      <a routerLink="/" class="logo"></a>
+      <a class="logo" routerLink="/"></a>
       <a class="item menu-title" routerLink="/">
         <div>
           Standups bot
-          <div class="menu-title__sign" *ngIf="user$ | async as user">
+          <div class="menu-title__sign">
+            <a (click)="$event.stopPropagation()" [href]="'https://' + user?.workspace?.domain + '.slack.com'" target="_blank">
+              <img [src]="user.workspace.slackData.icon.image_34"/>
+            </a>
             for {{ user?.workspace?.domain }}.slack.com
           </div>
         </div>
       </a>
       <div class="right menu">
-        <a class="item" routerLink="/team/create" routerLinkActive #rla="routerLinkActive" [class.active]="rla.isActive">
-          <mat-icon inline>360</mat-icon> Create review 360
-        </a>
+<!--        <a class="item" routerLink="/team/create" routerLinkActive #rla="routerLinkActive" [class.active]="rla.isActive">-->
+<!--          <mat-icon inline>360</mat-icon> Create review 360-->
+<!--        </a>-->
         <a class="item" routerLink="/team/create" routerLinkActive #rla="routerLinkActive" [class.active]="rla.isActive">
           <mat-icon inline>add_circle</mat-icon> Create standup
         </a>
