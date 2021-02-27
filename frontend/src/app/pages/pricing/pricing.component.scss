@@ -1,0 +1,39 @@
+.module {
+  display: flex;
+  justify-content: center;
+}
+.plans {
+  display: flex;
+  justify-content: space-between;
+  width: 800px;
+}
+
+.plan {
+  border-radius: 10px;
+  box-shadow: 0 1px 2px 0 rgb(34 36 38 / 15%);
+  background: #007eff26;
+  width: 250px;
+  padding: 25px;
+  text-align: center;
+  &__title {
+    font-size: 22px;
+    font-weight: 600;
+
+    margin-bottom: 15px;
+  }
+
+  &__desc {
+    font-size: 18px;
+    color: #919193;
+
+    margin-bottom: 25px;
+  }
+
+  &__price {
+    font-size: 18px;
+    font-weight: 600;
+    color: #191972;
+
+    margin-bottom: 10px;
+  }
+}

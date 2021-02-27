@@ -1,0 +1,11 @@
+<div class="module">
+  Current plan
+  Free
+
+  <a routerLink="/pricing" mat-stroked-button>Upgrade</a>
+
+
+  <a routerLink="/archive" mat-stroked-button routerLinkActive #rla1="routerLinkActive" [class.active]="rla1.isActive">
+    <mat-icon inline>archive</mat-icon> Archived teams
+  </a>
+</div>

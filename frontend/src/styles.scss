@@ -120,6 +120,14 @@ body {
   float: right;
 }
 
+.no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 32px;
+  height: 150px;
+}
 
 .mat-standard-chip {
   height: initial!important;

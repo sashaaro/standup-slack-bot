@@ -93,7 +93,7 @@
           <button type="button" mat-button matSuffix mat-icon-button aria-label="Drag" cdkDragHandle>
             <mat-icon>drag_indicator</mat-icon>
           </button>
-          <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="questionsControl.removeAt(qIndex)">
+          <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="removeQuestion(qIndex)">
             <mat-icon>delete</mat-icon>
           </button>
           <mat-error>{{ questionControl.get('text').getError('custom') }}</mat-error>
@@ -163,4 +163,18 @@
       {{ user.name }}
     </mat-option>
   </mat-autocomplete>
+</ng-template>
+
+<ng-template #confirmDialogRef>
+  <mat-dialog-content>
+    <div>Confirm window</div>
+    <mat-hint>Would be deleted after submit form!</mat-hint>
+  </mat-dialog-content>
+
+  <mat-dialog-actions>
+    <button mat-button color="warn" [mat-dialog-close]="true">Confirm delete</button>
+    <button mat-button [mat-dialog-close]="false">Cancel</button>
+    <!-- The mat-dialog-close directive optionally accepts a value as a result for the dialog. -->
+  </mat-dialog-actions>
+
 </ng-template>

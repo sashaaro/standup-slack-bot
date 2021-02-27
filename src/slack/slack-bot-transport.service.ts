@@ -404,6 +404,7 @@ export class SlackBotTransport implements ITransport {
       //markdown support todo // https://api.slack.com/reference/surfaces/formatting !
     }
 
+    // TODO validate https://github.com/slackapi/slack-api-specs/blob/master/web-api/slack_web_openapi_v2.json ?!
     const args:any = {
       view: view,
       trigger_id: triggerId,

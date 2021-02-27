@@ -4,7 +4,7 @@ import {
   Input,
   OnChanges,
   OnInit, QueryList,
-  SimpleChanges,
+  SimpleChanges, TemplateRef, ViewChild,
   ViewChildren
 } from '@angular/core';
 import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
@@ -26,6 +26,8 @@ import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
 import {MatChip, MatChipInputEvent} from "@angular/material/chips";
 import {BACKSPACE} from "@angular/cdk/keycodes";
 import {FocusMonitor} from "@angular/cdk/a11y";
+import {MatDialog} from "@angular/material/dialog";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 // TODO use daysControl
 export const weekDays = [
@@ -63,6 +65,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   })
 
   @ViewChildren(MatChip) chips: QueryList<MatChip>;
+  @ViewChild('confirmDialogRef', {static: true}) confirmDialog: TemplateRef<any>;
 
   submitting = false;
   users$ = this.userService.getUsers()
@@ -96,6 +99,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     private timezoneService: TimezoneService,
     private channelService: ChannelService,
     private _focusMonitor: FocusMonitor,
+    public dialog: MatDialog,
+    public snackBar: MatSnackBar,
   ) {
   }
 
@@ -154,11 +159,22 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   remove(control: AbstractControl, value) {
-    // TODO confirm
     // TODO add hint would not be remove until you submit form
     const list = [...control.value];
     list.splice(this.usersControl.value.indexOf(this.usersControl.value), 1)
     control.setValue(list);
+  }
+
+  removeQuestion(qIndex: number) {
+    const dialogRef = this.dialog.open(this.confirmDialog, {
+      width: '250px'
+    });
+    // confirm
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.questionsControl.removeAt(qIndex)
+      }
+    })
   }
 
   focus(element: HTMLInputElement) {
@@ -228,8 +244,12 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       untilDestroyed(this)
     ).subscribe(team => {
       // todo notification
-      this.team = team;
-      //this.router.navigateByUrl('/')
+      this.snackBar.open(this.team ?'Successfully updated' : 'Successfully created', 'Ok', {
+        verticalPosition: 'top',
+        duration: 3000,
+      });
+      // ..this.team = team;
+      this.router.navigateByUrl('/')
     }, (e: HttpErrorResponse) => {
       if (400 === e.status) {
         const errors = e.error as ValidationError[];

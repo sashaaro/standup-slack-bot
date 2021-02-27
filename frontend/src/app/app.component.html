@@ -13,15 +13,19 @@
           </div>
         </div>
       </a>
+      <a class="item" routerLink="/" routerLinkActive #rla3="routerLinkActive" [class.active]="rla3.isActive && rla3.routerLinkActiveOptions.exact">
+        Teams
+      </a>
+
       <div class="right menu">
 <!--        <a class="item" routerLink="/team/create" routerLinkActive #rla="routerLinkActive" [class.active]="rla.isActive">-->
 <!--          <mat-icon inline>360</mat-icon> Create review 360-->
 <!--        </a>-->
         <a class="item" routerLink="/team/create" routerLinkActive #rla="routerLinkActive" [class.active]="rla.isActive">
-          <mat-icon inline>add_circle</mat-icon> Create standup
+          <mat-icon inline>add_circle</mat-icon> Create team
         </a>
-        <a class="item disabled" routerLink="/archive" routerLinkActive #rla1="routerLinkActive" [class.active]="rla1.isActive">
-          <mat-icon inline>archive</mat-icon> Archive
+        <a class="item" routerLink="/settings" routerLinkActive #rla2="routerLinkActive" [class.active]="rla2.isActive">
+          <mat-icon inline>settings</mat-icon> Settings
         </a>
 <!--        <a class="item disabled" routerLink="/archive" routerLinkActive #rla2="routerLinkActive" [class.active]="rla2.isActive">-->
 <!--          <mat-icon inline>support</mat-icon> Support-->
