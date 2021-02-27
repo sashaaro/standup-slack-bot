@@ -1,30 +1,44 @@
 import { Component, OnInit } from '@angular/core';
 import {Team, TeamService} from "../../../api/auto";
-import {publishReplay, refCount, startWith, switchMap} from "rxjs/operators";
+import {map, publishReplay, refCount, startWith, switchMap} from "rxjs/operators";
 import {MatSlideToggleChange} from "@angular/material/slide-toggle";
-import {Subject} from "rxjs";
+import {merge, Subject} from "rxjs";
+import {ActivatedRoute} from "@angular/router";
+import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
 
+@UntilDestroy()
 @Component({
   selector: 'app-teams',
   templateUrl: './teams.component.html',
   styleUrls: ['./teams.component.scss']
 })
 export class TeamsComponent implements OnInit {
-  manualUpdate = new Subject()
-  teams$ = this.manualUpdate.pipe(
-    startWith(null),
-    switchMap(_ => this.teamService.getTeams()),
-    publishReplay(1),
-    refCount()
-  )
+  manualUpdate = new Subject<number|null>()
+  teams$ =
+    merge(
+      this.activatedRoute.data.pipe(
+        map(data => data.status)
+      ),
+      this.manualUpdate.pipe(map(_ => this.activatedRoute.snapshot.data.status))
+    ).pipe(
+      switchMap(status => this.teamService.getTeams(status)),
+      publishReplay(1),
+      refCount()
+    )
 
 
-  constructor(private teamService: TeamService) { }
+  constructor(
+    private teamService: TeamService,
+    private activatedRoute: ActivatedRoute
+  ) { }
 
   ngOnInit(): void {
-    this.teams$.subscribe(teams => {
-      //this.activateControls = new FormControl();
-    })
+
+    this.teams$
+      .pipe(untilDestroyed(this))
+      .subscribe(teams => {
+        //this.activateControls = new FormControl();
+      })
   }
 
   toggle(e: MatSlideToggleChange, team: Team) {
@@ -36,6 +50,14 @@ export class TeamsComponent implements OnInit {
     })
   }
 
+  restoreTeam(team: Team) {
+    this.teamService.updateStatus(team.id, {
+      status: 1
+    }).subscribe(t => {
+      // TODO notification
+      this.manualUpdate.next();
+    })
+  }
   achieve(team: Team) {
     this.teamService.updateStatus(team.id, {
       status: 3

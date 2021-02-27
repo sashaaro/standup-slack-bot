@@ -17,7 +17,14 @@ const routes: Routes = [
   {
     path: '',
     component: TeamsComponent,
-    canActivate: [AuthorizedGuard]
+    canActivate: [AuthorizedGuard],
+    data: {status: null}
+  },
+  {
+    path: 'archive',
+    component: TeamsComponent,
+    canActivate: [AuthorizedGuard],
+    data: {status: 3}
   },
   {
     path: 'team/create',

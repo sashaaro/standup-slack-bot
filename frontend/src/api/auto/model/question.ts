@@ -17,7 +17,6 @@ export interface Question {
     index?: number;
     text?: string;
     options?: Array<Option>;
-    isEnabled?: boolean;
     createdAt?: string;
 }
 

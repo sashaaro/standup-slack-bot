@@ -23,11 +23,11 @@
         <a class="item disabled" routerLink="/archive" routerLinkActive #rla1="routerLinkActive" [class.active]="rla1.isActive">
           <mat-icon inline>archive</mat-icon> Archive
         </a>
-        <a class="item disabled" routerLink="/archive" routerLinkActive #rla1="routerLinkActive" [class.active]="rla1.isActive">
-          <mat-icon inline>support</mat-icon> Support
-        </a>
+<!--        <a class="item disabled" routerLink="/archive" routerLinkActive #rla2="routerLinkActive" [class.active]="rla2.isActive">-->
+<!--          <mat-icon inline>support</mat-icon> Support-->
+<!--        </a>-->
 
-        <a class="item" (click)="logout()">Logout</a></div>
+        <a class="item" href="#" (click)="$event.preventDefault(); logout()">Logout</a></div>
     </div>
   </div>
 

@@ -1,11 +1,11 @@
 <div class="team-list" *appAsync="teams$; placeholder: true; let teams">
   <div *ngIf="teams.length === 0" class="no-stand-ups">No teams🐥<i class="icon bee"></i></div>
 
-  <div *ngFor="let team of teams" class="team" [routerLink]="'/team/' + team.id + '/standups'" [class.team--disabled]="team.status !== 1">
+  <div *ngFor="let team of teams" class="team" [routerLink]="'/team/' + team.id + '/standups'" [class.team--disabled]="team.status === 2">
     <div class="team__header">
       <a class="team__title">{{ team.name }}</a>
-      <div class="ui toggle checkbox">
-        <mat-slide-toggle [checked]="team.status === 1" (change)="toggle($event, team)" title="Activate"></mat-slide-toggle>
+      <div class="ui toggle checkbox" *ngIf="team.status !== 3">
+        <mat-slide-toggle [checked]="team.status === 1" (change)="toggle($event, team);" (click)="$event.stopPropagation()" title="Activate"></mat-slide-toggle>
       </div>
     </div>
     <div class="team__content">
@@ -32,9 +32,14 @@
         <button mat-flat-button color="primary" title="settings"  [routerLink]="'/team/' + team.id + '/edit'">
           <mat-icon>settings</mat-icon>
         </button>
-        <button mat-flat-button title="achieve" color="warn" (click)="$event.stopPropagation(); achieve(team)">
+        <button mat-flat-button title="achieve" color="warn" *ngIf="team.status !== 3; else restore" (click)="$event.stopPropagation(); achieve(team)">
           <mat-icon>restore_from_trash</mat-icon>
         </button>
+        <ng-template #restore>
+          <button mat-flat-button title="achieve" color="warn" (click)="$event.stopPropagation(); restoreTeam(team)">
+            <mat-icon>autorenew</mat-icon>
+          </button>
+        </ng-template>
       </div>
     </div>
 

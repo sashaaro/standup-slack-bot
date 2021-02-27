@@ -33,6 +33,8 @@ export const TEAM_STATUS_ACTIVATED = 1;
 export const TEAM_STATUS_DEACTIVATED = 2;
 export const TEAM_STATUS_ACHIEVED = 3;
 
+export const teamStatuses = [TEAM_STATUS_ACTIVATED, TEAM_STATUS_DEACTIVATED, TEAM_STATUS_ACHIEVED]
+
 @Entity()
 export class Team implements ITeam {
   @PrimaryGeneratedColumn()

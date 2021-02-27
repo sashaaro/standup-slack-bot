@@ -5,7 +5,12 @@ import {IHttpAction} from "./index";
 import Timezone from "../../model/Timezone";
 import {plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";
-import {Team, TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, TEAM_STATUS_DEACTIVATED} from "../../model/Team";
+import {
+  Team,
+  TEAM_STATUS_ACHIEVED,
+  TEAM_STATUS_ACTIVATED,
+  teamStatuses
+} from "../../model/Team";
 import Question from "../../model/Question";
 import QuestionOption from "../../model/QuestionOption";
 
@@ -28,14 +33,26 @@ export class TeamController {
   }
 
   list: IHttpAction = async (req, res) => {
-    const teams = await this.connection.getRepository(Team).createQueryBuilder('t')
+    let status = parseInt(req.query.status);
+
+    if (!teamStatuses.includes(status)) {
+      status = null;
+    }
+
+    const qb = this.connection.getRepository(Team).createQueryBuilder('t')
       .leftJoinAndSelect('t.timezone', 'tz')
       .leftJoinAndSelect('t.createdBy', 'createdBy')
       .leftJoinAndSelect('t.users', 'users')
       .andWhere('t.createdById = :createdBy', {createdBy: req.context.user.id})
-      .andWhere('t.status != :exceptStatus', {exceptStatus: TEAM_STATUS_ACHIEVED})
-      // TODO .addOrderBy('t.createdAt', "DESC")
-      .getMany()
+    // TODO .addOrderBy('t.createdAt', "DESC")
+
+    if (status) {
+      qb.andWhere('t.status = :status', {status: status})
+    } else {
+      qb.andWhere('t.status != :exceptStatus', {exceptStatus: TEAM_STATUS_ACHIEVED})
+    }
+
+    const teams = await qb.getMany()
 
     res.setHeader('Content-Type', 'application/json');
     res.send(teams);
@@ -241,7 +258,7 @@ export class TeamController {
     }
 
     const status = parseInt(req.body.status)
-    if (![TEAM_STATUS_ACTIVATED, TEAM_STATUS_DEACTIVATED, TEAM_STATUS_ACHIEVED].includes(status)) {
+    if (!teamStatuses.includes(status)) {
       throw new BadRequestError();
     }
 
