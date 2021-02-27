@@ -8,7 +8,7 @@ import {Router} from "@angular/router";
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  user$ = this.sessionService.auth()
+  user$ = this.sessionService.user$
 
   constructor(
     private sessionService: SessionService,

@@ -38,7 +38,7 @@ export class AuthController {
         this.logger.error('Destroy session error', {error: err})
       }
 
-      return res.redirect('/');
+      return res.status(err ? 500 : 204).send('');
     })
   }
 

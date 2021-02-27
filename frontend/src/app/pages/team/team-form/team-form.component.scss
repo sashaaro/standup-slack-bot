@@ -1,7 +1,14 @@
+@import "../../../../mixin";
+
 form {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-column-gap: 30px;
+
+  @include onlyMobile {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
 }
 .section {
   display: grid;
@@ -13,6 +20,11 @@ form {
     "users users"
     "channel channel"
 ;
+
+  @include onlyMobile {
+    grid-template-columns: 1fr;
+    grid-template: initial;
+  }
 
   grid-column-gap: 20px;
   grid-row-gap: 0px;

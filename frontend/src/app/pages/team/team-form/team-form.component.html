@@ -97,12 +97,12 @@
             <mat-icon>delete</mat-icon>
           </button>
           <mat-error>{{ questionControl.get('text').getError('custom') }}</mat-error>
-          <mat-hint *ngIf="true">
-            <mat-icon>update</mat-icon>
-            <mat-icon>help</mat-icon>
-            <mat-icon>warning</mat-icon>
-            We updated existed question. Which already have answer.
-          </mat-hint>
+<!--          <mat-hint *ngIf="true">-->
+<!--            <mat-icon>update</mat-icon>-->
+<!--            <mat-icon>help</mat-icon>-->
+<!--            <mat-icon>warning</mat-icon>-->
+<!--            We updated existed question. Which already have answer.-->
+<!--          </mat-hint>-->
           <mat-hint *ngIf="questionControl.get('text').dirty && questionControl.valid && questionControl.value.id">
             Be know Already exist question is changed. it would be effected charts
           </mat-hint>

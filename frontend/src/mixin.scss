@@ -12,3 +12,16 @@
     clear: both;
   }
 }
+
+@mixin media($query) {
+  @media #{$query} { @content; }
+}
+
+$mobile-width: 965px;
+$mobileMediaQuery: "only screen and (max-width: #{$mobile-width})";
+@mixin onlyMobile() {
+  @include media($mobileMediaQuery) {
+    @content;
+  }
+}
+

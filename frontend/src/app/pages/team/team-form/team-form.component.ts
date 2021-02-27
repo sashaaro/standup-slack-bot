@@ -22,11 +22,12 @@ import {HttpErrorResponse} from "@angular/common/http";
 import {Router} from "@angular/router";
 import {BehaviorSubject, combineLatest, NEVER, of, Subject} from "rxjs";
 import {distinct, map, mergeMap, startWith, switchMap, tap} from "rxjs/operators";
-import {CdkDragDrop, CdkDragStart, moveItemInArray} from "@angular/cdk/drag-drop";
+import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
 import {MatChip, MatChipInputEvent} from "@angular/material/chips";
 import {BACKSPACE} from "@angular/cdk/keycodes";
 import {FocusMonitor} from "@angular/cdk/a11y";
 
+// TODO use daysControl
 export const weekDays = [
   'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
 ];
