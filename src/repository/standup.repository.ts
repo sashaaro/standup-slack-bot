@@ -26,6 +26,7 @@ export class StandUpRepository extends Repository<StandUp> {
     const qb = this.createQueryBuilder('standup');
     qbStandUpJoins(qb);
     qbActiveQuestions(qb);
+    // database timzone and nodejs process timezone should be same!
     qb.andWhere(`date_trunc('minute', standup.endAt)::time = :startedAt::time`, {startedAt: formatTime(date, false)})
 
     return qb.getMany();

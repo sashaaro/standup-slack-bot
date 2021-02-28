@@ -99,7 +99,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     }
     await redisReady(this.redis);
     if (!this.connection.isConnected) {
-      //await this.connection.connect();
+      await this.connection.connect();
     }
 
     const queues = queueNames.map(q => this.injector.get(QUEUE_FACTORY_TOKEN)(q))

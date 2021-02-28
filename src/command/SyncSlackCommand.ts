@@ -19,7 +19,9 @@ export class SyncSlackCommand implements yargs.CommandModule<any, any> {
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    await this.connection.connect()
+    if (!this.connection.isConnected) {
+      await this.connection.connect();
+    }
     const workspaces = await this.connection.getRepository(SlackWorkspace).find()
     for(const workspace of workspaces) {
       await this.syncSlackService.syncForWorkspace(workspace)

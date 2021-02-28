@@ -41,8 +41,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
     if (!this.connection.isConnected) {
       await this.connection.connect();
     }
-    const connection = this.connection
-    const sqlInMemory = await connection.driver.createSchemaBuilder().log();
+    const sqlInMemory = await this.connection.driver.createSchemaBuilder().log();
     const upSqls: string[] = [], downSqls: string[] = [];
 
     sqlInMemory.upQueries.forEach(upQuery => {

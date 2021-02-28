@@ -1,7 +1,7 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  EXPRESS_SLACK_API_TOKEN, IQueueFactory,
+  IQueueFactory,
   LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, QUEUE_LIST, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
 import {Connection} from "typeorm";
@@ -70,11 +70,12 @@ export class ServerCommand implements yargs.CommandModule {
 
     const expressApp = express()
 
-    expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
+    const apiMiddleware = new ApiMiddleware(this.injector)
+    expressApp.use('/api/slack', apiMiddleware.useSlackApi());
     this.slackEventListener.initSlackEvents();
 
     expressApp.use('/api/doc', express.static('./resources/public'));
-    expressApp.use('/api', new ApiMiddleware(this.injector).use());
+    expressApp.use('/api', apiMiddleware.use());
 
     expressApp.get('/api/health-check', (request, response) => {
       const redis = this.redis.status === 'connected';

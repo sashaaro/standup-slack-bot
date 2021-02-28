@@ -19,7 +19,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
   constructor(
     private slackTransport: SlackBotTransport,
-    private standUpBotService: StandUpNotifier,
+    private standUpNotifier: StandUpNotifier,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(TERMINATE) protected terminate$: Observable<void>,
@@ -43,7 +43,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     await redisReady(this.redis);
 
     this.logger.debug('Start standup notificator loop...');
-    const {start$, end$} = this.standUpBotService.create()
+    const {start$, end$} = this.standUpNotifier.create()
     start$.pipe(
       takeUntil(this.terminate$)
     ).subscribe(standups => {

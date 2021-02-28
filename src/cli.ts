@@ -19,12 +19,11 @@ const injector = ReflectiveInjector.resolveAndCreate(providers);
 
 const config = injector.get(CONFIG_TOKEN);
 const logger = injector.get(LOGGER_TOKEN);
-console.log(`Environment: ${env}. Debug: ${config.debug ? 'enable' : 'disable'}`);
+console.log(`Environment: ${env}. Debug: ${config.debug ? 'true' : 'false'}`);
 
 injector.get(TERMINATE).subscribe(() => {
   console.log('Terminate...')
 })
-
 
 if (config.rollBarAccessToken) {
   const rollbar = new Rollbar({

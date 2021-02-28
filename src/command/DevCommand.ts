@@ -8,7 +8,7 @@ import {bind} from "../services/decorators";
 export class DevCommand implements yargs.CommandModule {
   static meta = {
     command: 'dev',
-    describe: 'Combine server:run standup:notify queue:consume'
+    describe: 'Combine server:run standup:notify queue:consume for watcher'
   }
 
   constructor(

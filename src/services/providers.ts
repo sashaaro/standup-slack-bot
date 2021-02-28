@@ -1,7 +1,6 @@
 import {Provider} from "injection-js";
 import {
   CONFIG_TOKEN,
-  EXPRESS_SLACK_API_TOKEN,
   IQueueFactory,
   LOGGER_TOKEN,
   QUEUE_FACTORY_TOKEN, QUEUE_LIST,
@@ -20,7 +19,6 @@ import IOredis from 'ioredis';
 import dotenv from "dotenv";
 import {commands, devCommands} from "../command";
 import {createLogger, format, Logger, transports} from "winston";
-import {createSlackApiExpress} from "../http/createExpress";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import Queue from "bull";
@@ -174,11 +172,6 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     SyncSlackService,
     StandUpNotifier,
     ...actions,
-    {
-      provide: EXPRESS_SLACK_API_TOKEN,
-      useFactory: createSlackApiExpress,
-      deps: [CONFIG_TOKEN, QUEUE_FACTORY_TOKEN, SlackEventAdapter, LOGGER_TOKEN]
-    },
     {
       provide: LOGGER_TOKEN,
       useFactory: (config: IAppConfig) => {

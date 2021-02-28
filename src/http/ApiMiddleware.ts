@@ -5,7 +5,7 @@ import createRedisConnectStore from 'connect-redis';
 import {Injector} from "injection-js";
 import {Connection} from "typeorm";
 import ApiContext from "../services/ApiContext";
-import {LOGGER_TOKEN, REDIS_TOKEN} from "../services/token";
+import {CONFIG_TOKEN, IQueueFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN} from "../services/token";
 import {AuthController} from "./controller/auth.controller";
 import http from "http";
 import {TeamController} from "./controller/team.controller";
@@ -14,6 +14,12 @@ import {ChannelController} from "./controller/channel.controller";
 import {StandupController} from "./controller/standup.controllert";
 import {OptionController} from "./controller/option.controller";
 import {Logger} from "winston";
+import {createMessageAdapter} from "@slack/interactive-messages";
+import {IAppConfig, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
+import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from "../slack/slack-bot-transport.service";
+import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
+import {createLoggerMiddleware} from "./middlewares";
+import SlackEventAdapter from "@slack/events-api/dist/adapter";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -132,6 +138,44 @@ export class ApiMiddleware {
     })
 
     router.use(errorHandler(injector.get(LOGGER_TOKEN)))
+
+    return router;
+  }
+
+  useSlackApi(): express.Router {
+    const router = express.Router()
+
+    const config = this.injector.get(CONFIG_TOKEN)
+    const queueFactory = this.injector.get(QUEUE_FACTORY_TOKEN);
+    const slackEvents = this.injector.get(SlackEventAdapter);
+    const logger = this.injector.get(LOGGER_TOKEN);
+
+    if (config.debug) {
+      router.use(createLoggerMiddleware(logger))
+    }
+
+    const slackInteractions = createMessageAdapter(config.slackSigningSecret);
+    const queue = queueFactory(QUEUE_NAME_SLACK_INTERACTIVE);
+
+    slackInteractions.viewSubmission(CALLBACK_STANDUP_SUBMIT, async (response: ViewSubmission) => {
+      try {
+        const job = await queue.add(response);
+      } catch (error) {
+        logger.error('Error put slack view submission to queue', {error})
+      }
+    })
+    slackInteractions.action({actionId: new RegExp(
+        [ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT].join('|')
+      )},  async (response: SlackAction) => {
+      try {
+        const job = await queue.add(response);
+      } catch (error) {
+        logger.error('Error put slack action to queue', {error})
+      }
+    })
+
+    router.use('/interactive', slackInteractions.expressMiddleware());
+    router.use('/events', slackEvents.expressMiddleware());
 
     return router;
   }
