@@ -1,12 +1,14 @@
 import * as yargs from "yargs";
 import {Connection} from "typeorm";
 import {Injectable} from "injection-js";
-import {bind} from "../services/utils";
+import {bind} from "../services/decorators";
 
 @Injectable()
 export class DatabaseMigrateCommand implements yargs.CommandModule {
-  command = 'database:migrate';
-  describe = 'Migrate database';
+  static meta = {
+    command: 'database:migrate',
+    describe: 'Migrate database',
+  }
 
   constructor(private connection: Connection) {}
 

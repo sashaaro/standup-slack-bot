@@ -2,7 +2,7 @@ import * as yargs from "yargs";
 import {Connection} from "typeorm";
 import {Injectable} from "injection-js";
 import * as fs from "fs";
-import {bind} from "../services/utils";
+import {bind} from "../services/decorators";
 
 const camelCase = function(str) {
   return str
@@ -16,17 +16,18 @@ const camelCase = function(str) {
  */
 @Injectable()
 export class MigrationGenerateCommand implements yargs.CommandModule {
-  command = "migration:generate";
-  describe = "Generates a new migration file with sql needs to be executed to update schema.";
-  aliases = "migrations:generate";
-
-  builder(args: yargs.Argv) {
-    return args
-      .option("n", {
-        alias: "name",
-        describe: "Name of the migration class.",
-        demand: true
-      });
+  static meta = {
+    command: 'migration:generate',
+    describe: "Generates a new migration file with sql needs to be executed to update schema.",
+    aliases: 'migrations:generate',
+    builder: (args: yargs.Argv) => {
+      return args
+        .option("n", {
+          alias: "name",
+          describe: "Name of the migration class.",
+          demand: true
+        });
+    }
   }
 
   constructor(private connection: Connection) {}

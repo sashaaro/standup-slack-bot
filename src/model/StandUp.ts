@@ -1,10 +1,9 @@
-import {Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
+import {BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import AnswerRequest from "./AnswerRequest";
-import {IStandUp} from "../bot/models";
 import {Team} from "./Team";
 
 @Entity()
-export default class StandUp implements IStandUp {
+export default class StandUp {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -22,7 +21,12 @@ export default class StandUp implements IStandUp {
   @OneToMany(type => AnswerRequest, answer => answer.standUp)
   answers: AnswerRequest[];
 
+  @BeforeInsert()
+  calculateEndAt() {
+    this.endAt = new Date(this.startAt.getTime() + this.team.duration * 60 * 1000);
+  }
+
   isFinished() {
-    return this.endAt && this.endAt.getTime() < new Date().getTime()
+    return this.endAt.getTime() < new Date().getTime()
   }
 }

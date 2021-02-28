@@ -1,22 +1,12 @@
-import { Injectable, Inject } from 'injection-js';
-import {CONFIG_TOKEN, LOGGER_TOKEN} from "../../services/token";
-import {IAppConfig} from "../../services/providers";
-import {WebClient} from "@slack/web-api";
+import { Injectable } from 'injection-js';
 import {Connection} from "typeorm";
 import User from "../../model/User";
-import {Logger} from "winston";
-import {authorized, bind} from "../../services/utils";
 import {Request, Response} from "express";
+import {authorized, bind} from "../../services/decorators";
 
 @Injectable()
 export class UserController {
-  constructor(
-    @Inject(CONFIG_TOKEN) private config: IAppConfig,
-    private connection: Connection,
-    private webClient: WebClient,
-    @Inject(LOGGER_TOKEN) private logger: Logger,
-  ) {
-  }
+  constructor(private connection: Connection) {}
 
   @bind
   @authorized

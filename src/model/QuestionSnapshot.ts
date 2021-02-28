@@ -1,37 +1,26 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, BeforeInsert, OneToMany} from "typeorm";
 import QuestionOption from "./QuestionOption";
 import {Team} from "./Team";
-import {ArrayMinSize, IsArray, IsInt, IsNotEmpty, MaxLength, MinLength} from "class-validator";
-import {Exclude, Expose, Transform, Type} from "class-transformer";
+import {IsArray, IsInt, IsNotEmpty, MaxLength, MinLength} from "class-validator";
+import {Expose, Transform, Type} from "class-transformer";
 import {TransformFnParams} from "class-transformer/types/interfaces";
+import StandUp from "./StandUp";
 
 @Entity()
-class Question {
-  @Expose()
+class QuestionSnapshot {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Expose()
-  @IsNotEmpty()
-  @IsInt()
   @Column()
   index: number;
 
   @Expose()
-  @IsNotEmpty()
-  @MinLength(3)
-  @MaxLength(50)
   @Column()
   text: string;
 
-  @Exclude()
-  @Column({default: true})
-  isEnabled: boolean = true;
-
-  // TODO ?! isOptional: boolean = false;
-
   @Expose()
-  @Type(() => QuestionOption)
+  // @Type(() => QuestionOptionSnapshot)
   @Transform((params: TransformFnParams) => params.value || [])
   @IsArray()
   //@ArrayMinSize(2)
@@ -41,20 +30,11 @@ class Question {
   })
   options: QuestionOption[];
 
-  @Column()
-  createdAt: Date;
-
   @ManyToOne(type => Team, {
     cascade: ["insert"],
     nullable: false
   })
-  team: Team;
-
-  @BeforeInsert()
-  setupCreatedAt() {
-    this.createdAt = new Date();
-    this.index = this.index !== undefined ? this.index : this.team?.questions?.indexOf(this);
-  }
+  standup: StandUp;
 }
 
-export default Question;
+export default QuestionSnapshot;

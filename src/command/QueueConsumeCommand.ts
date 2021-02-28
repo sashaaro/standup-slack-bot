@@ -9,13 +9,12 @@ import {
 import {Logger} from "winston";
 import {Connection} from "typeorm";
 import {Redis} from "ioredis";
-import StandUpBotService from "../bot/StandUpBotService";
 import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {Observable} from "rxjs";
 import {Job} from "bull";
-import {bind} from "../services/utils";
 import {SlackEventListener} from "../slack/SlackEventListener";
 import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
+import {bind} from "../services/decorators";
 
 class HasPreviousError extends Error {
   public previous: Error;
@@ -41,8 +40,10 @@ export const redisReady = (redis: Redis): Promise<void> => {
 }
 
 export class QueueConsumeCommand implements yargs.CommandModule {
-  command = 'queue:consume';
-  describe = 'Run queue consumers';
+  static meta = {
+    command: 'queue:consume',
+    describe: 'Run queue consumers'
+  }
 
   queueHandlers = {
     [QUEUE_NAME_SLACK_EVENTS]: async (job: Job) => {
@@ -62,7 +63,6 @@ export class QueueConsumeCommand implements yargs.CommandModule {
   constructor(
     private injector: Injector,
     private slackEventListener: SlackEventListener,
-    private standUpBotService: StandUpBotService,
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
@@ -101,8 +101,6 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     if (!this.connection.isConnected) {
       //await this.connection.connect();
     }
-
-    this.standUpBotService.listenTransport();
 
     const queues = queueNames.map(q => this.injector.get(QUEUE_FACTORY_TOKEN)(q))
 

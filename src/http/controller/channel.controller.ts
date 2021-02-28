@@ -4,9 +4,9 @@ import {IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
 import {Connection} from "typeorm";
 import {Logger} from "winston";
-import {authorized, bind} from "../../services/utils";
 import {Request, Response} from "express";
 import {Channel} from "../../model/Channel";
+import {authorized, bind} from "../../services/decorators";
 
 @Injectable()
 export class ChannelController {

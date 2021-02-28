@@ -1,23 +1,25 @@
 import * as yargs from "yargs";
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
-import StandUpBotService from "../bot/StandUpBotService";
-import StandUp from "../model/StandUp";
+import StandUpNotifier from "../slack/StandUpNotifier";
 import {Inject} from "injection-js";
 import {LOGGER_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
 import {Connection} from "typeorm";
 import {Observable} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
-import {bind} from "../services/utils";
 import {Logger} from "winston";
+import {takeUntil} from "rxjs/operators";
+import {bind} from "../services/decorators";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
-  command = 'standup:notify';
-  describe = 'Notify teams about standup starting';
+  static meta = {
+    command: 'standup:notify',
+    describe: 'Notify teams about standup starting'
+  }
 
   constructor(
-    @Inject(SlackBotTransport) private slackTransport: SlackBotTransport,
-    @Inject(StandUpBotService) private standUpBotService: StandUpBotService,
+    private slackTransport: SlackBotTransport,
+    private standUpBotService: StandUpNotifier,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(TERMINATE) protected terminate$: Observable<void>,
@@ -28,7 +30,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
   async handler(args: yargs.Arguments<{}>) {
     this.logger.debug('Database connecting...');
     if (!this.connection.isConnected) {
-      //await this.connection.connect();
+      await this.connection.connect();
     }
     try {
       await this.redis.connect();
@@ -40,17 +42,28 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
     await redisReady(this.redis);
 
-    this.standUpBotService.finishStandUp$.subscribe((standUp: StandUp) => {
-      if (standUp.team.reportChannel) {
-        this.slackTransport.sendReport(standUp)
-      }
-    });
-
     this.logger.debug('Start standup notificator loop...');
-    this.standUpBotService.startStandUpInterval().subscribe({
-      error: () => this.close(),
-      complete: () => this.close()
+    const {start$, end$} = this.standUpBotService.create()
+    start$.pipe(
+      takeUntil(this.terminate$)
+    ).subscribe(standups => {
+      this.logger.info('Start daily meetings', {standups: standups.map(standUp => standUp.id)})
+
+      standups.forEach(standup => {
+        standup.team.users.forEach(user => {
+          try {
+            this.slackTransport.sendGreetingMessage(user, standup)
+          } catch (e) {
+            this.logger.error('Start daily meeting error', {standUpId: standup.id, userId: user.id, error: e})
+          }
+        })
+      })
     });
+    end$.pipe(
+      takeUntil(this.terminate$)
+    ).subscribe(standups => {
+      standups.forEach(standup => this.slackTransport.sendReport(standup))
+    })
 
     this.terminate$.subscribe(() => {
       this.close();

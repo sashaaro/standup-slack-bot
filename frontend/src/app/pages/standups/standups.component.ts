@@ -14,7 +14,7 @@ export class StandupsComponent implements OnInit {
   response$ =
     combineLatest([
       this.activatedRoute.params.pipe(map(params => params.id)),
-      this.activatedRoute.queryParams.pipe(map(params => params.page || 3)),
+      this.activatedRoute.queryParams.pipe(map(params => params.page || 1)),
     ]).pipe(
     switchMap(([teamId, page]) => this.standupService.getStandups(teamId, page, 'response')),
     map((response: HttpResponse<Standup[]>) => ({

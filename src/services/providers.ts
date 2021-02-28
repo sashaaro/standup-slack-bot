@@ -9,8 +9,7 @@ import {
   TERMINATE,
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
-import {SlackStandUpProvider} from "../slack/SlackStandUpProvider";
-import StandUpBotService, {STAND_UP_BOT_STAND_UP_PROVIDER, STAND_UP_BOT_TRANSPORT} from "../bot/StandUpBotService";
+import StandUpNotifier from "../slack/StandUpNotifier";
 import actions from "../http/controller";
 import {LogLevel, WebClient} from '@slack/web-api'
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
@@ -19,18 +18,17 @@ import entities from "../model";
 import * as fs from "fs";
 import IOredis from 'ioredis';
 import dotenv from "dotenv";
-import {TestTransport} from "../../test/services/transport";
-import {commands} from "../command";
+import {commands, devCommands} from "../command";
 import {createLogger, format, Logger, transports} from "winston";
 import {createSlackApiExpress} from "../http/createExpress";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import Queue from "bull";
-import {DevCommand} from "../command/DevCommand";
 import * as Transport from "winston-transport";
 import {TransformableInfo} from "logform";
 import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
 import {SlackEventListener} from "../slack/SlackEventListener";
+import {SyncSlackService} from "../slack/sync-slack.service";
 
 export interface IAppConfig {
   env: string,
@@ -171,13 +169,10 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       useFactory: (config: IAppConfig) => createEventAdapter(config.slackSigningSecret),
       deps: [CONFIG_TOKEN]
     },
-    SlackStandUpProvider,
+    SlackBotTransport,
     SlackEventListener,
-    {
-      provide: STAND_UP_BOT_STAND_UP_PROVIDER,
-      useExisting: SlackStandUpProvider
-    },
-    StandUpBotService,
+    SyncSlackService,
+    StandUpNotifier,
     ...actions,
     {
       provide: EXPRESS_SLACK_API_TOKEN,
@@ -231,18 +226,12 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     ...queueProviders
   ]
 
-  providers.push(env === 'test' ? TestTransport : SlackBotTransport);
-  providers.push({
-    provide: STAND_UP_BOT_TRANSPORT,
-    useExisting: env === 'test' ? TestTransport : SlackBotTransport
-  });
-
-  const commandProviders = [...commands]
+  let commandProviders = [...commands]
   if (env !== "prod") {
-    commandProviders.push(DevCommand)
+    commandProviders = [...commandProviders, ...devCommands]
   }
 
-  providers = providers.concat(commandProviders)
+  providers = [...providers, ...commandProviders]
 
   return {providers, commands: commandProviders};
 }

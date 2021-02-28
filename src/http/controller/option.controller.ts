@@ -4,9 +4,9 @@ import {IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
 import {Connection} from "typeorm";
 import {Logger} from "winston";
-import {authorized, bind} from "../../services/utils";
 import {Request, Response} from "express";
 import QuestionOption from "../../model/QuestionOption";
+import {authorized, bind} from "../../services/decorators";
 
 @Injectable()
 export class OptionController {

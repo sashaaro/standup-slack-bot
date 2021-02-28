@@ -3,11 +3,13 @@ import {Inject, Injector} from "injection-js";
 import {ServerCommand} from "./ServerCommand";
 import {StandupNotifyCommand} from "./StandupNotifyCommand";
 import {QueueConsumeCommand} from "./QueueConsumeCommand";
-import {bind} from "../services/utils";
+import {bind} from "../services/decorators";
 
 export class DevCommand implements yargs.CommandModule {
-  command = 'dev';
-  describe = 'Combine server:run standup:notify queue:consume';
+  static meta = {
+    command: 'dev',
+    describe: 'Combine server:run standup:notify queue:consume'
+  }
 
   constructor(
     @Inject(Injector) private injector: Injector

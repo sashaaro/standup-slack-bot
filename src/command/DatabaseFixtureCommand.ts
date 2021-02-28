@@ -2,12 +2,14 @@ import * as yargs from "yargs";
 import {initFixtures} from "../services/providers";
 import {Connection} from "typeorm";
 import {Injectable} from "injection-js";
-import {bind} from "../services/utils";
+import {bind} from "../services/decorators";
 
 @Injectable()
 export class DatabaseFixtureCommand implements yargs.CommandModule {
-  command = 'database:fixture';
-  describe = 'Load database fixture';
+  static meta = {
+    command: 'database:fixture',
+    describe: 'Load database fixture',
+  }
 
   constructor(private connection: Connection) {}
 

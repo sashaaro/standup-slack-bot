@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import "reflect-metadata";
-import yargs from "yargs";
+import yargs, {Arguments} from "yargs";
 import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "./services/providers";
 import {CONFIG_TOKEN, LOGGER_TOKEN, TERMINATE} from "./services/token";
 import Rollbar from "rollbar";
+import "./services/decorators";
 
 let argv = yargs.option('env', {
   default: 'dev',
@@ -13,6 +14,7 @@ let argv = yargs.option('env', {
 
 const env = argv.argv.env;
 const {providers, commands} = createProviders(env);
+// consider https://github.com/TypedProject/tsed/tree/production/packages/di
 const injector = ReflectiveInjector.resolveAndCreate(providers);
 
 const config = injector.get(CONFIG_TOKEN);
@@ -36,9 +38,10 @@ if (config.rollBarAccessToken) {
 let main = yargs
   .usage("Usage: $0 <command> [options]")
 
-commands.forEach(command => {
-  const commandInstance = injector.get(command) as yargs.CommandModule
-  main = main.command(commandInstance);
+commands.forEach((command: any) => {
+  const meta = command.meta as Partial<yargs.CommandModule<any, any>>
+  const handler: (args: Arguments<any>) => void = (args) => injector.get(command).handler(args)
+  main = main.command({...meta, handler});
 })
 
 try {

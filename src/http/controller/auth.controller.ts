@@ -8,11 +8,11 @@ import SlackWorkspace from "../../model/SlackWorkspace";
 import {OauthAccessResponse} from "../../slack/model/ScopeGranted";
 import User from "../../model/User";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
-import {AccessDenyError, ResourceNotFoundError} from "../apiExpressMiddleware";
+import {AccessDenyError, ResourceNotFoundError} from "../ApiMiddleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
-import {SlackBotTransport} from "../../slack/slack-bot-transport.service";
 import {Logger} from "winston";
-import {bind} from "../../services/utils";
+import {SyncSlackService} from "../../slack/sync-slack.service";
+import {bind} from "../../services/decorators";
 
 @Injectable()
 export class AuthController {
@@ -21,7 +21,7 @@ export class AuthController {
     private connection: Connection,
     private webClient: WebClient,
     @Inject(LOGGER_TOKEN) private logger: Logger,
-    private slackTransport: SlackBotTransport,
+    private syncSlackService: SyncSlackService,
   ) {
   }
 
@@ -89,7 +89,7 @@ export class AuthController {
       const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({team: workspace.id})) as any;
       workspace.domain = teamInfo.team.domain;
       workspace = await workspaceRepository.save(workspace);
-      this.slackTransport.syncData(workspace);
+      this.syncSlackService.syncForWorkspace(workspace);
     }
 
     const userRepository = this.connection.manager.getRepository(User);

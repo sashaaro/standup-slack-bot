@@ -1,12 +1,11 @@
 import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, BeforeUpdate} from "typeorm";
 import Question from "./Question";
-import {IQuestionOption} from "../bot/models";
 import {IsNotEmpty, IsString} from "class-validator";
 import {Exclude, Expose, Transform} from "class-transformer";
 import {TransformFnParams} from "class-transformer/types/interfaces";
 
 @Entity()
-export default class QuestionOption implements IQuestionOption {
+export default class QuestionOption {
   @Expose()
   @PrimaryGeneratedColumn()
   id: number;

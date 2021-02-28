@@ -1,7 +1,7 @@
 import StandUp from "../../model/StandUp";
 import {Inject, Injectable} from 'injection-js';
 import {Connection} from "typeorm";
-import {AccessDenyError} from "../apiExpressMiddleware";
+import {AccessDenyError} from "../ApiMiddleware";
 import {IHttpAction} from "./index";
 import {groupBy} from "../../services/utils";
 

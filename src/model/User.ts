@@ -2,7 +2,6 @@ import {Entity, Column, ManyToOne, PrimaryColumn, ManyToMany, JoinTable, OneToMa
 import SlackWorkspace from "./SlackWorkspace";
 import {SlackUserProfile} from "../slack/model/SlackUser";
 import {Channel} from "./Channel";
-import {IUser} from "../bot/models";
 import {Team} from "./Team";
 import AnswerRequest from "./AnswerRequest";
 import {Exclude, Expose} from "class-transformer";
@@ -33,7 +32,7 @@ class Profile implements SlackUserProfile {
 }
 
 @Entity()
-export default class User implements IUser {
+export default class User {
   @Expose()
   @PrimaryColumn()
   id: string;

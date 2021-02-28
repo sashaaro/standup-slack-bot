@@ -2,7 +2,7 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Column,
-  Entity, JoinTable,
+  Entity,
   ManyToMany,
   ManyToOne,
   OneToMany,
@@ -11,7 +11,6 @@ import {
 import User from "./User";
 import SlackWorkspace from "./SlackWorkspace";
 import Question from "./Question";
-import {ITeam} from "../bot/models";
 import Timezone from "./Timezone";
 import {Channel} from "./Channel";
 import {Expose, Type} from "class-transformer";
@@ -20,14 +19,13 @@ import {
   IsArray,
   IsInt,
   IsMilitaryTime,
-  IsNotEmpty, Length,
+  IsNotEmpty,
   Max,
   MaxLength,
   Min,
   MinLength,
   ValidateNested
 } from "class-validator";
-import {JoinColumn} from "typeorm/browser";
 
 export const TEAM_STATUS_ACTIVATED = 1;
 export const TEAM_STATUS_DEACTIVATED = 2;
@@ -35,15 +33,18 @@ export const TEAM_STATUS_ACHIEVED = 3;
 
 export const teamStatuses = [TEAM_STATUS_ACTIVATED, TEAM_STATUS_DEACTIVATED, TEAM_STATUS_ACHIEVED]
 
+
+// TODO consider https://tsed.io/docs/validation.html#data-input-validation
+
 @Entity()
-export class Team implements ITeam {
+export class Team {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Expose()
   @IsNotEmpty()
   @MinLength(2)
-  @MaxLength(40)
+  @MaxLength(16)
   @Column()
   name: string;
 

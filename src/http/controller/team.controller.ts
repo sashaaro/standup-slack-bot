@@ -1,6 +1,6 @@
 import {Injectable} from 'injection-js';
 import {Connection} from "typeorm";
-import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../apiExpressMiddleware";
+import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../ApiMiddleware";
 import {IHttpAction} from "./index";
 import Timezone from "../../model/Timezone";
 import {plainToClassFromExist} from "class-transformer";
@@ -33,7 +33,7 @@ export class TeamController {
   }
 
   list: IHttpAction = async (req, res) => {
-    let status = parseInt(req.query.status);
+    let status = parseInt(req.query.status as string);
 
     if (!teamStatuses.includes(status)) {
       status = null;

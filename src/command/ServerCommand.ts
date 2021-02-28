@@ -8,18 +8,20 @@ import {Connection} from "typeorm";
 import express from 'express'
 import 'express-async-errors';
 import http from "http";
-import {apiExpressMiddleware} from "../http/apiExpressMiddleware";
+import {ApiMiddleware} from "../http/ApiMiddleware";
 import {Redis} from "ioredis";
 import {Logger} from "winston";
 import {Observable} from "rxjs";
 import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
-import {bind} from "../services/utils";
 import {SlackEventListener} from "../slack/SlackEventListener";
+import {bind} from "../services/decorators";
 
 export class ServerCommand implements yargs.CommandModule {
-  command = 'server:run';
-  describe = 'Run server';
+  static meta: Partial<yargs.CommandModule<any, any>> = {
+    command: 'server:run',
+    describe: 'Run server',
+  };
 
   constructor(
     private injector: Injector,
@@ -68,13 +70,14 @@ export class ServerCommand implements yargs.CommandModule {
 
     const expressApp = express()
 
-    this.slackEventListener.initSlackEvents();
     expressApp.use('/api/slack', this.injector.get(EXPRESS_SLACK_API_TOKEN));
+    this.slackEventListener.initSlackEvents();
+
     expressApp.use('/api/doc', express.static('./resources/public'));
-    expressApp.use('/api', apiExpressMiddleware(this.injector));
+    expressApp.use('/api', new ApiMiddleware(this.injector).use());
 
     expressApp.get('/api/health-check', (request, response) => {
-      const redis = this.injector.get(REDIS_TOKEN).status === 'connected';
+      const redis = this.redis.status === 'connected';
       const postgres = this.injector.get(Connection).isConnected
 
       response.status(redis && postgres ? 200 : 500);

@@ -89,6 +89,7 @@ https://www.digitalocean.com/docs/container-registry/quickstart/
 ```bash
 eval $(minikube -p minikube docker-env)
 docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
+docker build frontend -f frontend/deploy/Dockerfile -t standup-slack-bot-ui:latest
 docker tag standup-slack-bot:latest registry.digitalocean.com/simple/standup-slack-bot:latest
 docker push registry.digitalocean.com/simple/standup-slack-bot:latest
 ```
