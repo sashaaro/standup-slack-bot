@@ -1,5 +1,5 @@
 import {Inject} from "injection-js";
-import {IQueueFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN} from "../services/token";
+import {LOGGER_TOKEN} from "../services/token";
 import {QUEUE_NAME_SLACK_EVENTS} from "../services/providers";
 import {MessageResponse} from "./model/MessageResponse";
 import {ChannelLeft, MemberJoinedChannel} from "./model/SlackChannel";
@@ -15,6 +15,7 @@ import Question from "../model/Question";
 import AnswerRequest from "../model/AnswerRequest";
 import {StandUpRepository} from "../repository/standup.repository";
 import {SyncSlackService} from "./sync-slack.service";
+import {QueueRegistry} from "../services/queue.registry";
 
 export class SlackEventListener {
   evensHandlers: {[event:string]: Function} = {
@@ -104,7 +105,7 @@ export class SlackEventListener {
     private slackEvents: SlackEventAdapter,
     private slackBotTransport: SlackBotTransport,
     private syncSlackService: SyncSlackService,
-    @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
+    private queueRegistry: QueueRegistry,
     private connection: Connection,
     @Inject(LOGGER_TOKEN) private logger: Logger,
   ) {
@@ -128,7 +129,7 @@ export class SlackEventListener {
       const handler = this.evensHandlers[event]
       handler.bind(this);
       this.slackEvents.on(event, (data) => {
-         this.queueFactory(QUEUE_NAME_SLACK_EVENTS).add(event, data);
+         this.queueRegistry.create(QUEUE_NAME_SLACK_EVENTS).add(event, data);
       })
     }
   }

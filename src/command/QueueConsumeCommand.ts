@@ -1,8 +1,7 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  IQueueFactory,
-  LOGGER_TOKEN, QUEUE_FACTORY_TOKEN,
+  LOGGER_TOKEN,
   REDIS_TOKEN,
   TERMINATE
 } from "../services/token";
@@ -15,6 +14,7 @@ import {Job} from "bull";
 import {SlackEventListener} from "../slack/SlackEventListener";
 import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
 import {bind} from "../services/decorators";
+import {QueueRegistry} from "../services/queue.registry";
 
 class HasPreviousError extends Error {
   public previous: Error;
@@ -66,7 +66,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
-    @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
+    private queueRegistry: QueueRegistry,
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 
@@ -102,7 +102,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       await this.connection.connect();
     }
 
-    const queues = queueNames.map(q => this.injector.get(QUEUE_FACTORY_TOKEN)(q))
+    const queues = queueNames.map(q => this.queueRegistry.create(q))
 
     queues.forEach(queue => {
       const handler = this.queueHandlers[queue.name]

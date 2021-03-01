@@ -1,9 +1,7 @@
 import {Provider} from "injection-js";
 import {
   CONFIG_TOKEN,
-  IQueueFactory,
   LOGGER_TOKEN,
-  QUEUE_FACTORY_TOKEN, QUEUE_LIST,
   REDIS_TOKEN,
   TERMINATE,
 } from "./token";
@@ -21,12 +19,12 @@ import {commands, devCommands} from "../command";
 import {createLogger, format, Logger, transports} from "winston";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
-import Queue from "bull";
 import * as Transport from "winston-transport";
 import {TransformableInfo} from "logform";
 import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
 import {SlackEventListener} from "../slack/SlackEventListener";
 import {SyncSlackService} from "../slack/sync-slack.service";
+import {QueueRegistry} from "./queue.registry";
 
 export interface IAppConfig {
   env: string,
@@ -91,25 +89,6 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     dotenv.config({path: `.env.${env}`})
   }
 
-  const queueProviders: Provider[] = [
-    {
-      provide: QUEUE_FACTORY_TOKEN,
-      useFactory: (config: IAppConfig, queues) => ((queueName: string) => {
-        queues[queueName] = queues[queueName] || new Queue(queueName, {redis: {host: config.redisHost, port: 6379}});
-
-        return queues[queueName];
-      }) as IQueueFactory,
-      deps: [CONFIG_TOKEN, QUEUE_LIST]
-    },
-  ]
-
-  queueProviders.push(
-    {
-      provide: QUEUE_LIST,
-      useFactory: () => []
-    }
-  )
-
   let providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,
@@ -154,6 +133,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       }),
       deps: [CONFIG_TOKEN]
     },
+    QueueRegistry,
     {
       provide: WebClient,
       useFactory: (config: IAppConfig, logger: Logger) => new WebClient(config.botUserOAuthAccessToken, {
@@ -216,7 +196,6 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
         })
       })
     },
-    ...queueProviders
   ]
 
   let commandProviders = [...commands]

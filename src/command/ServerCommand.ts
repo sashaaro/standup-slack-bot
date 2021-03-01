@@ -1,8 +1,7 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  IQueueFactory,
-  LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, QUEUE_LIST, REDIS_TOKEN, TERMINATE,
+  LOGGER_TOKEN, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
 import {Connection} from "typeorm";
 import express from 'express'
@@ -16,6 +15,7 @@ import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
 import {SlackEventListener} from "../slack/SlackEventListener";
 import {bind} from "../services/decorators";
+import {QueueRegistry} from "../services/queue.registry";
 
 export class ServerCommand implements yargs.CommandModule {
   static meta: Partial<yargs.CommandModule<any, any>> = {
@@ -28,7 +28,6 @@ export class ServerCommand implements yargs.CommandModule {
     private connection: Connection,
     private slackEventListener: SlackEventListener,
     @Inject(REDIS_TOKEN) private redis: Redis,
-    @Inject(QUEUE_FACTORY_TOKEN) private queueFactory: IQueueFactory,
     @Inject(LOGGER_TOKEN) protected logger: Logger,
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
@@ -120,7 +119,6 @@ export class ServerCommand implements yargs.CommandModule {
   private close() {
     this.connection.close()
     try {
-      this.injector.get(QUEUE_LIST).forEach(q => q.close())
       this.redis.disconnect()
     } catch (e) {
       if (!e.message.startsWith('Connection is closed')) {

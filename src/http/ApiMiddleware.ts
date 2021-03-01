@@ -5,7 +5,7 @@ import createRedisConnectStore from 'connect-redis';
 import {Injector} from "injection-js";
 import {Connection} from "typeorm";
 import ApiContext from "../services/ApiContext";
-import {CONFIG_TOKEN, IQueueFactory, LOGGER_TOKEN, QUEUE_FACTORY_TOKEN, REDIS_TOKEN} from "../services/token";
+import {CONFIG_TOKEN, LOGGER_TOKEN, REDIS_TOKEN} from "../services/token";
 import {AuthController} from "./controller/auth.controller";
 import http from "http";
 import {TeamController} from "./controller/team.controller";
@@ -20,6 +20,7 @@ import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from ".
 import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
 import {createLoggerMiddleware} from "./middlewares";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
+import {QueueRegistry} from "../services/queue.registry";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -146,7 +147,7 @@ export class ApiMiddleware {
     const router = express.Router()
 
     const config = this.injector.get(CONFIG_TOKEN)
-    const queueFactory = this.injector.get(QUEUE_FACTORY_TOKEN);
+    const queueRegistry = this.injector.get(QueueRegistry);
     const slackEvents = this.injector.get(SlackEventAdapter);
     const logger = this.injector.get(LOGGER_TOKEN);
 
@@ -155,7 +156,7 @@ export class ApiMiddleware {
     }
 
     const slackInteractions = createMessageAdapter(config.slackSigningSecret);
-    const queue = queueFactory(QUEUE_NAME_SLACK_INTERACTIVE);
+    const queue = queueRegistry.create(QUEUE_NAME_SLACK_INTERACTIVE);
 
     slackInteractions.viewSubmission(CALLBACK_STANDUP_SUBMIT, async (response: ViewSubmission) => {
       try {
