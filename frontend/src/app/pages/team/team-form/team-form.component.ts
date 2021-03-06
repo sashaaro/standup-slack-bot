@@ -60,7 +60,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     start: [null, Validators.required],
     duration: [null, [Validators.required, control => Number.isNaN(Number.parseInt(control.value, 10)) ? {required: true} : null]],
     users: this.usersControl,
-    reportChannel: [null],
+    reportChannel: [null, Validators.required],
     questions: this.questionsControl,
   })
 
@@ -235,6 +235,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     value.questions.forEach((q) => q.text = q.text?.trim());
     value.users = value.users.map(u => ({id: u.id}));
     value.timezone = {id: value.timezone.id};
+    value.reportChannel = {id: value.reportChannel.id};
 
     (this.team ?
       this.teamService.updateTeam(this.team.id, value) :

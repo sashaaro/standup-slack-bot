@@ -2,7 +2,7 @@ import {Inject, Injectable} from "injection-js";
 import User from "../model/User";
 import StandUp from "../model/StandUp";
 import groupBy from "lodash.groupby";
-import {ChatPostMessageArguments, WebAPICallResult, WebClient} from '@slack/web-api'
+import {ChatPostMessageArguments, WebClient} from '@slack/web-api'
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Block, KnownBlock} from "@slack/types";
@@ -331,7 +331,7 @@ export class SlackBotTransport {
       })
     }
     this.postMessage({
-      channel: standUp.team.reportChannel,
+      channel: standUp.team.reportChannel.id,
       text,
       blocks
     })

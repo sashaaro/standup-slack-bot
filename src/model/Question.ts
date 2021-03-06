@@ -19,7 +19,7 @@ class Question {
 
   @Expose()
   @IsNotEmpty()
-  @MinLength(3)
+  @MinLength(2)
   @MaxLength(50)
   @Column()
   text: string;

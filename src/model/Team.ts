@@ -59,7 +59,7 @@ export class Team {
 
   @ManyToOne(type => SlackWorkspace, null, {
     eager: true,
-    nullable: false
+    nullable: false,
   })
   workspace: SlackWorkspace;
 
@@ -68,7 +68,7 @@ export class Team {
   // @Min(1)
   @IsNotEmpty()
   @ManyToMany(type => User, user => user.teams, {
-    //cascade: ["insert", "update"],
+    cascade: ["insert", "update"],
   })
   // @JoinTable({
   //   name: 'user_teams_team',
@@ -99,7 +99,7 @@ export class Team {
   @Expose()
   @IsNotEmpty()
   @IsMilitaryTime({message: 'must be a valid in the format HH:MM'})
-  @Column({default: '11:00'})
+  @Column({default: '11:00', nullable: false})
   start: string
 
   @Expose()
@@ -107,15 +107,15 @@ export class Team {
   @IsInt()
   @Min(2)
   @Max(59, {message: 'must not be greater than 59'})
-  @Column({default: 30})
+  @Column({default: 30, nullable: false})
   duration: number
 
   @Expose()
-  @Type(() => SlackWorkspace)
+  @Type(() => Channel)
   @IsNotEmpty()
   @ManyToOne(type => Channel, null, {
     eager: true,
-    nullable: false
+    nullable: false,
   })
-  reportChannel: string
+  reportChannel: Channel
 }

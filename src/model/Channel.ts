@@ -1,9 +1,11 @@
 import {Column, Entity, ManyToMany, ManyToOne, PrimaryColumn} from "typeorm";
 import User from "./User";
 import SlackWorkspace from "./SlackWorkspace";
+import {Expose} from "class-transformer";
 
 @Entity()
 export class Channel {
+  @Expose()
   @PrimaryColumn()
   id: string
 

@@ -15,7 +15,6 @@ import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
 import {SlackEventListener} from "../slack/SlackEventListener";
 import {bind} from "../services/decorators";
-import {QueueRegistry} from "../services/queue.registry";
 
 export class ServerCommand implements yargs.CommandModule {
   static meta: Partial<yargs.CommandModule<any, any>> = {

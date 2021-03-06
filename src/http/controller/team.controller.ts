@@ -13,6 +13,7 @@ import {
 } from "../../model/Team";
 import Question from "../../model/Question";
 import QuestionOption from "../../model/QuestionOption";
+import {TeamRepository} from "../../repository/team.repository";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -25,7 +26,7 @@ const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] 
 
 @Injectable()
 export class TeamController {
-  teamRepository = this.connection.getRepository(Team)
+  teamRepository = this.connection.getCustomRepository(TeamRepository)
 
   constructor(
     private connection: Connection,
@@ -39,7 +40,7 @@ export class TeamController {
       status = null;
     }
 
-    const qb = this.connection.getRepository(Team).createQueryBuilder('t')
+    const qb = this.teamRepository.createQueryBuilder('t')
       .leftJoinAndSelect('t.timezone', 'tz')
       .leftJoinAndSelect('t.createdBy', 'createdBy')
       .leftJoinAndSelect('t.users', 'users')
@@ -81,7 +82,12 @@ export class TeamController {
 
     if (errors.length === 0) {
       team.status = TEAM_STATUS_ACTIVATED;
-      await this.teamRepository.save(team);
+      try {
+        await this.teamRepository.save(team);
+      } catch (e) {
+        res.status(500).send('');
+        throw e;
+      }
       res.send(team);
     } else {
       res.status(400);
@@ -96,23 +102,13 @@ export class TeamController {
 
     const id = req.params.id as number|any
 
-    const team = await this.teamRepository
-      // .findOne({id: id, isEnabled: true}, {relations: ['timezone', 'questions', 'workspace', 'users', 'questions.options']})
-      .createQueryBuilder('t')
-      .leftJoinAndSelect('t.timezone', 'timezone')
-      .leftJoinAndSelect('t.questions', 'questions')
-      .leftJoinAndSelect('t.workspace', 'workspace')
-      .leftJoinAndSelect('t.reportChannel', 'reportChannel')
-      .leftJoinAndSelect('t.users', 'users')
-      .leftJoinAndSelect('questions.options', 'options')
-      .leftJoinAndSelect('t.createdBy', 'createdBy')
-      .where("t.id = :id", {id: id})
-      .andWhere("createdBy.id = :me", {me: req.context.user.id})
-      .andWhere('t.status = :status', {status: TEAM_STATUS_ACTIVATED})
-      .orderBy("questions.index", "ASC")
-      .getOne();
+    const team = await this.teamRepository.findActiveById(id);
 
     if (!team) {
+      throw new ResourceNotFoundError('Team is not found');
+    }
+
+    if (req.context.user.id !== team.createdBy.id) {
       throw new ResourceNotFoundError('Team is not found');
     }
 
@@ -123,88 +119,7 @@ export class TeamController {
     const errors = this.handleRequest(req.body, team);
 
     if (errors.length === 0) {
-      await this.teamRepository.manager.transaction(async manager => {
-        await manager.getRepository(Team)
-          .createQueryBuilder()
-          .update({
-            name: team.name,
-            duration: team.duration,
-            timezone: team.timezone,
-            start: team.start,
-            reportChannel: team.reportChannel,
-            // users: team.users
-          })
-          .where({id: team.id})
-          .execute();
-
-        await manager.connection.query(
-          `DELETE FROM user_teams_team WHERE "teamId" = $1 AND "userId" NOT IN (${team.users.map((u, i) => `$${i + 2}`).join(',')})`, [
-          team.id,
-          ...team.users.map(u => u.id)
-        ]);
-        await manager.query(
-          `INSERT INTO user_teams_team ("teamId", "userId") VALUES ${team.users.map((u, i) => `($1, $${i + 2})`).join(',')} ON CONFLICT DO NOTHING`,
-          [
-          team.id,
-          ...team.users.map(u => u.id)
-        ]);
-
-        const questionRepository = manager.getRepository(Question)
-        const optionsRepository = manager.getRepository(QuestionOption)
-
-        const newQuestions = team.questions.filter(q => !q.id)
-        const existQuestions = team.questions.filter(q => !!q.id)
-
-        if (existQuestions.length) {
-          await questionRepository // mark as disabled removed questions
-            .createQueryBuilder()
-            .update(Question, {isEnabled: false})
-            .where('teamId = :team', {team: team.id})
-            .andWhere('id NOT IN(:...questions)', {questions: existQuestions.map(q => q.id)})
-            .execute();
-        }
-        await Promise.all(existQuestions.map(q => questionRepository
-          .createQueryBuilder()
-          .update(Question, {text: q.text})
-          .where({id: q.id})
-          .execute())
-        )
-
-        await Promise.all(newQuestions.map(q => {
-          // TODO find same.. in
-          q.team = team;
-          return questionRepository.insert(q);
-        }));
-
-        for (const q of team.questions.filter(q => q.options.length)) {
-          const options = q.options
-
-          const newOptions = options.filter(o => !o.id);
-          const existOptions = options.filter(o => !!o.id)
-
-          if (existOptions.length) {
-            await optionsRepository // mark as disabled removed options
-              .createQueryBuilder()
-              .update(QuestionOption, {isEnabled: false})
-              .where({question: q})
-              .andWhere('id NOT IN(:...options)', {options: existOptions.map(o => o.id)})
-              .execute()
-          }
-
-          await Promise.all(existOptions.map(o => questionRepository
-              .createQueryBuilder()
-              .update(QuestionOption, {text: o.text})
-              .where({id: o.id})
-              .execute()
-          ));
-
-          await Promise.all(newOptions.map(o => {
-            // TODO find same
-            o.question = q;
-            return optionsRepository.insert(o);
-          }))
-        }
-      })
+      await this.teamRepository.submit(team);
     }
 
     res.setHeader('Content-Type', 'application/json');

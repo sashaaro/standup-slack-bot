@@ -8,6 +8,7 @@ import {TeamRepository} from "../repository/team.repository";
 import {StandUpRepository} from "../repository/standup.repository";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {Connection} from "typeorm";
+import QuestionSnapshot from "../model/QuestionSnapshot";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -56,6 +57,8 @@ export default class StandUpNotifier {
         })
       )
 
+    const qsRepo = this.connection.getRepository(QuestionSnapshot);
+
     const start$ = interval$.pipe(
       mergeMap(date =>
         fromPromise(teamRepository.findByStart(date)).pipe(
@@ -63,7 +66,28 @@ export default class StandUpNotifier {
         )
       ),
       map(({teams, date}) => teams.map(team => {
-        const standup = new StandUp()
+        const standup = new StandUp();
+        // const snapshots = await qsRepo.createQueryBuilder('qs')
+        //   .innerJoinAndSelect('qs.standUp', 'standUp')
+        //   .innerJoinAndSelect('standUp.team', 'team')
+        //   .innerJoinAndSelect('team.questions', 'q')
+        //   .andWhere('standUp.teamId := :team', {team})
+        //   .andWhere('q.id = qs.originQuestionId')
+        //   .andWhere('q.updatedAt = qs.createdAt')
+        //   .orderBy({'qs.createdAt': 'DESC'})
+        //   .getMany()
+        //
+        // standup.questions = snapshots.length ? snapshots : team.questions.map(q => {
+        //   const qs = new QuestionSnapshot()
+        //   qs.createdAt = new Date();
+        //   qs.index = q.index;
+        //   qs.originQuestion = q;
+        //   qs.text = q.text;
+        //   // TODO snapshot qs.options
+        //
+        //   return qs;
+        // });
+
         standup.startAt = date;
         standup.team = team;
         return standup;

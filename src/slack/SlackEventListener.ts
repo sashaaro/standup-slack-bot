@@ -102,7 +102,7 @@ export class SlackEventListener {
   private standUpRepository: StandUpRepository;
 
   constructor(
-    private slackEvents: SlackEventAdapter,
+    @Inject(SlackEventAdapter) private slackEvents: SlackEventAdapter,
     private slackBotTransport: SlackBotTransport,
     private syncSlackService: SyncSlackService,
     private queueRegistry: QueueRegistry,

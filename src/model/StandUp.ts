@@ -1,6 +1,7 @@
 import {BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import AnswerRequest from "./AnswerRequest";
 import {Team} from "./Team";
+import QuestionSnapshot from "./QuestionSnapshot";
 
 @Entity()
 export default class StandUp {
@@ -20,6 +21,9 @@ export default class StandUp {
 
   @OneToMany(type => AnswerRequest, answer => answer.standUp)
   answers: AnswerRequest[];
+
+  @OneToMany(type => QuestionSnapshot, qs => qs.standUp)
+  questions: QuestionSnapshot[];
 
   @BeforeInsert()
   calculateEndAt() {

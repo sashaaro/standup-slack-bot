@@ -8,7 +8,8 @@ cp .env.dist .env.dev
 docker-compose run --rm -u $(id -u) serve install
 
 docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREATE DATABASE standup"
-docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREATE USER standup WITH PASSWORD 'standup_123'; GRANT ALL PRIVILEGES ON DATABASE standup TO standup;"
+docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREATE USER standup WITH PASSWORD 'standup_123'"
+docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "GRANT ALL PRIVILEGES ON DATABASE standup TO standup"
 
 echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
@@ -18,7 +19,8 @@ docker-compose exec -u $(id -u) serve sh
 
 Create new migration
 ```bash
-./node_modules/typeorm/cli.js migration:generate --name=name
+./cli.sh migration:generate -name=init
+# ./node_modules/typeorm/cli.js migration:generate --name=name
 ```
 
 Generate migration
@@ -28,6 +30,7 @@ Generate migration
 
 Run migrations
 ```bash
+rm -r ./dist/*
 ./cli.sh database:migrate
 ```
 
@@ -64,9 +67,8 @@ docker-compose run --rm openapi-generator
 Run jest tests
 ```bash
 cp .env.dist .env.dev
-./cli.sh database:migrate --env=test
-./cli.sh database:fixture --env=test
-npm run test
+./test.sh
+
 ```
 
 ### Staging

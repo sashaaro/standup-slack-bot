@@ -1,6 +1,6 @@
 import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, BeforeUpdate} from "typeorm";
 import Question from "./Question";
-import {IsNotEmpty, IsString} from "class-validator";
+import {IsInt, IsNotEmpty, IsString} from "class-validator";
 import {Exclude, Expose, Transform} from "class-transformer";
 import {TransformFnParams} from "class-transformer/types/interfaces";
 
@@ -25,6 +25,12 @@ export default class QuestionOption {
   @IsString()
   @Column({nullable: false})
   text: string
+
+  //@Expose()
+  //@IsNotEmpty()
+  //@IsInt()
+  //@Column()
+  // index: number;
 
   @Column()
   updatedAt: Date;

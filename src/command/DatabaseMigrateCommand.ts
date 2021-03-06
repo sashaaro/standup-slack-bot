@@ -17,7 +17,7 @@ export class DatabaseMigrateCommand implements yargs.CommandModule {
     if (!this.connection.isConnected) {
       await this.connection.connect();
     }
-    const migrations = await this.connection.runMigrations();
+    const migrations = await this.connection.runMigrations({transaction: 'all'});
     migrations.forEach(m => {
       console.log(m.instance);
     });

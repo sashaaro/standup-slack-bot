@@ -1,4 +1,5 @@
-export function groupBy<T = any>(list: T[], by: (item: T) => string|number): {[index: keyof T]: T} {
+export function groupBy<T>(list: T[], by: (item: T) => string|number): {[key: string]: T[]} {
+  new Map()
   const group = {};
   list.forEach(i => {
     const v = by(i)

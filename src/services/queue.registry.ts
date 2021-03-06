@@ -6,7 +6,7 @@ import {Observable} from "rxjs";
 
 @Injectable()
 export class QueueRegistry {
-  queues = {};
+  queues: {[key: string]: Queue.Queue} = {};
 
   public constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,

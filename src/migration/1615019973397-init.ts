@@ -1,15 +1,16 @@
 import {MigrationInterface, QueryRunner} from "typeorm";
-export class init1589119063843 implements MigrationInterface {
-    name = 'init1589119063843'
+export class init1615019973397 implements MigrationInterface {
+    name = 'init1615019973397'
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE "question_option" ("id" SERIAL NOT NULL, "text" character varying NOT NULL, "isEnabled" boolean NOT NULL DEFAULT true, "updatedAt" TIMESTAMP NOT NULL, "createdAt" TIMESTAMP NOT NULL, "questionId" integer, CONSTRAINT "PK_64f8e42188891f2b0610017c8f9" PRIMARY KEY ("id"))`, undefined);
+        await queryRunner.query(`CREATE TABLE "question_option" ("id" SERIAL NOT NULL, "isEnabled" boolean NOT NULL DEFAULT true, "text" character varying NOT NULL, "updatedAt" TIMESTAMP NOT NULL, "createdAt" TIMESTAMP NOT NULL, "questionId" integer, CONSTRAINT "PK_64f8e42188891f2b0610017c8f9" PRIMARY KEY ("id"))`, undefined);
+        await queryRunner.query(`CREATE TABLE "channel" ("id" character varying NOT NULL, "name" character varying NOT NULL, "isArchived" boolean NOT NULL DEFAULT false, "isEnabled" boolean NOT NULL DEFAULT false, "nameNormalized" character varying NOT NULL, "createdById" character varying, "workspaceId" character varying, CONSTRAINT "PK_590f33ee6ee7d76437acf362e39" PRIMARY KEY ("id"))`, undefined);
         await queryRunner.query(`CREATE TABLE "slack_workspace" ("id" character varying NOT NULL, "name" character varying NOT NULL, "domain" character varying NOT NULL, "slackData" json, CONSTRAINT "PK_9d602f5f57ff152042f21d72336" PRIMARY KEY ("id"))`, undefined);
-        await queryRunner.query(`CREATE TABLE "channel" ("id" character varying NOT NULL, "name" character varying NOT NULL, "isArchived" boolean NOT NULL DEFAULT false, "isEnabled" boolean NOT NULL DEFAULT false, "nameNormalized" character varying NOT NULL, "createdById" character varying, "workspaceId" character varying NOT NULL, CONSTRAINT "PK_590f33ee6ee7d76437acf362e39" PRIMARY KEY ("id"))`, undefined);
         await queryRunner.query(`CREATE TABLE "user" ("id" character varying NOT NULL, "name" character varying(500) NOT NULL, "im" character varying(10), "accessToken" character varying, "profile" json NOT NULL DEFAULT '{}', "workspaceId" character varying NOT NULL, CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`, undefined);
         await queryRunner.query(`CREATE TABLE "timezone" ("id" SERIAL NOT NULL, "utc_offset" interval NOT NULL, "name" character varying NOT NULL, CONSTRAINT "PK_2706edc3223dd1d219f9f6a11b1" PRIMARY KEY ("id"))`, undefined);
-        await queryRunner.query(`CREATE TABLE "team" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "status" smallint NOT NULL DEFAULT 1, "start" character varying NOT NULL DEFAULT '11:00', "duration" integer NOT NULL DEFAULT 30, "reportChannel" character varying NOT NULL, "createdById" character varying NOT NULL, "workspaceId" character varying NOT NULL, "timezoneId" integer NOT NULL, CONSTRAINT "PK_f57d8293406df4af348402e4b74" PRIMARY KEY ("id"))`, undefined);
-        await queryRunner.query(`CREATE TABLE "question" ("id" SERIAL NOT NULL, "index" integer NOT NULL, "text" character varying NOT NULL, "isEnabled" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL, "teamId" integer, CONSTRAINT "PK_21e5786aa0ea704ae185a79b2d5" PRIMARY KEY ("id"))`, undefined);
+        await queryRunner.query(`CREATE TABLE "team" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "status" integer NOT NULL DEFAULT '1', "start" character varying NOT NULL DEFAULT '11:00', "duration" integer NOT NULL DEFAULT '30', "createdById" character varying, "workspaceId" character varying, "timezoneId" integer, "reportChannelId" character varying, CONSTRAINT "PK_f57d8293406df4af348402e4b74" PRIMARY KEY ("id"))`, undefined);
+        await queryRunner.query(`CREATE TABLE "question" ("id" SERIAL NOT NULL, "index" integer NOT NULL, "text" character varying NOT NULL, "isEnabled" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL, "teamId" integer NOT NULL, CONSTRAINT "PK_21e5786aa0ea704ae185a79b2d5" PRIMARY KEY ("id"))`, undefined);
         await queryRunner.query(`CREATE TABLE "answer_request" ("id" SERIAL NOT NULL, "answerMessage" character varying, "createdAt" TIMESTAMP NOT NULL, "answerCreatedAt" TIMESTAMP, "userId" character varying, "standUpId" integer, "questionId" integer NOT NULL, "optionId" integer, CONSTRAINT "PK_e95abf2917a2e6a78ecd8ec39cb" PRIMARY KEY ("id"))`, undefined);
+        await queryRunner.query(`CREATE TABLE "question_snapshot" ("id" SERIAL NOT NULL, "index" integer NOT NULL, "text" character varying NOT NULL, "originQuestionId" integer, "standUpId" integer, CONSTRAINT "PK_62df2941cc3dd1ba2a26f9572f1" PRIMARY KEY ("id"))`, undefined);
         await queryRunner.query(`CREATE TABLE "stand_up" ("id" SERIAL NOT NULL, "startAt" TIMESTAMP NOT NULL, "endAt" TIMESTAMP NOT NULL, "teamId" integer, CONSTRAINT "PK_00077ae773e68bfe42c0f5451a1" PRIMARY KEY ("id"))`, undefined);
         await queryRunner.query(`CREATE TABLE "user_teams_team" ("userId" character varying NOT NULL, "teamId" integer NOT NULL, CONSTRAINT "PK_da60f131c39079373054fd8ed07" PRIMARY KEY ("userId", "teamId"))`, undefined);
         await queryRunner.query(`CREATE INDEX "IDX_5b1d47a221406321be714a8186" ON "user_teams_team" ("userId") `, undefined);
@@ -24,11 +25,14 @@ export class init1589119063843 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "team" ADD CONSTRAINT "FK_3a93fbdeba4e1e9e47fec6bada9" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "team" ADD CONSTRAINT "FK_66f4adf2b7982a24c835d60e399" FOREIGN KEY ("workspaceId") REFERENCES "slack_workspace"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "team" ADD CONSTRAINT "FK_4fe6066de8fec6371ca98105aa6" FOREIGN KEY ("timezoneId") REFERENCES "timezone"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
+        await queryRunner.query(`ALTER TABLE "team" ADD CONSTRAINT "FK_1640d32de843e1f56a1418ea2de" FOREIGN KEY ("reportChannelId") REFERENCES "channel"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "question" ADD CONSTRAINT "FK_b105c73ea8f15609c3a72877135" FOREIGN KEY ("teamId") REFERENCES "team"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "answer_request" ADD CONSTRAINT "FK_2d3ccf6de45f8f96399229009d2" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "answer_request" ADD CONSTRAINT "FK_7daa632484b0b8ae9cf2edaa7fd" FOREIGN KEY ("standUpId") REFERENCES "stand_up"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "answer_request" ADD CONSTRAINT "FK_72c8029ce793661de4cbc5093a7" FOREIGN KEY ("questionId") REFERENCES "question"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
-        await queryRunner.query(`ALTER TABLE "answer_request" ADD CONSTRAINT "FK_8877cab68f1b94672812dd48f01" FOREIGN KEY ("optionId") REFERENCES "question_option"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
+        await queryRunner.query(`ALTER TABLE "answer_request" ADD CONSTRAINT "FK_9321019b60471a82c818947a264" FOREIGN KEY ("optionId") REFERENCES "question_option"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
+        await queryRunner.query(`ALTER TABLE "question_snapshot" ADD CONSTRAINT "FK_fc65efbcfebde907582a3518ecc" FOREIGN KEY ("originQuestionId") REFERENCES "question"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
+        await queryRunner.query(`ALTER TABLE "question_snapshot" ADD CONSTRAINT "FK_d4a613927ba1eb8e59632015cff" FOREIGN KEY ("standUpId") REFERENCES "stand_up"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "stand_up" ADD CONSTRAINT "FK_03f4c4962f4bb49af472fa73387" FOREIGN KEY ("teamId") REFERENCES "team"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "user_teams_team" ADD CONSTRAINT "FK_5b1d47a221406321be714a8186d" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`, undefined);
         await queryRunner.query(`ALTER TABLE "user_teams_team" ADD CONSTRAINT "FK_a80f8ae0d425218dbaa2240df49" FOREIGN KEY ("teamId") REFERENCES "team"("id") ON DELETE CASCADE ON UPDATE NO ACTION`, undefined);
@@ -41,11 +45,14 @@ export class init1589119063843 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "user_teams_team" DROP CONSTRAINT "FK_a80f8ae0d425218dbaa2240df49"`, undefined);
         await queryRunner.query(`ALTER TABLE "user_teams_team" DROP CONSTRAINT "FK_5b1d47a221406321be714a8186d"`, undefined);
         await queryRunner.query(`ALTER TABLE "stand_up" DROP CONSTRAINT "FK_03f4c4962f4bb49af472fa73387"`, undefined);
-        await queryRunner.query(`ALTER TABLE "answer_request" DROP CONSTRAINT "FK_8877cab68f1b94672812dd48f01"`, undefined);
+        await queryRunner.query(`ALTER TABLE "question_snapshot" DROP CONSTRAINT "FK_d4a613927ba1eb8e59632015cff"`, undefined);
+        await queryRunner.query(`ALTER TABLE "question_snapshot" DROP CONSTRAINT "FK_fc65efbcfebde907582a3518ecc"`, undefined);
+        await queryRunner.query(`ALTER TABLE "answer_request" DROP CONSTRAINT "FK_9321019b60471a82c818947a264"`, undefined);
         await queryRunner.query(`ALTER TABLE "answer_request" DROP CONSTRAINT "FK_72c8029ce793661de4cbc5093a7"`, undefined);
         await queryRunner.query(`ALTER TABLE "answer_request" DROP CONSTRAINT "FK_7daa632484b0b8ae9cf2edaa7fd"`, undefined);
         await queryRunner.query(`ALTER TABLE "answer_request" DROP CONSTRAINT "FK_2d3ccf6de45f8f96399229009d2"`, undefined);
         await queryRunner.query(`ALTER TABLE "question" DROP CONSTRAINT "FK_b105c73ea8f15609c3a72877135"`, undefined);
+        await queryRunner.query(`ALTER TABLE "team" DROP CONSTRAINT "FK_1640d32de843e1f56a1418ea2de"`, undefined);
         await queryRunner.query(`ALTER TABLE "team" DROP CONSTRAINT "FK_4fe6066de8fec6371ca98105aa6"`, undefined);
         await queryRunner.query(`ALTER TABLE "team" DROP CONSTRAINT "FK_66f4adf2b7982a24c835d60e399"`, undefined);
         await queryRunner.query(`ALTER TABLE "team" DROP CONSTRAINT "FK_3a93fbdeba4e1e9e47fec6bada9"`, undefined);
@@ -60,13 +67,14 @@ export class init1589119063843 implements MigrationInterface {
         await queryRunner.query(`DROP INDEX "IDX_5b1d47a221406321be714a8186"`, undefined);
         await queryRunner.query(`DROP TABLE "user_teams_team"`, undefined);
         await queryRunner.query(`DROP TABLE "stand_up"`, undefined);
+        await queryRunner.query(`DROP TABLE "question_snapshot"`, undefined);
         await queryRunner.query(`DROP TABLE "answer_request"`, undefined);
         await queryRunner.query(`DROP TABLE "question"`, undefined);
         await queryRunner.query(`DROP TABLE "team"`, undefined);
         await queryRunner.query(`DROP TABLE "timezone"`, undefined);
         await queryRunner.query(`DROP TABLE "user"`, undefined);
-        await queryRunner.query(`DROP TABLE "channel"`, undefined);
         await queryRunner.query(`DROP TABLE "slack_workspace"`, undefined);
+        await queryRunner.query(`DROP TABLE "channel"`, undefined);
         await queryRunner.query(`DROP TABLE "question_option"`, undefined);
     }
 }
