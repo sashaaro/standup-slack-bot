@@ -76,7 +76,7 @@
 
 
   <div class="section2">
-    <div cdkDropList  (cdkDropListDropped)="drop(questionsControl, $event)">
+    <div class="questions" cdkDropList  (cdkDropListDropped)="drop(questionsControl, $event)">
       <div *ngFor="let questionControl of questionsControl.controls; let qIndex = index" class="question-item" cdkDrag>
         <mat-form-field appearance="outline" class="question">
           <mat-label>#{{ qIndex + 1 }}</mat-label>

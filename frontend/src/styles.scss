@@ -196,6 +196,22 @@ body {
   }
 }
 
+.mat-form-field-flex {
+  background-color: white;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.questions.cdk-drop-list-dragging .question-item:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
 
 //*,:after,:before{-webkit-box-sizing:inherit;box-sizing:inherit;}
 //a{background-color:transparent;-webkit-text-decoration-skip:objects;}
