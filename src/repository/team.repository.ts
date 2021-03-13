@@ -1,7 +1,7 @@
 import {EntityManager, EntityRepository, Repository, Transaction, UpdateQueryBuilder} from "typeorm";
 import {Team, TEAM_STATUS_ACTIVATED} from "../model/Team";
 import {scopeTeamJoins} from "./scopes";
-import {formatTime} from "../services/utils";
+import {formatTime, sortByIndex} from "../services/utils";
 import Question from "../model/Question";
 import QuestionOption from "../model/QuestionOption";
 import {TeamSnapshot} from "../model/TeamSnapshot";
@@ -25,7 +25,6 @@ export class TeamRepository extends Repository<Team> {
 
   async findActiveById(id) {
     return await this
-      // .findOne({id: id, isEnabled: true}, {relations: ['timezone', 'questions', 'workspace', 'users', 'questions.options']})
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.timezone', 'timezone')
       .leftJoinAndSelect('t.questions', 'questions')
@@ -43,8 +42,7 @@ export class TeamRepository extends Repository<Team> {
 
   async add(team: Team) {
     return await this.manager.transaction('SERIALIZABLE', async manager => {
-      const teamRepo = this.manager.getRepository(Team)
-      await teamRepo.insert(team)
+      await this.manager.getRepository(Team).insert(team)
       await this.insertSnapshot(team, manager)
     });
   }
@@ -76,7 +74,7 @@ export class TeamRepository extends Repository<Team> {
       questionSnapshot.options = q.options.filter(o => o.isEnabled).map(o => {
         const optionSnapshot = new QuestionOptionSnapshot()
         optionSnapshot.question = questionSnapshot;
-        // optionSnapshot.index = o.index // TODO!
+        optionSnapshot.index = o.index
         optionSnapshot.text = o.text
 
         return optionSnapshot;
@@ -85,7 +83,19 @@ export class TeamRepository extends Repository<Team> {
       return questionSnapshot;
     })
 
+    teamSnapshot.normalizeSort();
+
     return teamSnapshot;
+  }
+
+  async clearUnneededSnapshots() {
+    const sql = `DELETE FROM team_snapshot WHERE id in (
+        SELECT id FROM (
+           SELECT team_snapshot.*, row_number() over (PARTITION BY team_snapshot."originTeamId" ORDER BY "createdAt" DESC) FROM team_snapshot
+            left join stand_up su on team_snapshot.id = su."teamId" and su.id is null
+        ) AS snapshow WHERE snapshow.row_number > 1
+    )`;
+    // TODO
   }
 
   async submit(team: Team) {
@@ -161,7 +171,7 @@ export class TeamRepository extends Repository<Team> {
       ])
 
       for (const q of team.questions) {
-        const options = q.options
+        const options = q.options.sort(sortByIndex)
 
         const newOptions = options.filter(o => !o.id);
         const existOptions = options.filter(o => !!o.id)
@@ -179,7 +189,7 @@ export class TeamRepository extends Repository<Team> {
         await Promise.all([
           ...existOptions.map(o => questionRepository
               .createQueryBuilder()
-              .update(QuestionOption, {text: o.text})
+              .update(QuestionOption, {text: o.text, index: o.index})
               .where({id: o.id})
               .execute()
           ),
@@ -198,8 +208,10 @@ export class TeamRepository extends Repository<Team> {
         relations: ['users', 'questions']
       }));
 
-      if (!lastSnapshot || lastSnapshot.equals(newSnapshot)) {
-        await manager.insert(TeamSnapshot, newSnapshot)
+      lastSnapshot?.normalizeSort()
+
+      if (!lastSnapshot || !lastSnapshot.equals(newSnapshot)) {
+        await manager.getRepository(TeamSnapshot).save(newSnapshot)
       }
     })
   }

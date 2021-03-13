@@ -15,16 +15,19 @@ class QuestionSnapshot {
   @Column()
   text: string;
 
-  @OneToMany(type => QuestionOption, o => o.question, {
+  @OneToMany(type => QuestionOptionSnapshot, o => o.question, {
     eager: true,
-    cascade: true
+    cascade: ["insert"],
   })
   options: QuestionOptionSnapshot[]; // TODO Snapshot
 
-  @ManyToOne(type => Question, {nullable: false})
+  @ManyToOne(type => Question, {nullable: false, eager: true})
   originQuestion: Question;
 
-  @ManyToOne(type => TeamSnapshot, t => t.questions, {nullable: false})
+  @ManyToOne(type => TeamSnapshot, t => t.questions, {
+    nullable: false,
+    onDelete: "CASCADE"
+  })
   team: TeamSnapshot;
 }
 

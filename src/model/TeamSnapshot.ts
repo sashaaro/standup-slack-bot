@@ -1,4 +1,5 @@
 import {
+  AfterLoad,
   BeforeInsert,
   Column,
   Entity, JoinTable,
@@ -11,6 +12,7 @@ import User from "./User";
 import {Expose, Type} from "class-transformer";
 import {Team} from "./Team";
 import QuestionSnapshot from "./QuestionSnapshot";
+import {sortByIndex} from "../services/utils";
 
 
 @Entity()
@@ -28,6 +30,7 @@ export class TeamSnapshot {
   @Type(() => User)
   @ManyToMany(type => User, {
     eager: true,
+    cascade: ["insert", "update"],
   })
   @JoinTable()
   users: Array<User>
@@ -48,6 +51,15 @@ export class TeamSnapshot {
     this.createdAt = new Date();
   }
 
+  @AfterLoad()
+  normalizeSort() {
+    this.questions = this.questions.sort(sortByIndex)
+
+    this.questions.forEach(q => {
+      q.options = q.options.sort(sortByIndex)
+    })
+  }
+
   // @Expose()
   // @Type(() => Channel)
   // @ManyToOne(type => Channel, null, {
@@ -60,18 +72,20 @@ export class TeamSnapshot {
     return {
       users: this.users.map(u => u.id),
       questions: this.questions.map(q => ({
-        index: q.index,
+        index: q.index, // TODO ensure correct order
         text: q.text,
         originQuestionId: q.originQuestion.id,
         options: q.options.map(o => ({
+          index: o.index,
           text: o.text
-          // TODO index?!
         }))
       }))
     }
   }
 
   equals(team: TeamSnapshot) {
+    console.log(JSON.stringify(this.simplify()))
+    console.log(JSON.stringify(team.simplify()))
     return JSON.stringify(this.simplify()) === JSON.stringify(team.simplify())
   }
 }

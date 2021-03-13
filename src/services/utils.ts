@@ -11,6 +11,8 @@ export function groupBy<T>(list: T[], by: (item: T) => string|number): {[key: st
   return group;
 }
 
+export const sortByIndex = (a, b) => a.index === b.index ? 0 : a.index > b.index ? 1 : -1
+
 export function formatTime(date: Date, seconds = true): string {
   const parts = [];
   parts.push(date.getHours().toString(10).padStart(2, '0'));

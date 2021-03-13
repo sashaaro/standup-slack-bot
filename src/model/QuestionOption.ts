@@ -26,12 +26,11 @@ export default class QuestionOption {
   @Column({nullable: false})
   text: string
 
-  // TODO!!
-  //@Expose()
-  //@IsNotEmpty()
-  //@IsInt()
-  //@Column()
-  // index: number;
+  @Expose()
+  @IsNotEmpty()
+  @IsInt()
+  @Column({nullable: false})
+  index: number;
 
   @Column()
   updatedAt: Date;
