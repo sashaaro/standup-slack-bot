@@ -39,7 +39,7 @@
               (removed)="remove(usersControl, $event.chip.value)"
               disableRipple
             >
-            <img class="user-pic" [src]="user.profile.image_24"/>
+              <img class="user-pic" [src]="user.profile.image_24"/>
               {{ user.name }}
               <mat-icon matChipRemove>cancel</mat-icon>
           </mat-chip>
@@ -50,9 +50,9 @@
             [matChipInputFor]="chipList"/>
         </mat-chip-list>
 
-        <mat-autocomplete class="users" #auto="matAutocomplete" (optionSelected)="usersControl.value.push($event.option.value);">
+        <mat-autocomplete class="users" #auto="matAutocomplete" (optionSelected)="usersControl.value.push($event.option.value);usersControl.updateValueAndValidity()">
           <mat-option *ngFor="let user of (autocompleteUsers$ | async)" [value]="user">
-            <img class="user-pic" [src]="user.profile.image_24"/>
+            <img class="user-pic" *ngIf="user.profile.image_24" [src]="user.profile.image_24"/>
             {{ user.name }}
           </mat-option>
         </mat-autocomplete>
@@ -76,11 +76,17 @@
 
 
   <div class="section2">
-    <div class="questions" cdkDropList  (cdkDropListDropped)="drop(questionsControl, $event)">
+    <div class="questions" cdkDropList (cdkDropListDropped)="drop(questionsControl, $event)">
       <div *ngFor="let questionControl of questionsControl.controls; let qIndex = index" class="question-item" cdkDrag>
         <mat-form-field appearance="outline" class="question">
           <mat-label>#{{ qIndex + 1 }}</mat-label>
-          <input matInput autocomplete="off" [formControl]="questionControl.get('text')"/>
+          <input matInput autocomplete="off"
+                 [formControl]="questionControl.get('text')"
+                 (focus)="questionFocus.next(questionControl.value)"
+                 (blur)="questionFocus.next(null)"
+                 [matAutocomplete]="questionAutocomplete"
+          />
+
           <button *ngIf="!(questionControl.get('options').length > 0 || openOptionsControls.includes(questionControl))"
                   title="Add options"
                   type="button"
@@ -118,9 +124,11 @@
                 removable
                 disableRipple
                 [selected]="false"
+                [selectable]="false"
+                [class.edit]="focusOption === option"
                 (removed)="questionControl.get('options').removeAt(optionIndex);"
               >
-                <div #optionText contenteditable="true" [formControl]="option.get('text')"></div>
+                <div #optionText contenteditable="true" (keydown.enter)="$event.preventDefault(); optionText.blur()" (focus)="focusOption = option" (blur)="focusOption = null" [formControl]="option.get('text')"></div>
                 <div class="option-actions">
                   <mat-icon (click)="focus(optionText)" inline>edit</mat-icon>
                   <mat-icon cdkDragHandle inline>drag_indicator</mat-icon>
@@ -155,8 +163,14 @@
   </div>
 </form>
 
+<mat-autocomplete #questionAutocomplete="matAutocomplete">
+  <mat-option *ngFor="let question of (autocompleteQuestions$ | async)" [value]="question">
+    {{ question.text }}
+  </mat-option>
+</mat-autocomplete>
+
 <ng-template>
-  <input matAutocomplete]="optionsAutocomplete"/>
+  <input [matAutocomplete]="optionsAutocomplete"/>
   <mat-autocomplete #optionsAutocomplete="matAutocomplete" (optionSelected)="usersControl.value.push($event.option.value);">
     <mat-option *ngFor="let user of (autocompleteOptions$ | async)" [value]="user">
       <img [src]="user.profile.image_24"/>

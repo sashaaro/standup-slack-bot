@@ -1,17 +1,17 @@
 import {BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import AnswerRequest from "./AnswerRequest";
-import {Team} from "./Team";
-import QuestionSnapshot from "./QuestionSnapshot";
+import {TeamSnapshot} from "./TeamSnapshot";
 
 @Entity()
 export default class StandUp {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(type => Team, {
-    cascade: true
+  @ManyToOne(type => TeamSnapshot, {
+    cascade: ['insert'],
+    nullable: false
   })
-  team: Team
+  team: TeamSnapshot
 
   @Column()
   startAt: Date;
@@ -22,12 +22,9 @@ export default class StandUp {
   @OneToMany(type => AnswerRequest, answer => answer.standUp)
   answers: AnswerRequest[];
 
-  @OneToMany(type => QuestionSnapshot, qs => qs.standUp)
-  questions: QuestionSnapshot[];
-
   @BeforeInsert()
   calculateEndAt() {
-    this.endAt = new Date(this.startAt.getTime() + this.team.duration * 60 * 1000);
+    this.endAt = new Date(this.startAt.getTime() + this.team.originTeam.duration * 60 * 1000);
   }
 
   isFinished() {

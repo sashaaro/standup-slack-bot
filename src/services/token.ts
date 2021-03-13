@@ -1,8 +1,6 @@
 import {InjectionToken} from 'injection-js';
 import {IAppConfig} from "./providers";
-import {Queue} from "bull";
 import {Redis} from "ioredis";
-import express from 'express'
 import {Logger} from "winston";
 import {Observable} from "rxjs";
 

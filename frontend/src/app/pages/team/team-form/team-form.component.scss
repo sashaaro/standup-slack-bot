@@ -109,6 +109,10 @@ ng-select {
 .user-pic {
   border-radius: 9px;
   margin-right: 8px;
+  height: 24px;
+  width: 24px;
+  max-height: 24px;
+  max-width: 24px;
 }
 
 .user-chip-list {
@@ -116,6 +120,27 @@ ng-select {
     box-shadow: unset !important;
   }
 }
+.users {
+  .mat-option-text::ng-deep {
+    display: inline-flex!important;
+    align-items: center!important;
+  }
+}
+
+.mat-standard-chip.edit { // TODO use custom
+  &:hover:after::ng-deep {
+    opacity: 0!important;
+  }
+}
+.mat-chip.edit::ng-deep {
+  border: 1px solid gray!important;
+  background-color: white!important;
+
+  &:hover::ng-deep {
+    background-color: white!important;
+  }
+}
+
 .mat-standard-chip::ng-deep {
   // margin: 0 4px !important;
   padding-top: 3px !important;

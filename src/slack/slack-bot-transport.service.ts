@@ -31,7 +31,7 @@ export class SlackBotTransport {
       type: "modal",
       title: {
         "type": "plain_text",
-        "text": `Report #${standUp.team.name}`.substr(0, 24).trim(),
+        "text": `Report #${standUp.team.originTeam.name}`.substr(0, 24).trim(),
         "emoji": true
       },
       "close": {
@@ -76,7 +76,7 @@ export class SlackBotTransport {
       type: "modal",
       title: {
         "type": "plain_text",
-        "text": `Standup #${standUp.team.name}`.substr(0, 24).trim(),
+        "text": `Standup #${standUp.team.originTeam.name}`.substr(0, 24).trim(),
         "emoji": true
       },
       "submit": {
@@ -210,14 +210,14 @@ export class SlackBotTransport {
   }
 
   async sendGreetingMessage(user: User, standUp: StandUp) {
-    const fallbackText =  `It's time to start your daily standup ${standUp.team.name}`;
+    const fallbackText =  `It's time to start your daily standup ${standUp.team.originTeam.name}`;
 
     const blocks: (KnownBlock | Block)[] = [
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `Hello, it's time to start your daily standup *${standUp.team.name}*`,
+          text: `Hello, it's time to start your daily standup *${standUp.team.originTeam.name}*`,
         },
       },
       {
@@ -331,7 +331,7 @@ export class SlackBotTransport {
       })
     }
     this.postMessage({
-      channel: standUp.team.reportChannel.id,
+      channel: standUp.team.originTeam.reportChannel.id,
       text,
       blocks
     })

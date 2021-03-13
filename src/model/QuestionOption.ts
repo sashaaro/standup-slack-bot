@@ -26,6 +26,7 @@ export default class QuestionOption {
   @Column({nullable: false})
   text: string
 
+  // TODO!!
   //@Expose()
   //@IsNotEmpty()
   //@IsInt()

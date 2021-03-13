@@ -3,7 +3,7 @@ import {Connection} from "typeorm";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../ApiMiddleware";
 import {IHttpAction} from "./index";
 import Timezone from "../../model/Timezone";
-import {plainToClassFromExist} from "class-transformer";
+import {classToPlain, plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";
 import {
   Team,
@@ -11,8 +11,6 @@ import {
   TEAM_STATUS_ACTIVATED,
   teamStatuses
 } from "../../model/Team";
-import Question from "../../model/Question";
-import QuestionOption from "../../model/QuestionOption";
 import {TeamRepository} from "../../repository/team.repository";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
@@ -83,7 +81,7 @@ export class TeamController {
     if (errors.length === 0) {
       team.status = TEAM_STATUS_ACTIVATED;
       try {
-        await this.teamRepository.save(team);
+        await this.teamRepository.add(team);
       } catch (e) {
         res.status(500).send('');
         throw e;
@@ -128,7 +126,7 @@ export class TeamController {
       team.questions.forEach(q => delete q.team);
       team.questions.forEach(q => q.options.forEach(o => delete o.question));// remove cycle deps for correct stringify
 
-      res.send(team);
+      res.send(classToPlain(team));
     } else {
       res.status(400).send(errors);
     }
@@ -154,12 +152,12 @@ export class TeamController {
       throw new BadRequestError();
     }
 
-    team.questions = team.questions.filter(q => q.isEnabled)
+    team.questions = team.questions.filter(q => q.isEnabled) // TODO serializer rule or sql?
     team.questions.forEach(q => {
-      q.options = q.options.filter(o => o.isEnabled) // TODO sql
+      q.options = q.options.filter(o => o.isEnabled)
     })
 
-    res.send(team);
+    res.send(classToPlain(team));
   }
 
   status: IHttpAction = async (req, res) => {

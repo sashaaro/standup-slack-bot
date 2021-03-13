@@ -1,5 +1,5 @@
 import { Injectable, Inject } from 'injection-js';
-import {timer} from "rxjs";
+import {forkJoin, from, NEVER, of, timer} from "rxjs";
 import {delay, map, mapTo, mergeMap, share, tap} from "rxjs/operators";
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
@@ -9,6 +9,7 @@ import {StandUpRepository} from "../repository/standup.repository";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {Connection} from "typeorm";
 import QuestionSnapshot from "../model/QuestionSnapshot";
+import {TeamSnapshot} from "../model/TeamSnapshot";
 
 const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standUpGoodBye = 'Have good day. Good bye.';
@@ -57,41 +58,27 @@ export default class StandUpNotifier {
         })
       )
 
-    const qsRepo = this.connection.getRepository(QuestionSnapshot);
-
     const start$ = interval$.pipe(
       mergeMap(date =>
         fromPromise(teamRepository.findByStart(date)).pipe(
           map(teams => ({teams, date}))
         )
       ),
-      map(({teams, date}) => teams.map(team => {
-        const standup = new StandUp();
-        // const snapshots = await qsRepo.createQueryBuilder('qs')
-        //   .innerJoinAndSelect('qs.standUp', 'standUp')
-        //   .innerJoinAndSelect('standUp.team', 'team')
-        //   .innerJoinAndSelect('team.questions', 'q')
-        //   .andWhere('standUp.teamId := :team', {team})
-        //   .andWhere('q.id = qs.originQuestionId')
-        //   .andWhere('q.updatedAt = qs.createdAt')
-        //   .orderBy({'qs.createdAt': 'DESC'})
-        //   .getMany()
-        //
-        // standup.questions = snapshots.length ? snapshots : team.questions.map(q => {
-        //   const qs = new QuestionSnapshot()
-        //   qs.createdAt = new Date();
-        //   qs.index = q.index;
-        //   qs.originQuestion = q;
-        //   qs.text = q.text;
-        //   // TODO snapshot qs.options
-        //
-        //   return qs;
-        // });
+      mergeMap(({teams, date}) =>
+        forkJoin(...teams.map(team =>
+            from(async () => {
+              const standup = new StandUp();
 
-        standup.startAt = date;
-        standup.team = team;
-        return standup;
-      })),
+              standup.startAt = date;
+              // TODO transaction
+              standup.team = await teamRepository.findSnapshot(team); // disable edger?!
+              if (!standup.team) {
+                  standup.team = await teamRepository.insertSnapshot(team);
+              }
+              return standup;
+            })
+        ))
+      ),
       mergeMap(standups =>
         fromPromise(standUpRepository.insert(standups)).pipe(mapTo(standups))
       )

@@ -15,7 +15,8 @@ export function qbStandUpJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<
   qb.leftJoinAndSelect('standup.answers', 'answers')
     .leftJoinAndSelect('answers.user', 'answerAuthor')
     .leftJoinAndSelect('answers.question', 'answersQuestion')
-    .innerJoinAndSelect('standup.team', 'team');
+    .innerJoinAndSelect('standup.team', 'teamSnapshot')
+    .innerJoinAndSelect('teamSnapshot.originTeam', 'team');
 
   return scopeTeamJoins(qb);
 }

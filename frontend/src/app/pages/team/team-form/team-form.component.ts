@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {
-  ChannelService,
+  ChannelService, Question,
   Team,
   TeamService,
   TimezoneService,
@@ -20,14 +20,25 @@ import {
 import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Router} from "@angular/router";
-import {BehaviorSubject, combineLatest, NEVER, of, Subject} from "rxjs";
-import {distinct, map, mergeMap, startWith, switchMap, tap} from "rxjs/operators";
+import {BehaviorSubject, combineLatest, NEVER, of, ReplaySubject, Subject} from "rxjs";
+import {
+  distinct,
+  distinctUntilChanged,
+  filter,
+  map,
+  mergeMap,
+  pairwise,
+  startWith,
+  switchMap,
+  tap
+} from "rxjs/operators";
 import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
 import {MatChip, MatChipInputEvent} from "@angular/material/chips";
-import {BACKSPACE} from "@angular/cdk/keycodes";
+import {BACKSPACE, SPACE} from "@angular/cdk/keycodes";
 import {FocusMonitor} from "@angular/cdk/a11y";
 import {MatDialog} from "@angular/material/dialog";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {log} from "../../../operator/log";
 
 // TODO use daysControl
 export const weekDays = [
@@ -89,7 +100,22 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
    )
 
   openOptionsControls = [];
+  focusOption;
   submit$ = new BehaviorSubject(false);
+
+  questionFocus = new Subject<Question>();
+
+  autocompleteQuestions$ = of(null).pipe(
+    switchMap(_ => this.questionFocus),
+    filter(q => !!q),
+    filter(q => !q.id),
+    distinctUntilChanged((a, b) => a.id === b.id),
+    switchMap(question => of([ // TODO ajax question.text
+      //{id: 3, text: "He he"},
+      //{id: 5, text: "bitch"},
+      //question
+    ]))
+  )
 
   constructor(
     private router: Router,
@@ -104,6 +130,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   ) {
   }
 
+  // TODO https://stackblitz.com/edit/angular-dyz1eb?file=src%2Fapp%2Fapp.component.ts
+  // https://github.com/angular/components/issues/13372
   ngOnInit(): void {
   }
 
@@ -128,7 +156,6 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     }
   }
 
-
   ngAfterViewInit() {
     this.chips.changes
       .pipe(
@@ -142,6 +169,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       })
   }
 
+
   focusQuestion(questionId) {
     this.focusQuestion$.next(questionId)
   }
@@ -149,8 +177,13 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   private patchChip(chip: MatChip) {
     const origin = chip._handleKeydown
     chip._handleKeydown = function (...args) {
+      if (SPACE === args[0].keyCode) {
+        return
+      }
       if (BACKSPACE === args[0].keyCode) {
         // TODO avoid prevent default behavior for contenteditable
+        //args[0].preventDefault();
+        //chip._blur()
         return;
       }
       origin.call(this, ...args)
@@ -166,6 +199,10 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   removeQuestion(qIndex: number) {
+    if(!this.questionsControl.at(qIndex).value.id) {
+      this.questionsControl.removeAt(qIndex)
+      return
+    }
     const dialogRef = this.dialog.open(this.confirmDialog, {
       width: '250px'
     });
@@ -199,10 +236,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     )
   }
 
-  drop(control: AbstractControl, event: CdkDragDrop<User>) {
-    const list = [...control.value]
-    moveItemInArray(list, event.previousIndex, event.currentIndex)
-    control.setValue(list)
+  drop(control: FormArray, event: CdkDragDrop<User>) {
+    moveItemInArray(control.controls, event.previousIndex, event.currentIndex)
   }
 
   addOption(optionsControl: FormArray|any, event: MatChipInputEvent) {
@@ -231,7 +266,11 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     const value = this.form.value; //{...this.form.value};
 
     value.duration = Number.parseInt(value.duration, 10);
-    value.questions = value.questions.map((q, index) => ({...q, index}));
+    value.questions = this.questionsControl.controls.map((control, index) => ({
+      ...control.value,
+      index,
+      options: (control.get('options') as FormArray).controls.map((oc, index) => ({...oc.value, index}))
+    })) //value.questions.map((q, index) => ({...q, index}));
     value.questions.forEach((q) => q.text = q.text?.trim());
     value.users = value.users.map(u => ({id: u.id}));
     value.timezone = {id: value.timezone.id};

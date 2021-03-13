@@ -23,8 +23,10 @@ export class StandupController {
     const standUpRepository = this.connection.getRepository(StandUp);
 
     const qb = standUpRepository
-      .createQueryBuilder('st')
-      .andWhere('st.teamId = :teamID', {teamID})
+      .createQueryBuilder('standup')
+      .innerJoinAndSelect('standup.team', 'teamSnapshot')
+      .innerJoinAndSelect('teamSnapshot.originTeam', 'team')
+      .andWhere('team.id = :teamID', {teamID})
 
     let limit = parseInt(req.query.limit as string) || 5;
     if (limit < 1 || limit > 10) {
@@ -60,7 +62,10 @@ export class StandupController {
    "question".text as "questionText",
    "question_option".text as "optionText",
    "answer_request"."answerMessage" as answer
-FROM (SELECT * FROM stand_up WHERE stand_up."teamId" = $1 OFFSET $2 LIMIT $3) as stand_up
+FROM (SELECT stand_up.* FROM stand_up
+INNER JOIN team_snapshot ON stand_up."teamId" = team_snapshot.id
+INNER JOIN team ON team.id = team_snapshot."originTeamId"
+WHERE team.id = $1 OFFSET $2 LIMIT $3) as stand_up
   LEFT JOIN answer_request ON answer_request."standUpId" = stand_up.id
   INNER JOIN question ON question.id = answer_request."questionId"
   LEFT JOIN question_option ON question_option.id = answer_request."optionId"

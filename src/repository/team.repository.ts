@@ -1,9 +1,12 @@
-import {EntityRepository, Repository, Transaction} from "typeorm";
+import {EntityManager, EntityRepository, Repository, Transaction, UpdateQueryBuilder} from "typeorm";
 import {Team, TEAM_STATUS_ACTIVATED} from "../model/Team";
 import {scopeTeamJoins} from "./scopes";
 import {formatTime} from "../services/utils";
 import Question from "../model/Question";
 import QuestionOption from "../model/QuestionOption";
+import {TeamSnapshot} from "../model/TeamSnapshot";
+import QuestionSnapshot from "../model/QuestionSnapshot";
+import QuestionOptionSnapshot from "../model/QuestionOptionSnapshot";
 
 @EntityRepository(Team)
 export class TeamRepository extends Repository<Team> {
@@ -38,8 +41,61 @@ export class TeamRepository extends Repository<Team> {
       .getOne()
   }
 
+  async add(team: Team) {
+    return await this.manager.transaction('SERIALIZABLE', async manager => {
+      const teamRepo = this.manager.getRepository(Team)
+      await teamRepo.insert(team)
+      await this.insertSnapshot(team, manager)
+    });
+  }
+
+  async findSnapshot(team: Team, manager?: EntityManager) {
+    return await (manager || this.manager).getRepository(TeamSnapshot).findOne({
+      originTeam: team,
+    }, {
+      order: {createdAt: 'DESC'}
+    })
+  }
+
+  async insertSnapshot(team: Team, manger?: EntityManager): Promise<TeamSnapshot> {
+    const teamSnapshot = this.createSnapshot(team);
+    await (manger || this.manager).insert(TeamSnapshot, teamSnapshot)
+    return teamSnapshot;
+  }
+
+  createSnapshot(team: Team): TeamSnapshot {
+    const teamSnapshot = new TeamSnapshot();
+    teamSnapshot.originTeam = team;
+    teamSnapshot.users = [...team.users];
+    teamSnapshot.questions = team.questions.filter(q => q.isEnabled).map(q => {
+      const questionSnapshot = new QuestionSnapshot()
+      questionSnapshot.originQuestion = q
+      questionSnapshot.text = q.text
+      questionSnapshot.index = q.index
+      questionSnapshot.team = teamSnapshot
+      questionSnapshot.options = q.options.filter(o => o.isEnabled).map(o => {
+        const optionSnapshot = new QuestionOptionSnapshot()
+        optionSnapshot.question = questionSnapshot;
+        // optionSnapshot.index = o.index // TODO!
+        optionSnapshot.text = o.text
+
+        return optionSnapshot;
+      })
+
+      return questionSnapshot;
+    })
+
+    return teamSnapshot;
+  }
+
   async submit(team: Team) {
-    return await this.manager.transaction(async manager => {
+    if (team.users.length === 0) {
+      new Error('Invalid team')
+    }
+    if (team.questions.length === 0) {
+      new Error('Invalid team')
+    }
+    return await this.manager.transaction('SERIALIZABLE', async manager => {
       await manager.getRepository(Team)
         .createQueryBuilder()
         .update({
@@ -53,11 +109,16 @@ export class TeamRepository extends Repository<Team> {
         .where({id: team.id})
         .execute();
 
+      // remove users which not include in users
+      let sql = `DELETE FROM user_teams_team WHERE "teamId" = $1 ${
+        team.users.length ? `AND "userId" NOT IN (${team.users.map((u, i) => `$${i + 2}`).join(',') }` : ``
+      })`
       await manager.connection.query(
-        `DELETE FROM user_teams_team WHERE "teamId" = $1 AND "userId" NOT IN (${team.users.map((u, i) => `$${i + 2}`).join(',')})`, [
+          sql, [
           team.id,
           ...team.users.map(u => u.id)
         ]);
+      // add new users
       await manager.query(
         `INSERT INTO user_teams_team ("teamId", "userId") VALUES ${team.users.map((u, i) => `($1, $${i + 2})`).join(',')} ON CONFLICT DO NOTHING`,
         [
@@ -71,56 +132,74 @@ export class TeamRepository extends Repository<Team> {
       const newQuestions = team.questions.filter(q => !q.id)
       const existQuestions = team.questions.filter(q => !!q.id)
 
-      console.log(newQuestions, existQuestions);
+      // mark as disabled removed questions
+      let qb = questionRepository
+        .createQueryBuilder()
+        .update(Question, {isEnabled: false})
+        .where('teamId = :team', {team: team.id}) as UpdateQueryBuilder<any>
 
       if (existQuestions.length) {
-        await questionRepository // mark as disabled removed questions
-          .createQueryBuilder()
-          .update(Question, {isEnabled: false})
-          .where('teamId = :team', {team: team.id})
-          .andWhere('id NOT IN(:...questions)', {questions: existQuestions.map(q => q.id)})
-          .execute();
+        qb = qb.andWhere('id NOT IN(:...questions)', {questions: existQuestions.map(q => q.id)})
       }
-      await Promise.all(existQuestions.map(q => questionRepository
-        .createQueryBuilder()
-        .update(Question, {text: q.text, index: q.index})
-        .where({id: q.id})
-        .execute())
-      )
+      await qb.execute();
 
-      await Promise.all(newQuestions.map(q => {
-        // TODO find same.. in
-        q.team = team;
-        return questionRepository.insert(q);
-      }));
+      await Promise.all([
+        // update existed questions
+        ...existQuestions.map(q => questionRepository
+            .createQueryBuilder()
+            .update(Question, {text: q.text, index: q.index})
+            .where({id: q.id})
+            .execute()),
+      ])
+      await Promise.all([
+        // add new Questions
+        ...newQuestions.map(q => {
+          // TODO find same.. in
+          q.team = team;
+          return questionRepository.insert(q);
+        })
+      ])
 
-      for (const q of team.questions.filter(q => q.options.length)) {
+      for (const q of team.questions) {
         const options = q.options
 
         const newOptions = options.filter(o => !o.id);
         const existOptions = options.filter(o => !!o.id)
 
-        if (existOptions.length) {
-          await optionsRepository // mark as disabled removed options
-            .createQueryBuilder()
-            .update(QuestionOption, {isEnabled: false})
-            .where({question: q})
-            .andWhere('id NOT IN(:...options)', {options: existOptions.map(o => o.id)})
-            .execute()
-        }
-
-        await Promise.all(existOptions.map(o => questionRepository
+        // mark as disabled removed options
+        qb = optionsRepository
           .createQueryBuilder()
-          .update(QuestionOption, {text: o.text})
-          .where({id: o.id})
-          .execute()
-        ));
+          .update(QuestionOption, {isEnabled: false})
+          .where({question: q})
+        if (existOptions.length) {
+          qb = qb.andWhere('id NOT IN(:...options)', {options: existOptions.map(o => o.id)})
+        }
+        await qb.execute()
 
-        await Promise.all(newOptions.map(o => {
-          // TODO find same
-          o.question = q;
-          return optionsRepository.insert(o);
-        }))
+        await Promise.all([
+          ...existOptions.map(o => questionRepository
+              .createQueryBuilder()
+              .update(QuestionOption, {text: o.text})
+              .where({id: o.id})
+              .execute()
+          ),
+        ])
+        await Promise.all([
+          ...newOptions.map(o => {
+            // TODO find same
+            o.question = q;
+            return optionsRepository.insert(o);
+          })
+        ]);
+      }
+
+      const lastSnapshot = await this.findSnapshot(team, manager);
+      const newSnapshot = this.createSnapshot(await manager.findOne(Team, team.id, {
+        relations: ['users', 'questions']
+      }));
+
+      if (!lastSnapshot || lastSnapshot.equals(newSnapshot)) {
+        await manager.insert(TeamSnapshot, newSnapshot)
       }
     })
   }

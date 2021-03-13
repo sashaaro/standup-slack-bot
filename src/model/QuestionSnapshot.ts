@@ -1,7 +1,8 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany} from "typeorm";
 import QuestionOption from "./QuestionOption";
 import Question from "./Question";
-import StandUp from "./StandUp";
+import {TeamSnapshot} from "./TeamSnapshot";
+import QuestionOptionSnapshot from "./QuestionOptionSnapshot";
 
 @Entity()
 class QuestionSnapshot {
@@ -18,16 +19,13 @@ class QuestionSnapshot {
     eager: true,
     cascade: true
   })
-  options: QuestionOption[];
+  options: QuestionOptionSnapshot[]; // TODO Snapshot
 
-  @ManyToOne(type => Question)
+  @ManyToOne(type => Question, {nullable: false})
   originQuestion: Question;
 
-  @ManyToOne(type => StandUp, q => q.questions)
-  standUp: StandUp;
-
-  @Column()
-  createdAt: Date;
+  @ManyToOne(type => TeamSnapshot, t => t.questions, {nullable: false})
+  team: TeamSnapshot;
 }
 
 export default QuestionSnapshot;

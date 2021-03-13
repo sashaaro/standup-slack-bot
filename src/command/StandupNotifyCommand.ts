@@ -46,19 +46,23 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     const {start$, end$} = this.standUpNotifier.create()
     start$.pipe(
       takeUntil(this.terminate$)
-    ).subscribe(standups => {
-      this.logger.info('Start daily meetings', {standups: standups.map(standUp => standUp.id)})
+    ).subscribe({
+      next: standups => {
+        this.logger.info('Start daily meetings', {standups: standups.map(standUp => standUp.id)})
 
-      standups.forEach(standup => {
-        standup.team.users.forEach(user => {
-          try {
-            this.slackTransport.sendGreetingMessage(user, standup)
-          } catch (e) {
-            this.logger.error('Start daily meeting error', {standUpId: standup.id, userId: user.id, error: e})
-          }
+        standups.forEach(standup => {
+          standup.team.users.forEach(user => {
+            try {
+              this.slackTransport.sendGreetingMessage(user, standup)
+            } catch (e) {
+              this.logger.error('Start daily meeting error', {standUpId: standup.id, userId: user.id, error: e})
+            }
+          })
         })
-      })
+      },
+      error: error => this.logger.error({error})
     });
+
     end$.pipe(
       takeUntil(this.terminate$)
     ).subscribe(standups => {

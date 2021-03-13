@@ -8,6 +8,8 @@ import Timezone from "./Timezone";
 import QuestionOption from "./QuestionOption";
 import {Team} from "./Team";
 import QuestionSnapshot from "./QuestionSnapshot";
+import {TeamSnapshot} from "./TeamSnapshot";
+import QuestionOptionSnapshot from "./QuestionOptionSnapshot";
 
 export default [
   AnswerRequest,
@@ -19,5 +21,7 @@ export default [
   Timezone,
   Team,
   User,
-  QuestionSnapshot
+  TeamSnapshot,
+  QuestionSnapshot,
+  QuestionOptionSnapshot
 ]
