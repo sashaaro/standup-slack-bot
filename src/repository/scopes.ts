@@ -11,6 +11,12 @@ export function scopeTeamJoins(qb: SelectQueryBuilder<Team>): SelectQueryBuilder
     .leftJoinAndSelect('questions.options', 'options')
 }
 
+export function scopeTeamSnapshotJoins(qb: SelectQueryBuilder<Team>): SelectQueryBuilder<Team> {
+  return qb
+      .leftJoinAndSelect('teamSnapshot.questions', 'snapshotQuestions')
+      .leftJoinAndSelect('snapshotQuestions.options', 'snapshotOptions')
+}
+
 export function qbStandUpJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
   qb.leftJoinAndSelect('standup.answers', 'answers')
     .leftJoinAndSelect('answers.user', 'answerAuthor')
@@ -18,7 +24,9 @@ export function qbStandUpJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<
     .innerJoinAndSelect('standup.team', 'teamSnapshot')
     .innerJoinAndSelect('teamSnapshot.originTeam', 'team');
 
-  return scopeTeamJoins(qb);
+  scopeTeamSnapshotJoins(qb);
+
+  return scopeTeamJoins(qb); // TODO remove?
 }
 
 export function qbStandUpDate(qb: SelectQueryBuilder<StandUp>, date: Date): SelectQueryBuilder<StandUp> {

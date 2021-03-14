@@ -19,7 +19,7 @@ class QuestionSnapshot {
     eager: true,
     cascade: ["insert"],
   })
-  options: QuestionOptionSnapshot[]; // TODO Snapshot
+  options: QuestionOptionSnapshot[];
 
   @ManyToOne(type => Question, {nullable: false, eager: true})
   originQuestion: Question;

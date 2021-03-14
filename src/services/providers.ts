@@ -6,7 +6,7 @@ import {
   TERMINATE,
 } from "./token";
 import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
-import StandUpNotifier from "../slack/StandUpNotifier";
+import StandupNotifier from "../slack/standup-notifier";
 import actions from "../http/controller";
 import {LogLevel, WebClient} from '@slack/web-api'
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
@@ -22,7 +22,7 @@ import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import * as Transport from "winston-transport";
 import {TransformableInfo} from "logform";
 import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
-import {SlackEventListener} from "../slack/SlackEventListener";
+import {SlackEventListener} from "../slack/slack-event-listener";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {QueueRegistry} from "./queue.registry";
 
@@ -150,7 +150,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     SlackBotTransport,
     SlackEventListener,
     SyncSlackService,
-    StandUpNotifier,
+    StandupNotifier,
     ...actions,
     {
       provide: LOGGER_TOKEN,

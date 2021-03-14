@@ -13,6 +13,7 @@
 
 export interface Option { 
     id?: number;
+    index?: number;
     text?: string;
     updatedAt?: string;
     createdAt?: string;

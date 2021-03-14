@@ -11,14 +11,20 @@ form {
   }
 }
 .section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template:
-    "name name"
-    "timezone timezone"
-    "start-at duration"
-    "users users"
-    "channel channel"
+  display: flex;
+  flex-direction: column;
+  > div:first-child {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-column-gap: 20px;
+    grid-template-areas:
+    "name name name"
+    "days days days"
+    "start-at timezone duration"
+    "users users users"
+    "channel channel channel"
+  }
+
 ;
 
   @include onlyMobile {
@@ -43,6 +49,33 @@ form {
   padding-left: 35px;
   padding-bottom: 0;
   box-sizing: border-box;
+}
+
+.days {
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 5px;
+  grid-area: days;
+  padding: 14px 12px;
+
+  position: relative;
+  mat-label {
+    position: absolute;
+    top: -10px;
+    color: rgba(0,0,0,.6);
+    font-size: 11px;
+    background-color: white;
+    padding: 0 6px;
+    left: 6px;
+  }
+
+  > mat-checkbox {
+    margin-right: 12px;
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+
+  margin-bottom: calc(18.814px + 3.5px);
 }
 
 .timezone {
@@ -141,13 +174,15 @@ ng-select {
   }
 }
 
-.mat-standard-chip::ng-deep {
+:host .mat-standard-chip::ng-deep {
   // margin: 0 4px !important;
   padding-top: 3px !important;
   padding-bottom: 4px !important;
   padding-right: 7px !important;
   padding-left: 10px !important;
 }
+
+
 
 .add-question {
   width: 100%;

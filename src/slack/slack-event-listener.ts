@@ -11,11 +11,12 @@ import User from "../model/User";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, SlackBotTransport} from "./slack-bot-transport.service";
 import {Connection} from "typeorm";
 import {SlackAction, ViewSubmission} from "./model/ViewSubmission";
-import Question from "../model/Question";
 import AnswerRequest from "../model/AnswerRequest";
 import {StandUpRepository} from "../repository/standup.repository";
 import {SyncSlackService} from "./sync-slack.service";
 import {QueueRegistry} from "../services/queue.registry";
+import {ContextualError} from "../services/utils";
+import QuestionSnapshot from "../model/QuestionSnapshot";
 
 export class SlackEventListener {
   evensHandlers: {[event:string]: Function} = {
@@ -32,10 +33,7 @@ export class SlackEventListener {
       const user = await this.connection.getRepository(User).findOne(messageResponse.user)
 
       if (!user) {
-        this.logger.warn('Message author is not found', {
-          messageResponse: messageResponse
-        })
-        return true;
+        throw new ContextualError('Message author is not found', { messageResponse })
       }
 
       // try {
@@ -228,7 +226,10 @@ export class SlackEventListener {
     const answers: AnswerRequest[] = [];
     for(const actionId in values) {
       const item = values[actionId];
-      const question = await this.connection.getRepository(Question).findOne(parseInt(actionId));
+      const question = await this.connection.getRepository(QuestionSnapshot).findOne(parseInt(actionId));
+      if (!question) {
+        throw new ContextualError('Question snapshot is not found', {actionId})
+      }
       const hasOptions = question.options.length > 1
       const value = hasOptions ? item.selected_option.value : item.value
       let answer = standup.answers.find(answer => answer.question.id === question.id)

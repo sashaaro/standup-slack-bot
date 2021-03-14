@@ -1,6 +1,6 @@
 import * as yargs from "yargs";
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
-import StandUpNotifier from "../slack/StandUpNotifier";
+import StandupNotifier from "../slack/standup-notifier";
 import {Inject} from "injection-js";
 import {LOGGER_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
 import {Connection} from "typeorm";
@@ -19,7 +19,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
   constructor(
     private slackTransport: SlackBotTransport,
-    private standUpNotifier: StandUpNotifier,
+    private standUpNotifier: StandupNotifier,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(TERMINATE) protected terminate$: Observable<void>,
@@ -65,8 +65,11 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
     end$.pipe(
       takeUntil(this.terminate$)
-    ).subscribe(standups => {
-      standups.forEach(standup => this.slackTransport.sendReport(standup))
+    ).subscribe({
+      next: standups => {
+        standups.forEach(standup => this.slackTransport.sendReport(standup))
+      },
+      error: error => this.logger.error({error})
     })
 
     this.terminate$.subscribe(() => {

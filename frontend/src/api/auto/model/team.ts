@@ -18,6 +18,7 @@ export interface Team {
     id?: number;
     title?: string;
     status?: number;
+    days?: Array<number>;
     start?: string;
     duration?: number;
     timezone?: Timezone;

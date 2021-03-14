@@ -3,6 +3,8 @@ import Question from "./Question";
 import StandUp from "./StandUp";
 import User from "./User";
 import QuestionOption from "./QuestionOption";
+import QuestionSnapshot from "./QuestionSnapshot";
+import QuestionOptionSnapshot from "./QuestionOptionSnapshot";
 
 @Entity()
 class AnswerRequest {
@@ -19,17 +21,17 @@ class AnswerRequest {
   })
   standUp: StandUp;
 
-  @ManyToOne(type => Question, {
+  @ManyToOne(type => QuestionSnapshot, {
     //eager: true,
     nullable: false
   })
-  question: Question
+  question: QuestionSnapshot
 
   @Column({nullable: true})
   answerMessage: string
 
-  @ManyToOne(type => QuestionOption)
-  option: QuestionOption; // TODO multiple
+  @ManyToOne(type => QuestionOptionSnapshot)
+  option: QuestionOptionSnapshot; // TODO multiple
 
   @Column()
   createdAt: Date;

@@ -13,7 +13,7 @@ import {Logger} from "winston";
 import {Observable} from "rxjs";
 import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
-import {SlackEventListener} from "../slack/SlackEventListener";
+import {SlackEventListener} from "../slack/slack-event-listener";
 import {bind} from "../services/decorators";
 
 export class ServerCommand implements yargs.CommandModule {

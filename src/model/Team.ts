@@ -1,4 +1,5 @@
 import {
+  AfterLoad,
   BeforeInsert,
   BeforeUpdate,
   Column,
@@ -26,6 +27,7 @@ import {
   MinLength,
   ValidateNested
 } from "class-validator";
+import {sortByIndex} from "../services/utils";
 
 export const TEAM_STATUS_ACTIVATED = 1;
 export const TEAM_STATUS_DEACTIVATED = 2;
@@ -89,6 +91,13 @@ export class Team {
   questions: Question[];
 
   @Expose()
+  @Type(() => Array)
+  @IsNotEmpty()
+  @IsArray()
+  @Column("integer", { array: true, nullable: false, default: '{0,1,2,3,4}' })
+  days: number[] = [0, 1, 2, 3, 4];
+
+  @Expose()
   @Type(() => Timezone)
   @ManyToOne(type => Timezone, null, {
     eager: true,
@@ -118,4 +127,14 @@ export class Team {
     nullable: false,
   })
   reportChannel: Channel
+
+
+  @AfterLoad()
+  normalizeSort() {
+    //this.questions = this.questions.sort(sortByIndex)
+
+    //this.questions.forEach(q => {
+    //  q.options = q.options.sort(sortByIndex)
+    //})
+  }
 }

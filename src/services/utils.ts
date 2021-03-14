@@ -22,3 +22,9 @@ export function formatTime(date: Date, seconds = true): string {
   }
   return parts.join(':');
 }
+
+export class ContextualError extends Error {
+  constructor(message?: string, context = {}) {
+    super(message);
+  }
+}

@@ -30,7 +30,7 @@ class OptionNotFoundError extends Error {
 }
 
 @Injectable()
-export default class StandUpNotifier {
+export default class StandupNotifier {
   constructor(
     private connection: Connection,
     @Inject(LOGGER_TOKEN) protected logger: Logger,
@@ -65,8 +65,9 @@ export default class StandUpNotifier {
         )
       ),
       mergeMap(({teams, date}) =>
-        forkJoin(...teams.map(team =>
-            from(async () => {
+        forkJoin(
+          teams.map(team =>
+            fromPromise((async () => {
               const standup = new StandUp();
 
               standup.startAt = date;
@@ -76,8 +77,9 @@ export default class StandUpNotifier {
                   standup.team = await teamRepository.insertSnapshot(team);
               }
               return standup;
-            })
-        ))
+            })())
+          )
+        )
       ),
       mergeMap(standups =>
         fromPromise(standUpRepository.insert(standups)).pipe(mapTo(standups))

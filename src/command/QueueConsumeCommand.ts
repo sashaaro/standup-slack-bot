@@ -11,7 +11,7 @@ import {Redis} from "ioredis";
 import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {Observable} from "rxjs";
 import {Job} from "bull";
-import {SlackEventListener} from "../slack/SlackEventListener";
+import {SlackEventListener} from "../slack/slack-event-listener";
 import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
 import {bind} from "../services/decorators";
 import {QueueRegistry} from "../services/queue.registry";
@@ -47,15 +47,24 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
   queueHandlers = {
     [QUEUE_NAME_SLACK_EVENTS]: async (job: Job) => {
-      this.slackEventListener.handleEventJob(job.name, job.data)
-    },
-    [QUEUE_NAME_SLACK_INTERACTIVE]: (job: Job) => {
-      const data = job.data;
-      if (data.type === InteractiveResponseTypeEnum.block_actions) {
-        this.slackEventListener.handleAction(data);
+      try {
+        this.slackEventListener.handleEventJob(job.name, job.data)
+      } catch (error) {
+        this.logger.warn('Error slack events job handling', {error, job})
       }
-      if (data.type === InteractiveResponseTypeEnum.view_submission) {
-        this.slackEventListener.handleViewSubmission(data);
+    },
+    [QUEUE_NAME_SLACK_INTERACTIVE]: async (job: Job) => {
+      const data = job.data;
+      try {
+        if (data.type === InteractiveResponseTypeEnum.block_actions) {
+          await this.slackEventListener.handleAction(data);
+        } else if (data.type === InteractiveResponseTypeEnum.view_submission) {
+          await this.slackEventListener.handleViewSubmission(data);
+        } else {
+          this.logger.warn('No handler for job', {job})
+        }
+      } catch (error) {
+        this.logger.warn('Error slack interactive job handling', {error, job})
       }
     }
   }

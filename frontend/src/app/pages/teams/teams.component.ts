@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {Team, TeamService} from "../../../api/auto";
 import {map, publishReplay, refCount, startWith, switchMap} from "rxjs/operators";
 import {MatSlideToggleChange} from "@angular/material/slide-toggle";
 import {merge, Subject} from "rxjs";
 import {ActivatedRoute} from "@angular/router";
 import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
+import {MatDialog} from "@angular/material/dialog";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @UntilDestroy()
 @Component({
@@ -26,19 +28,16 @@ export class TeamsComponent implements OnInit {
       refCount()
     )
 
+  @ViewChild('confirmDialogRef', {static: true}) confirmDialog: TemplateRef<any>;
 
   constructor(
     private teamService: TeamService,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
+    public dialog: MatDialog,
+    public snackBar: MatSnackBar,
   ) { }
 
   ngOnInit(): void {
-
-    this.teams$
-      .pipe(untilDestroyed(this))
-      .subscribe(teams => {
-        //this.activateControls = new FormControl();
-      })
   }
 
   toggle(e: MatSlideToggleChange, team: Team) {
@@ -59,12 +58,21 @@ export class TeamsComponent implements OnInit {
     })
   }
   achieve(team: Team) {
-    this.teamService.updateStatus(team.id, {
-      status: 3
-    }).subscribe(t => {
-      // TODO notification
-      this.manualUpdate.next();
+    const dialogRef = this.dialog.open(this.confirmDialog, {
+      width: '250px'
+    });
+
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.teamService.updateStatus(team.id, {
+          status: 3
+        }).subscribe(t => {
+          // TODO notification
+          this.manualUpdate.next();
+        })
+      }
     })
+
   }
 
   untilTime(team: Team) { // TODO pipe

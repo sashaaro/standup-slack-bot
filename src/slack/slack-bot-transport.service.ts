@@ -105,8 +105,7 @@ export class SlackBotTransport {
       const element: any = {
         type: hasOptions ?  "static_select" : "plain_text_input",
         action_id: question.id.toString(),
-      };
-
+      }
 
       if (inProgress) {
         if (hasOptions) {

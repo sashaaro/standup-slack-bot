@@ -37,6 +37,7 @@ import {SettingsComponent} from './pages/settings/settings.component';
 import {PricingComponent} from './pages/pricing/pricing.component';
 import {MatSnackBarModule} from "@angular/material/snack-bar";
 import {MatDialogModule} from "@angular/material/dialog";
+import {MatCheckboxModule} from "@angular/material/checkbox";
 
 @NgModule({
   declarations: [
@@ -78,7 +79,8 @@ import {MatDialogModule} from "@angular/material/dialog";
     DragDropModule,
     NgxPaginationModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule,
+    MatCheckboxModule
   ],
   providers: [
     {

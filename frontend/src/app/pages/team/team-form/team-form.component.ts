@@ -40,7 +40,6 @@ import {MatDialog} from "@angular/material/dialog";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {log} from "../../../operator/log";
 
-// TODO use daysControl
 export const weekDays = [
   'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
 ];
@@ -67,6 +66,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   usersControl = new FormControl([], [Validators.required, Validators.minLength(1)]);
   form = this.fb.group({
     name: [null, Validators.required],
+    days: new FormArray(weekDays.map((d, index) => new FormControl(index < 5)), Validators.minLength(1)),
     timezone: [null, Validators.required],
     start: [null, Validators.required],
     duration: [null, [Validators.required, control => Number.isNaN(Number.parseInt(control.value, 10)) ? {required: true} : null]],
@@ -90,6 +90,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     ]).pipe(
       map(([users, selected]) => users.filter(u => !selected.includes(u.id)))
     )
+
+  weekDays = weekDays
 
   timezones$ = this.timezoneService.getTimezones()
   channels$ = this.channelService.getChannels()
@@ -147,7 +149,9 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
           this.questionsControl.push(questionControl)
         });
 
-        this.form.reset(this.team);
+        const value = this.team as Team|any
+        value.days = weekDays.map((v, i) => value.days.includes(i))
+        this.form.reset(value);
         this.form.markAsPristine();
       } else {
         this.form.reset();
@@ -263,7 +267,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       this.form.markAllAsTouched();
       return;
     }
-    const value = this.form.value; //{...this.form.value};
+    const value = {...this.form.value};
 
     value.duration = Number.parseInt(value.duration, 10);
     value.questions = this.questionsControl.controls.map((control, index) => ({
@@ -275,6 +279,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     value.users = value.users.map(u => ({id: u.id}));
     value.timezone = {id: value.timezone.id};
     value.reportChannel = {id: value.reportChannel.id};
+    value.days = value.days.map((v, i) => v ? i : null).filter(v => v !== null);
 
     (this.team ?
       this.teamService.updateTeam(this.team.id, value) :

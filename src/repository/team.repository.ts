@@ -18,8 +18,13 @@ export class TeamRepository extends Repository<Team> {
     return qb
       .innerJoinAndSelect('team.timezone', 'timezone')
       .innerJoin( 'pg_timezone_names', 'pg_timezone', 'timezone.name = pg_timezone.name')
-      .andWhere(`(team.start::time - pg_timezone.utc_offset) = :start::time`, {start: formatTime(startedAt, false)})
+      .andWhere(`(team.start::time - pg_timezone.utc_offset) = :start::time`, {
+        start: formatTime(startedAt, false)
+      })
       .andWhere('team.status = :status', {status: TEAM_STATUS_ACTIVATED})
+      .andWhere(
+          '((extract("dow" from :startedAt at time zone pg_timezone.name)::int + 6) % 7) = ANY(team.days)',
+          {startedAt: startedAt})
       .getMany();
   }
 
@@ -37,6 +42,7 @@ export class TeamRepository extends Repository<Team> {
       .andWhere('questions.isEnabled = true')
       .andWhere('t.status = :status', {status: TEAM_STATUS_ACTIVATED})
       .orderBy("questions.index", "ASC")
+      .addOrderBy("options.index", "ASC")
       .getOne()
   }
 
@@ -114,6 +120,7 @@ export class TeamRepository extends Repository<Team> {
           timezone: team.timezone,
           start: team.start,
           reportChannel: team.reportChannel,
+          days: team.days
           // users: team.users
         })
         .where({id: team.id})
