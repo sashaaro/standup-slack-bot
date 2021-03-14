@@ -11,9 +11,13 @@
 
         <div>
           <div *ngFor="let question of user.questions; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index">
-            <div class="stand-up-item__question">{{ question.text }}</div>
-            <div class="stand-up-item__answer">{{ question.option }}</div>
-            <div class="stand-up-item__answer">{{ question.answer }}</div>
+            <div class="stand-up-item__question">{{ question.questionText }}</div>
+            <div class="stand-up-item__answer" *ngIf="question.answerOptionId">
+              <div *ngFor="let option of question.options" [class.active]="option.optionId === question.answerOptionId">{{ option.optionText }}</div>
+            </div>
+            <div class="stand-up-item__answer">
+              <div class="active">{{ question.answerMessage }}</div>
+            </div>
           </div>
         </div>
 

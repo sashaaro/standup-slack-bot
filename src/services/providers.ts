@@ -25,6 +25,7 @@ import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
 import {SlackEventListener} from "../slack/slack-event-listener";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {QueueRegistry} from "./queue.registry";
+import {enumerateErrorFormat} from "./utils";
 
 export interface IAppConfig {
   env: string,
@@ -73,16 +74,6 @@ export const initFixtures = async (connection: Connection) => {
 export const QUEUE_NAME_SLACK_EVENTS = 'slack_events';
 export const QUEUE_NAME_SLACK_INTERACTIVE = 'slack_interactive';
 
-const enumerateErrorFormat = format((info: TransformableInfo) => {
-  if (info.error instanceof Error) {
-    info.error = Object.assign({
-      message: info.error.message,
-      stack: info.error.stack
-    }, info.error);
-  }
-
-  return info;
-});
 
 export const createProviders = (env = 'dev'): {providers: Provider[], commands: Provider[]} => {
   if (fs.existsSync(`.env.${env}`)) {

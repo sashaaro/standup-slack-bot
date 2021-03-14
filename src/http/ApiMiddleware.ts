@@ -21,6 +21,7 @@ import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
 import {createLoggerMiddleware} from "./middlewares";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import {QueueRegistry} from "../services/queue.registry";
+import {stringifyError} from "../services/utils";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -51,33 +52,18 @@ export class ResourceNotFoundError extends Error {
 export class BadRequestError extends Error {
 }
 
-const errorHandler = (logger: Logger) => (err, req, res, next) => {
-  logger.error("Catch express middleware error", {error: err})
-
+const errorHandler = (config: IAppConfig,logger: Logger) => (err, req, res, next) => {
   if (err instanceof AccessDenyError) {
-    res.status(403);
-
-    if (req.accepts('html')) {
-      res.send('');
-    } else {
-      res.send('')
-    }
+    res.status(403).send();
   } else if (err instanceof BadRequestError) {
-    res.sendStatus(400);
+    res.status(400).send();
   } else if (err instanceof ResourceNotFoundError) {
-    res.sendStatus(404);
-
-    if (req.accepts('html')) {
-      res.send('');
-    } else {
-      res.send('')
-    }
+    res.status(404).send();
   } else {
     logger.error("Catch express middleware error", {error: err})
-    /*if (err.statusCode !== 'ERR_HTTP_HEADERS_SENT') {
-      res.status(502);
-      res.send(render('502', {supportTelegram: config.supportTelegram}))
-    }*/
+    if (err.statusCode !== 'ERR_HTTP_HEADERS_SENT') {
+      res.status(502).send(config.env !== 'prod' ? stringifyError(err) : '');
+    }
   }
 }
 
@@ -138,7 +124,7 @@ export class ApiMiddleware {
       res.type('txt').send('Not found');
     })
 
-    router.use(errorHandler(injector.get(LOGGER_TOKEN)))
+    router.use(errorHandler(injector.get(CONFIG_TOKEN), injector.get(LOGGER_TOKEN)))
 
     return router;
   }

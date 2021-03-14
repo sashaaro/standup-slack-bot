@@ -97,6 +97,12 @@
   &__answer {
     font-size: 16px;
     font-style: italic;
+    > div {
+      opacity: 0.18;
+      &.active {
+        opacity: 1;
+      }
+    }
   }
 
   padding-bottom: 25px;
