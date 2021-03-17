@@ -20,6 +20,7 @@ export class ServerCommand implements yargs.CommandModule {
   static meta: Partial<yargs.CommandModule<any, any>> = {
     command: 'server:run',
     describe: 'Run server',
+    builder: ServerCommand.builder
   };
 
   constructor(
@@ -31,12 +32,12 @@ export class ServerCommand implements yargs.CommandModule {
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 
-  builder(args: yargs.Argv) {
+  static builder(args: yargs.Argv) {
     return args
-      .option("p", {
-        alias: "port",
+      .positional("port", {
+        alias: "p",
         describe: "Listen port",
-        demand: false
+        default: 3001,
       })
       ;
   }

@@ -9,7 +9,7 @@
       <div *ngFor="let user of standup.users" class="stand-up-item">
         <div *ngIf="user.questions.length === 0">No answers 🐥</div>
 
-        <div>
+        <div class="stand-up-item__results">
           <div *ngFor="let question of user.questions; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index">
             <div class="stand-up-item__question">{{ question.questionText }}</div>
             <div class="stand-up-item__answer" *ngIf="question.answerOptionId">
@@ -22,8 +22,8 @@
         </div>
 
         <div class="stand-up-item__content">
-          <img [src]="user.image"/>
-          <div class="stand-up-item__name"> {{ user.name }}</div>
+          <img [src]="user.userImage"/>
+          <div class="stand-up-item__name"> {{ user.userName }}</div>
         </div>
       </div>
     </div>

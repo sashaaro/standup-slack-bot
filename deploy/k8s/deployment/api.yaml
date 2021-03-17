@@ -18,11 +18,89 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+      initContainers:
+        - name: create-db
+          image: postgres:13.1-alpine
+          env:
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-configmap
+                  key: service
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+          command:
+            - "bash"
+            - "-c"
+            - |
+              psql -U postgres -c "CREATE DATABASE standup" || echo "Already exists"
+        - name: create-schema
+          image: registry.digitalocean.com/simple/standup-slack-bot:latest
+          #imagePullPolicy: Never #uncommend if use minikube
+          #securityContext:
+          #  runAsUser: node
+          #  runAsNonRoot: true
+          #  runAsGroup: node
+          args: [ "database:migrate" ]
+          env: &appEnv
+            - name: SLACK_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: client-id
+            - name: SLACK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: secret
+            - name: SLACK_SIGNING_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: signing-secrent
+            - name: BOT_USER_OAUTH_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: slack-api-secret
+                  key: bot-user-oauth-access-token
+            - name: DEBUG
+              value: "true"
+            - name: HOST
+              value: "https://standup.botenza.com"
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-configmap
+                  key: service
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-configmap
+                  key: service
+            - name: DB_DATABASE
+              value: standup
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+            - name: LOG_DIR
+              value: "/var/log"
+        - name: fixture-db
+          image: registry.digitalocean.com/simple/standup-slack-bot:latest
+          #imagePullPolicy: Never
+          args: [ "database:fixture" ]
+          env: *appEnv
       containers:
         - name: standup-api
           image: registry.digitalocean.com/simple/standup-slack-bot:latest
           #imagePullPolicy: Never
-          args: ["server:run", "--type=slack-api", "--listen=3000", "--env=dev"]
+          args: ["server:run", "--port=3000", "--env=dev"]
           ports:
             - containerPort: 3000
           env:

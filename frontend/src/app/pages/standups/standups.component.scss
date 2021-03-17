@@ -66,8 +66,17 @@
     margin-left: 15px;
   }
 
+  &__results {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    grid-column-gap: 30px;
+    grid-row-gap: 20px;
+  }
+
   &__result {
-    margin-bottom: 20px;
+    width: 350px;
+    margin-bottom: 13px;
     padding-left: 12px;
     border-left: 4px solid;
     /* https://semantic-ui.com/usage/theming.html*/
@@ -83,24 +92,27 @@
     &--3 {
       border-left-color: #016936;
     }
-    &:last-child {
-      margin-bottom: 0;
-    }
   }
 
   &__question {
-    font-weight: bold;
-    font-size: 18px;
+    font-size: 24px;
     margin-bottom: 8px;
+    font-weight: 600;
   }
 
   &__answer {
-    font-size: 16px;
+    font-size: 22px;
+    font-weight: 400;
     font-style: italic;
     > div {
       opacity: 0.18;
       &.active {
         opacity: 1;
+      }
+
+      margin-bottom: 10px;
+      &:last-child {
+        margin-bottom: 0;
       }
     }
   }

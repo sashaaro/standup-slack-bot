@@ -3,3 +3,4 @@ dist
 deploy
 var
 resources/public/*.css
+frontend

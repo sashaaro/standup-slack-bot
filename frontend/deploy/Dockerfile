@@ -12,5 +12,5 @@ RUN ./node_modules/@angular/cli/bin/ng build --prod
 
 FROM nginx:1.18.0-alpine
 WORKDIR /opt/app
-COPY ./deplay/default-nginx.conf /etc/nginx/sites-enabled/default
-COPY --from=builder /opt/app/dist ./dist
+COPY ./deploy/default-nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /opt/app/dist/frontend ./dist

@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: queue-consumer-deployment
+  name: queue-consumer
   labels:
     app: queue-consumer
 spec:
@@ -20,8 +20,8 @@ spec:
         fsGroup: 1000
       containers:
         - name: queue-consumer
-          image: standup-slack-bot:latest
-          imagePullPolicy: Never
+          image: registry.digitalocean.com/simple/standup-slack-bot:latest
+          #imagePullPolicy: Never
           args: ["queue:consume", "--env=prod"]
           ports:
             - containerPort: 3000

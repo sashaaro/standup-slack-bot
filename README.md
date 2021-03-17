@@ -93,6 +93,7 @@ https://www.digitalocean.com/docs/container-registry/quickstart/
 eval $(minikube -p minikube docker-env)
 docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
 docker build frontend -f frontend/deploy/Dockerfile -t standup-slack-bot-ui:latest
+#docker build . -f deploy/Dockerfile -t standup-slack-bot-ui:latest
 docker tag standup-slack-bot:latest registry.digitalocean.com/simple/standup-slack-bot:latest
 docker push registry.digitalocean.com/simple/standup-slack-bot:latest
 ```
@@ -108,4 +109,9 @@ kubectl apply -f deploy/k8s/deployment/queue-consumer.yaml
 kubectl apply -f deploy/k8s/deployment/notifier.yaml
 # kubectl create secret tls app-secret-tls --cert=path/to/cert/file --key=path/to/key/file
 kubectl apply -f deploy/k8s/standup-bot-ingress.yaml
+```
+
+```shell
+minikube tunnel
+echo "192.168.49.2    standup.botenza.com" >> /etc/host
 ```

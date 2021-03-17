@@ -13,7 +13,7 @@ spec:
     - host: standup.botenza.com
       http:
         paths:
-          - path: /api/slack
+          - path: /api
             pathType: "Prefix"
             backend:
               service:
