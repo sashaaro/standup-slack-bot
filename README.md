@@ -23,15 +23,10 @@ Create new migration
 # ./node_modules/typeorm/cli.js migration:generate --name=name
 ```
 
-Generate migration
-```bash
-./cli.sh migration:generate -n
-```
-
 Run migrations
 ```bash
 rm -r ./dist/*
-npm run buiild
+npm run build
 ./cli.sh database:migrate
 ```
 
