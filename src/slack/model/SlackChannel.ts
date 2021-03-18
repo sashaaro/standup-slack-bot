@@ -43,7 +43,7 @@ export interface MemberJoinedChannel {
  */
 export interface SlackConversation {
   "id": "C012AB3CD",
-  "name": "general",
+  "name": string,
   "is_channel": true,
   "is_group": false,
   "is_im": false,

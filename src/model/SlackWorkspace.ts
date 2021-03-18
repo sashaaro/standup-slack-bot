@@ -27,7 +27,7 @@ class SlackWorkspace {
   @OneToMany(type => Channel, ch => ch.workspace)
   channels: Channel[]
 
-  @Column("json", {nullable: true})
+  @Column("jsonb", {nullable: false})
   slackData: SlackTeam
 
   // https://api.slack.com/authentication/token-types#granular_bot

@@ -12,6 +12,9 @@ export class Channel {
   @Column()
   name: string
 
+  @Column()
+  nameNormalized: string;
+
   @Column({default: false})
   isArchived: boolean;
 
@@ -19,9 +22,6 @@ export class Channel {
   isEnabled: boolean;
 
   // TODO isPrivate: boolean;
-
-  @Column()
-  nameNormalized: string;
 
   @ManyToOne(type => User, null, {
     eager: true
@@ -33,9 +33,4 @@ export class Channel {
     nullable: false
   })
   workspace: SlackWorkspace
-
-  @ManyToMany(type => User, user => user.channels, {
-    cascade: ["insert", "update"]
-  })
-  users: Array<User>
 }

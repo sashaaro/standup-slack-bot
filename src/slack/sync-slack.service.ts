@@ -9,7 +9,7 @@ import {Channel} from "../model/Channel";
 import {Inject, Injectable} from "injection-js";
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
-import {WebAPIPlatformError, WebClient} from "@slack/web-api";
+import {WebClient} from "@slack/web-api";
 import {Connection, DeepPartial} from "typeorm";
 
 @Injectable()
@@ -35,31 +35,44 @@ export class SyncSlackService {
     const teamRepository = this.connection.getRepository(SlackWorkspace);
     workspace = await teamRepository.save(workspace);
 
-    this.updateUsers(workspace);
-    this.updateChannels(workspace);
+    await this.updateUsers(workspace);
+    await this.updateChannels(workspace);
   }
 
   private async updateUsers(workspace: SlackWorkspace) {
     const userRepository = this.connection.getRepository(User);
 
     /* https://api.slack.com/methods/users.list */
-    let usersResponse;
+    let response;
     let cursor = null;
     do {
-      cursor = usersResponse?.response_metadata?.next_cursor;
-      usersResponse = await this.webClient.users.list({
+      cursor = response?.response_metadata?.next_cursor;
+      response = await this.webClient.users.list({
         limit: 200,
         cursor,
         token: workspace.accessToken
       });
-      if (!usersResponse.ok) {
+      if (!response.ok) {
         // throw..
-        this.logger.error('Fetch users error', {error: usersResponse.error})
+        this.logger.error('Fetch users error', {error: response.error})
         return;
       }
 
+      const members = (response.members as ISlackUser[]).filter(
+          u =>
+              !u.is_bot
+              && !u.deleted
+              && !u.is_app_user
+              && u.id !== 'USLACKBOT' // https://stackoverflow.com/a/40681457
+      )
+      this.logger.debug('webClient.users.list', {users: members})
 
-      for (const member of (usersResponse.members as ISlackUser[]).filter(u => !u.is_bot && !u.deleted && !u.is_app_user)) {
+      const list = []
+      for (const member of members) {
+        if (member.team_id !== workspace.id) {
+          throw new Error(`Workspace #${workspace.id} is not equal to member.team_id as ${member.team_id}`)
+        }
+
         let user = await userRepository.findOne(member.id);
         if (!user) {
           user = new User();
@@ -68,16 +81,13 @@ export class SyncSlackService {
         user.name = member.name;
         user.profile = member.profile;
 
-        if (member.team_id !== workspace.id) {
-          throw new Error(`Workspace #${workspace.id} is not equal to member.team_id as ${member.team_id}`)
-        }
-
         user.workspace = workspace; //await teamRepository.findOne(member.team_id);
 
-        await userRepository.save(user)
+        list.push(user);
       }
+      await userRepository.save(list)
 
-    } while (usersResponse.response_metadata.next_cursor);
+    } while (response.response_metadata.next_cursor);
 
 
     let conversationsResponse;
@@ -108,53 +118,57 @@ export class SyncSlackService {
   private async updateChannels(workspace: SlackWorkspace) {
     // TODO fix update private channel where bot invited already
     const userRepository = this.connection.getRepository(User);
-    const response = await this.webClient.conversations.list({
-      types: 'public_channel,private_channel',
-      token: workspace.accessToken
-      // TODO limit? pagination
-    });
-    /*let response = await this.webClient.users.conversations({
-      types: 'public_channel,private_channel',
-    });*/
-    if (!response.ok) {
-      throw new Error(response.error);
-    }
 
-    const conversations = (response as any).channels as SlackConversation[];
-    const channelRepository = this.connection.getCustomRepository(ChannelRepository);
+    // TODO wtf?
     await this.connection.createQueryBuilder()
-      .update(Channel)
-      .where({workspace: workspace.id})
-      .set({isArchived: true})
-      .execute()
+        .update(Channel)
+        .where({workspace: workspace.id})
+        .set({isArchived: true})
+        .execute()
 
-    for (const channel of conversations.filter(ch => !ch.is_member)) {
-      let ch = await channelRepository.findOne(channel.id);
-      if (!ch) {
-        ch = new Channel()
-        ch.id = channel.id;
+    const channelRepository = this.connection.getCustomRepository(ChannelRepository);
+
+    let response;
+    let cursor = null;
+    do {
+      cursor = response?.response_metadata?.next_cursor;
+
+      response = await this.webClient.conversations.list({
+        types: 'public_channel,private_channel',
+        token: workspace.accessToken,
+        limit: 200,
+        cursor,
+      });
+      /*let response = await this.webClient.users.conversations({
+        types: 'public_channel,private_channel',
+      });*/
+      if (!response.ok) {
+        throw new Error(response.error);
       }
 
-      ch.isEnabled = true;
-      ch.isArchived = channel.is_archived;
-      ch.createdBy = await userRepository.findOne(channel.creator);
-      if (!ch.createdBy) {
-        this.logger.error(`Created by is not found`);
+      const conversations = (response as any).channels as SlackConversation[];
 
-        continue;
-      }
-      ch.workspace = workspace
-      if (!ch.workspace) {
-        this.logger.error(`Created by is not found`);
-        continue;
-      }
+      const channels = conversations.filter(ch =>
+          !ch.is_member
+          && ch.name !== 'slack-bots'
+          && ch.name !== 'random'
+      )
+      this.logger.debug('webClient.conversations.list', {channels})
 
-      ch.name = channel.name
-      ch.nameNormalized = channel.name_normalized
-      await channelRepository.save(ch);
-      await this.updateChannelMembers(ch, workspace.accessToken);
-      await channelRepository.save(ch);
-    }
+      const list = []
+      for (const channel of channels) {
+        const ch = this.connection.manager.create(Channel, {id: channel.id});
+        ch.name = channel.name
+        ch.nameNormalized = channel.name_normalized
+        ch.isArchived = channel.is_archived;
+        ch.isEnabled = true;
+        ch.workspace = workspace;
+        ch.createdBy = this.connection.manager.create(User, {id: channel.creator});
+
+        list.push(ch);
+      }
+      await channelRepository.save(list);
+    } while (response.response_metadata.next_cursor)
   }
 
   async updateWorkspace(workspace: SlackWorkspace, token): Promise<SlackWorkspace> {
@@ -167,33 +181,6 @@ export class SyncSlackService {
     workspace.domain = teamInfo.team.domain
 
     return await this.connection.getRepository(SlackWorkspace).save(workspace)
-  }
-
-  async updateChannelMembers(channel: Channel, token) {
-    const userRepository = this.connection.getRepository(User);
-    let membersResponse: { ok: boolean, members?: string[], error?: string };
-    try {
-      membersResponse = await this.webClient.conversations.members({
-        channel: channel.id,
-        token
-      });
-    } catch (e: WebAPIPlatformError|any) {
-      if (e.code === 'slack_webapi_platform_error' && e.data.error === 'not_in_channel') {
-        this.logger.warn('Can not joined channel', {error: e})
-        // TODO ?! throw new SyncDataProblem
-      } else {
-        throw e
-      }
-    }
-
-    if (!membersResponse.ok) {
-      throw new Error(membersResponse.error);
-    }
-
-    channel.users = []
-    if (membersResponse.members.length > 0) {
-      channel.users = await userRepository.createQueryBuilder('u').whereInIds(membersResponse.members).getMany() // TODO
-    }
   }
 
   async findOrCreateAndUpdate(channelID: string, data: DeepPartial<Channel>): Promise<{channel: Channel, isNew: boolean}> {
@@ -215,7 +202,6 @@ export class SyncSlackService {
   };
 
   async channelJoined({channel}: { channel: SlackChannel }) {
-
     // TODO use channel.members
     await this.joinSlackChannel(channel.id, {
       isArchived: channel.is_archived,
@@ -237,7 +223,6 @@ export class SyncSlackService {
 
     const channelRepository = this.connection.getCustomRepository(ChannelRepository);
     await channelRepository.save(channel);
-    await this.updateChannelMembers(channel, 'TODO')
     /*await this.postMessage({
       channel: channel.id,
       text: 'Hi everyone, I am here! Every one here will be receive questions. Open settings if want change'

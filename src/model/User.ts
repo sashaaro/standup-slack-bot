@@ -46,7 +46,7 @@ export default class User {
   workspace: SlackWorkspace;
 
   @Column({
-    length: 10,
+    length: 20,
     nullable: true,
   })
   im: string;
@@ -56,16 +56,12 @@ export default class User {
   @Column({nullable: true})
   accessToken: string;
 
-  @Column('json', {default: new Profile()})
+  @Column('jsonb', {default: new Profile()})
   profile: SlackUserProfile = new Profile();
 
   @ManyToMany(type => Team, team => team.users)
   @JoinTable()
   teams: Team[];
-
-  @ManyToMany(type => Channel, channel => channel.users)
-  @JoinTable()
-  channels: Channel[];
 
   @OneToMany(type => AnswerRequest, answer => answer.user)
   answers: AnswerRequest[];
