@@ -30,6 +30,7 @@ export interface ScopeGranted {
   "event_time": 1505519097
 }
 
+// https://api.slack.com/methods/oauth.v2.access
 export interface OauthAccessResponse {
   "ok": true,
   "access_token": "xoxb-17653672481-19874698323-pdFZKVeTuE8sk7oOcBrzbqgy",
@@ -47,8 +48,8 @@ export interface OauthAccessResponse {
   },
   "authed_user": {
     "id": "U1234",
-    "scope": "chat:write",
-    "access_token": "xoxp-1234",
-    "token_type": "user"
+    scope?: "chat:write",
+    access_token?: "xoxp-1234",
+    token_type?: "user"
   }
 }

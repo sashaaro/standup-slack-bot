@@ -22,7 +22,10 @@ export class SyncSlackService {
   }
 
   async syncForWorkspace(workspace: SlackWorkspace) {
-    const teamResponse: {team: SlackTeam} = await this.webClient.team.info({team: workspace.id}) as any;
+    const teamResponse: {team: SlackTeam} = await this.webClient.team.info({
+      team: workspace.id,
+      token: workspace.accessToken
+    }) as any;
 
     if (workspace.id !== teamResponse.team.id) {
       throw new Error(`Wrong team id #${teamResponse.team.id}. Workspace #${workspace.id}`);
@@ -44,7 +47,11 @@ export class SyncSlackService {
     let cursor = null;
     do {
       cursor = usersResponse?.response_metadata?.next_cursor;
-      usersResponse = await this.webClient.users.list({limit: 200, cursor});
+      usersResponse = await this.webClient.users.list({
+        limit: 200,
+        cursor,
+        token: workspace.accessToken
+      });
       if (!usersResponse.ok) {
         // throw..
         this.logger.error('Fetch users error', {error: usersResponse.error})
@@ -77,7 +84,12 @@ export class SyncSlackService {
     cursor = null;
     do {
       cursor = conversationsResponse?.response_metadata?.next_cursor;
-      conversationsResponse = await this.webClient.conversations.list({types: 'im', limit: 200, cursor});
+      conversationsResponse = await this.webClient.conversations.list({
+        types: 'im',
+        limit: 200,
+        cursor,
+        token: workspace.accessToken
+      });
       if (!conversationsResponse.ok) {
         throw new Error(conversationsResponse.error);
       }
@@ -96,7 +108,11 @@ export class SyncSlackService {
   private async updateChannels(workspace: SlackWorkspace) {
     // TODO fix update private channel where bot invited already
     const userRepository = this.connection.getRepository(User);
-    const response = await this.webClient.conversations.list({types: 'public_channel,private_channel'});
+    const response = await this.webClient.conversations.list({
+      types: 'public_channel,private_channel',
+      token: workspace.accessToken
+      // TODO limit? pagination
+    });
     /*let response = await this.webClient.users.conversations({
       types: 'public_channel,private_channel',
     });*/
@@ -136,25 +152,31 @@ export class SyncSlackService {
       ch.name = channel.name
       ch.nameNormalized = channel.name_normalized
       await channelRepository.save(ch);
-      await this.updateChannelMembers(ch);
+      await this.updateChannelMembers(ch, workspace.accessToken);
       await channelRepository.save(ch);
     }
   }
 
-  async updateWorkspace(workspace: SlackWorkspace): Promise<SlackWorkspace> {
+  async updateWorkspace(workspace: SlackWorkspace, token): Promise<SlackWorkspace> {
     // https://api.slack.com/methods/team.info
-    const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({team: workspace.id})) as any;
+    const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({
+      team: workspace.id,
+      token
+    })) as any;
     workspace.name = teamInfo.team.name;``
     workspace.domain = teamInfo.team.domain
 
     return await this.connection.getRepository(SlackWorkspace).save(workspace)
   }
 
-  async updateChannelMembers(channel: Channel) {
+  async updateChannelMembers(channel: Channel, token) {
     const userRepository = this.connection.getRepository(User);
     let membersResponse: { ok: boolean, members?: string[], error?: string };
     try {
-      membersResponse = await this.webClient.conversations.members({channel: channel.id});
+      membersResponse = await this.webClient.conversations.members({
+        channel: channel.id,
+        token
+      });
     } catch (e: WebAPIPlatformError|any) {
       if (e.code === 'slack_webapi_platform_error' && e.data.error === 'not_in_channel') {
         this.logger.warn('Can not joined channel', {error: e})
@@ -179,7 +201,10 @@ export class SyncSlackService {
     const {channel, isNew} = await repo.findOrCreateChannel(channelID);
     Object.assign(channel, data);
     if (isNew) {
-      const channelInfo = (await this.webClient.conversations.info({channel: channel.id})).channel as SlackConversation
+      const channelInfo = (await this.webClient.conversations.info({
+        channel: channel.id,
+        token: channel.workspace.accessToken
+      })).channel as SlackConversation
 
       channel.name = channelInfo.name;
       channel.nameNormalized = channelInfo.name_normalized;
@@ -212,7 +237,7 @@ export class SyncSlackService {
 
     const channelRepository = this.connection.getCustomRepository(ChannelRepository);
     await channelRepository.save(channel);
-    await this.updateChannelMembers(channel)
+    await this.updateChannelMembers(channel, 'TODO')
     /*await this.postMessage({
       channel: channel.id,
       text: 'Hi everyone, I am here! Every one here will be receive questions. Open settings if want change'

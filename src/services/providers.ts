@@ -32,7 +32,6 @@ export interface IAppConfig {
   slackClientID: string,
   slackSecret: string,
   slackSigningSecret: string,
-  botUserOAuthAccessToken: string,
   host: string,
   debug: false,
   yandexMetrikaID?: string,
@@ -88,7 +87,6 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
         slackClientID: process.env.SLACK_CLIENT_ID,
         slackSecret: process.env.SLACK_SECRET,
         slackSigningSecret: process.env.SLACK_SIGNING_SECRET,
-        botUserOAuthAccessToken: process.env.BOT_USER_OAUTH_ACCESS_TOKEN,
         host: process.env.HOST,
         redisHost: process.env.REDIS_HOST || 'redis',
         db: {
@@ -127,7 +125,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     QueueRegistry,
     {
       provide: WebClient,
-      useFactory: (config: IAppConfig, logger: Logger) => new WebClient(config.botUserOAuthAccessToken, {
+      useFactory: (config: IAppConfig, logger: Logger) => new WebClient(null,  {
         logger: new WinstonSlackLoggerAdapter(logger),
         logLevel: LogLevel.DEBUG
       }),

@@ -1,7 +1,6 @@
 import { Injectable, Inject } from 'injection-js';
 import {CONFIG_TOKEN, LOGGER_TOKEN} from "../../services/token";
 import {IAppConfig} from "../../services/providers";
-import {WebClient} from "@slack/web-api";
 import {Connection} from "typeorm";
 import {Logger} from "winston";
 import {Request, Response} from "express";
@@ -13,7 +12,6 @@ export class OptionController {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private connection: Connection,
-    private webClient: WebClient,
     @Inject(LOGGER_TOKEN) private logger: Logger,
   ) {
   }

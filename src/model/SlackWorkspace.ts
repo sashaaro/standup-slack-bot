@@ -14,6 +14,7 @@ class SlackWorkspace {
   @Column()
   name: string;
 
+  // TODO nullable: false?!
   @Column()
   domain: string;
 
@@ -29,8 +30,9 @@ class SlackWorkspace {
   @Column("json", {nullable: true})
   slackData: SlackTeam
 
-  //@Column("string", {nullable: true})
-  //accessToken: string;
+  // https://api.slack.com/authentication/token-types#granular_bot
+  @Column({nullable: false})
+  accessToken: string;
 }
 
 export default SlackWorkspace;

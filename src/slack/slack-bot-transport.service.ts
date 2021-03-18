@@ -58,7 +58,10 @@ export class SlackBotTransport {
     }
     this.logger.debug('Call webClient.views.open', {args: args})
 
-    const r = await this.webClient.views.open(args)
+    const r = await this.webClient.views.open({
+      ...args,
+      token: standUp.team.originTeam.workspace.accessToken
+    })
   }
 
   async openDialog(user: User, standUp: StandUp, triggerId: string) {
@@ -199,7 +202,10 @@ export class SlackBotTransport {
     }
     this.logger.debug('Call webClient.views.open', {args: args})
     try {
-      await this.webClient.views.open(args)
+      await this.webClient.views.open({
+        ...args,
+        token: standUp.team.originTeam.workspace.accessToken
+      })
     } catch (e) {
       this.logger.error(e.message, {
         error: e
@@ -268,7 +274,7 @@ export class SlackBotTransport {
       channel: user.id,
       text: fallbackText,
       blocks: blocks,
-    });
+    }, standUp.team.originTeam.workspace.accessToken);
   }
 
   async sendReport(standUp: StandUp) {
@@ -332,17 +338,20 @@ export class SlackBotTransport {
     this.postMessage({
       channel: standUp.team.originTeam.reportChannel.id,
       text,
-      blocks
-    })
+      blocks,
+    }, standUp.team.originTeam.workspace.accessToken)
   }
 
-  private async postMessage(args: ChatPostMessageArguments) {
+  private async postMessage(args: ChatPostMessageArguments, token: string) {
     this.logger.debug('Call webClient.chat.postMessage', args)
-    await this.webClient.chat.postMessage(args);
+    await this.webClient.chat.postMessage({
+      ...args,
+      token
+    });
   }
 
   async sendMessage(user: User, message: string): Promise<any> {
     const args: ChatPostMessageArguments = {text: message, channel: user.id}
-    await this.postMessage(args);
+    await this.postMessage(args, user.workspace.accessToken);
   }
 }

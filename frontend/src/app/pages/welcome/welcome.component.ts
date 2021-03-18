@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import {environment} from "../../../environments/environment";
 
 const scopes = [
   'team:read',
@@ -12,7 +13,6 @@ const scopes = [
   'im:history',
 ];
 
-const slackClientID = '646242827008.988405770482';
 
 @Component({
   selector: 'app-welcome',
@@ -20,7 +20,8 @@ const slackClientID = '646242827008.988405770482';
   styleUrls: ['./welcome.component.scss']
 })
 export class WelcomeComponent implements OnInit {
-  authLink = `https://slack.com/oauth/v2/authorize?client_id=${slackClientID}&scope=${scopes.join(',')}&redirect_uri=${location.origin}/api/auth`
+  // https://api.slack.com/authentication/basics#installing
+  authLink = `https://slack.com/oauth/v2/authorize?client_id=${environment.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${location.origin}/api/auth`
 
   constructor() { }
 

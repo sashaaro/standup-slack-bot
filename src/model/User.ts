@@ -51,6 +51,7 @@ export default class User {
   })
   im: string;
 
+  // https://api.slack.com/authentication/token-types#user
   @Exclude()
   @Column({nullable: true})
   accessToken: string;

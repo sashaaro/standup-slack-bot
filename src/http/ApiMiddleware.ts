@@ -54,7 +54,7 @@ export class BadRequestError extends Error {
 
 const errorHandler = (config: IAppConfig,logger: Logger) => (err, req, res, next) => {
   if (err instanceof AccessDenyError) {
-    res.status(403).send();
+    res.status(403).send(); // check if not sent yet
   } else if (err instanceof BadRequestError) {
     res.status(400).send();
   } else if (err instanceof ResourceNotFoundError) {

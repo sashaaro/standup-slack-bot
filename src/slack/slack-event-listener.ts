@@ -64,7 +64,7 @@ export class SlackEventListener {
       const workspaceRepository = this.connection.getRepository(SlackWorkspace)
 
       let workspace = (await workspaceRepository.findOne(response.team)) || workspaceRepository.create({id: response.team});
-      workspace = await this.syncSlackService.updateWorkspace(workspace)
+      workspace = await this.syncSlackService.updateWorkspace(workspace, 'TODO')
       await this.syncSlackService.joinSlackChannel(response.channel, {
         workspace: workspace
       });
@@ -112,17 +112,17 @@ export class SlackEventListener {
   initSlackEvents(): void {
     this.standUpRepository = this.connection.getCustomRepository(StandUpRepository)
     // https://api.slack.com/events/scope_granted
-    this.slackEvents.on('scope_granted', async (scopeGranted: ScopeGranted) => {
-      this.logger.info(`Scope granted for team`, {team: scopeGranted.team_id})
+    // this.slackEvents.on('scope_granted', async (scopeGranted: ScopeGranted) => {
+    //   this.logger.info(`Scope granted for team`, {team: scopeGranted.team_id})
+    //
+    //   let workspace = await this.connection.getRepository(SlackWorkspace).findOne(scopeGranted.team_id);
+    //   if (!workspace) {
+    //     workspace = new SlackWorkspace();
+    //     workspace.id = scopeGranted.team_id;
+    //     this.syncSlackService.updateWorkspace(workspace, 'TODO')
+    //   }
+    // })
 
-      let workspace = await this.connection.getRepository(SlackWorkspace).findOne(scopeGranted.team_id);
-      if (!workspace) {
-        workspace = new SlackWorkspace();
-        workspace.id = scopeGranted.team_id;
-        this.syncSlackService.updateWorkspace(workspace)
-      }
-      // TODO move to cmd this.syncService.exec(getSyncSlackTeamKey(team.id), this.syncData(team));
-    });
     for (const event in this.evensHandlers) {
       const handler = this.evensHandlers[event]
       handler.bind(this);
@@ -130,6 +130,10 @@ export class SlackEventListener {
          this.queueRegistry.create(QUEUE_NAME_SLACK_EVENTS).add(event, data);
       })
     }
+
+    this.slackEvents.on('error', (error) => {
+      this.logger.error('Slack event error', error)
+    })
   }
 
 

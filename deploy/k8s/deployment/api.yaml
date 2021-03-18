@@ -61,11 +61,6 @@ spec:
                 secretKeyRef:
                   name: slack-api-secret
                   key: signing-secrent
-            - name: BOT_USER_OAUTH_ACCESS_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: slack-api-secret
-                  key: bot-user-oauth-access-token
             - name: DEBUG
               value: "true"
             - name: HOST
@@ -100,51 +95,10 @@ spec:
         - name: standup-api
           image: registry.digitalocean.com/simple/standup-slack-bot:latest
           #imagePullPolicy: Never
-          args: ["server:run", "--port=3000", "--env=dev"]
+          args: ["server:run", "--port=3000", "--env=prod"]
           ports:
             - containerPort: 3000
-          env:
-            - name: SLACK_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: slack-api-secret
-                  key: client-id
-            - name: SLACK_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: slack-api-secret
-                  key: secret
-            - name: SLACK_SIGNING_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: slack-api-secret
-                  key: signing-secrent
-            - name: BOT_USER_OAUTH_ACCESS_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: slack-api-secret
-                  key: bot-user-oauth-access-token
-            - name: DEBUG
-              value: "false"
-            - name: REDIS_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: redis-configmap
-                  key: service
-            - name: DB_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: postgres-configmap
-                  key: service
-            - name: DB_DATABASE
-              value: standup
-            - name: DB_USERNAME
-              value: postgres
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secret
-                  key: postgres-password
+          env: *appEnv
 ---
 apiVersion: v1
 kind: Service

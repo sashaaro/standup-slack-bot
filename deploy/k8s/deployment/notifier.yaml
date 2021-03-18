@@ -47,11 +47,6 @@ spec:
                 secretKeyRef:
                   name: slack-api-secret
                   key: signing-secrent
-            - name: BOT_USER_OAUTH_ACCESS_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: slack-api-secret
-                  key: bot-user-oauth-access-token
             - name: DEBUG
               value: "true"
             - name: REDIS_HOST
