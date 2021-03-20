@@ -3,6 +3,7 @@ import StandUp from "../model/StandUp";
 import User from "../model/User";
 import {qbActiveQuestions, qbAuthorAnswers, qbStandUpDate, qbStandUpJoins} from "./scopes";
 import {formatTime} from "../services/utils";
+import UserStandup from "../model/UserStandup";
 
 @EntityRepository(StandUp)
 export class StandUpRepository extends Repository<StandUp> {
@@ -33,6 +34,14 @@ export class StandUpRepository extends Repository<StandUp> {
 
     return qb.getMany();
   }
+
+  findUserStandUp(user: User, standUpId: any): Promise<UserStandup> {
+    return this.manager.getRepository(UserStandup).findOne({
+      user,
+      standUp: this.manager.create(StandUp, {id: standUpId})
+    })
+  }
+
   standUpByIdAndUser(user: User, standUpId: any): Promise<StandUp> {
     const qb = this.createQueryBuilder('standup');
 

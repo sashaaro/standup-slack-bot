@@ -184,6 +184,10 @@ body {
     padding: 8px 12px;
     cursor: pointer;
 
+    &.active {
+      background: rgba(0,0,0,.05);
+    }
+
     &:before {
       position: absolute;
       content: "";

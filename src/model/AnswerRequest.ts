@@ -1,25 +1,17 @@
 import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn} from "typeorm";
-import Question from "./Question";
-import StandUp from "./StandUp";
-import User from "./User";
-import QuestionOption from "./QuestionOption";
 import QuestionSnapshot from "./QuestionSnapshot";
 import QuestionOptionSnapshot from "./QuestionOptionSnapshot";
+import UserStandup from "./UserStandup";
 
 @Entity()
 class AnswerRequest {
   @PrimaryGeneratedColumn()
   id: string
 
-  @ManyToOne(type => User, null, {
+  @ManyToOne(type => UserStandup, us => us.answers, {
     eager: true
   })
-  user: User;
-
-  @ManyToOne(type => StandUp, null, {
-    eager: true
-  })
-  standUp: StandUp;
+  userStandup: UserStandup;
 
   @ManyToOne(type => QuestionSnapshot, {
     //eager: true,

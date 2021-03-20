@@ -17,6 +17,7 @@ import {SyncSlackService} from "./sync-slack.service";
 import {QueueRegistry} from "../services/queue.registry";
 import {ContextualError} from "../services/utils";
 import QuestionSnapshot from "../model/QuestionSnapshot";
+import UserStandup from "../model/UserStandup";
 
 export class SlackEventListener {
   evensHandlers: {[event:string]: Function} = {
@@ -174,7 +175,7 @@ export class SlackEventListener {
         throw new Error(`Standup #${standUpId} is not found`)
       }
 
-      this.slackBotTransport.openReport(standUp, action.trigger_id);
+      this.slackBotTransport.openReport(standUp, action.trigger_id); // TODO await?!
 
       return;
     }
@@ -199,16 +200,17 @@ export class SlackEventListener {
       throw new Error(`Standup #${standUpId} is not found`)
     }
 
+    const userStandup = new UserStandup()
+    userStandup.standUp = standUp;
+    userStandup.user = user;
+
     //const openDialogTs = new Date(parseInt(openDialogAction.action_ts) * 1000);
-    this.slackBotTransport.openDialog(user, standUp, action.trigger_id);
+    userStandup.slackMessage = this.slackBotTransport.openDialog(userStandup, action.trigger_id);
+    await this.connection.manager.insert(UserStandup, userStandup)
   }
 
   async handleViewSubmission(viewSubmission: ViewSubmission) {
     const user = await this.connection.getRepository(User).findOne(viewSubmission.user.id);
-
-    // TODO  if (viewSubmission.trigger_id !== CALLBACK_STANDUP_SUBMIT) {
-    //  throw new Error('Wrong response');
-    //}
 
     if (!user) {
       throw new Error(`User ${viewSubmission.user.id} is not found`)
@@ -218,37 +220,36 @@ export class SlackEventListener {
     //const msgDate = new Date(parseInt(viewSubmission.ts) * 1000);
 
     const metadata = JSON.parse(viewSubmission.view.private_metadata);
-    const standup = await this.standUpRepository.standUpByIdAndUser(user, metadata.standup)
-    if (!standup) {
+    const userStandup = await this.standUpRepository.findUserStandUp(user, metadata.standup)
+    if (!userStandup) {
       // TODO
       throw new Error('No standup #' + metadata.standup)
     }
 
-    let values: any = viewSubmission.view.state.values
-    values = Object.assign({}, ...Object.values(values));
+    const standup = userStandup.standUp
 
-    const answers: AnswerRequest[] = [];
-    for(const actionId in values) {
-      const item = values[actionId];
-      const question = await this.connection.getRepository(QuestionSnapshot).findOne(parseInt(actionId));
-      if (!question) {
-        throw new ContextualError('Question snapshot is not found', {actionId})
+    const questionsIds = Object.values(viewSubmission.view.state.values).map(v => parseInt(v));
+    const questions = await this.connection.getRepository(QuestionSnapshot).findByIds(questionsIds, {
+      relations: ['options']
+    });
+    if (questions.length !== questionsIds.length) {
+      throw new Error('questions quantity is not same as answers') // TODO
+    }
+
+    for(const question of questions) {
+      const item = viewSubmission.view.state.values[question.id] as any;
+
+      if (!item) {
+        throw new Error('not found answer by question id') // TODO
       }
+
       const hasOptions = question.options.length > 1
       const value = hasOptions ? item.selected_option.value : item.value
-      let answer = standup.answers.find(answer => answer.question.id === question.id)
+      let answer = userStandup.answers.find(answer => answer.question.id === question.id)
       if (!answer) {
         answer = new AnswerRequest()
         answer.question = question;
-        answer.user = user; // TODO check it is not nullable!
-        answer.standUp = standup; // TODO check it is not nullable!
-      } else {
-        if (answer.question.id !== question.id) {
-          // TODO throw?
-        }
-        if (answer.user.id !== user.id) {
-          // TODO throw?
-        }
+        userStandup.answers.push(answer)
       }
 
       if (hasOptions) {
@@ -256,12 +257,11 @@ export class SlackEventListener {
       } else {
         answer.answerMessage = value;
       }
-
-      answers.push(answer)
     }
 
-    if (answers.length > 0) {
-      const updatedanswers = await this.connection.getRepository(AnswerRequest).save(answers)
+    if (userStandup.answers.length > 0) {
+      const result = await this.connection.getRepository(AnswerRequest).save(userStandup.answers);
+      //
     }
   }
 }

@@ -10,18 +10,24 @@ import {Team} from "./Team";
 import QuestionSnapshot from "./QuestionSnapshot";
 import {TeamSnapshot} from "./TeamSnapshot";
 import QuestionOptionSnapshot from "./QuestionOptionSnapshot";
+import UserStandup from "./UserStandup";
 
 export default [
-  AnswerRequest,
-  Channel,
-  QuestionOption,
-  Question,
-  StandUp,
-  SlackWorkspace,
   Timezone,
-  Team,
+
+  SlackWorkspace,
   User,
+  Channel,
+
+  Team,
+  Question,
+  QuestionOption,
+
+  StandUp,
   TeamSnapshot,
   QuestionSnapshot,
-  QuestionOptionSnapshot
+  QuestionOptionSnapshot,
+
+  UserStandup,
+  AnswerRequest,
 ]

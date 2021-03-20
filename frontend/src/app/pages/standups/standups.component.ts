@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {map, publishReplay, refCount, switchMap} from "rxjs/operators";
+import {delay, map, publishReplay, refCount, switchMap} from "rxjs/operators";
 import {ActivatedRoute, Router} from "@angular/router";
 import {Standup, StandupService} from "../../../api/auto";
 import {HttpResponse} from "@angular/common/http";

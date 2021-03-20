@@ -1,0 +1,38 @@
+import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, OneToMany} from "typeorm";
+import StandUp from "./StandUp";
+import User from "./User";
+import {ISlackMessageResult} from "../slack/model/ISlackMessageResult";
+import AnswerRequest from "./AnswerRequest";
+
+@Entity()
+class UserStandup {
+  @PrimaryGeneratedColumn()
+  id: string
+
+  @ManyToOne(type => User, null, {
+    eager: true
+  })
+  user: User;
+
+  @ManyToOne(type => StandUp, null, {
+    eager: true
+  })
+  standUp: StandUp;
+
+  @OneToMany(type => AnswerRequest, answer => answer.userStandup)
+  answers: AnswerRequest[];
+
+  @Column()
+  createdAt: Date;
+
+  @Column("jsonb")
+  slackMessage: ISlackMessageResult['message']
+
+
+  @BeforeInsert()
+  setupCreatedAt() {
+    this.createdAt = new Date();
+  }
+}
+
+export default UserStandup;

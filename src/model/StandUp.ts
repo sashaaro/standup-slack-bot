@@ -1,6 +1,6 @@
 import {BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
-import AnswerRequest from "./AnswerRequest";
 import {TeamSnapshot} from "./TeamSnapshot";
+import UserStandup from "./UserStandup";
 
 @Entity()
 export default class StandUp {
@@ -19,8 +19,8 @@ export default class StandUp {
   @Column()
   endAt: Date;
 
-  @OneToMany(type => AnswerRequest, answer => answer.standUp)
-  answers: AnswerRequest[];
+  @OneToMany(type => UserStandup, us => us.user)
+  users: UserStandup[];
 
   @BeforeInsert()
   calculateEndAt() {

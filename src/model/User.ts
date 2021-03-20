@@ -63,6 +63,6 @@ export default class User {
   @JoinTable()
   teams: Team[];
 
-  @OneToMany(type => AnswerRequest, answer => answer.user)
-  answers: AnswerRequest[];
+  // @OneToMany(type => AnswerRequest, answer => answer.user)
+  // answers: AnswerRequest[];
 }

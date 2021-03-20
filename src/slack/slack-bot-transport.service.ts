@@ -2,10 +2,13 @@ import {Inject, Injectable} from "injection-js";
 import User from "../model/User";
 import StandUp from "../model/StandUp";
 import groupBy from "lodash.groupby";
-import {ChatPostMessageArguments, WebClient} from '@slack/web-api'
+import {ChatPostMessageArguments, ChatUpdateArguments, WebClient} from '@slack/web-api'
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Block, KnownBlock} from "@slack/types";
+import {ContextualError} from "../services/utils";
+import {ISlackMessageResult} from "./model/ISlackMessageResult";
+import UserStandup from "../model/UserStandup";
 
 const standUpFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -14,6 +17,7 @@ export const hasOptionQuestions = (team) => team.questions.filter(q => q.options
 export const CALLBACK_STANDUP_SUBMIT = 'standup_submit'
 export const ACTION_OPEN_DIALOG = 'open_dialog'
 export const ACTION_OPEN_REPORT = 'open_report'
+
 
 @Injectable()
 export class SlackBotTransport {
@@ -64,8 +68,8 @@ export class SlackBotTransport {
     })
   }
 
-  async openDialog(user: User, standUp: StandUp, triggerId: string) {
-    const inProgress = !standUp.isFinished(); // has not standUp.endAt?!
+  async openDialog(userStandup: UserStandup, triggerId: string): ISlackMessageResult['message'] {
+    const inProgress = !userStandup.standUp.isFinished(); // has not standUp.endAt?!
 
     if (!inProgress) { // in progress only..
       //await this.sendMessage(user, standUpFinishedAlreadyMsg.replace('{id}', standUp.id.toString()));
@@ -73,18 +77,16 @@ export class SlackBotTransport {
       //return;
     }
 
-    const answers = standUp.answers.filter(a => a.user.id === user.id);
-
     const view = {
       type: "modal",
       title: {
         "type": "plain_text",
-        "text": `Standup #${standUp.team.originTeam.name}`.substr(0, 24).trim(),
+        "text": `Standup #${userStandup.standUp.team.originTeam.name}`.substr(0, 24).trim(),
         "emoji": true
       },
       "submit": {
         "type": "plain_text",
-        "text": answers.length > 0 ? "Update" : "Submit",
+        "text": userStandup.answers.length > 0 ? "Update" : "Submit",
         "emoji": true
       },
       "close": {
@@ -93,7 +95,7 @@ export class SlackBotTransport {
         "emoji": true
       },
       callback_id: CALLBACK_STANDUP_SUBMIT,
-      private_metadata: JSON.stringify({standup: standUp.id}),
+      private_metadata: JSON.stringify({standup: userStandup.standUp.id}), // userStandup.id?!
       blocks: []
     };
 
@@ -101,8 +103,10 @@ export class SlackBotTransport {
       delete view.submit
     }
 
+    const standUp = userStandup.standUp
+
     for (const question of standUp.team.questions) {
-      const answer = answers.find(answer => answer.question.id === question.id);
+      const answer = userStandup.answers.find(answer => answer.question.id === question.id);
 
       const hasOptions = question.options.length > 1;
       const element: any = {
@@ -201,17 +205,16 @@ export class SlackBotTransport {
       trigger_id: triggerId,
     }
     this.logger.debug('Call webClient.views.open', {args: args})
-    try {
-      await this.webClient.views.open({
-        ...args,
-        token: standUp.team.originTeam.workspace.accessToken
-      })
-    } catch (e) {
-      this.logger.error(e.message, {
-        error: e
-      })
-      throw new Error(e.message)
+    const result: ISlackMessageResult|any = await this.webClient.views.open({
+      ...args,
+      token: standUp.team.originTeam.workspace.accessToken
+    })
+
+    if (!result.ok) {
+      throw new ContextualError('openDialog', result)
     }
+
+    return result.message
   }
 
   async sendGreetingMessage(user: User, standUp: StandUp) {
@@ -278,27 +281,18 @@ export class SlackBotTransport {
   }
 
   async sendReport(standUp: StandUp) {
-    let text = `Standup complete `
-
-    const blocks: any[] = [
-      {
-        type: "header",
-        "text": {
-          "type": "plain_text",
-          "text": text,
-          "emoji": true
-        }
-      }
-    ]
-
-    const userAnswers = groupBy(standUp.answers, 'user.id');
-    const users = standUp.answers.map(a => a.user);
+    const answersBlocks = []
     for (const user of standUp.team.users) {
+      const userStandup = standUp.users.find(userStandup => userStandup.user.id === user.id)
+      if (!userStandup) {
+        // user didn't replay
+        continue
+      }
       let body = '';
-      for (const question of standUp.team.questions) {
+      for (const answer of userStandup.answers) {
         // const index = standUp.team.questions.indexOf(question);
-        const answer = standUp.answers.find(a => a.user.id === user.id && a.question.id == question.id);
-        const hasOptions = question.options.length
+        const question = answer.question;
+        const hasOptions = answer.question.options.length
         if (!answer) {
           this.logger.warn('Answer not found', {user: user.id, question: question.id});
           return
@@ -307,7 +301,7 @@ export class SlackBotTransport {
         body += `*${question.text}*\n${(hasOptions ? answer.option?.text : answer.answerMessage) || '-'}\n`
       }
 
-      blocks.push({
+      answersBlocks.push({
         "type": "section",
         "text": {
           "type": "mrkdwn",
@@ -320,38 +314,75 @@ export class SlackBotTransport {
           }} : {})
       })
 
-      blocks.push({
+      answersBlocks.push({
         type: "divider"
       })
     }
 
 
-    if (userAnswers.length === 0) {
-      blocks.push({
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": 'Nobody sent answers 🐥'
-        }
-      })
-    }
-    this.postMessage({
+    let text = `Standup complete `
+    const headerBlock = {
+      type: "header",
+      "text": {
+        "type": "plain_text",
+        "text": text,
+        "emoji": true
+      }
+    };
+    const blocks = [
+      headerBlock,
+      ...(
+        answersBlocks.length > 0 ?
+          answersBlocks :
+          [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": 'Nobody sent answers 🐥'
+              }
+            }
+        ]
+      )
+    ]
+    const result = await this.postMessage({
       channel: standUp.team.originTeam.reportChannel.id,
       text,
       blocks,
     }, standUp.team.originTeam.workspace.accessToken)
+
+    // TODO ?! standUp.slackReportMessage = result.message
   }
 
-  private async postMessage(args: ChatPostMessageArguments, token: string) {
+  private async updateMessage(args: ChatUpdateArguments, token: string): Promise<ISlackMessageResult> {
+    const result: ISlackMessageResult = await this.webClient.chat.update({
+      ...args,
+      token,
+    }) as any;
+
+    if (!result.ok) {
+      throw new ContextualError('updateMessage', args)
+    }
+
+    return result
+  }
+
+  private async postMessage(args: ChatPostMessageArguments, token: string): Promise<ISlackMessageResult> {
     this.logger.debug('Call webClient.chat.postMessage', args)
-    await this.webClient.chat.postMessage({
+    const result: ISlackMessageResult = await this.webClient.chat.postMessage({
       ...args,
       token
-    });
+    }) as any;
+
+    if (!result.ok) {
+      throw new ContextualError('postMessage', args)
+    }
+
+    return result;
   }
 
-  async sendMessage(user: User, message: string): Promise<any> {
+  async sendMessage(user: User, message: string): Promise<ISlackMessageResult> {
     const args: ChatPostMessageArguments = {text: message, channel: user.id}
-    await this.postMessage(args, user.workspace.accessToken);
+    return await this.postMessage(args, user.workspace.accessToken);
   }
 }
