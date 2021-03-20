@@ -76,6 +76,8 @@ export default class StandupNotifier {
               if (!standup.team) {
                   standup.team = await teamRepository.insertSnapshot(team);
               }
+              console.log(team)
+              console.log(standup.team.originTeam)
               return standup;
             })())
           )

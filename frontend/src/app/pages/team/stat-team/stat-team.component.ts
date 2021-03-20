@@ -9,7 +9,7 @@ const chartColors = {
   purple: 'rgb(153, 102, 255)',
   grey: 'rgb(201, 203, 207)'
 };
-const config = {
+export const chartConfig = {
   type: 'line',
   data: {
     labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
@@ -79,7 +79,7 @@ export class StatTeamComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     var ctx = (document.getElementById('canvas') as HTMLCanvasElement).getContext('2d');
     import ('chart.js').then(({Chart}) => {
-      console.log(new Chart(ctx, config))
+      console.log(new Chart(ctx, chartConfig))
     })
   }
 

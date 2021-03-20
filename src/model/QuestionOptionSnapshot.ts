@@ -3,6 +3,8 @@ import {Expose, Transform} from "class-transformer";
 import {TransformFnParams} from "class-transformer/types/interfaces";
 import QuestionSnapshot from "./QuestionSnapshot";
 import {IsInt, IsNotEmpty} from "class-validator";
+import Question from "./Question";
+import QuestionOption from "./QuestionOption";
 
 @Entity()
 export default class QuestionOptionSnapshot {
@@ -27,4 +29,7 @@ export default class QuestionOptionSnapshot {
     onDelete: "CASCADE"
   })
   question: QuestionSnapshot;
+
+  @ManyToOne(type => QuestionOption, {nullable: false, eager: true})
+  originOption: QuestionOption;
 }

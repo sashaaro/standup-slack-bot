@@ -76,6 +76,7 @@ export class TeamSnapshot {
         text: q.text,
         originQuestionId: q.originQuestion.id,
         options: q.options.map(o => ({
+          originOptionId: o.originOption.id,
           index: o.index,
           text: o.text
         }))
@@ -84,8 +85,6 @@ export class TeamSnapshot {
   }
 
   equals(team: TeamSnapshot) {
-    console.log(JSON.stringify(this.simplify()))
-    console.log(JSON.stringify(team.simplify()))
     return JSON.stringify(this.simplify()) === JSON.stringify(team.simplify())
   }
 }

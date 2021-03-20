@@ -4,13 +4,20 @@
       <mat-form-field appearance="outline" class="name">
         <mat-label>Name</mat-label>
         <input matInput autocomplete="off" formControlName="name"/>
-        <mat-error>{{ form.get('name').errors }}</mat-error>
+        <mat-error>
+          <ng-container *ngIf="form.get('name').hasError('required')">Required</ng-container>
+          <ng-container *ngIf="form.get('name').hasError('custom')">{{ form.get('name').getError('custom') }}</ng-container>
+        </mat-error>
       </mat-form-field>
 
-      <div class="days" formArrayName="days">
-        <mat-label>Days</mat-label>
-        <mat-checkbox *ngFor="let day of weekDays; let index = index" [formControlName]="index" [value]="day">{{ day }}</mat-checkbox>
-        <mat-error>{{ form.get('days').errors }}</mat-error>
+      <div class="days">
+        <div class="checkbox-list" formArrayName="days">
+          <mat-label>Days</mat-label>
+          <mat-checkbox *ngFor="let day of weekDays; let index = index" [formControlName]="index" [value]="day">{{ day }}</mat-checkbox>
+        </div>
+        <mat-error>
+          <ng-container *ngIf="form.get('days').hasError('required')">Required</ng-container>
+        </mat-error>
       </div>
 
       <mat-form-field appearance="outline" class="timezone">
@@ -18,19 +25,26 @@
         <mat-select formControlName="timezone" [compareWith]="compareWithById">
           <mat-option *ngFor="let timezone of (timezones$ | async)" [value]="timezone">{{ timezone | formatTimezone }}</mat-option>
         </mat-select>
-        <mat-error>{{ form.get('timezone').errors }}</mat-error>
+        <mat-error>
+          <ng-container *ngIf="form.get('timezone').hasError('required')">Required</ng-container>
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="start-at">
         <mat-label>Start at</mat-label>
         <input matInput autocomplete="off" type="time" step="60" formControlName="start"/>
-        <mat-error>{{ form.get('start').errors }}</mat-error>
+        <mat-error>
+          <ng-container *ngIf="form.get('start').hasError('required')">Required</ng-container>
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="duration">
         <mat-label>Duration</mat-label>
-        <input matInput autocomplete="off" formControlName="duration"/>
-        <mat-error>{{ form.get('duration').errors }}</mat-error>
+        <input matInput type="number" autocomplete="off" formControlName="duration"/>
+        <mat-error>
+          <ng-container *ngIf="form.get('duration').hasError('required')">Required</ng-container>
+          <ng-container *ngIf="form.get('duration').hasError('custom')">{{ form.get('duration').getError('custom') }}</ng-container>
+        </mat-error>
       </mat-form-field>
 
 
@@ -63,7 +77,10 @@
           </mat-option>
         </mat-autocomplete>
 
-        <mat-error>{{ usersControl.errors }}</mat-error>
+        <mat-error>
+          <ng-container *ngIf="usersControl.hasError('required')">Required</ng-container>
+          <ng-container *ngIf="usersControl.hasError('minLength')">Required</ng-container>
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="channel">
@@ -71,7 +88,9 @@
         <mat-select formControlName="reportChannel" [compareWith]="compareWithById">
           <mat-option *ngFor="let channel of (channels$ | async)" [value]="channel">{{ channel.name }}</mat-option>
         </mat-select>
-        <mat-error>{{ form.get('reportChannel').errors }}</mat-error>
+        <mat-error>
+          <ng-container *ngIf="form.get('reportChannel').hasError('required')">Required</ng-container>
+        </mat-error>
       </mat-form-field>
     </div>
 
@@ -108,7 +127,10 @@
           <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="removeQuestion(qIndex)">
             <mat-icon>delete</mat-icon>
           </button>
-          <mat-error>{{ questionControl.get('text').getError('custom') }}</mat-error>
+          <mat-error>
+            <ng-container *ngIf="questionControl.get('text').hasError('required')">Required</ng-container>
+            <ng-container *ngIf="questionControl.get('text').hasError('custom')">{{ questionControl.get('text').getError('custom') }}</ng-container>
+          </mat-error>
 <!--          <mat-hint *ngIf="true">-->
 <!--            <mat-icon>update</mat-icon>-->
 <!--            <mat-icon>help</mat-icon>-->
@@ -150,12 +172,19 @@
               (matChipInputTokenEnd)="addOption(questionControl.get('options'), $event)"
             />
 
+            <button *ngIf="questionControl.get('id')" type="button" mat-button matSuffix mat-icon-button aria-label="Stats" (click)="openStats(questionControl.get('id'))">
+              <mat-icon>insights</mat-icon>
+            </button>
             <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="questionControl.get('options').clear(); openOptionsControls.splice(openOptionsControls.indexOf(questionControl), 1)">
               <mat-icon>delete</mat-icon>
             </button>
           </mat-chip-list>
 
-          <mat-error>{{ questionControl.get('options').getError('custom') }}</mat-error>
+
+          <mat-error>
+            <ng-container *ngIf="questionControl.get('options').hasError('minLength')">at least 2</ng-container>
+            <ng-container *ngIf="questionControl.get('options').hasError('custom')">{{ questionControl.get('options').getError('custom') }}</ng-container>
+          </mat-error>
         </mat-form-field>
 
         <mat-error>{{ questionControl.getError('custom') }}</mat-error>
@@ -197,4 +226,16 @@
     <!-- The mat-dialog-close directive optionally accepts a value as a result for the dialog. -->
   </mat-dialog-actions>
 
+</ng-template>
+
+
+<ng-template #statsDialogRef>
+  <mat-dialog-content>
+    <canvas class="canvas"></canvas>
+  </mat-dialog-content>
+
+  <mat-dialog-actions>
+    <button mat-button [mat-dialog-close]="false">Close</button>
+    <!-- The mat-dialog-close directive optionally accepts a value as a result for the dialog. -->
+  </mat-dialog-actions>
 </ng-template>

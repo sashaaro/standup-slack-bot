@@ -17,6 +17,7 @@ export class TeamRepository extends Repository<Team> {
 
     return qb
       .innerJoinAndSelect('team.timezone', 'timezone')
+      .innerJoinAndSelect('team.workspace', 'workspace')
       .innerJoin( 'pg_timezone_names', 'pg_timezone', 'timezone.name = pg_timezone.name')
       .andWhere(`(team.start::time - pg_timezone.utc_offset) = :start::time`, {
         start: formatTime(startedAt, false)
@@ -48,22 +49,29 @@ export class TeamRepository extends Repository<Team> {
 
   async add(team: Team) {
     return await this.manager.transaction('SERIALIZABLE', async manager => {
-      await this.manager.getRepository(Team).insert(team)
+      await manager.getRepository(Team).save(team)
       await this.insertSnapshot(team, manager)
     });
   }
 
   async findSnapshot(team: Team, manager?: EntityManager) {
-    return await (manager || this.manager).getRepository(TeamSnapshot).findOne({
-      originTeam: team,
-    }, {
-      order: {createdAt: 'DESC'}
-    })
+    return await (manager || this.manager).getRepository(TeamSnapshot).createQueryBuilder('ts')
+        .innerJoinAndSelect('ts.users', 'users')
+        .innerJoinAndSelect('ts.questions', 'questions')
+        .innerJoinAndSelect('questions.options', 'options')
+        .innerJoinAndSelect('questions.originQuestion', 'originQuestion')
+        .innerJoinAndSelect('options.originOption', 'originOption')
+        .innerJoinAndSelect('ts.originTeam', 'team')
+        .innerJoinAndSelect('team.workspace', 'workspace')
+        .andWhere('ts.originTeamId = :originTeamId', {originTeamId: team.id})
+        .orderBy({'ts.createdAt': 'DESC'})
+        .limit(1)
+        .getOne()
   }
 
   async insertSnapshot(team: Team, manger?: EntityManager): Promise<TeamSnapshot> {
     const teamSnapshot = this.createSnapshot(team);
-    await (manger || this.manager).insert(TeamSnapshot, teamSnapshot)
+    await (manger || this.manager).save(TeamSnapshot, teamSnapshot)
     return teamSnapshot;
   }
 
@@ -79,6 +87,7 @@ export class TeamRepository extends Repository<Team> {
       questionSnapshot.team = teamSnapshot
       questionSnapshot.options = q.options.filter(o => o.isEnabled).map(o => {
         const optionSnapshot = new QuestionOptionSnapshot()
+        optionSnapshot.originOption = o;
         optionSnapshot.question = questionSnapshot;
         optionSnapshot.index = o.index
         optionSnapshot.text = o.text

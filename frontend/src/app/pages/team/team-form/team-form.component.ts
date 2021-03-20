@@ -1,6 +1,6 @@
 import {
   AfterViewInit,
-  Component,
+  Component, ElementRef,
   Input,
   OnChanges,
   OnInit, QueryList,
@@ -39,6 +39,7 @@ import {FocusMonitor} from "@angular/cdk/a11y";
 import {MatDialog} from "@angular/material/dialog";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {log} from "../../../operator/log";
+import {chartConfig} from "../stat-team/stat-team.component";
 
 export const weekDays = [
   'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
@@ -66,7 +67,13 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   usersControl = new FormControl([], [Validators.required, Validators.minLength(1)]);
   form = this.fb.group({
     name: [null, Validators.required],
-    days: new FormArray(weekDays.map((d, index) => new FormControl(index < 5)), Validators.minLength(1)),
+    days: new FormArray(
+      weekDays.map((d, index) => new FormControl(index < 5)),
+      [
+        Validators.required,
+        (control) => control.value.filter(v => v).length === 0 ? {required: true} : null
+      ]
+    ),
     timezone: [null, Validators.required],
     start: [null, Validators.required],
     duration: [null, [Validators.required, control => Number.isNaN(Number.parseInt(control.value, 10)) ? {required: true} : null]],
@@ -77,6 +84,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
 
   @ViewChildren(MatChip) chips: QueryList<MatChip>;
   @ViewChild('confirmDialogRef', {static: true}) confirmDialog: TemplateRef<any>;
+  @ViewChild('statsDialogRef', {static: true}) statsDialog: TemplateRef<any>;
 
   submitting = false;
   users$ = this.userService.getUsers()
@@ -129,6 +137,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     private _focusMonitor: FocusMonitor,
     public dialog: MatDialog,
     public snackBar: MatSnackBar,
+    public elementRef: ElementRef<HTMLElement>,
   ) {
   }
 
@@ -235,9 +244,9 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   add() {
-    this.questionsControl.push(
-      this.createQuestionControl()
-    )
+    const control = this.createQuestionControl()
+    this.questionsControl.push(control);
+    control.markAsUntouched();
   }
 
   drop(control: FormArray, event: CdkDragDrop<User>) {
@@ -307,13 +316,29 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
 
+  openStats(questionId) {
+    const dialogRef = this.dialog.open(this.statsDialog, {
+      width: '550px'
+    });
+
+    dialogRef.afterOpened().subscribe(_ => {
+      import ('chart.js').then(({Chart}) => {
+        var ctx = (dialogRef._containerInstance['_elementRef'].nativeElement.querySelector('.canvas') as HTMLCanvasElement).getContext('2d');
+        console.log(new Chart(ctx, chartConfig))
+      })
+    })
+
+
+    dialogRef.afterClosed().subscribe(confirmed => {
+
+    })
+  }
+
   private createQuestionControl() {
     return this.fb.group({
       id: this.fb.control(null),
       text: this.fb.control(null, Validators.required),
-      options: this.fb.array([
-
-      ]),
+      options: this.fb.array([], Validators.minLength(2)),
     });
   }
 

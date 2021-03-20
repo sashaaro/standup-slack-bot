@@ -50,17 +50,40 @@ form {
   padding-bottom: 0;
   box-sizing: border-box;
 }
-
 .days {
+  grid-area: days;
+  position: relative;
+
+  mat-error {
+    font-size: 11px;
+    position: absolute;
+    left: 10px;
+  }
+  margin-bottom: calc(18.814px + 3.5px);
+}
+
+.checkbox-list {
+  display: flex;
+  justify-content: space-between;
   border: 1px solid rgba(0,0,0,.12);
   border-radius: 5px;
-  grid-area: days;
   padding: 14px 12px;
+
+  &.ng-invalid.ng-touched {
+    color: rgb(244, 67, 54);
+    border-color: rgb(244, 67, 54);
+    border-width: 2px;
+    padding: 13px 11px;
+    mat-label {
+      color: rgb(244, 67, 54);
+    }
+  }
 
   position: relative;
   mat-label {
     position: absolute;
-    top: -10px;
+    top: -4px;
+    line-height: 7px;
     color: rgba(0,0,0,.6);
     font-size: 11px;
     background-color: white;
@@ -74,8 +97,6 @@ form {
       margin-right: 0;
     }
   }
-
-  margin-bottom: calc(18.814px + 3.5px);
 }
 
 .timezone {
