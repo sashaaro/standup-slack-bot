@@ -206,36 +206,57 @@ paths:
                 items:
                   $ref: '#/components/schemas/Channel'
   /team/{teamId}/standup:
-   get:
-     tags:
-       - standup
-     operationId: getStandups
-     parameters:
-       - name: teamId
-         in: path
-         required: true
-         schema:
-           type: integer
-           format: int64
-           minimum: 1
-       - name: page
-         in: query
-         required: false
-         schema:
-           type: integer
-           minimum: 1
-           default: 5
-     responses:
-       200:
-         description: Success
-         #headers:
-         # X-Total
-         content:
-           application/json:
-             schema:
-               type: array
-               items:
-                 $ref: '#/components/schemas/Standup'
+    get:
+      tags:
+        - standup
+      operationId: getStandups
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 5
+      responses:
+        200:
+          description: Success
+          #headers:
+          # X-Total
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Standup'
+  /stat/options/{questionId}:
+    get:
+      tags:
+        - stat
+      operationId: getOptionsStat
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
 components:
   schemas:
     User:

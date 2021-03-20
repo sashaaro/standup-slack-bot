@@ -5,6 +5,7 @@ import {UserController} from "./user.controller";
 import {ChannelController} from "./channel.controller";
 import {StandupController} from "./standup.controllert";
 import {OptionController} from "./option.controller";
+import {StatController} from "./stat.controller";
 
 export interface IHttpAction {
   (req: Request, res: Response): void
@@ -16,7 +17,8 @@ const actions = [
   UserController,
   ChannelController,
   StandupController,
-  OptionController
+  OptionController,
+  StatController
 ];
 
 export default actions;

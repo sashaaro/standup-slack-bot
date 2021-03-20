@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 import {
-  ChannelService, Question,
+  ChannelService, Question, StatService,
   Team,
   TeamService,
   TimezoneService,
@@ -20,7 +20,7 @@ import {
 import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Router} from "@angular/router";
-import {BehaviorSubject, combineLatest, NEVER, of, ReplaySubject, Subject} from "rxjs";
+import {BehaviorSubject, combineLatest, forkJoin, from, NEVER, of, ReplaySubject, Subject} from "rxjs";
 import {
   distinct,
   distinctUntilChanged,
@@ -40,6 +40,7 @@ import {MatDialog} from "@angular/material/dialog";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {log} from "../../../operator/log";
 import {chartConfig} from "../stat-team/stat-team.component";
+import {chartColors} from "../../../service/utils";
 
 export const weekDays = [
   'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
@@ -133,6 +134,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     private userService: UserService,
     private teamService: TeamService,
     private timezoneService: TimezoneService,
+    private statService: StatService,
     private channelService: ChannelService,
     private _focusMonitor: FocusMonitor,
     public dialog: MatDialog,
@@ -321,11 +323,68 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       width: '550px'
     });
 
-    dialogRef.afterOpened().subscribe(_ => {
-      import ('chart.js').then(({Chart}) => {
-        var ctx = (dialogRef._containerInstance['_elementRef'].nativeElement.querySelector('.canvas') as HTMLCanvasElement).getContext('2d');
-        console.log(new Chart(ctx, chartConfig))
+    forkJoin([
+      this.statService.getOptionsStat(questionId),
+      from(import ('chart.js')),
+      dialogRef.afterOpened()
+    ]).subscribe(([stat, {Chart}]: any) => {
+      const ids = [ ...new Set(stat.map(s => s.id)) ]
+      const datasets = ids.map(id => {
+        const l = stat.filter(s => s.id === id)
+        return {
+          labels: stat.map(s => s.startAt),
+          datasets: [{
+            label: l[0].text,
+            fill: false,
+            backgroundColor: chartColors.red,
+            borderColor: chartColors.red,
+            data: l.map(s => parseInt(s.count)),
+          }]
+        }
       })
+      const labels = [1,2,3,4]
+      console.log(datasets);
+      console.log(datasets);
+      new Chart(
+        (dialogRef._containerInstance['_elementRef'].nativeElement.querySelector('.canvas') as HTMLCanvasElement).getContext('2d'),
+        {
+          type: 'line',
+          data: {
+            labels,
+            datasets
+          },
+          options: {
+            responsive: true,
+            title: {
+              display: true,
+              text: 'Are you in office today?'
+            },
+            tooltips: {
+              mode: 'index',
+              intersect: false,
+            },
+            hover: {
+              mode: 'nearest',
+              intersect: true
+            },
+            scales: {
+              xAxes: [{
+                display: true,
+                scaleLabel: {
+                  display: false,
+                  // labelString: 'Month'
+                }
+              }],
+              yAxes: [{
+                display: true,
+                scaleLabel: {
+                  display: true,
+                  labelString: 'Answers'
+                }
+              }]
+            }
+          }
+        })
     })
 
 

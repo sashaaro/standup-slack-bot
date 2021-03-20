@@ -22,6 +22,7 @@ import {createLoggerMiddleware} from "./middlewares";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import {QueueRegistry} from "../services/queue.registry";
 import {stringifyError} from "../services/utils";
+import {StatController} from "./controller/stat.controller";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -112,6 +113,9 @@ export class ApiMiddleware {
 
     const option = injector.get(OptionController);
     router.get('/option/history/:questionId', option.history);
+
+    const stat = injector.get(StatController);
+    router.get('/stat/options/:questionId', stat.options);
 
     router.use((req: express.Request, res: express.Response, next) => {
       res.status(404);

@@ -5,6 +5,7 @@ api/api.ts
 api/auth.service.ts
 api/channel.service.ts
 api/standup.service.ts
+api/stat.service.ts
 api/team.service.ts
 api/timezone.service.ts
 api/user.service.ts
