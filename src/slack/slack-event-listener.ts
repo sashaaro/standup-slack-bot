@@ -16,14 +16,14 @@ import {SyncSlackService} from "./sync-slack.service";
 import {QueueRegistry} from "../services/queue.registry";
 import {ContextualError} from "../services/utils";
 import QuestionSnapshot from "../model/QuestionSnapshot";
-import UserStandup from "../model/UserStandup";
+import {greetingBlocks} from "./slack-blocks";
 
 export class SlackEventListener {
   evensHandlers: {[event:string]: (data: any) => Promise<any>|any} = {
-    message: async (messageResponse: MessageResponse) => {
+    message: async (messageResponse: MessageResponse) => { // todo insert db?!
       const user = await this.connection.getRepository(User).findOne(messageResponse.user)
 
-      if (!user) {
+      if (!user) { // TODO skip bot message
         throw new ContextualError('Message author is not found', { messageResponse })
       }
 
@@ -49,13 +49,20 @@ export class SlackEventListener {
       return await this.slackBotTransport.sendMessage(user, "Click \"Open dialog\" above")
     },
     error: (data) => this.logger.error('Receive slack events error', {error: data}),
-    /*member_left_channel: async (response: MemberJoinedChannel) => {
-    },*/
+    member_left_channel: async (response: MemberJoinedChannel) => { // TODO left interface
+      const workspaceRepository = this.connection.getRepository(SlackWorkspace)
+
+      let workspace = (await workspaceRepository.findOne(response.team)) || workspaceRepository.create({id: response.team});
+      workspace = await this.syncSlack.updateWorkspace(workspace)
+      await this.syncSlack.joinSlackChannel(response.channel, {
+        workspace: workspace
+      });
+    },
     member_joined_channel: async (response: MemberJoinedChannel) => {
       const workspaceRepository = this.connection.getRepository(SlackWorkspace)
 
       let workspace = (await workspaceRepository.findOne(response.team)) || workspaceRepository.create({id: response.team});
-      workspace = await this.syncSlack.updateWorkspace(workspace, 'TODO')
+      workspace = await this.syncSlack.updateWorkspace(workspace)
       await this.syncSlack.joinSlackChannel(response.channel, {
         workspace: workspace
       });
@@ -220,5 +227,11 @@ export class SlackEventListener {
     }
 
     await this.connection.getRepository(AnswerRequest).save(userStandup.answers);
+    await this.slackBotTransport.updateMessage({
+      token: 'xoxb-646242827008-1873129895365-hoUmeZfd4ZIgStbKKH5Ct7X0',
+      ts: '1616350254.002200',
+      channel: 'D01RSCDLNM9',
+      ...greetingBlocks(userStandup.standUp, true),
+    })
   }
 }

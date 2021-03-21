@@ -2,7 +2,13 @@ import {Inject, Injectable} from "injection-js";
 import User from "../model/User";
 import StandUp from "../model/StandUp";
 import groupBy from "lodash.groupby";
-import {ChatPostMessageArguments, ChatUpdateArguments, WebClient} from '@slack/web-api'
+import {
+  ChatPostMessageArguments,
+  ChatUpdateArguments, CodedError,
+  WebAPICallError,
+  WebAPIPlatformError,
+  WebClient
+} from '@slack/web-api'
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Block, KnownBlock} from "@slack/types";
@@ -10,6 +16,7 @@ import {ContextualError} from "../services/utils";
 import {MessageResult} from "./model/MessageResult";
 import UserStandup from "../model/UserStandup";
 import {OpenViewResult} from "./model/OpenViewResult";
+import {greetingBlocks} from "./slack-blocks";
 
 const standUpFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -99,7 +106,7 @@ export class SlackBotTransport {
     }
 
     const standUp = userStandup.standUp
-    
+
     for (const question of standUp.team.questions) {
       const answer = userStandup.answers.find(answer => answer.question.id === question.id);
 
@@ -212,73 +219,33 @@ export class SlackBotTransport {
     return result.view
   }
 
-  async sendGreetingMessage(user: User, standUp: StandUp): Promise<MessageResult['message']> {
-    const fallbackText =  `It's time to start your daily standup ${standUp.team.originTeam.name}`;
-
-    const blocks: (KnownBlock | Block)[] = [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `Hello, it's time to start your daily standup *${standUp.team.originTeam.name}*`,
-        },
-      },
-      {
-        type: 'actions',
-        elements: [
-          // hasOptionQuestions
-          /*{
-            type: "button",
-            text: {
-              text: 'Start',
-              type: 'plain_text'
-            },
-            value: ACTION_START,
-            action_id: "1",
-          },*/
-          {
-            type: "button",
-            style: 'primary',
-            text: {
-              type: 'plain_text',
-              text: 'Open dialog',
-            },
-            action_id: ACTION_OPEN_DIALOG,
-            value: standUp.id.toString(),
-          }
-        ]
-      }
-    ];
-
-
+  async sendGreetingMessage(user: User, standUp: StandUp): Promise<MessageResult> {
     // TODO I'm late?!
     /*attachmentBtns.actions.push(
-      {
-        "name": "skip",
-        "text": "I skip",
-        "type": "button",
-        "value": "skip",
-        "style": "danger",
-        "confirm": {
-          "title": "Are you sure?",
-          "text": "Wouldn't you prefer to skip standup today?",
-          "ok_text": "Yes",
-          "dismiss_text": "No"
-        }
-      })*/
-
+    {
+      "name": "skip",
+      "text": "I skip",
+      "type": "button",
+      "value": "skip",
+      "style": "danger",
+      "confirm": {
+        "title": "Are you sure?",
+        "text": "Wouldn't you prefer to skip standup today?",
+        "ok_text": "Yes",
+        "dismiss_text": "No"
+      }
+    })*/
 
     const result = await this.postMessage({
       channel: user.id,
-      text: fallbackText,
-      blocks: blocks,
+      ...greetingBlocks(standUp),
     }, standUp.team.originTeam.workspace.accessToken);
 
     if (!result.ok) {
       throw new ContextualError('Send report post message error', result)
     }
 
-    return result.message;
+    return result;
   }
 
   async sendReport(standup: StandUp): Promise<MessageResult['message']> {
@@ -303,7 +270,7 @@ export class SlackBotTransport {
         "type": "section",
         "text": {
           "type": "mrkdwn",
-          "text": body
+          "text": body || 'No answers'
         },
         ...(user.profile?.image_192 ? {"accessory": {
             "type": "image",
@@ -343,11 +310,28 @@ export class SlackBotTransport {
         ]
       )
     ]
-    const result = await this.postMessage({
-      channel: standup.team.originTeam.reportChannel.id, // TODO use from snapshot?!
-      text,
-      blocks,
-    }, standup.team.originTeam.workspace.accessToken)
+    let result;
+
+    const isPlatformError = (e: CodedError): e is WebAPIPlatformError => e.code === 'slack_webapi_platform_error'
+    try {
+      result = await this.postMessage({
+        channel: standup.team.originTeam.reportChannel.id, // TODO use from snapshot?!
+        text,
+        blocks,
+      }, standup.team.originTeam.workspace.accessToken)
+    } catch (error) {
+      if (isPlatformError(error) && error.data.error === 'invalid_blocks') {
+        throw error // TODO
+      } else if (isPlatformError(error) && error.data.error === 'not_in_channel') {
+        // TODO notify
+        this.logger.info('bot are not joined in report channel', {
+          channel: standup.team.originTeam.reportChannel.id,
+          standup: standup.id,
+        })
+      } else {
+        throw error
+      }
+    }
 
     if (!result.ok) {
       throw new ContextualError('Send report post message error', result)
@@ -356,10 +340,9 @@ export class SlackBotTransport {
     return result.message;
   }
 
-  private async updateMessage(args: ChatUpdateArguments, token: string): Promise<MessageResult> {
+  public async updateMessage(args: ChatUpdateArguments): Promise<MessageResult> {
     const result: MessageResult = await this.webClient.chat.update({
-      ...args,
-      token,
+      ...args
     }) as any;
 
     if (!result.ok) {

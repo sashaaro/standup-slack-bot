@@ -27,7 +27,7 @@ class UserStandup {
 
   // TODO rename? slackDialogMessage
   @Column("jsonb")
-  slackMessage: MessageResult['message']
+  slackMessage: MessageResult
 
   @BeforeInsert()
   setupCreatedAt() {

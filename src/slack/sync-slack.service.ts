@@ -147,13 +147,18 @@ export class SyncSlackService {
       }
 
       const conversations = (response as any).channels as SlackConversation[];
-
       const channels = conversations.filter(ch =>
-          !ch.is_member
+          ch.is_member
           && ch.name !== 'slack-bots'
           && ch.name !== 'random'
       )
       this.logger.debug('webClient.conversations.list', {channels})
+
+      await this.connection.createQueryBuilder()
+        .update(Channel)
+        .where({workspace: workspace.id})
+        .set({isArchived: true})
+        .execute()
 
       const list = []
       for (const channel of channels) {
@@ -171,11 +176,11 @@ export class SyncSlackService {
     } while (response.response_metadata.next_cursor)
   }
 
-  async updateWorkspace(workspace: SlackWorkspace, token): Promise<SlackWorkspace> {
+  async updateWorkspace(workspace: SlackWorkspace): Promise<SlackWorkspace> {
     // https://api.slack.com/methods/team.info
     const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({
       team: workspace.id,
-      token
+      token: workspace.accessToken
     })) as any;
     workspace.name = teamInfo.team.name;``
     workspace.domain = teamInfo.team.domain

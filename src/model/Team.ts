@@ -128,7 +128,6 @@ export class Team {
   })
   reportChannel: Channel
 
-
   @AfterLoad()
   normalizeSort() {
     //this.questions = this.questions.sort(sortByIndex)

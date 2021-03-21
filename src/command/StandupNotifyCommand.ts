@@ -85,9 +85,9 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       takeUntil(this.terminate$)
     ).subscribe({
       next: standups => {
-        // TODO insert to slack message
+        // TODO insert to slack message table?!
       },
-      error: error => this.logger.error({error})
+      error: error => this.logger.error('send report error', {error})
     })
 
     this.terminate$.subscribe(() => {

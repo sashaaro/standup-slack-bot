@@ -55,6 +55,8 @@ export const generateWorkspace = () => {
   workspace.name = 'test space'
   workspace.domain = 'test-space'
   workspace.id = `space-${random()}`
+  workspace.accessToken = 'xhxd-1022'
+  workspace.slackData = {} as any
   return workspace;
 }
 
