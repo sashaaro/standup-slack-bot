@@ -27,7 +27,8 @@ export class SlackBotTransport {
   ) {
   }
 
-  async openReport(standUp: StandUp, triggerId: string) {
+  async openReport(userStandup: UserStandup, triggerId: string) {
+    const standUp = userStandup.standUp
     if (false) {
       // check in progress
     }
@@ -68,7 +69,7 @@ export class SlackBotTransport {
     })
   }
 
-  async openDialog(userStandup: UserStandup, triggerId: string): ISlackMessageResult['message'] {
+  async openDialog(userStandup: UserStandup, triggerId: string): Promise<ISlackMessageResult['message']> {
     const inProgress = !userStandup.standUp.isFinished(); // has not standUp.endAt?!
 
     if (!inProgress) { // in progress only..
@@ -280,14 +281,11 @@ export class SlackBotTransport {
     }, standUp.team.originTeam.workspace.accessToken);
   }
 
-  async sendReport(standUp: StandUp) {
+  async sendReport(standup: StandUp): Promise<ISlackMessageResult['message']> {
     const answersBlocks = []
-    for (const user of standUp.team.users) {
-      const userStandup = standUp.users.find(userStandup => userStandup.user.id === user.id)
-      if (!userStandup) {
-        // user didn't replay
-        continue
-      }
+    for (const userStandup of standup.users) {
+      const user = userStandup.user;
+
       let body = '';
       for (const answer of userStandup.answers) {
         // const index = standUp.team.questions.indexOf(question);
@@ -346,12 +344,16 @@ export class SlackBotTransport {
       )
     ]
     const result = await this.postMessage({
-      channel: standUp.team.originTeam.reportChannel.id,
+      channel: standup.team.originTeam.reportChannel.id, // TODO use from snapshot?!
       text,
       blocks,
-    }, standUp.team.originTeam.workspace.accessToken)
+    }, standup.team.originTeam.workspace.accessToken)
 
-    // TODO ?! standUp.slackReportMessage = result.message
+    if (!result.ok) {
+      throw new ContextualError('Send report post message error', result)
+    }
+
+    return result.message;
   }
 
   private async updateMessage(args: ChatUpdateArguments, token: string): Promise<ISlackMessageResult> {

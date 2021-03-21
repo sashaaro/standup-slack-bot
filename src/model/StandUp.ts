@@ -7,6 +7,7 @@ export default class StandUp {
   @PrimaryGeneratedColumn()
   id: number;
 
+  // todo rename teamSnapshot ?!
   @ManyToOne(type => TeamSnapshot, {
     cascade: ['insert'],
     nullable: false
@@ -19,7 +20,7 @@ export default class StandUp {
   @Column()
   endAt: Date;
 
-  @OneToMany(type => UserStandup, us => us.user)
+  @OneToMany(type => UserStandup, us => us.standUp)
   users: UserStandup[];
 
   @BeforeInsert()

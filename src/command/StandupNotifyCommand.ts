@@ -4,11 +4,11 @@ import StandupNotifier from "../slack/standup-notifier";
 import {Inject} from "injection-js";
 import {LOGGER_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
 import {Connection} from "typeorm";
-import {Observable} from "rxjs";
+import {from, Observable} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
 import {Logger} from "winston";
-import {takeUntil} from "rxjs/operators";
+import {mergeMap, takeUntil} from "rxjs/operators";
 import {bind} from "../services/decorators";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
@@ -64,10 +64,13 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     });
 
     end$.pipe(
+      mergeMap(standups => from(
+        Promise.all(standups.map(standup => this.slackTransport.sendReport(standup))))
+      ),
       takeUntil(this.terminate$)
     ).subscribe({
       next: standups => {
-        standups.forEach(standup => this.slackTransport.sendReport(standup))
+        // TODO insert to slack message
       },
       error: error => this.logger.error({error})
     })

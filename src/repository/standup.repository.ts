@@ -1,60 +1,41 @@
 import {EntityRepository, Repository} from "typeorm";
 import StandUp from "../model/StandUp";
-import User from "../model/User";
-import {qbActiveQuestions, qbAuthorAnswers, qbStandUpDate, qbStandUpJoins} from "./scopes";
-import {formatTime} from "../services/utils";
+import {qbStandUpJoins} from "./scopes";
 import UserStandup from "../model/UserStandup";
 
 @EntityRepository(StandUp)
 export class StandUpRepository extends Repository<StandUp> {
-  findByUser(user: User, date: Date): Promise<StandUp> {
+  findByIdAndUser(userId: string, standupId: number): Promise<StandUp> {
     const qb = this.createQueryBuilder('standup');
 
-    qb.orderBy('standup.startAt', "ASC")
-
-    qbStandUpJoins(qb);
-    qb.andWhere('users.id = :user', {user: user.id});
-    qbStandUpDate(qb, date);
-    qbActiveQuestions(qb);
-    qbAuthorAnswers(qb, user);
+    qbStandUpJoins(qb)
+    
+    qb.andWhere('users.id = :userId AND standup.id = :standupId', {userId, standupId})
+    qb.andWhere('userStandup.userId = :userId', {userId});
+    qb.leftJoinAndSelect('answers.option', 'optionAnswer')
 
     return qb
-      .take(1)
+      .limit(1)
+      //.orderBy('st.start', "DESC")
       .getOne();
   }
 
-  findEnd(date: Date): Promise<StandUp[]> {
+  findEnd(endAt: Date): Promise<StandUp[]> {
     const qb = this.createQueryBuilder('standup');
     qbStandUpJoins(qb);
-    qbActiveQuestions(qb);
-    qb.leftJoinAndSelect('teamSnapshot.users', 'snapshotUsers')
-
-    // database timzone and nodejs process timezone should be same!
-    qb.andWhere(`date_trunc('minute', standup.endAt)::time = :startedAt::time`, {startedAt: formatTime(date, false)})
+    // TODO! database timzone and nodejs process timezone should be same!
+    qb.andWhere(`date_trunc('minute', standup.endAt) = date_trunc('minute', :endAt::timestamp)`, {endAt})
 
     return qb.getMany();
   }
 
-  findUserStandUp(user: User, standUpId: any): Promise<UserStandup> {
-    return this.manager.getRepository(UserStandup).findOne({
-      user,
-      standUp: this.manager.create(StandUp, {id: standUpId})
-    })
-  }
-
-  standUpByIdAndUser(user: User, standUpId: any): Promise<StandUp> {
-    const qb = this.createQueryBuilder('standup');
-
-    qbStandUpJoins(qb)
-
-    qb.andWhere('users.id = :user AND standup.id = :standupID', {user: user.id, standupID: standUpId})
-    qbActiveQuestions(qb);
-    qbAuthorAnswers(qb, user);
-    qb.leftJoinAndSelect('answers.option', 'optionAnswer')
-
-    return qb
-      .take(1)
-      //.orderBy('st.start', "DESC")
-      .getOne();
+  findUserStandUp(userId: string, standUpId: number): Promise<UserStandup> {
+    return this.manager.getRepository(UserStandup).createQueryBuilder('us')
+      .andWhere('us.userId = :userId', {userId}) // TODO add unique index userId standUpId
+      .andWhere('us.standUpId = :standUpId', {standUpId})
+      .leftJoinAndSelect('us.user', 'user')
+      .leftJoinAndSelect('us.standUp', 'standUp')
+      .limit(1)
+      .getOne()
   }
 }

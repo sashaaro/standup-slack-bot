@@ -12,6 +12,7 @@ docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREAT
 docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "GRANT ALL PRIVILEGES ON DATABASE standup TO standup"
 
 echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+sudo sysctl -w fs.inotify.max_user_watches=524288
 
 docker-compose up -d
 docker-compose exec -u $(id -u) serve sh

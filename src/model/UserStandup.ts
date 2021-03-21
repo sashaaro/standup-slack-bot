@@ -14,7 +14,7 @@ class UserStandup {
   })
   user: User;
 
-  @ManyToOne(type => StandUp, null, {
+  @ManyToOne(type => StandUp, standup => standup.users, {
     eager: true
   })
   standUp: StandUp;
@@ -25,9 +25,9 @@ class UserStandup {
   @Column()
   createdAt: Date;
 
+  // TODO rename? slackDialogMessage
   @Column("jsonb")
   slackMessage: ISlackMessageResult['message']
-
 
   @BeforeInsert()
   setupCreatedAt() {

@@ -3,7 +3,6 @@ import {LOGGER_TOKEN} from "../services/token";
 import {QUEUE_NAME_SLACK_EVENTS} from "../services/providers";
 import {MessageResponse} from "./model/MessageResponse";
 import {ChannelLeft, MemberJoinedChannel} from "./model/SlackChannel";
-import {ScopeGranted} from "./model/ScopeGranted";
 import SlackWorkspace from "../model/SlackWorkspace";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import {Logger} from "winston";
@@ -20,17 +19,8 @@ import QuestionSnapshot from "../model/QuestionSnapshot";
 import UserStandup from "../model/UserStandup";
 
 export class SlackEventListener {
-  evensHandlers: {[event:string]: Function} = {
+  evensHandlers: {[event:string]: (data: any) => Promise<any>|any} = {
     message: async (messageResponse: MessageResponse) => {
-      const userRepository = this.connection.getRepository(User);
-      // be sure it is direct answerMessage to bot
-      /*if (!await userRepository.findOne({where: {im: messageResponse.channel}})) {
-        this.logger.error(`User channel ${messageResponse.channel} is not im`);
-        // TODO try update from api
-        return true
-      }*/
-
-      // const eventAt = new Date(parseInt(messageResponse.event_ts) * 1000)
       const user = await this.connection.getRepository(User).findOne(messageResponse.user)
 
       if (!user) {
@@ -56,7 +46,7 @@ export class SlackEventListener {
       //   }
       // }
 
-      this.slackBotTransport.sendMessage(user, "Click \"Open dialog\" above")
+      return await this.slackBotTransport.sendMessage(user, "Click \"Open dialog\" above")
     },
     error: (data) => this.logger.error('Receive slack events error', {error: data}),
     /*member_left_channel: async (response: MemberJoinedChannel) => {
@@ -65,37 +55,19 @@ export class SlackEventListener {
       const workspaceRepository = this.connection.getRepository(SlackWorkspace)
 
       let workspace = (await workspaceRepository.findOne(response.team)) || workspaceRepository.create({id: response.team});
-      workspace = await this.syncSlackService.updateWorkspace(workspace, 'TODO')
-      await this.syncSlackService.joinSlackChannel(response.channel, {
+      workspace = await this.syncSlack.updateWorkspace(workspace, 'TODO')
+      await this.syncSlack.joinSlackChannel(response.channel, {
         workspace: workspace
       });
     },
-    channel_joined: (data) => this.syncSlackService.channelJoined(data),
-    group_joined: (data) => this.syncSlackService.channelJoined(data),
-    channel_left: (data) => {
-      const response = data as ChannelLeft
-      this.syncSlackService.findOrCreateAndUpdate(response.channel, {isEnabled: false})
-    },
-    group_left: (data) => {
-      const channel: string = data.channel;
-      this.syncSlackService.findOrCreateAndUpdate(channel, {isEnabled: false})
-    },
-    channel_archive: (data) => {
-      const channel: string = data.channel;
-      this.syncSlackService.findOrCreateAndUpdate(channel, {isArchived: true})
-    },
-    group_archive: (data) => {
-      const channel: string = data.channel;
-      this.syncSlackService.findOrCreateAndUpdate(channel, {isArchived: true})
-    },
-    channel_unarchive: (data) => {
-      const channel: string = data.channel;
-      this.syncSlackService.findOrCreateAndUpdate(channel, {isArchived: false})
-    },
-    group_unarchive: (data) => {
-      const channel: string = data.channel;
-      this.syncSlackService.findOrCreateAndUpdate(channel, {isArchived: false})
-    }
+    channel_joined: (data) => this.syncSlack.channelJoined(data),
+    group_joined: (data) => this.syncSlack.channelJoined(data),
+    channel_left: (data: ChannelLeft) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isEnabled: false}),
+    group_left: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isEnabled: false}),
+    channel_archive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: true}),
+    group_archive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: true}),
+    channel_unarchive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: false}),
+    group_unarchive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: false})
   }
 
   private standUpRepository: StandUpRepository;
@@ -103,7 +75,7 @@ export class SlackEventListener {
   constructor(
     @Inject(SlackEventAdapter) private slackEvents: SlackEventAdapter,
     private slackBotTransport: SlackBotTransport,
-    private syncSlackService: SyncSlackService,
+    private syncSlack: SyncSlackService,
     private queueRegistry: QueueRegistry,
     private connection: Connection,
     @Inject(LOGGER_TOKEN) private logger: Logger,
@@ -127,8 +99,12 @@ export class SlackEventListener {
     for (const event in this.evensHandlers) {
       const handler = this.evensHandlers[event]
       handler.bind(this);
-      this.slackEvents.on(event, (data) => {
-         this.queueRegistry.create(QUEUE_NAME_SLACK_EVENTS).add(event, data);
+      this.slackEvents.on(event, async (data) => {
+        try {
+          await this.queueRegistry.create(QUEUE_NAME_SLACK_EVENTS).add(event, data);
+        } catch (error) {
+          this.logger.error('Add job error', {event, data})
+        }
       })
     }
 
@@ -137,31 +113,19 @@ export class SlackEventListener {
     })
   }
 
-
-
-  public handleEventJob(event: string, data: any) {
-    this.evensHandlers[event](data);
+  public handleEventJob(event: string, data: any): Promise<void> {
+    const r = this.evensHandlers[event](data);
+    return r instanceof Promise ? r : new Promise(resolve => resolve(null))
   }
 
   public async handleAction(action: SlackAction) {
-    const user = await this.connection.getRepository(User).findOne(action.user.id);
-
-    if (!user) {
-      throw new Error(`User ${action.user.id} is not found`)
-    }
-
     if (action.actions.length !== 1) {
       this.logger.warn('Inconsistent actions length', {action})
     }
 
-    /*const startAction = response.actions.find(a => a.action_id === ACTION_START);
-    if (startAction) {
-      // TODO local time should be same from slack sever, have shift then cant find standup, consider shift in bot service
-      this.startConfirmSubject.next({user, date: msgDate})
-      return
-    }*/
-
+    const userId = action.user.id
     const openReportAction = action.actions.find(a => a.action_id === ACTION_OPEN_REPORT);
+    const openDialogAction = action.actions.find(a => a.action_id === ACTION_OPEN_DIALOG);
 
     if (openReportAction) {
       const standUpId = parseInt(openReportAction.value);
@@ -169,61 +133,50 @@ export class SlackEventListener {
         throw new Error(`Standup standUpId is not defined ${openReportAction.value}`)
       }
 
-      const standUp = await this.standUpRepository.standUpByIdAndUser(user, standUpId);
+      const standUp = await this.standUpRepository.findUserStandUp(userId, standUpId);
 
       if (!standUp) {
-        throw new Error(`Standup #${standUpId} is not found`)
+        throw new ContextualError(`User standup is not found`, {userId, standUpId})
       }
 
-      this.slackBotTransport.openReport(standUp, action.trigger_id); // TODO await?!
+      await this.slackBotTransport.openReport(standUp, action.trigger_id);
+    } else if (openDialogAction) {
+      const standUpId = parseInt(openDialogAction.value);
+      // TODO already submit
 
-      return;
-    }
+      const standUp = await this.standUpRepository.findByIdAndUser(userId, standUpId);
 
-    const openDialogAction = action.actions.find(a => a.action_id === ACTION_OPEN_DIALOG);
-    if (!openDialogAction) {
+      if (!standUp) {
+        throw new ContextualError(`User standup is not found`, {userId, standUpId})
+      }
+
+      const userStandup = new UserStandup()
+      userStandup.standUp = standUp;
+      userStandup.user = await this.connection.getRepository(User).findOne(userId);
+
+      if (!userStandup.user) {
+        throw new ContextualError(`User is not found`, {userId})
+      }
+
+      //const openDialogTs = new Date(parseInt(openDialogAction.action_ts) * 1000);
+      userStandup.slackMessage = await this.slackBotTransport.openDialog(userStandup, action.trigger_id);
+      await this.connection.manager.insert(UserStandup, userStandup)
+    } else {
       throw new Error(`${ACTION_OPEN_DIALOG} action is not found in list of action from interactive response`); // TODO save response
     }
-
-    const standUpId = parseInt(openDialogAction.value);
-
-    if (!standUpId) {
-      throw new Error(`Standup standUpId is not defined ${openDialogAction.value}`)
-    }
-
-    // TODO already submit
-    // const standUp = await this.findByUser(user);
-
-    const standUp = await this.standUpRepository.standUpByIdAndUser(user, standUpId);
-
-    if (!standUp) {
-      throw new Error(`Standup #${standUpId} is not found`)
-    }
-
-    const userStandup = new UserStandup()
-    userStandup.standUp = standUp;
-    userStandup.user = user;
-
-    //const openDialogTs = new Date(parseInt(openDialogAction.action_ts) * 1000);
-    userStandup.slackMessage = this.slackBotTransport.openDialog(userStandup, action.trigger_id);
-    await this.connection.manager.insert(UserStandup, userStandup)
   }
 
   async handleViewSubmission(viewSubmission: ViewSubmission) {
-    const user = await this.connection.getRepository(User).findOne(viewSubmission.user.id);
-
-    if (!user) {
-      throw new Error(`User ${viewSubmission.user.id} is not found`)
-    }
+    const userId = viewSubmission.user.id;
 
     //viewSubmission.view.private_metadata
     //const msgDate = new Date(parseInt(viewSubmission.ts) * 1000);
 
     const metadata = JSON.parse(viewSubmission.view.private_metadata);
-    const userStandup = await this.standUpRepository.findUserStandUp(user, metadata.standup)
+    const userStandup = await this.standUpRepository.findUserStandUp(userId, metadata.standup)
     if (!userStandup) {
       // TODO
-      throw new Error('No standup #' + metadata.standup)
+      throw new ContextualError(`User standup is not found`, {userId, standUpId: metadata.standup})
     }
 
     const standup = userStandup.standUp

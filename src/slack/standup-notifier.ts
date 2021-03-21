@@ -71,13 +71,12 @@ export default class StandupNotifier {
               const standup = new StandUp();
 
               standup.startAt = date;
+              // TODO ?! standup.startAt = new Date(Math.floor(date.getTime() / (60 * 1000)) * 60 * 1000)
               // TODO transaction
               standup.team = await teamRepository.findSnapshot(team); // disable edger?!
               if (!standup.team) {
                   standup.team = await teamRepository.insertSnapshot(team);
               }
-              console.log(team)
-              console.log(standup.team.originTeam)
               return standup;
             })())
           )

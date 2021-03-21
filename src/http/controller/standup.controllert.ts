@@ -92,10 +92,11 @@ FROM (SELECT stand_up.* FROM stand_up
 INNER JOIN team_snapshot ON stand_up."teamId" = team_snapshot.id
 INNER JOIN team ON team.id = team_snapshot."originTeamId"
 WHERE team.id = $1 OFFSET $2 LIMIT $3) as stand_up
-  LEFT JOIN answer_request ON answer_request."standUpId" = stand_up.id
+  INNER JOIN user_standup ON user_standup."standUpId" = stand_up.id
+  LEFT JOIN answer_request ON answer_request."userStandupId" = user_standup.id
   INNER JOIN question_snapshot question ON question.id = answer_request."questionId"
-  LEFT JOIN question_option_snapshot question_option ON question_option."questionId" = question.id
-  INNER JOIN "user" ON "user".id = answer_request."userId"
+  INNER JOIN question_option_snapshot question_option ON question_option."questionId" = question.id
+  INNER JOIN "user" ON "user".id = user_standup."userId"
 `, [teamID, offset, limit]);
     let grouped: IStandupView[] | any = groupByData(data, {
       groupBy: 'id',

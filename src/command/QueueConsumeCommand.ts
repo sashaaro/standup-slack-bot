@@ -48,7 +48,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
   queueHandlers = {
     [QUEUE_NAME_SLACK_EVENTS]: async (job: Job) => {
       try {
-        this.slackEventListener.handleEventJob(job.name, job.data)
+        await this.slackEventListener.handleEventJob(job.name, job.data)
       } catch (error) {
         this.logger.warn('Error slack events job handling', {error, job})
       }
