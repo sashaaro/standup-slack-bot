@@ -1,7 +1,7 @@
 import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, OneToMany} from "typeorm";
 import StandUp from "./StandUp";
 import User from "./User";
-import {ISlackMessageResult} from "../slack/model/ISlackMessageResult";
+import {MessageResult} from "../slack/model/MessageResult";
 import AnswerRequest from "./AnswerRequest";
 
 @Entity()
@@ -27,7 +27,7 @@ class UserStandup {
 
   // TODO rename? slackDialogMessage
   @Column("jsonb")
-  slackMessage: ISlackMessageResult['message']
+  slackMessage: MessageResult['message']
 
   @BeforeInsert()
   setupCreatedAt() {

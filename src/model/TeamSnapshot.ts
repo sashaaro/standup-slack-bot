@@ -53,6 +53,9 @@ export class TeamSnapshot {
 
   @AfterLoad()
   normalizeSort() {
+    // if (this.questions == null) {
+    //   return;
+    // }
     this.questions = this.questions.sort(sortByIndex)
 
     this.questions.forEach(q => {

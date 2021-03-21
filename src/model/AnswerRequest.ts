@@ -9,7 +9,8 @@ class AnswerRequest {
   id: string
 
   @ManyToOne(type => UserStandup, us => us.answers, {
-    eager: true
+    eager: true,
+    nullable: false
   })
   userStandup: UserStandup;
 

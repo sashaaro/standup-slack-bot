@@ -7,8 +7,9 @@ import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Block, KnownBlock} from "@slack/types";
 import {ContextualError} from "../services/utils";
-import {ISlackMessageResult} from "./model/ISlackMessageResult";
+import {MessageResult} from "./model/MessageResult";
 import UserStandup from "../model/UserStandup";
+import {OpenViewResult} from "./model/OpenViewResult";
 
 const standUpFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -69,28 +70,17 @@ export class SlackBotTransport {
     })
   }
 
-  async openDialog(userStandup: UserStandup, triggerId: string): Promise<ISlackMessageResult['message']> {
-    const inProgress = !userStandup.standUp.isFinished(); // has not standUp.endAt?!
+  async openDialog(userStandup: UserStandup, triggerId: string): Promise<OpenViewResult['view']> {
+    const inProgress = !userStandup.standUp.isFinished();
 
-    if (!inProgress) { // in progress only..
-      //await this.sendMessage(user, standUpFinishedAlreadyMsg.replace('{id}', standUp.id.toString()));
-      //await this.sendGreetingMessage(user, standUp);
-      //return;
-    }
-
-    const view = {
+    const view: any = {
       type: "modal",
       title: {
         "type": "plain_text",
         "text": `Standup #${userStandup.standUp.team.originTeam.name}`.substr(0, 24).trim(),
         "emoji": true
       },
-      "submit": {
-        "type": "plain_text",
-        "text": userStandup.answers.length > 0 ? "Update" : "Submit",
-        "emoji": true
-      },
-      "close": {
+      close: {
         "type": "plain_text",
         "text": "Cancel",
         "emoji": true
@@ -100,12 +90,16 @@ export class SlackBotTransport {
       blocks: []
     };
 
-    if (!inProgress) {
-      delete view.submit
+    if (inProgress) {
+      view.submit = {
+        "type": "plain_text",
+          "text": userStandup.answers.length > 0 ? "Update" : "Submit",
+          "emoji": true
+      }
     }
 
     const standUp = userStandup.standUp
-
+    
     for (const question of standUp.team.questions) {
       const answer = userStandup.answers.find(answer => answer.question.id === question.id);
 
@@ -206,7 +200,7 @@ export class SlackBotTransport {
       trigger_id: triggerId,
     }
     this.logger.debug('Call webClient.views.open', {args: args})
-    const result: ISlackMessageResult|any = await this.webClient.views.open({
+    const result: OpenViewResult|any = await this.webClient.views.open({
       ...args,
       token: standUp.team.originTeam.workspace.accessToken
     })
@@ -215,10 +209,10 @@ export class SlackBotTransport {
       throw new ContextualError('openDialog', result)
     }
 
-    return result.message
+    return result.view
   }
 
-  async sendGreetingMessage(user: User, standUp: StandUp) {
+  async sendGreetingMessage(user: User, standUp: StandUp): Promise<MessageResult['message']> {
     const fallbackText =  `It's time to start your daily standup ${standUp.team.originTeam.name}`;
 
     const blocks: (KnownBlock | Block)[] = [
@@ -274,14 +268,20 @@ export class SlackBotTransport {
       })*/
 
 
-    await this.postMessage({
+    const result = await this.postMessage({
       channel: user.id,
       text: fallbackText,
       blocks: blocks,
     }, standUp.team.originTeam.workspace.accessToken);
+
+    if (!result.ok) {
+      throw new ContextualError('Send report post message error', result)
+    }
+
+    return result.message;
   }
 
-  async sendReport(standup: StandUp): Promise<ISlackMessageResult['message']> {
+  async sendReport(standup: StandUp): Promise<MessageResult['message']> {
     const answersBlocks = []
     for (const userStandup of standup.users) {
       const user = userStandup.user;
@@ -356,8 +356,8 @@ export class SlackBotTransport {
     return result.message;
   }
 
-  private async updateMessage(args: ChatUpdateArguments, token: string): Promise<ISlackMessageResult> {
-    const result: ISlackMessageResult = await this.webClient.chat.update({
+  private async updateMessage(args: ChatUpdateArguments, token: string): Promise<MessageResult> {
+    const result: MessageResult = await this.webClient.chat.update({
       ...args,
       token,
     }) as any;
@@ -369,9 +369,9 @@ export class SlackBotTransport {
     return result
   }
 
-  private async postMessage(args: ChatPostMessageArguments, token: string): Promise<ISlackMessageResult> {
+  private async postMessage(args: ChatPostMessageArguments, token: string): Promise<MessageResult> {
     this.logger.debug('Call webClient.chat.postMessage', args)
-    const result: ISlackMessageResult = await this.webClient.chat.postMessage({
+    const result: MessageResult = await this.webClient.chat.postMessage({
       ...args,
       token
     }) as any;
@@ -383,7 +383,7 @@ export class SlackBotTransport {
     return result;
   }
 
-  async sendMessage(user: User, message: string): Promise<ISlackMessageResult> {
+  async sendMessage(user: User, message: string): Promise<MessageResult> {
     const args: ChatPostMessageArguments = {text: message, channel: user.id}
     return await this.postMessage(args, user.workspace.accessToken);
   }

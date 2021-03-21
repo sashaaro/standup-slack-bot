@@ -133,34 +133,24 @@ export class SlackEventListener {
         throw new Error(`Standup standUpId is not defined ${openReportAction.value}`)
       }
 
-      const standUp = await this.standUpRepository.findUserStandUp(userId, standUpId);
+      const userStandUp = await this.standUpRepository.findUserStandUp(userId, standUpId);
 
-      if (!standUp) {
+      if (!userStandUp) {
         throw new ContextualError(`User standup is not found`, {userId, standUpId})
       }
 
-      await this.slackBotTransport.openReport(standUp, action.trigger_id);
+      await this.slackBotTransport.openReport(userStandUp, action.trigger_id);
     } else if (openDialogAction) {
       const standUpId = parseInt(openDialogAction.value);
       // TODO already submit
 
-      const standUp = await this.standUpRepository.findByIdAndUser(userId, standUpId);
+      let userStandup = await this.standUpRepository.findUserStandUp(userId, standUpId);
 
-      if (!standUp) {
+      if (!userStandup) {
         throw new ContextualError(`User standup is not found`, {userId, standUpId})
       }
 
-      const userStandup = new UserStandup()
-      userStandup.standUp = standUp;
-      userStandup.user = await this.connection.getRepository(User).findOne(userId);
-
-      if (!userStandup.user) {
-        throw new ContextualError(`User is not found`, {userId})
-      }
-
-      //const openDialogTs = new Date(parseInt(openDialogAction.action_ts) * 1000);
-      userStandup.slackMessage = await this.slackBotTransport.openDialog(userStandup, action.trigger_id);
-      await this.connection.manager.insert(UserStandup, userStandup)
+      await this.slackBotTransport.openDialog(userStandup, action.trigger_id);
     } else {
       throw new Error(`${ACTION_OPEN_DIALOG} action is not found in list of action from interactive response`); // TODO save response
     }
@@ -179,30 +169,47 @@ export class SlackEventListener {
       throw new ContextualError(`User standup is not found`, {userId, standUpId: metadata.standup})
     }
 
-    const standup = userStandup.standUp
+    const values: {[questionId: string]: {
+        type: 'plain_text_input'|'static_select',
+        value?: string,
+        selected_option?: {
+          text: {
+            type: 'plain_text',
+            text: string,
+            emoji: boolean
+          },
+          value: string
+        }
+    }} = Object.assign({}, ...Object.values(viewSubmission.view.state.values));
 
-    const questionsIds = Object.values(viewSubmission.view.state.values).map(v => parseInt(v));
+    const questionsIds = Object.keys(values).map(v => parseInt(v)).filter(v => v);
+    if (questionsIds.length !== Object.values(viewSubmission.view.state.values).length) {
+      throw new ContextualError('question answer are wrong', viewSubmission)
+    }
     const questions = await this.connection.getRepository(QuestionSnapshot).findByIds(questionsIds, {
       relations: ['options']
     });
+
     if (questions.length !== questionsIds.length) {
       throw new Error('questions quantity is not same as answers') // TODO
     }
 
     for(const question of questions) {
-      const item = viewSubmission.view.state.values[question.id] as any;
+      const item = values[question.id]
 
-      if (!item) {
-        throw new Error('not found answer by question id') // TODO
+      const hasOptions = question.options.length > 1;
+
+      if (hasOptions && item.type !== 'static_select') {
+        this.logger.warning('wrong item type', item)
       }
 
-      const hasOptions = question.options.length > 1
       const value = hasOptions ? item.selected_option.value : item.value
       let answer = userStandup.answers.find(answer => answer.question.id === question.id)
       if (!answer) {
         answer = new AnswerRequest()
-        answer.question = question;
+        answer.question = question
         userStandup.answers.push(answer)
+        answer.userStandup = userStandup;
       }
 
       if (hasOptions) {
@@ -212,9 +219,6 @@ export class SlackEventListener {
       }
     }
 
-    if (userStandup.answers.length > 0) {
-      const result = await this.connection.getRepository(AnswerRequest).save(userStandup.answers);
-      //
-    }
+    await this.connection.getRepository(AnswerRequest).save(userStandup.answers);
   }
 }

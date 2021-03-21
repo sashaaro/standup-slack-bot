@@ -4,12 +4,16 @@ import StandupNotifier from "../slack/standup-notifier";
 import {Inject} from "injection-js";
 import {LOGGER_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
 import {Connection} from "typeorm";
-import {from, Observable} from "rxjs";
+import {forkJoin, from, Observable, of} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
 import {Logger} from "winston";
-import {mergeMap, takeUntil} from "rxjs/operators";
+import {map, mapTo, mergeMap, takeUntil} from "rxjs/operators";
 import {bind} from "../services/decorators";
+import {fromPromise} from "rxjs/internal/observable/fromPromise";
+import {ContextualError} from "../services/utils";
+import UserStandup from "../model/UserStandup";
+import User from "../model/User";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
   static meta = {
@@ -45,26 +49,37 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     this.logger.debug('Start standup notificator loop...');
     const {start$, end$} = this.standUpNotifier.create()
     start$.pipe(
+      mergeMap(standups => forkJoin(
+        standups.map(standup =>
+          standup.team.users.map(
+            user => fromPromise(this.slackTransport.sendGreetingMessage(user, standup).then(messageResult => ({
+              messageResult, user, standup
+            })))
+          )
+        ).flat(1)
+      )),
+      mergeMap(list => {
+        const userStandups = list.map(({messageResult, standup, user}) => {
+          const userStandup = new UserStandup()
+          userStandup.standUp = standup;
+          userStandup.answers = [];
+          userStandup.user = user;
+
+          userStandup.slackMessage = messageResult;
+          return userStandup;
+        })
+        return fromPromise(this.connection.manager.insert(UserStandup, userStandups)).pipe(mapTo(list))
+      }),
       takeUntil(this.terminate$)
     ).subscribe({
-      next: standups => {
-        this.logger.info('Start daily meetings', {standups: standups.map(standUp => standUp.id)})
-
-        standups.forEach(standup => {
-          standup.team.users.forEach(user => {
-            try {
-              this.slackTransport.sendGreetingMessage(user, standup)
-            } catch (e) {
-              this.logger.error('Start daily meeting error', {standUpId: standup.id, userId: user.id, error: e})
-            }
-          })
-        })
+      next: list => {
+        this.logger.info('Start daily meetings', {standups: list.map(({standup}) => standup.id)})
       },
-      error: error => this.logger.error({error})
+      error: error => this.logger.error('Start daily meeting error', {error})
     });
 
     end$.pipe(
-      mergeMap(standups => from(
+      mergeMap(standups => fromPromise(
         Promise.all(standups.map(standup => this.slackTransport.sendReport(standup))))
       ),
       takeUntil(this.terminate$)

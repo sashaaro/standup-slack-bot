@@ -1,5 +1,6 @@
-export interface ISlackMessageResult {
-  ok: true,
+import {WebAPICallResult} from "@slack/web-api/dist/WebClient";
+
+export interface MessageResult extends WebAPICallResult {
   channel: 'D01RSCDLNM9',
   ts: '1616242092.000900',
   message: {
@@ -20,18 +21,4 @@ export interface ISlackMessageResult {
     },
     blocks: any[]
   },
-  response_metadata: {
-    scopes: [
-      'team:read',
-      'channels:read',
-      'chat:write',
-      'users:read',
-      'users:write',
-      'groups:read',
-      'im:read',
-      'im:write',
-      'im:history'
-    ],
-    acceptedScopes: ['chat:write']
-  }
 }
