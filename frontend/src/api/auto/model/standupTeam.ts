@@ -9,15 +9,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { StandupUsers } from './standupUsers';
-import { StandupTeam } from './standupTeam';
+import { StandupTeamQuestions } from './standupTeamQuestions';
 
 
-export interface Standup { 
-    id?: number;
-    startAt?: string;
-    endAt?: string;
-    team?: StandupTeam;
-    users?: Array<StandupUsers>;
+export interface StandupTeam { 
+    questions?: Array<StandupTeamQuestions>;
 }
 

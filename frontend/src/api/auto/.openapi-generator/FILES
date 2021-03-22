@@ -19,7 +19,12 @@ model/models.ts
 model/option.ts
 model/question.ts
 model/standup.ts
-model/standupQuestions.ts
+model/standupAnswers.ts
+model/standupOption.ts
+model/standupTeam.ts
+model/standupTeamOptions.ts
+model/standupTeamQuestions.ts
+model/standupUser.ts
 model/standupUsers.ts
 model/team.ts
 model/timezone.ts

@@ -6,24 +6,24 @@
 <!--      a.ui.teal.label= 'In progress'-->
     </div>
     <div class="stand-up__content">
-      <div *ngFor="let user of standup.users" class="stand-up-item">
-        <div *ngIf="user.questions.length === 0">No answers 🐥</div>
+      <div *ngFor="let userStandup of standup.users" class="stand-up-item">
+        <div *ngIf="userStandup.answers.length === 0">No answers 🐥</div>
 
         <div class="stand-up-item__results">
-          <div *ngFor="let question of user.questions; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index">
-            <div class="stand-up-item__question">{{ question.questionText }}</div>
-            <div class="stand-up-item__answer" *ngIf="question.answerOptionId">
-              <div *ngFor="let option of question.options" [class.active]="option.optionId === question.answerOptionId">{{ option.optionText }}</div>
+          <div *ngFor="let answer of userStandup.answers; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index">
+            <div class="stand-up-item__question">{{ answer.question.text }}</div>
+            <div class="stand-up-item__answer" *ngIf="answer.option">
+              <div *ngFor="let option of standup.team.questions[index].options" [class.active]="option.id === answer.option.id">{{ option.text }}</div>
             </div>
             <div class="stand-up-item__answer">
-              <div class="active">{{ question.answerMessage }}</div>
+              <div class="active">{{ answer.answerMessage }}</div>
             </div>
           </div>
         </div>
 
         <div class="stand-up-item__content">
-          <img [src]="user.userImage"/>
-          <div class="stand-up-item__name"> {{ user.userName }}</div>
+          <img [src]="userStandup.user.profile?.image_48"/>
+          <div class="stand-up-item__name"> {{ userStandup.user.name }}</div>
         </div>
       </div>
     </div>

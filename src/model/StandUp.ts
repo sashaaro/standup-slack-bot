@@ -1,6 +1,7 @@
 import {BeforeInsert, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import {TeamSnapshot} from "./TeamSnapshot";
 import UserStandup from "./UserStandup";
+import {Exclude} from "class-transformer";
 
 @Entity()
 export default class StandUp {

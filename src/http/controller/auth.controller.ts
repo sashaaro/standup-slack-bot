@@ -70,7 +70,7 @@ export class AuthController {
     } catch (e) {
       if (e.error === 'invalid_code') {
         // TODO message invalid code
-        this.logger.debug('Invalid code 0Auth2', {error: e})
+        this.logger.warning('Invalid code 0Auth2', {error: e})
         res.status(400).send();
         return;
       } else {

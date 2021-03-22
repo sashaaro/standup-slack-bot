@@ -3,6 +3,7 @@ import StandUp from "./StandUp";
 import User from "./User";
 import {MessageResult} from "../slack/model/MessageResult";
 import AnswerRequest from "./AnswerRequest";
+import {Exclude} from "class-transformer";
 
 @Entity()
 class UserStandup {
@@ -14,6 +15,7 @@ class UserStandup {
   })
   user: User;
 
+  @Exclude()
   @ManyToOne(type => StandUp, standup => standup.users, {
     eager: true
   })
@@ -26,6 +28,7 @@ class UserStandup {
   createdAt: Date;
 
   // TODO rename? slackDialogMessage
+  @Exclude()
   @Column("jsonb")
   slackMessage: MessageResult
 

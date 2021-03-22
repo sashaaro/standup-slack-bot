@@ -9,13 +9,12 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { StandupQuestions } from './standupQuestions';
+import { StandupAnswers } from './standupAnswers';
+import { StandupUser } from './standupUser';
 
 
 export interface StandupUsers { 
-    id?: number;
-    name?: string;
-    image?: string;
-    questions?: Array<StandupQuestions>;
+    user?: StandupUser;
+    answers?: Array<StandupAnswers>;
 }
 

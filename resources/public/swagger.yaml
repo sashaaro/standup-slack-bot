@@ -369,27 +369,61 @@ components:
           type: string
         endAt:
           type: string
+        team:
+          type: object
+          properties:
+            questions:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  index:
+                    type: string
+                  text:
+                    type: string
+                  options:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      index:
+                        type: string
+                      text:
+                        type: string
         users:
           type: array
           items:
             type: object
             properties:
-              id:
-                type: integer
-              name:
-                type: string
-              image:
-                type: string
-              questions:
+              user:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+              answers:
                 type: array
                 items:
                   type: object
                   properties:
                     id:
                       type: integer
-                    text:
+                    answerMessage:
                       type: string
                     option:
-                      type: string
-                    answer:
-                      type: string
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        text:
+                          type: string
+                    question:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        text:
+                          type: string
