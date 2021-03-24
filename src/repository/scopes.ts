@@ -1,7 +1,7 @@
 // with channel channelUsers questions answers answerAuthor
 import {Brackets, SelectQueryBuilder} from "typeorm";
 import {Team} from "../model/Team";
-import StandUp from "../model/StandUp";
+import Standup from "../model/Standup";
 import User from "../model/User";
 
 export function scopeTeamWorkspaceJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
@@ -26,7 +26,7 @@ export function scopeTeamSnapshotJoins(qb: SelectQueryBuilder<any>): SelectQuery
     .leftJoinAndSelect('questionSnapshot.options', 'optionSnapshot')
 }
 
-export function qbStandUpJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
+export function qbStandupJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
   scopeTeamWorkspaceJoins(qb)
   qb.leftJoinAndSelect('standup.users', 'userStandup');
   return scopeUserAnswerQuestion(qb)

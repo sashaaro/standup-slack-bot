@@ -23,7 +23,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
   constructor(
     private slackTransport: SlackBotTransport,
-    private standUpNotifier: StandupNotifier,
+    private standupNotifier: StandupNotifier,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(TERMINATE) protected terminate$: Observable<void>,
@@ -47,7 +47,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     await redisReady(this.redis);
 
     this.logger.debug('Start standup notificator loop...');
-    const {start$, end$} = this.standUpNotifier.create()
+    const {start$, end$} = this.standupNotifier.create()
     start$.pipe(
       mergeMap(standups => forkJoin(
         standups.map(standup =>
@@ -61,7 +61,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       mergeMap(list => {
         const userStandups = list.map(({messageResult, standup, user}) => {
           const userStandup = new UserStandup()
-          userStandup.standUp = standup;
+          userStandup.standup = standup;
           userStandup.answers = [];
           userStandup.user = user;
 

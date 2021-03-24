@@ -1,7 +1,4 @@
-import { SlackPrefs } from "./SlackPrefs";
-import {WebAPICallResult} from "@slack/web-api/dist/WebClient";
-
-export interface  SlackTeamIcons {
+export interface SlackTeamIcons {
     image_34: string;
     image_44: string;
     image_68: string;
@@ -12,7 +9,7 @@ export interface  SlackTeamIcons {
     image_default: boolean;
 }
 
-export interface SlackTeam extends WebAPICallResult
+export interface SlackTeam
 {
     "id": "T12345",
     "name": "My SlackWorkspace",

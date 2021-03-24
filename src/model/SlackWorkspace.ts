@@ -11,10 +11,10 @@ class SlackWorkspace {
   @PrimaryColumn()
   id: string;
 
-  @Column()
+  @Column() // TODO delete
   name: string;
 
-  // TODO nullable: false?!
+  // TODO nullable: false?! TODO delete?!
   @Column()
   domain: string;
 
@@ -27,7 +27,7 @@ class SlackWorkspace {
   @OneToMany(type => Channel, ch => ch.workspace)
   channels: Channel[]
 
-  @Column("jsonb", {nullable: false})
+  @Column("jsonb", {nullable: true}) // TODO nullable false
   slackData: SlackTeam
 
   // https://api.slack.com/authentication/token-types#granular_bot

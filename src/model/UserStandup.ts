@@ -1,5 +1,5 @@
 import {Entity, Column, ManyToOne, BeforeInsert, PrimaryGeneratedColumn, OneToMany} from "typeorm";
-import StandUp from "./StandUp";
+import Standup from "./Standup";
 import User from "./User";
 import {MessageResult} from "../slack/model/MessageResult";
 import AnswerRequest from "./AnswerRequest";
@@ -16,10 +16,10 @@ class UserStandup {
   user: User;
 
   @Exclude()
-  @ManyToOne(type => StandUp, standup => standup.users, {
+  @ManyToOne(type => Standup, standup => standup.users, {
     eager: true
   })
-  standUp: StandUp;
+  standup: Standup;
 
   @OneToMany(type => AnswerRequest, answer => answer.userStandup)
   answers: AnswerRequest[];

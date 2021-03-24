@@ -3,31 +3,17 @@ import {forkJoin, from, NEVER, of, timer} from "rxjs";
 import {delay, map, mapTo, mergeMap, share, tap} from "rxjs/operators";
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
-import StandUp from "../model/StandUp";
+import Standup from "../model/Standup";
 import {TeamRepository} from "../repository/team.repository";
-import {StandUpRepository} from "../repository/standup.repository";
+import {StandupRepository} from "../repository/standupRepository";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {Connection} from "typeorm";
 import QuestionSnapshot from "../model/QuestionSnapshot";
 import {TeamSnapshot} from "../model/TeamSnapshot";
 
-const standUpGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
-const standUpGoodBye = 'Have good day. Good bye.';
-const standUpWillRemindYouNextTime = `I will remind you when your next standup is up..`;
-
-class InProgressStandUpNotFoundError extends Error {
-  // answerMessage: IMessage
-
-  constructor() {
-    super('No stand up in progress')
-  }
-}
-
-
-class OptionNotFoundError extends Error {
-  public option: string;
-  public standup: number; // TODO save
-}
+const standupGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
+const standupGoodBye = 'Have good day. Good bye.';
+const standupWillRemindYouNextTime = `I will remind you when your next standup is up..`;
 
 @Injectable()
 export default class StandupNotifier {
@@ -38,7 +24,7 @@ export default class StandupNotifier {
 
   create() {
     const teamRepository = this.connection.getCustomRepository(TeamRepository)
-    const standUpRepository = this.connection.getCustomRepository(StandUpRepository)
+    const standupRepository = this.connection.getCustomRepository(StandupRepository)
 
     const intervalMs = 60 * 1000;  // every minutes
 
@@ -68,7 +54,7 @@ export default class StandupNotifier {
         forkJoin(
           teams.map(team =>
             fromPromise((async () => {
-              const standup = new StandUp();
+              const standup = new Standup();
 
               standup.startAt = date;
               // TODO ?! standup.startAt = new Date(Math.floor(date.getTime() / (60 * 1000)) * 60 * 1000)
@@ -83,12 +69,12 @@ export default class StandupNotifier {
         )
       ),
       mergeMap(standups =>
-        fromPromise(standUpRepository.insert(standups)).pipe(mapTo(standups))
+        fromPromise(standupRepository.insert(standups)).pipe(mapTo(standups))
       )
     )
 
     const end$ = interval$.pipe(
-      mergeMap(date => fromPromise(standUpRepository.findEnd(date)))
+      mergeMap(date => fromPromise(standupRepository.findEnd(date)))
     )
 
     return {start$, end$};

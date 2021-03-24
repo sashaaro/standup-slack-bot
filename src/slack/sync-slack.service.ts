@@ -21,20 +21,19 @@ export class SyncSlackService {
   ) {
   }
 
-  async syncForWorkspace(workspace: SlackWorkspace) {
-    const teamResponse: {team: SlackTeam} = await this.webClient.team.info({
+  async updateWorkspace(workspace: SlackWorkspace): Promise<SlackWorkspace> {
+    // https://api.slack.com/methods/team.info
+    const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({
       team: workspace.id,
       token: workspace.accessToken
-    }) as any;
+    })) as any;
+    workspace.slackData = teamInfo.team;
 
-    if (workspace.id !== teamResponse.team.id) {
-      throw new Error(`Wrong team id #${teamResponse.team.id}. Workspace #${workspace.id}`);
-    }
+    return await this.connection.getRepository(SlackWorkspace).save(workspace)
+  }
 
-    workspace.slackData = teamResponse.team;
-    const teamRepository = this.connection.getRepository(SlackWorkspace);
-    workspace = await teamRepository.save(workspace);
-
+  async syncForWorkspace(workspace: SlackWorkspace) {
+    await this.updateWorkspace(workspace);
     await this.updateUsers(workspace);
     await this.updateChannels(workspace);
   }
@@ -174,18 +173,6 @@ export class SyncSlackService {
       }
       await channelRepository.save(list);
     } while (response.response_metadata.next_cursor)
-  }
-
-  async updateWorkspace(workspace: SlackWorkspace): Promise<SlackWorkspace> {
-    // https://api.slack.com/methods/team.info
-    const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({
-      team: workspace.id,
-      token: workspace.accessToken
-    })) as any;
-    workspace.name = teamInfo.team.name;``
-    workspace.domain = teamInfo.team.domain
-
-    return await this.connection.getRepository(SlackWorkspace).save(workspace)
   }
 
   async findOrCreateAndUpdate(channelID: string, data: DeepPartial<Channel>): Promise<{channel: Channel, isNew: boolean}> {

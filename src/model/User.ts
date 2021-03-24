@@ -1,4 +1,14 @@
-import {Entity, Column, ManyToOne, PrimaryColumn, ManyToMany, JoinTable, OneToMany} from "typeorm";
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  PrimaryColumn,
+  ManyToMany,
+  JoinTable,
+  OneToMany,
+  BeforeInsert,
+  BeforeUpdate
+} from "typeorm";
 import SlackWorkspace from "./SlackWorkspace";
 import {SlackUserProfile} from "../slack/model/SlackUser";
 import {Channel} from "./Channel";
@@ -62,6 +72,23 @@ export default class User {
   @ManyToMany(type => Team, team => team.users)
   @JoinTable()
   teams: Team[];
+
+  // TODO @Column()
+  createdAt: Date;
+
+  // TODO @Column()
+  updatedAt: Date;
+
+  @BeforeInsert()
+  onBeforeInsert() {
+    this.createdAt = new Date();
+    this.updatedAt = new Date();
+  }
+
+  @BeforeUpdate()
+  onBeforeUpdate() {
+    this.updatedAt = new Date();
+  }
 
   // @OneToMany(type => AnswerRequest, answer => answer.user)
   // answers: AnswerRequest[];

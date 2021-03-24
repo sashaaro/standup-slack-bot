@@ -1,6 +1,6 @@
 import {Inject, Injectable} from "injection-js";
 import User from "../model/User";
-import StandUp from "../model/StandUp";
+import Standup from "../model/Standup";
 import groupBy from "lodash.groupby";
 import {
   ChatPostMessageArguments,
@@ -12,13 +12,13 @@ import {
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {Block, KnownBlock} from "@slack/types";
-import {ContextualError} from "../services/utils";
+import {ContextualError, isPlatformError} from "../services/utils";
 import {MessageResult} from "./model/MessageResult";
 import UserStandup from "../model/UserStandup";
 import {OpenViewResult} from "./model/OpenViewResult";
 import {greetingBlocks} from "./slack-blocks";
 
-const standUpFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
+const standupFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
 export const hasOptionQuestions = (team) => team.questions.filter(q => q.options.length > 0)
 
@@ -36,7 +36,7 @@ export class SlackBotTransport {
   }
 
   async openReport(userStandup: UserStandup, triggerId: string) {
-    const standUp = userStandup.standUp
+    const standup = userStandup.standup
     if (false) {
       // check in progress
     }
@@ -44,7 +44,7 @@ export class SlackBotTransport {
       type: "modal",
       title: {
         "type": "plain_text",
-        "text": `Report #${standUp.team.originTeam.name}`.substr(0, 24).trim(),
+        "text": `Report #${standup.team.originTeam.name}`.substr(0, 24).trim(),
         "emoji": true
       },
       "close": {
@@ -73,18 +73,18 @@ export class SlackBotTransport {
 
     const r = await this.webClient.views.open({
       ...args,
-      token: standUp.team.originTeam.workspace.accessToken
+      token: standup.team.originTeam.workspace.accessToken
     })
   }
 
   async openDialog(userStandup: UserStandup, triggerId: string): Promise<OpenViewResult['view']> {
-    const inProgress = !userStandup.standUp.isFinished();
+    const inProgress = !userStandup.standup.isFinished();
 
     const view: any = {
       type: "modal",
       title: {
         "type": "plain_text",
-        "text": `Standup #${userStandup.standUp.team.originTeam.name}`.substr(0, 24).trim(),
+        "text": `Standup #${userStandup.standup.team.originTeam.name}`.substr(0, 24).trim(),
         "emoji": true
       },
       close: {
@@ -93,7 +93,7 @@ export class SlackBotTransport {
         "emoji": true
       },
       callback_id: CALLBACK_STANDUP_SUBMIT,
-      private_metadata: JSON.stringify({standup: userStandup.standUp.id}), // userStandup.id?!
+      private_metadata: JSON.stringify({standup: userStandup.standup.id}), // userStandup.id?!
       blocks: []
     };
 
@@ -105,9 +105,9 @@ export class SlackBotTransport {
       }
     }
 
-    const standUp = userStandup.standUp
+    const standup = userStandup.standup
 
-    for (const question of standUp.team.questions) {
+    for (const question of standup.team.questions) {
       const answer = userStandup.answers.find(answer => answer.question.id === question.id);
 
       const hasOptions = question.options.length > 1;
@@ -171,7 +171,7 @@ export class SlackBotTransport {
         })
       }
 
-      const isLast = question === standUp.team.questions[standUp.team.questions.length]
+      const isLast = question === standup.team.questions[standup.team.questions.length]
       if (!isLast) {
         view.blocks.push({
           type: "divider"
@@ -193,7 +193,7 @@ export class SlackBotTransport {
             "text": "Open report",
             "emoji": true
           },
-          "value": standUp.id.toString(),
+          "value": standup.id.toString(),
           "action_id": ACTION_OPEN_REPORT
         }
       })
@@ -209,7 +209,7 @@ export class SlackBotTransport {
     this.logger.debug('Call webClient.views.open', {args: args})
     const result: OpenViewResult|any = await this.webClient.views.open({
       ...args,
-      token: standUp.team.originTeam.workspace.accessToken
+      token: standup.team.originTeam.workspace.accessToken
     })
 
     if (!result.ok) {
@@ -219,7 +219,7 @@ export class SlackBotTransport {
     return result.view
   }
 
-  async sendGreetingMessage(user: User, standUp: StandUp): Promise<MessageResult> {
+  async sendGreetingMessage(user: User, standup: Standup): Promise<MessageResult> {
     // TODO I'm late?!
     /*attachmentBtns.actions.push(
     {
@@ -238,8 +238,8 @@ export class SlackBotTransport {
 
     const result = await this.postMessage({
       channel: user.id,
-      ...greetingBlocks(standUp),
-    }, standUp.team.originTeam.workspace.accessToken);
+      ...greetingBlocks(standup),
+    }, standup.team.originTeam.workspace.accessToken);
 
     if (!result.ok) {
       throw new ContextualError('Send report post message error', result)
@@ -248,7 +248,7 @@ export class SlackBotTransport {
     return result;
   }
 
-  async sendReport(standup: StandUp): Promise<MessageResult['message']> {
+  async sendReport(standup: Standup): Promise<MessageResult['message']> {
     const answersBlocks = []
     for (const userStandup of standup.users) {
       const user = userStandup.user;
@@ -312,7 +312,6 @@ export class SlackBotTransport {
     ]
     let result;
 
-    const isPlatformError = (e: CodedError): e is WebAPIPlatformError => e.code === 'slack_webapi_platform_error'
     try {
       result = await this.postMessage({
         channel: standup.team.originTeam.reportChannel.id, // TODO use from snapshot?!

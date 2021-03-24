@@ -1,14 +1,14 @@
 import {EntityRepository, Repository} from "typeorm";
-import StandUp from "../model/StandUp";
-import {qbStandUpJoins, scopeTeamSnapshotJoins, scopeTeamWorkspaceJoins, scopeUserAnswerQuestion} from "./scopes";
+import Standup from "../model/Standup";
+import {qbStandupJoins, scopeTeamSnapshotJoins, scopeTeamWorkspaceJoins, scopeUserAnswerQuestion} from "./scopes";
 import UserStandup from "../model/UserStandup";
 
-@EntityRepository(StandUp)
-export class StandUpRepository extends Repository<StandUp> {
-  findByIdAndUser(userId: string, standupId: number): Promise<StandUp> {
+@EntityRepository(Standup)
+export class StandupRepository extends Repository<Standup> {
+  findByIdAndUser(userId: string, standupId: number): Promise<Standup> {
     const qb = this.createQueryBuilder('standup');
 
-    qbStandUpJoins(qb)
+    qbStandupJoins(qb)
     scopeTeamSnapshotJoins(qb)
     qb.innerJoinAndSelect('teamSnapshot.users', 'users')
 
@@ -22,9 +22,9 @@ export class StandUpRepository extends Repository<StandUp> {
       .getOne();
   }
 
-  findEnd(endAt: Date): Promise<StandUp[]> {
+  findEnd(endAt: Date): Promise<Standup[]> {
     const qb = this.createQueryBuilder('standup');
-    qbStandUpJoins(qb);
+    qbStandupJoins(qb);
     qb.leftJoinAndSelect('answersQuestion.options', 'answersQuestionOptions')
       .leftJoinAndSelect('userStandup.user', 'user')
       .leftJoinAndSelect('team.reportChannel', 'reportChannel')
@@ -35,12 +35,12 @@ export class StandUpRepository extends Repository<StandUp> {
     return qb.getMany();
   }
 
-  findUserStandUp(userId: string, standUpId: number): Promise<UserStandup> {
+  findUserStandup(userId: string, standupId: number): Promise<UserStandup> {
     const qb = this.manager.getRepository(UserStandup).createQueryBuilder('userStandup')
-      .andWhere('userStandup.userId = :userId', {userId}) // TODO add unique index userId standUpId
-      .andWhere('userStandup.standUpId = :standUpId', {standUpId})
+      .andWhere('userStandup.userId = :userId', {userId}) // TODO add unique index userId standupId
+      .andWhere('userStandup.standupId = :standupId', {standupId})
       .leftJoinAndSelect('userStandup.user', 'user')
-      .leftJoinAndSelect('userStandup.standUp', 'standup')
+      .leftJoinAndSelect('userStandup.standup', 'standup')
 
     scopeTeamWorkspaceJoins(qb)
     scopeTeamSnapshotJoins(qb)

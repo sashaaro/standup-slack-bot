@@ -13,6 +13,7 @@ import {SlackTeam} from "../../slack/model/SlackTeam";
 import {Logger} from "winston";
 import {SyncSlackService} from "../../slack/sync-slack.service";
 import {bind} from "../../services/decorators";
+import {ContextualError, isPlatformError} from "../../services/utils";
 
 @Injectable()
 export class AuthController {
@@ -49,10 +50,8 @@ export class AuthController {
       return;
     }
 
-    if (req.query.error) {
-      if (req.query.error === 'access_denied') {
-        throw new AccessDenyError()
-      }
+    if (req.query.error === 'access_denied') {
+      throw new AccessDenyError() // TODO template
     }
     if (!req.query.code) {
       throw new ResourceNotFoundError()
@@ -68,10 +67,10 @@ export class AuthController {
         redirect_uri: `${this.config.host}/api/auth`,
       }) as any
     } catch (e) {
-      if (e.error === 'invalid_code') {
+      if (isPlatformError(e) && e.data.error === 'invalid_code') {
         // TODO message invalid code
-        this.logger.warning('Invalid code 0Auth2', {error: e})
-        res.status(400).send();
+        this.logger.warn('Invalid code 0Auth2', {error: e})
+        res.status(400).send('400'); // TODO redirect notify?
         return;
       } else {
         throw e;
@@ -82,9 +81,9 @@ export class AuthController {
 
     if (!response.ok) {
       // LOG ?
-      throw new Error(response as any)
+      throw new ContextualError('Oauth is not ok', response)
     }
-
+    console.log(response)
 
     const workspaceRepository = this.connection.manager.getRepository(SlackWorkspace);
 
@@ -96,7 +95,13 @@ export class AuthController {
       workspace.id = response.team.id;
     }
     workspace.name = response.team.name
-    workspace.accessToken = response.access_token
+
+    if (response.token_type === 'bot') {
+      workspace.accessToken = response.access_token
+    } else {
+      this.logger.warning('Oauth response no content token type as bot', response)
+      // TODO throw ?!
+    }
 
     if (newWorkspace) {
       const teamInfo: {team: SlackTeam} = (await this.webClient.team.info({
@@ -106,7 +111,6 @@ export class AuthController {
       workspace.domain = teamInfo.team.domain;
     }
     workspace = await workspaceRepository.save(workspace);
-
 
     const userRepository = this.connection.manager.getRepository(User);
     let user = await userRepository.findOne(response.authed_user.id);
@@ -118,7 +122,7 @@ export class AuthController {
       user.accessToken = response.authed_user.access_token;
     // }
 
-    if (!user.id) {
+    if (!user.name) { // || new Date() - user.updatedAt > 3 days
       const userInfo: SlackUserInfo = await this.webClient.users.info({
         user: user.id,
         token: workspace.accessToken
@@ -134,8 +138,8 @@ export class AuthController {
 
     res.redirect('/')
 
-    if (newWorkspace) {
-      this.syncSlackService.syncForWorkspace(workspace);
-    }
+    //if (newWorkspace) {
+      await this.syncSlackService.syncForWorkspace(workspace);
+    //}
   }
 }

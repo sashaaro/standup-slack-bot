@@ -86,7 +86,7 @@ export class Team {
   @ArrayMinSize(1)
   @ValidateNested()
   @OneToMany(type => Question, question => question.team, {
-    cascade: true
+    cascade: true,
   })
   questions: Question[];
 

@@ -49,7 +49,9 @@ export class TeamRepository extends Repository<Team> {
 
   async add(team: Team) {
     return await this.manager.transaction('SERIALIZABLE', async manager => {
+      console.log(team.questions.map(q => q.id))
       await manager.getRepository(Team).save(team)
+      console.log(team.questions.map(q => q.id))
       await this.insertSnapshot(team, manager)
     });
   }

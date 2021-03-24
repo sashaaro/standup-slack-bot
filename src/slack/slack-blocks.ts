@@ -1,16 +1,16 @@
 import {Block, KnownBlock} from "@slack/types";
 import {ACTION_OPEN_DIALOG} from "./slack-bot-transport.service";
-import StandUp from "../model/StandUp";
+import Standup from "../model/Standup";
 
-export const greetingBlocks = (standUp: StandUp, submitted = false) => {
-  const fallbackText =  `It's time to start your daily standup ${standUp.team.originTeam.name}`;
+export const greetingBlocks = (standup: Standup, submitted = false) => {
+  const fallbackText =  `It's time to start your daily standup ${standup.team.originTeam.name}`;
 
   const blocks: (KnownBlock | Block)[] = [
     {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `Hello, it's time to start your daily standup *${standUp.team.originTeam.name}*`,
+        text: `Hello, it's time to start your daily standup *${standup.team.originTeam.name}*`,
       },
     },
     {
@@ -34,7 +34,7 @@ export const greetingBlocks = (standUp: StandUp, submitted = false) => {
             text: 'Open dialog',
           },
           action_id: ACTION_OPEN_DIALOG,
-          value: standUp.id.toString(),
+          value: standup.id.toString(),
         }
       ]
     }

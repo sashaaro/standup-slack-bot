@@ -18,7 +18,7 @@ export class StatController {
     const stat = await this.connection.query(`SELECT st."startAt", qo.id, qo.text, COUNT(*) FROM answer_request
 INNER JOIN question_option_snapshot qos on qos.id = answer_request."optionId"
 INNER JOIN question_option qo on qo.id = qos."originOptionId"
-INNER JOIN stand_up st on answer_request."standUpId" = st.id
+INNER JOIN stand_up st on answer_request."standupId" = st.id
 WHERE answer_request."optionId" IS NOT NULL AND qo."questionId" = $1
 group by st."startAt", qo.id`, [questionId])
 

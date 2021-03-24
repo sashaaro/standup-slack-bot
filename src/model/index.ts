@@ -2,7 +2,7 @@ import Question from "./Question";
 import SlackWorkspace from "./SlackWorkspace";
 import User from "./User";
 import AnswerRequest from "./AnswerRequest";
-import StandUp from "./StandUp";
+import Standup from "./Standup";
 import {Channel} from "./Channel";
 import Timezone from "./Timezone";
 import QuestionOption from "./QuestionOption";
@@ -23,7 +23,7 @@ export default [
   Question,
   QuestionOption,
 
-  StandUp,
+  Standup,
   TeamSnapshot,
   QuestionSnapshot,
   QuestionOptionSnapshot,

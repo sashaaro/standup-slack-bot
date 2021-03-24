@@ -21,7 +21,7 @@ class QuestionSnapshot {
   })
   options: QuestionOptionSnapshot[];
 
-  @ManyToOne(type => Question, {nullable: false, eager: true})
+  @ManyToOne(type => Question, {eager: true}) // TODO nullable true
   originQuestion: Question;
 
   @ManyToOne(type => TeamSnapshot, t => t.questions, {

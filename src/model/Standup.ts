@@ -3,8 +3,8 @@ import {TeamSnapshot} from "./TeamSnapshot";
 import UserStandup from "./UserStandup";
 import {Exclude} from "class-transformer";
 
-@Entity()
-export default class StandUp {
+@Entity({name: 'stand_up'})
+export default class Standup {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -21,7 +21,7 @@ export default class StandUp {
   @Column()
   endAt: Date;
 
-  @OneToMany(type => UserStandup, us => us.standUp)
+  @OneToMany(type => UserStandup, us => us.standup)
   users: UserStandup[];
 
   @BeforeInsert()

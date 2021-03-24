@@ -1,4 +1,4 @@
-import StandUp from "../../model/StandUp";
+import Standup from "../../model/Standup";
 import {Inject, Injectable} from 'injection-js';
 import {Connection} from "typeorm";
 import {AccessDenyError} from "../ApiMiddleware";
@@ -21,9 +21,9 @@ export class StandupController {
     const teamID = req.params.id
 
 
-    const standUpRepository = this.connection.getRepository(StandUp);
+    const standupRepository = this.connection.getRepository(Standup);
 
-    const qb = standUpRepository
+    const qb = standupRepository
       .createQueryBuilder('standup')
       .innerJoinAndSelect('standup.team', 'teamSnapshot')
       .innerJoinAndSelect('teamSnapshot.questions', 'questionsSnapshot')

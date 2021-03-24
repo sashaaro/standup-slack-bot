@@ -46,7 +46,7 @@ class Question {
 
   @ManyToOne(type => Team, {
     cascade: ["insert"],
-    nullable: false
+    nullable: false,
   })
   team: Team;
 
