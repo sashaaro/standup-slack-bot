@@ -111,3 +111,9 @@ kubectl apply -f deploy/k8s/standup-bot-ingress.yaml
 minikube tunnel
 echo "192.168.49.2    standup.botenza.com" >> /etc/host
 ```
+
+Saas pkg using https://github.com/vercel/pkg
+
+```
+npm run pkg
+```
