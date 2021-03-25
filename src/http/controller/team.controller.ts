@@ -1,17 +1,16 @@
 import {Injectable} from 'injection-js';
-import {Connection} from "typeorm";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../ApiMiddleware";
 import {IHttpAction} from "./index";
 import Timezone from "../../model/Timezone";
 import {classToPlain, plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";
 import {
-  Team,
   TEAM_STATUS_ACHIEVED,
   TEAM_STATUS_ACTIVATED,
   teamStatuses
 } from "../../model/Team";
-import {TeamRepository} from "../../repository/team.repository";
+import {em} from "../../services/providers";
+import {Team} from "../../entity/team";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -24,34 +23,30 @@ const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] 
 
 @Injectable()
 export class TeamController {
-  teamRepository = this.connection.getCustomRepository(TeamRepository)
-
-  constructor(
-    private connection: Connection,
-  ) {
-  }
-
+  teamRepository: any;
   list: IHttpAction = async (req, res) => {
+
     let status = parseInt(req.query.status as string);
 
     if (!teamStatuses.includes(status)) {
       status = null;
     }
 
-    const qb = this.teamRepository.createQueryBuilder('t')
-      .leftJoinAndSelect('t.timezone', 'tz')
-      .leftJoinAndSelect('t.createdBy', 'createdBy')
-      .leftJoinAndSelect('t.users', 'users')
-      .andWhere('t.createdById = :createdBy', {createdBy: req.context.user.id})
+    const qb = em().createQueryBuilder(Team, 't')
+        .select('*')
+        .leftJoinAndSelect('t.timezone', 'tz')
+        .leftJoinAndSelect('t.createdBy', 'created')
+        .leftJoinAndSelect('t.users', 'users')
+        .andWhere({'t.created_by_id': req.context.user.id})
     // TODO .addOrderBy('t.createdAt', "DESC")
 
     if (status) {
-      qb.andWhere('t.status = :status', {status: status})
+      qb.andWhere({'t.status': status})
     } else {
-      qb.andWhere('t.status != :exceptStatus', {exceptStatus: TEAM_STATUS_ACHIEVED})
+      qb.andWhere('t.status != ?', [TEAM_STATUS_ACHIEVED])
     }
 
-    const teams = await qb.getMany()
+    const teams = await qb.getResultList()
 
     res.setHeader('Content-Type', 'application/json');
     res.send(teams);
@@ -81,7 +76,7 @@ export class TeamController {
     if (errors.length === 0) {
       team.status = TEAM_STATUS_ACTIVATED;
       try {
-        await this.teamRepository.add(team);
+        await em().getRepository(Team).persist(team)
       } catch (e) {
         res.status(500).send('');
         throw e;
@@ -134,7 +129,7 @@ export class TeamController {
 
   timezone: IHttpAction = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    res.send(await this.connection.getRepository(Timezone).find())
+    res.send([])//await this.connection.getRepository(Timezone).find())
   }
 
   get: IHttpAction = async (req, res) => {

@@ -1,6 +1,7 @@
 import {format} from "winston";
 import {TransformableInfo} from "logform";
 import {CodedError, WebAPIPlatformError} from "@slack/web-api";
+import {Platform, Type, ValidationError} from "@mikro-orm/core";
 
 export function groupBy<T>(list: T[], by: (item: T) => string|number): {[key: string]: T[]} {
   new Map()
@@ -74,3 +75,20 @@ export const groupByData = (data: any[], options: { groupBy: string, groupProps:
 
 
 export const isPlatformError = (e: CodedError): e is WebAPIPlatformError => e.code === 'slack_webapi_platform_error'
+
+export class IntArrayType extends Type {
+  convertToDatabaseValue(value: any): string {
+    if (value.length) {
+      return `{${value.join(',')}}`;
+    }
+    throw ValidationError.invalidType(Array, value, 'JS');
+  }
+
+  toJSON(value: any) {
+    return value;
+  }
+
+  getColumnType() {
+    return 'integer[]';
+  }
+}

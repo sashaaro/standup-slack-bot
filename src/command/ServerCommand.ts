@@ -1,9 +1,8 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  LOGGER_TOKEN, REDIS_TOKEN, TERMINATE,
+  LOGGER_TOKEN, MIKRO_TOKEN, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
-import {Connection} from "typeorm";
 import express from 'express'
 import 'express-async-errors';
 import http from "http";
@@ -15,6 +14,8 @@ import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
 import {SlackEventListener} from "../slack/slack-event-listener";
 import {bind} from "../services/decorators";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
 export class ServerCommand implements yargs.CommandModule {
   static meta: Partial<yargs.CommandModule<any, any>> = {
@@ -25,7 +26,7 @@ export class ServerCommand implements yargs.CommandModule {
 
   constructor(
     private injector: Injector,
-    private connection: Connection,
+    @Inject(MIKRO_TOKEN) private mikroORM,
     private slackEventListener: SlackEventListener,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(LOGGER_TOKEN) protected logger: Logger,
@@ -53,8 +54,11 @@ export class ServerCommand implements yargs.CommandModule {
 
   private async startServer(port?: string|number)
   {
-    if (!this.connection.isConnected) {
-      await this.connection.connect();
+    let mikroORM: MikroORM<PostgreSqlDriver>;
+    mikroORM = await this.mikroORM
+
+    if (!await mikroORM.isConnected()) {
+      await mikroORM.connect()
     }
 
     try {
@@ -70,15 +74,17 @@ export class ServerCommand implements yargs.CommandModule {
     const expressApp = express()
 
     const apiMiddleware = new ApiMiddleware(this.injector)
-    expressApp.use('/api/slack', apiMiddleware.useSlackApi());
-    this.slackEventListener.initSlackEvents();
+
+    expressApp.use('/api/slack', apiMiddleware.useSlackApi(mikroORM));
+
+    this.slackEventListener.init();
 
     expressApp.use('/api/doc', express.static('./resources/public'));
-    expressApp.use('/api', apiMiddleware.use());
+    expressApp.use('/api', apiMiddleware.use(mikroORM));
 
-    expressApp.get('/api/health-check', (request, response) => {
+    expressApp.get('/api/health-check', async (request, response) => {
       const redis = this.redis.status === 'connected';
-      const postgres = this.injector.get(Connection).isConnected
+      const postgres = await mikroORM.isConnected()
 
       response.status(redis && postgres ? 200 : 500);
       response.setHeader('Content-type', 'application/json')
@@ -117,7 +123,7 @@ export class ServerCommand implements yargs.CommandModule {
   }
 
   private close() {
-    this.connection.close()
+    // TODO mikroorm.close();
     try {
       this.redis.disconnect()
     } catch (e) {

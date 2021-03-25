@@ -1,7 +1,9 @@
 import * as yargs from "yargs";
-import {Connection} from "typeorm";
-import {Injectable} from "injection-js";
+import {Inject, Injectable} from "injection-js";
 import {bind} from "../services/decorators";
+import {MIKRO_TOKEN} from "../services/token";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
 @Injectable()
 export class DatabaseMigrateCommand implements yargs.CommandModule {
@@ -10,18 +12,18 @@ export class DatabaseMigrateCommand implements yargs.CommandModule {
     describe: 'Migrate database',
   }
 
-  constructor(private connection: Connection) {}
+  constructor(@Inject(MIKRO_TOKEN) private mikroORM) {}
 
   @bind
-  async handler(args: yargs.Arguments<{}>) {
-    if (!this.connection.isConnected) {
-      await this.connection.connect();
-    }
-    const migrations = await this.connection.runMigrations({transaction: 'all'});
-    migrations.forEach(m => {
-      console.log(m.instance);
-    });
+  async handler(args: yargs.Arguments) {
+    let mikroORM: MikroORM<PostgreSqlDriver>;
+    mikroORM = await this.mikroORM
 
-    await this.connection.close();
+    if (!await mikroORM.isConnected()) {
+      await mikroORM.connect()
+    }
+
+    await mikroORM.getMigrator().up()
+    await mikroORM.close()
   }
 }

@@ -20,8 +20,8 @@ export class DevCommand implements yargs.CommandModule {
   async handler(args: yargs.Arguments<{}>) {
     const commands = [
       ServerCommand,
-      StandupNotifyCommand,
-      QueueConsumeCommand
+      // StandupNotifyCommand,
+      // QueueConsumeCommand
     ]
 
     for (const command of commands) {

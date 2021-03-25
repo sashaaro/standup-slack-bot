@@ -1,6 +1,5 @@
-import SlackWorkspace from "../model/SlackWorkspace";
 import {SlackTeam} from "./model/SlackTeam";
-import User from "../model/User";
+import {User} from "../entity/user";
 import {ISlackUser} from "./model/SlackUser";
 import {SlackIm} from "./model/ScopeGranted";
 import {SlackChannel, SlackConversation} from "./model/SlackChannel";
@@ -11,6 +10,8 @@ import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {WebClient} from "@slack/web-api";
 import {Connection, DeepPartial} from "typeorm";
+import SlackWorkspace from "../entity/slack-workspace";
+import {em} from "../services/providers";
 
 @Injectable()
 export class SyncSlackService {
@@ -39,7 +40,7 @@ export class SyncSlackService {
   }
 
   private async updateUsers(workspace: SlackWorkspace) {
-    const userRepository = this.connection.getRepository(User);
+    const userRepository = em().getRepository(User)
 
     /* https://api.slack.com/methods/users.list */
     let response;
@@ -84,7 +85,7 @@ export class SyncSlackService {
 
         list.push(user);
       }
-      await userRepository.save(list)
+      await userRepository.persist(list)
 
     } while (response.response_metadata.next_cursor);
 
@@ -108,7 +109,7 @@ export class SyncSlackService {
         const user = await userRepository.findOne(conversation.user);
         if (user) {
           user.im = conversation.id;
-          await userRepository.save(user);
+          await userRepository.persist(user);
         }
       }
     } while (conversationsResponse.response_metadata.next_cursor);
@@ -166,8 +167,8 @@ export class SyncSlackService {
         ch.nameNormalized = channel.name_normalized
         ch.isArchived = channel.is_archived;
         ch.isEnabled = true;
-        ch.workspace = workspace;
-        ch.createdBy = this.connection.manager.create(User, {id: channel.creator});
+        //ch.workspace = workspace; TODO uncommend after migrate to mikroorm
+        //ch.createdBy = this.connection.manager.create(User, {id: channel.creator});
 
         list.push(ch);
       }

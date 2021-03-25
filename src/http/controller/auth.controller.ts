@@ -1,12 +1,9 @@
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {CONFIG_TOKEN, LOGGER_TOKEN} from "../../services/token";
-import {IAppConfig} from "../../services/providers";
+import {em, IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
-import {Connection} from "typeorm";
-import SlackWorkspace from "../../model/SlackWorkspace";
 import {OauthAccessResponse} from "../../slack/model/ScopeGranted";
-import User from "../../model/User";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
 import {AccessDenyError, ResourceNotFoundError} from "../ApiMiddleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
@@ -14,12 +11,13 @@ import {Logger} from "winston";
 import {SyncSlackService} from "../../slack/sync-slack.service";
 import {bind} from "../../services/decorators";
 import {ContextualError, isPlatformError} from "../../services/utils";
+import SlackWorkspace from "../../entity/slack-workspace";
+import {User} from "../../entity/user";
 
 @Injectable()
 export class AuthController {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
-    private connection: Connection,
     private webClient: WebClient,
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private syncSlackService: SyncSlackService,
@@ -85,7 +83,7 @@ export class AuthController {
     }
     console.log(response)
 
-    const workspaceRepository = this.connection.manager.getRepository(SlackWorkspace);
+    const workspaceRepository = em().getRepository(SlackWorkspace);
 
     let workspace = await workspaceRepository.findOne(response.team.id);
     const newWorkspace = !workspace
@@ -110,9 +108,9 @@ export class AuthController {
       })) as any;
       workspace.domain = teamInfo.team.domain;
     }
-    workspace = await workspaceRepository.save(workspace);
+    await workspaceRepository.persist(workspace);
 
-    const userRepository = this.connection.manager.getRepository(User);
+    const userRepository = em().getRepository(User);
     let user = await userRepository.findOne(response.authed_user.id);
     if (!user) {
       user = new User();
@@ -132,7 +130,7 @@ export class AuthController {
     }
 
     user.workspace = workspace;
-    user = await userRepository.save(user);
+    await userRepository.persist(user);
 
     req.context.authenticate(response.authed_user, user);
 

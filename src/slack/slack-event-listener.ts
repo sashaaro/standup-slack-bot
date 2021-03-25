@@ -1,27 +1,25 @@
 import {Inject} from "injection-js";
 import {LOGGER_TOKEN} from "../services/token";
-import {QUEUE_NAME_SLACK_EVENTS} from "../services/providers";
+import {em, QUEUE_NAME_SLACK_EVENTS} from "../services/providers";
 import {MessageResponse} from "./model/MessageResponse";
 import {ChannelLeft, MemberJoinedChannel} from "./model/SlackChannel";
-import SlackWorkspace from "../model/SlackWorkspace";
+import SlackWorkspace from "../entity/slack-workspace";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import {Logger} from "winston";
-import User from "../model/User";
+import {User} from "../entity/user";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, SlackBotTransport} from "./slack-bot-transport.service";
-import {Connection} from "typeorm";
 import {SlackAction, ViewSubmission} from "./model/ViewSubmission";
-import AnswerRequest from "../model/AnswerRequest";
-import {StandupRepository} from "../repository/standupRepository";
+import AnswerRequest from "../entity/answer-request";
 import {SyncSlackService} from "./sync-slack.service";
 import {QueueRegistry} from "../services/queue.registry";
 import {ContextualError} from "../services/utils";
-import QuestionSnapshot from "../model/QuestionSnapshot";
+import QuestionSnapshot from "../entity/question-snapshot";
 import {greetingBlocks} from "./slack-blocks";
 
 export class SlackEventListener {
   evensHandlers: {[event:string]: (data: any) => Promise<any>|any} = {
     message: async (messageResponse: MessageResponse) => { // todo insert db?!
-      const user = await this.connection.getRepository(User).findOne(messageResponse.user)
+      const user = await em().getRepository(User).findOne(messageResponse.user)
 
       if (!user) { // TODO skip bot message
         throw new ContextualError('Message author is not found', { messageResponse })
@@ -50,7 +48,7 @@ export class SlackEventListener {
     },
     error: (data) => this.logger.error('Receive slack events error', {error: data}),
     member_left_channel: async (response: MemberJoinedChannel) => { // TODO left interface
-      const workspaceRepository = this.connection.getRepository(SlackWorkspace)
+      const workspaceRepository = em().getRepository(SlackWorkspace)
 
       let workspace = (await workspaceRepository.findOne(response.team)) || workspaceRepository.create({id: response.team});
       workspace = await this.syncSlack.updateWorkspace(workspace) // why?
@@ -59,7 +57,7 @@ export class SlackEventListener {
       });
     },
     member_joined_channel: async (response: MemberJoinedChannel) => {
-      const workspaceRepository = this.connection.getRepository(SlackWorkspace)
+      const workspaceRepository = em().getRepository(SlackWorkspace)
 
       let workspace = (await workspaceRepository.findOne(response.team)) || workspaceRepository.create({id: response.team});
       workspace = await this.syncSlack.updateWorkspace(workspace) // why?
@@ -77,20 +75,16 @@ export class SlackEventListener {
     group_unarchive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: false})
   }
 
-  private standupRepository: StandupRepository;
-
   constructor(
     @Inject(SlackEventAdapter) private slackEvents: SlackEventAdapter,
     private slackBotTransport: SlackBotTransport,
     private syncSlack: SyncSlackService,
     private queueRegistry: QueueRegistry,
-    private connection: Connection,
     @Inject(LOGGER_TOKEN) private logger: Logger,
   ) {
   }
 
-  initSlackEvents(): void {
-    this.standupRepository = this.connection.getCustomRepository(StandupRepository)
+  init(): void {
     // https://api.slack.com/events/scope_granted
     // this.slackEvents.on('scope_granted', async (scopeGranted: ScopeGranted) => {
     //   this.logger.info(`Scope granted for team`, {team: scopeGranted.team_id})
@@ -140,7 +134,7 @@ export class SlackEventListener {
         throw new Error(`Standup standpId is not defined ${openReportAction.value}`)
       }
 
-      const userStandup = await this.standupRepository.findUserStandup(userId, standupId);
+      const userStandup = await em().getRepository(User).findUserStandup(userId, standupId);
 
       if (!userStandup) {
         throw new ContextualError(`User standup is not found`, {userId, standupId: standupId})
@@ -151,7 +145,7 @@ export class SlackEventListener {
       const standupId = parseInt(openDialogAction.value);
       // TODO already submit
 
-      let userStandup = await this.standupRepository.findUserStandup(userId, standupId);
+      let userStandup = await em().getRepository(User).findUserStandup(userId, standupId);
 
       if (!userStandup) {
         throw new ContextualError(`User standup is not found`, {userId, standupId})

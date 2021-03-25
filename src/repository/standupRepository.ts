@@ -1,25 +1,26 @@
-import {EntityRepository, Repository} from "typeorm";
-import Standup from "../model/Standup";
+import Standup from "../entity/standup";
 import {qbStandupJoins, scopeTeamSnapshotJoins, scopeTeamWorkspaceJoins, scopeUserAnswerQuestion} from "./scopes";
-import UserStandup from "../model/UserStandup";
+import UserStandup from "../entity/user-standup";
+import {Repository} from "@mikro-orm/core";
+import {EntityRepository} from "@mikro-orm/postgresql";
 
-@EntityRepository(Standup)
-export class StandupRepository extends Repository<Standup> {
+@Repository(Standup)
+export class StandupRepository extends EntityRepository<Standup> {
   findByIdAndUser(userId: string, standupId: number): Promise<Standup> {
-    const qb = this.createQueryBuilder('standup');
+    const qb = this.em.createQueryBuilder<Standup>('standup');
 
     qbStandupJoins(qb)
     scopeTeamSnapshotJoins(qb)
-    qb.innerJoinAndSelect('teamSnapshot.users', 'users')
+    qb.joinAndSelect('teamSnapshot.users', 'users')
 
-    qb.andWhere('standup.id = :standupId', {standupId})
-    qb.andWhere('users.id = :userId', {userId});
+    qb.andWhere('standup.id = ?', [standupId])
+    qb.andWhere('users.id = ?', [userId]);
     qb.leftJoinAndSelect('answers.option', 'optionAnswer')
 
     return qb
-      .take(1)
+      /// TODO .take(1)
       //.orderBy('st.start', "DESC")
-      .getOne();
+      .getSingleResult();
   }
 
   findEnd(endAt: Date): Promise<Standup[]> {
@@ -30,15 +31,15 @@ export class StandupRepository extends Repository<Standup> {
       .leftJoinAndSelect('team.reportChannel', 'reportChannel')
 
     // TODO! database timzone and nodejs process timezone should be same!
-    qb.andWhere(`date_trunc('minute', standup.endAt) = date_trunc('minute', :endAt::timestamp)`, {endAt})
+    qb.andWhere(`date_trunc('minute', standup.endAt) = date_trunc('minute', ?::timestamp)`, [endAt])
 
-    return qb.getMany();
+    return qb.getResultList();
   }
 
   findUserStandup(userId: string, standupId: number): Promise<UserStandup> {
-    const qb = this.manager.getRepository(UserStandup).createQueryBuilder('userStandup')
-      .andWhere('userStandup.userId = :userId', {userId}) // TODO add unique index userId standupId
-      .andWhere('userStandup.standupId = :standupId', {standupId})
+    const qb = this.em.getRepository(UserStandup).createQueryBuilder('userStandup')
+      .andWhere({'userStandup.userId': userId}) // TODO add unique index userId standupId
+      .andWhere({'userStandup.standupId': standupId})
       .leftJoinAndSelect('userStandup.user', 'user')
       .leftJoinAndSelect('userStandup.standup', 'standup')
 
@@ -49,7 +50,7 @@ export class StandupRepository extends Repository<Standup> {
     qb.leftJoinAndSelect('answers.option', 'optionAnswer')
 
     return qb
-      .take(1)
-      .getOne()
+      //TODO .take(1)
+      .getSingleResult()
   }
 }

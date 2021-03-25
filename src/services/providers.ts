@@ -1,7 +1,7 @@
 import {Provider} from "injection-js";
 import {
   CONFIG_TOKEN,
-  LOGGER_TOKEN,
+  LOGGER_TOKEN, MIKRO_TOKEN,
   REDIS_TOKEN,
   TERMINATE,
 } from "./token";
@@ -20,12 +20,26 @@ import {createLogger, format, Logger, transports} from "winston";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import * as Transport from "winston-transport";
-import {TransformableInfo} from "logform";
 import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
 import {SlackEventListener} from "../slack/slack-event-listener";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {QueueRegistry} from "./queue.registry";
 import {enumerateErrorFormat} from "./utils";
+import {MikroORM, Type, ValidationError} from "@mikro-orm/core";
+import {EntityManager, PostgreSqlDriver} from "@mikro-orm/postgresql";
+import {Team} from "../entity/team";
+import { AsyncLocalStorage } from "async_hooks";
+import {User} from "../entity/user";
+import Timezone from "../entity/timezone";
+import SlackWorkspace from "../entity/slack-workspace";
+import Question from "../entity/question";
+import QuestionOption from "../entity/question-option";
+import QuestionSnapshot from "../entity/question-snapshot";
+import QuestionOptionSnapshot from "../entity/question-option-snapshot";
+import {TeamSnapshot} from "../entity/team-snapshot";
+import Standup from "../entity/standup";
+import UserStandup from "../entity/user-standup";
+import AnswerRequest from "../entity/answer-request";
 
 export interface IAppConfig {
   env: string,
@@ -48,17 +62,14 @@ export interface IAppConfig {
   logDir?: string
 }
 
-
-const migrationDir = __dirname + '/../migration';
+const migrationsDir = __dirname + '/../migrations';
+// const migrationsDir = __dirname + '/../../../src/migrations';// TODO
 const defaultConnectionOptions: ConnectionOptions = {
   type: "postgres",
   host: "postgres",
   port: 5432,
   migrationsTransactionMode: "all",
   migrationsRun: false,
-  migrations: fs.readdirSync(migrationDir)
-    .filter(f => f.endsWith('.js'))
-    .map(f => migrationDir + '/' + f),
   database: "postgres",
   username: "postgres",
   password: "postgres",
@@ -73,7 +84,11 @@ export const initFixtures = async (connection: Connection) => {
 export const QUEUE_NAME_SLACK_EVENTS = 'slack_events';
 export const QUEUE_NAME_SLACK_INTERACTIVE = 'slack_interactive';
 
+export const emStorage = new AsyncLocalStorage<EntityManager<PostgreSqlDriver>>();
 
+export const em = () => emStorage.getStore()
+
+// TODO https://github.com/microsoft/tsyringe ?!
 export const createProviders = (env = 'dev'): {providers: Provider[], commands: Provider[]} => {
   if (fs.existsSync(`.env.${env}`)) {
     dotenv.config({path: `.env.${env}`})
@@ -120,6 +135,37 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
         logger: config.env === 'prod' ? 'file' : 'advanced-console',
         logging: config.env === 'prod' ? false : ["error", "warn"].concat(config.debug ? ["query"] : []) as any
       }),
+      deps: [CONFIG_TOKEN]
+    },
+    {
+      provide: MIKRO_TOKEN,
+      useFactory: async (config: IAppConfig) => {
+        return MikroORM.init({
+          entities: [
+            User, SlackWorkspace,
+            Timezone, Team,
+            Question, QuestionOption,
+            TeamSnapshot,
+            QuestionSnapshot, QuestionOptionSnapshot,
+            Standup, UserStandup, AnswerRequest
+          ],
+          host: config.db.host,
+          user: config.db.username,
+          password: config.db.password,
+          dbName: config.db.database,
+          type: 'postgresql',
+          context: () => emStorage.getStore(),
+          migrations: {
+            transactional: true,
+            path: migrationsDir,
+            pattern: /^[\w-]+\d+\.js$/,
+            disableForeignKeys: false, //?!
+            allOrNothing: true,
+            dropTables: false,
+            emit: 'ts'
+          }
+        }, false);
+      },
       deps: [CONFIG_TOKEN]
     },
     QueueRegistry,

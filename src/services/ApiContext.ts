@@ -1,6 +1,6 @@
-import {Connection} from "typeorm";
 import {Injectable} from 'injection-js';
-import User from "../model/User";
+import {User} from "../entity/user";
+import {em} from "./providers";
 
 export interface IAuthUser {
   id: string,
@@ -15,14 +15,17 @@ export default class ApiContext {
 
   constructor(
     private session: any,
-    private connection: Connection
   ) {}
 
   async init() {
     const authedUser = this.session.user as IAuthUser;
-    const userRepository = this.connection.getRepository(User);
     if (authedUser) {
-      this.user = await userRepository.findOne(authedUser.id, {relations: ['workspace']});
+      this.user = await em()
+          .createQueryBuilder(User, 'u')
+          .select('*')
+          .where( {id: authedUser.id})
+          .leftJoinAndSelect('u.workspace', 'w')
+          .getSingleResult();
     }
   }
 

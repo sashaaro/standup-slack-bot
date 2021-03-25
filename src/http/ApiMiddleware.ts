@@ -15,7 +15,7 @@ import {StandupController} from "./controller/standup.controllert";
 import {OptionController} from "./controller/option.controller";
 import {Logger} from "winston";
 import {createMessageAdapter} from "@slack/interactive-messages";
-import {IAppConfig, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
+import {emStorage, IAppConfig, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from "../slack/slack-bot-transport.service";
 import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
 import {createLoggerMiddleware} from "./middlewares";
@@ -23,6 +23,8 @@ import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import {QueueRegistry} from "../services/queue.registry";
 import {stringifyError} from "../services/utils";
 import {StatController} from "./controller/stat.controller";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -34,9 +36,9 @@ declare global {
   }
 }
 
-export const createApiContextMiddleware = (connection: Connection) => {
+export const createApiContextMiddleware = () => {
   return async (req: http.IncomingMessage | express.Request | express.Router | any, res, next) => {
-    const context = new ApiContext(req.session, connection);
+    const context = new ApiContext(req.session);
     await context.init();
     req.context = context;
 
@@ -72,7 +74,7 @@ const errorHandler = (config: IAppConfig,logger: Logger) => (err, req, res, next
 export class ApiMiddleware {
   constructor(private injector: Injector) {}
 
-  use(): express.Router {
+  use(mikro: MikroORM<PostgreSqlDriver>): express.Router {
     const injector = this.injector;
 
     const router = express.Router()
@@ -86,7 +88,12 @@ export class ApiMiddleware {
       //cookie: { secure: true }
     }))
 
-    router.use(createApiContextMiddleware(injector.get(Connection)));
+    router.use((req, res, next) => {
+      emStorage.run(mikro.em.fork(true, true), next)
+      // TODO forkEm.close?!
+    });
+
+    router.use(createApiContextMiddleware());
 
     const auto = injector.get(AuthController);
     router.get('/auth/session', auto.session);
@@ -133,7 +140,7 @@ export class ApiMiddleware {
     return router;
   }
 
-  useSlackApi(): express.Router {
+  useSlackApi(mikro: MikroORM<PostgreSqlDriver>): express.Router {
     const router = express.Router()
 
     const config = this.injector.get(CONFIG_TOKEN)
@@ -164,6 +171,11 @@ export class ApiMiddleware {
         logger.error('Error put slack action to queue', {error})
       }
     })
+
+    router.use((req, res, next) => {
+      emStorage.run(mikro.em.fork(true, true), next)
+      // TODO forkEm.close?!
+    });
 
     router.use('/interactive', slackInteractions.expressMiddleware());
     router.use('/events', slackEvents.expressMiddleware());

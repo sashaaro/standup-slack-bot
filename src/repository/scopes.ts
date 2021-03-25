@@ -1,32 +1,30 @@
 // with channel channelUsers questions answers answerAuthor
-import {Brackets, SelectQueryBuilder} from "typeorm";
-import {Team} from "../model/Team";
-import Standup from "../model/Standup";
-import User from "../model/User";
+import {Team} from "../entity/team";
+import {QueryBuilder} from "@mikro-orm/postgresql";
 
-export function scopeTeamWorkspaceJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
-  return qb.innerJoinAndSelect('standup.team', 'teamSnapshot')
-    .innerJoinAndSelect('teamSnapshot.originTeam', 'team')
-    .innerJoinAndSelect('team.workspace', 'workspace')
+export function scopeTeamWorkspaceJoins(qb: QueryBuilder): QueryBuilder<any> {
+  return qb.joinAndSelect('standup.team', 'teamSnapshot')
+    .joinAndSelect('teamSnapshot.originTeam', 'team')
+    .joinAndSelect('team.workspace', 'workspace')
 }
-export function scopeUserAnswerQuestion(qb: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
+export function scopeUserAnswerQuestion(qb: QueryBuilder<any>): QueryBuilder<any> {
   return qb.leftJoinAndSelect('userStandup.answers', 'answers')
     .leftJoinAndSelect('answers.question', 'answersQuestion')
 }
-export function scopeTeamJoins(qb: SelectQueryBuilder<Team>): SelectQueryBuilder<Team> {
+export function scopeTeamJoins(qb: QueryBuilder<Team>): QueryBuilder<Team> {
   return qb
-    .innerJoinAndSelect('team.users', 'users') // TODO remove
-    .innerJoinAndSelect('team.questions', 'questions')
+    .joinAndSelect('team.users', 'users') // TODO remove
+    .joinAndSelect('team.questions', 'questions')
     .leftJoinAndSelect('questions.options', 'options')
 }
 
-export function scopeTeamSnapshotJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
+export function scopeTeamSnapshotJoins(qb: QueryBuilder<any>): QueryBuilder<any> {
   return qb
-    .innerJoinAndSelect('teamSnapshot.questions', 'questionSnapshot')
+    .joinAndSelect('teamSnapshot.questions', 'questionSnapshot')
     .leftJoinAndSelect('questionSnapshot.options', 'optionSnapshot')
 }
 
-export function qbStandupJoins(qb: SelectQueryBuilder<any>): SelectQueryBuilder<any> {
+export function qbStandupJoins(qb: QueryBuilder<any>): QueryBuilder<any> {
   scopeTeamWorkspaceJoins(qb)
   qb.leftJoinAndSelect('standup.users', 'userStandup');
   return scopeUserAnswerQuestion(qb)
