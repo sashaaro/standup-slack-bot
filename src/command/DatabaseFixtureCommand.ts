@@ -1,6 +1,5 @@
 import * as yargs from "yargs";
 import {initFixtures} from "../services/providers";
-import {Connection} from "typeorm";
 import {Injectable} from "injection-js";
 import {bind} from "../services/decorators";
 
@@ -11,14 +10,15 @@ export class DatabaseFixtureCommand implements yargs.CommandModule {
     describe: 'Load database fixture',
   }
 
-  constructor(private connection: Connection) {}
+  constructor() {}
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    if (!this.connection.isConnected) {
-      await this.connection.connect();
-    }
-    await initFixtures(this.connection)
-    this.connection.close()
+    // TODO mikroorm
+    // if (!this.connection.isConnected) {
+    //   await this.connection.connect();
+    // }
+    // await initFixtures(this.connection)
+    // this.connection.close()
   }
 }

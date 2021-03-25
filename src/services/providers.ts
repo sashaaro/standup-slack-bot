@@ -5,13 +5,11 @@ import {
   REDIS_TOKEN,
   TERMINATE,
 } from "./token";
-import {Connection, ConnectionOptions, getConnectionManager} from "typeorm";
 import StandupNotifier from "../slack/standup-notifier";
 import actions from "../http/controller";
 import {LogLevel, WebClient} from '@slack/web-api'
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import {createEventAdapter} from "@slack/events-api";
-import entities from "../model";
 import * as fs from "fs";
 import IOredis from 'ioredis';
 import dotenv from "dotenv";
@@ -25,7 +23,7 @@ import {SlackEventListener} from "../slack/slack-event-listener";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {QueueRegistry} from "./queue.registry";
 import {enumerateErrorFormat} from "./utils";
-import {MikroORM, Type, ValidationError} from "@mikro-orm/core";
+import {MikroORM} from "@mikro-orm/core";
 import {EntityManager, PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {Team} from "../entity/team";
 import { AsyncLocalStorage } from "async_hooks";
@@ -40,6 +38,7 @@ import {TeamSnapshot} from "../entity/team-snapshot";
 import Standup from "../entity/standup";
 import UserStandup from "../entity/user-standup";
 import AnswerRequest from "../entity/answer-request";
+import {Channel} from "../entity/channel";
 
 export interface IAppConfig {
   env: string,
@@ -64,20 +63,10 @@ export interface IAppConfig {
 
 const migrationsDir = __dirname + '/../migrations';
 // const migrationsDir = __dirname + '/../../../src/migrations';// TODO
-const defaultConnectionOptions: ConnectionOptions = {
-  type: "postgres",
-  host: "postgres",
-  port: 5432,
-  migrationsTransactionMode: "all",
-  migrationsRun: false,
-  database: "postgres",
-  username: "postgres",
-  password: "postgres",
-  synchronize: false
-}
 
 
-export const initFixtures = async (connection: Connection) => {
+export const initFixtures = async (connection) => {
+  // TODO mikroorm
   await connection.query(fs.readFileSync('resources/timezone.sql').toString());
 }
 
@@ -127,21 +116,11 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       deps: [CONFIG_TOKEN]
     },
     {
-      provide: Connection,
-      useFactory: (config: IAppConfig) => getConnectionManager().create({
-        ...defaultConnectionOptions,
-        ...config.db,
-        entities,
-        logger: config.env === 'prod' ? 'file' : 'advanced-console',
-        logging: config.env === 'prod' ? false : ["error", "warn"].concat(config.debug ? ["query"] : []) as any
-      }),
-      deps: [CONFIG_TOKEN]
-    },
-    {
       provide: MIKRO_TOKEN,
       useFactory: async (config: IAppConfig) => {
         return MikroORM.init({
           entities: [
+            Channel,
             User, SlackWorkspace,
             Timezone, Team,
             Question, QuestionOption,

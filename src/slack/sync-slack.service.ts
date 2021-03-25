@@ -9,7 +9,6 @@ import {Inject, Injectable} from "injection-js";
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {WebClient} from "@slack/web-api";
-import {Connection, DeepPartial} from "typeorm";
 import SlackWorkspace from "../entity/slack-workspace";
 import {em} from "../services/providers";
 
@@ -18,7 +17,6 @@ export class SyncSlackService {
   constructor(
     @Inject(LOGGER_TOKEN) private logger: Logger,
     private webClient: WebClient,
-    private connection: Connection,
   ) {
   }
 
@@ -30,7 +28,7 @@ export class SyncSlackService {
     })) as any;
     workspace.slackData = teamInfo.team;
 
-    return await this.connection.getRepository(SlackWorkspace).save(workspace)
+    return workspace; // TODO await this.connection.getRepository(SlackWorkspace).save(workspace)
   }
 
   async syncForWorkspace(workspace: SlackWorkspace) {
@@ -117,16 +115,16 @@ export class SyncSlackService {
 
   private async updateChannels(workspace: SlackWorkspace) {
     // TODO fix update private channel where bot invited already
-    const userRepository = this.connection.getRepository(User);
+    const userRepository = {} as any; // this.connection.getRepository(User);
 
-    // TODO wtf?
-    await this.connection.createQueryBuilder()
-        .update(Channel)
-        .where({workspace: workspace.id})
-        .set({isArchived: true})
-        .execute()
+    // uncomment and migrate to mikroorm
+    // await this.connection.createQueryBuilder()
+    //     .update(Channel)
+    //     .where({workspace: workspace.id})
+    //     .set({isArchived: true})
+    //     .execute()
 
-    const channelRepository = this.connection.getCustomRepository(ChannelRepository);
+    const channelRepository = {} as any; // this.connection.getCustomRepository(ChannelRepository);
 
     let response;
     let cursor = null;
@@ -154,15 +152,16 @@ export class SyncSlackService {
       )
       this.logger.debug('webClient.conversations.list', {channels})
 
-      await this.connection.createQueryBuilder()
-        .update(Channel)
-        .where({workspace: workspace.id})
-        .set({isArchived: true})
-        .execute()
+      // uncommend and migrate mikroorm
+      // await this.connection.createQueryBuilder()
+      //   .update(Channel)
+      //   .where({workspace: workspace.id})
+      //   .set({isArchived: true})
+      //   .execute()
 
       const list = []
       for (const channel of channels) {
-        const ch = this.connection.manager.create(Channel, {id: channel.id});
+        const ch = {} as any; // this.connection.manager.create(Channel, {id: channel.id});
         ch.name = channel.name
         ch.nameNormalized = channel.name_normalized
         ch.isArchived = channel.is_archived;
@@ -176,8 +175,8 @@ export class SyncSlackService {
     } while (response.response_metadata.next_cursor)
   }
 
-  async findOrCreateAndUpdate(channelID: string, data: DeepPartial<Channel>): Promise<{channel: Channel, isNew: boolean}> {
-    const repo = this.connection.getCustomRepository(ChannelRepository);
+  async findOrCreateAndUpdate(channelID: string, data: Channel): Promise<{channel: Channel, isNew: boolean}> {
+    const repo = {} as any; // this.connection.getCustomRepository(ChannelRepository);
     const {channel, isNew} = await repo.findOrCreateChannel(channelID);
     Object.assign(channel, data);
     if (isNew) {
@@ -203,8 +202,8 @@ export class SyncSlackService {
     })
   }
 
-  async joinSlackChannel(channelID: string, updateData?: DeepPartial<Channel>) {
-    const repo = this.connection.getCustomRepository(ChannelRepository);
+  async joinSlackChannel(channelID: string, updateData?: Channel) {
+    const repo = {} as any; // this.connection.getCustomRepository(ChannelRepository);
 
     const {channel} = await repo.findOrCreateChannel(channelID);
 
@@ -214,7 +213,7 @@ export class SyncSlackService {
       Object.assign(channel, updateData);
     }
 
-    const channelRepository = this.connection.getCustomRepository(ChannelRepository);
+    const channelRepository = {} as any; // this.connection.getCustomRepository(ChannelRepository);
     await channelRepository.save(channel);
     /*await this.postMessage({
       channel: channel.id,

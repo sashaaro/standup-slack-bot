@@ -3,7 +3,6 @@ import express from 'express'
 import session from 'express-session'
 import createRedisConnectStore from 'connect-redis';
 import {Injector} from "injection-js";
-import {Connection} from "typeorm";
 import ApiContext from "../services/ApiContext";
 import {CONFIG_TOKEN, LOGGER_TOKEN, REDIS_TOKEN} from "../services/token";
 import {AuthController} from "./controller/auth.controller";

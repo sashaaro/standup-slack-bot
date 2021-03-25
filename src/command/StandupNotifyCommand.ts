@@ -2,8 +2,7 @@ import * as yargs from "yargs";
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import StandupNotifier from "../slack/standup-notifier";
 import {Inject} from "injection-js";
-import {LOGGER_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
-import {Connection} from "typeorm";
+import {LOGGER_TOKEN, MIKRO_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
 import {forkJoin, from, Observable, of} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
@@ -13,7 +12,8 @@ import {bind} from "../services/decorators";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {ContextualError} from "../services/utils";
 import UserStandup from "../model/UserStandup";
-import User from "../model/User";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
   static meta = {
@@ -24,18 +24,24 @@ export class StandupNotifyCommand implements yargs.CommandModule {
   constructor(
     private slackTransport: SlackBotTransport,
     private standupNotifier: StandupNotifier,
-    private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(TERMINATE) protected terminate$: Observable<void>,
     @Inject(LOGGER_TOKEN) protected logger: Logger,
+    @Inject(MIKRO_TOKEN) private mikroORM,
+
   ) {}
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
     this.logger.debug('Database connecting...');
-    if (!this.connection.isConnected) {
-      await this.connection.connect();
+
+    let mikroORM: MikroORM<PostgreSqlDriver>;
+    mikroORM = await this.mikroORM
+
+    if (!await mikroORM.isConnected()) {
+      await mikroORM.connect()
     }
+
     try {
       await this.redis.connect();
     } catch (e) {
@@ -68,7 +74,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
           userStandup.slackMessage = messageResult;
           return userStandup;
         })
-        return fromPromise(this.connection.manager.insert(UserStandup, userStandups)).pipe(mapTo(list))
+        return fromPromise(this.mikroORM.em.persist(UserStandup, userStandups)).pipe(mapTo(list))
       }),
       takeUntil(this.terminate$)
     ).subscribe({
@@ -91,13 +97,9 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     })
 
     this.terminate$.subscribe(() => {
-      this.close();
+      this.mikroORM.close()
     });
 
     console.log('Notifier listen!');
-  }
-
-  private close() {
-    this.connection.close()
   }
 }

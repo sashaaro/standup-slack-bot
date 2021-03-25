@@ -7,9 +7,6 @@ import Standup from "../model/Standup";
 import {TeamRepository} from "../repository/team.repository";
 import {StandupRepository} from "../repository/standupRepository";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
-import {Connection} from "typeorm";
-import QuestionSnapshot from "../model/QuestionSnapshot";
-import {TeamSnapshot} from "../model/TeamSnapshot";
 
 const standupGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standupGoodBye = 'Have good day. Good bye.';
@@ -17,14 +14,11 @@ const standupWillRemindYouNextTime = `I will remind you when your next standup i
 
 @Injectable()
 export default class StandupNotifier {
-  constructor(
-    private connection: Connection,
-    @Inject(LOGGER_TOKEN) protected logger: Logger,
-  ) {}
+  constructor(@Inject(LOGGER_TOKEN) protected logger: Logger){}
 
   create() {
-    const teamRepository = this.connection.getCustomRepository(TeamRepository)
-    const standupRepository = this.connection.getCustomRepository(StandupRepository)
+    const teamRepository = {} as any; // this.connection.getCustomRepository(TeamRepository)
+    const standupRepository = {} as any; // this.connection.getCustomRepository(StandupRepository)
 
     const intervalMs = 60 * 1000;  // every minutes
 

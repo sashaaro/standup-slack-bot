@@ -3,7 +3,7 @@ import {TeamSnapshot} from "./team-snapshot";
 import UserStandup from "./user-standup";
 import {Exclude} from "class-transformer";
 
-@Entity({tableName: 'stand_up'})
+@Entity()
 export default class Standup {
   @PrimaryKey()
   id: number;
