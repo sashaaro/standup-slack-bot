@@ -1,7 +1,6 @@
 import {Provider} from "injection-js";
 import {
-  CONFIG_TOKEN,
-  LOGGER_TOKEN, MIKRO_TOKEN,
+  CONFIG_TOKEN, LOG_TOKEN, MIKRO_TOKEN,
   REDIS_TOKEN,
   TERMINATE,
 } from "./token";
@@ -14,15 +13,13 @@ import * as fs from "fs";
 import IOredis from 'ioredis';
 import dotenv from "dotenv";
 import {commands, devCommands} from "../command";
-import {createLogger, format, Logger, transports} from "winston";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
-import * as Transport from "winston-transport";
 import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
 import {SlackEventListener} from "../slack/slack-event-listener";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {QueueRegistry} from "./queue.registry";
-import {enumerateErrorFormat} from "./utils";
+import pino, {Logger} from "pino";
 import {MikroORM} from "@mikro-orm/core";
 import {EntityManager, PostgreSqlDriver} from "@mikro-orm/postgresql";
 import { AsyncLocalStorage } from "async_hooks";
@@ -98,6 +95,16 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       deps: [CONFIG_TOKEN]
     },
     {
+      provide: LOG_TOKEN,
+      useFactory: (config: IAppConfig) => {
+        return pino({
+          prettyPrint: config.debug,
+          level: config.debug ? 'trace' : undefined
+        })
+      },
+      deps: [CONFIG_TOKEN]
+    },
+    {
       provide: MIKRO_TOKEN,
       useFactory: async (config: IAppConfig) => {
         return MikroORM.init({
@@ -126,10 +133,10 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     {
       provide: WebClient,
       useFactory: (config: IAppConfig, logger: Logger) => new WebClient(null,  {
-        logger: new WinstonSlackLoggerAdapter(logger),
+        logger: new WinstonSlackLoggerAdapter(logger.child({channel: 'slack'})),
         logLevel: LogLevel.DEBUG
       }),
-      deps: [CONFIG_TOKEN, LOGGER_TOKEN]
+      deps: [CONFIG_TOKEN, LOG_TOKEN]
     },
     {
       provide: SlackEventAdapter,
@@ -141,37 +148,6 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     SyncSlackService,
     StandupNotifier,
     ...actions,
-    {
-      provide: LOGGER_TOKEN,
-      useFactory: (config: IAppConfig) => {
-        let transport: Transport;
-
-        const pretty = env === 'dev';
-        const logFormat = format.combine(
-            format.timestamp(),
-            enumerateErrorFormat(),
-            format.json({space: pretty ? 2 : 0})
-        );
-
-        if (env === 'prod') {
-          const logDir = config.logDir || 'var';
-          transport = new transports.File({
-            filename: `${logDir}/standup-slack-bot.log`, // TODO depends from channel metadata?!
-            format: logFormat,
-          })
-        } else {
-          transport = new transports.Console({
-            format: logFormat
-          })
-        }
-
-        return createLogger({
-          level: config.debug ? 'debug' : 'info',
-          transports: transport
-        });
-      },
-      deps: [CONFIG_TOKEN]
-    },
     {
       provide: TERMINATE,
       useValue: new Observable((observer) => {

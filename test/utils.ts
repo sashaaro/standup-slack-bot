@@ -1,10 +1,7 @@
 import {createProviders} from "../src/services/providers";
 import {ReflectiveInjector} from "injection-js";
-import {Connection, ConnectionManager, EntityManager} from "typeorm";
+import {Connection, EntityManager} from "typeorm";
 import Timezone from "../src/model/Timezone";
-import {LOGGER_TOKEN} from "../src/services/token";
-import TransportStream from "winston-transport";
-import {createLogger} from "winston";
 import {Team, TEAM_STATUS_ACTIVATED} from "../src/model/Team";
 import SlackWorkspace from "../src/model/SlackWorkspace";
 import {Channel} from "../src/model/Channel";

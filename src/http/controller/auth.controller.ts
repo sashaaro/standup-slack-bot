@@ -1,13 +1,13 @@
 import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
-import {CONFIG_TOKEN, LOGGER_TOKEN} from "../../services/token";
+import {CONFIG_TOKEN, LOG_TOKEN} from "../../services/token";
 import {em, IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
 import {OauthAccessResponse} from "../../slack/model/ScopeGranted";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
 import {AccessDenyError, ResourceNotFoundError} from "../ApiMiddleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
-import {Logger} from "winston";
+import {Logger} from "pino";
 import {SyncSlackService} from "../../slack/sync-slack.service";
 import {bind} from "../../services/decorators";
 import {ContextualError, isPlatformError} from "../../services/utils";
@@ -19,7 +19,7 @@ export class AuthController {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private webClient: WebClient,
-    @Inject(LOGGER_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private logger: Logger,
     private syncSlackService: SyncSlackService,
   ) {
   }
@@ -34,7 +34,7 @@ export class AuthController {
     const session = req.session;
     session.destroy(err => {
       if (err) {
-        this.logger.error('Destroy session error', {error: err})
+        this.logger.error(err, 'Destroy session error')
       }
 
       return res.status(err ? 500 : 204).send('');
@@ -67,7 +67,7 @@ export class AuthController {
     } catch (e) {
       if (isPlatformError(e) && e.data.error === 'invalid_code') {
         // TODO message invalid code
-        this.logger.warn('Invalid code 0Auth2', {error: e})
+        this.logger.warn(e, 'Invalid code 0Auth2')
         res.status(400).send('400'); // TODO redirect notify?
         return;
       } else {
@@ -75,13 +75,12 @@ export class AuthController {
       }
     }
 
-    this.logger.debug('0Auth2 response', response)
+    this.logger.debug(response, '0Auth2 response')
 
     if (!response.ok) {
       // LOG ?
       throw new ContextualError('Oauth is not ok', response)
     }
-    console.log(response)
 
     const workspaceRepository = em().getRepository(SlackWorkspace);
 
@@ -97,7 +96,7 @@ export class AuthController {
     if (response.token_type === 'bot') {
       workspace.accessToken = response.access_token
     } else {
-      this.logger.warning('Oauth response no content token type as bot', response)
+      this.logger.warning(response, 'Oauth response no content token type as bot')
       // TODO throw ?!
     }
 

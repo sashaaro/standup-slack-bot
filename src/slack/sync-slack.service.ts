@@ -6,17 +6,17 @@ import {SlackChannel, SlackConversation} from "./model/SlackChannel";
 import {ChannelRepository} from "../repository/ChannelRepository";
 import {Channel} from "../entity";
 import {Inject, Injectable} from "injection-js";
-import {LOGGER_TOKEN} from "../services/token";
-import {Logger} from "winston";
+import {Logger} from "pino";
 import {WebClient} from "@slack/web-api";
 import SlackWorkspace from "../entity/slack-workspace";
 import {em} from "../services/providers";
 import {wrap} from "@mikro-orm/core";
+import {LOG_TOKEN} from "../services/token";
 
 @Injectable()
 export class SyncSlackService {
   constructor(
-    @Inject(LOGGER_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private logger: Logger,
     private webClient: WebClient,
   ) {
   }
@@ -55,7 +55,7 @@ export class SyncSlackService {
       });
       if (!response.ok) {
         // throw..
-        this.logger.error('Fetch users error', {error: response.error})
+        this.logger.error(response, 'Fetch users error')
         return;
       }
 
@@ -66,7 +66,7 @@ export class SyncSlackService {
               && !u.is_app_user
               && u.id !== 'USLACKBOT' // https://stackoverflow.com/a/40681457
       )
-      this.logger.debug('webClient.users.list', {users: response.members, filtered: members.length})
+      this.logger.debug({users: response.members}, 'webClient.users.list')
 
       const list = []
       for (const member of members) {
@@ -158,7 +158,7 @@ export class SyncSlackService {
           && ch.name !== 'slack-bots'
           && ch.name !== 'random'
       )
-      this.logger.debug('webClient.conversations.list', {channels})
+      this.logger.debug({channels}, 'webClient.conversations.list')
 
       // uncommend and migrate mikroorm
       // await this.connection.createQueryBuilder()

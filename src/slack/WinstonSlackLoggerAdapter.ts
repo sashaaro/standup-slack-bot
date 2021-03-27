@@ -1,21 +1,19 @@
 import {Logger, LogLevel} from '@slack/logger';
-import {Logger as WinstonLogger} from "winston";
+import {Logger as PinoLogger} from "pino";
 
 export class WinstonSlackLoggerAdapter implements Logger
 {
     private level: LogLevel;
 
-    private context = {channel: 'slack-web-client'}
-
-    constructor(private logger: WinstonLogger) {
+    constructor(private logger: PinoLogger) {
     }
 
     debug(...msg: any[]): void {
-        msg.forEach(m => this.logger.debug(m, this.context));
+        msg.forEach(m => this.logger.debug(m));
     }
 
     error(...msg: any[]): void {
-        msg.forEach(m => this.logger.error(m, this.context));
+        msg.forEach(m => this.logger.error(m));
     }
 
     getLevel(): LogLevel {
@@ -23,7 +21,7 @@ export class WinstonSlackLoggerAdapter implements Logger
     }
 
     info(...msg: any[]): void {
-        msg.forEach(m => this.logger.info(m, this.context));
+        msg.forEach(m => this.logger.info(m));
     }
 
     setLevel(level: LogLevel): void {
@@ -35,6 +33,6 @@ export class WinstonSlackLoggerAdapter implements Logger
     }
 
     warn(...msg: any[]): void {
-        msg.forEach(m => this.logger.warn(m, this.context));
+        msg.forEach(m => this.logger.warn(m));
     }
 }

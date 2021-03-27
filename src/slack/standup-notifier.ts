@@ -1,12 +1,13 @@
 import { Injectable, Inject } from 'injection-js';
 import {forkJoin, from, NEVER, of, timer} from "rxjs";
 import {delay, map, mapTo, mergeMap, share, tap} from "rxjs/operators";
-import {LOGGER_TOKEN} from "../services/token";
-import {Logger} from "winston";
+import {Logger} from "pino";
 import Standup from "../model/Standup";
 import {TeamRepository} from "../repository/team.repository";
 import {StandupRepository} from "../repository/standupRepository";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
+import {Connection} from "typeorm";
+import {LOG_TOKEN} from "../services/token";
 
 const standupGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standupGoodBye = 'Have good day. Good bye.';
@@ -14,7 +15,7 @@ const standupWillRemindYouNextTime = `I will remind you when your next standup i
 
 @Injectable()
 export default class StandupNotifier {
-  constructor(@Inject(LOGGER_TOKEN) protected logger: Logger){}
+  constructor(@Inject(LOG_TOKEN) protected logger: Logger){}
 
   create() {
     const teamRepository = {} as any; // this.connection.getCustomRepository(TeamRepository)
@@ -26,7 +27,7 @@ export default class StandupNotifier {
     const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds();
     const millisecondsDelay = intervalMs - milliseconds;
 
-    this.logger.debug('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop');
+    this.logger.info('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop');
 
     const interval$ = timer(0, intervalMs)
       .pipe(
@@ -34,7 +35,7 @@ export default class StandupNotifier {
         delay(5 * 1000),
         share(),
         tap({
-          error: e => this.logger.error('Interval loop error', {error: e})
+          error: e => this.logger.error(e, 'Interval loop error')
         })
       )
 

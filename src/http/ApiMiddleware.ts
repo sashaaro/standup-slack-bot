@@ -4,7 +4,7 @@ import session from 'express-session'
 import createRedisConnectStore from 'connect-redis';
 import {Injector} from "injection-js";
 import ApiContext from "../services/ApiContext";
-import {CONFIG_TOKEN, LOGGER_TOKEN, REDIS_TOKEN} from "../services/token";
+import {CONFIG_TOKEN, LOG_TOKEN, REDIS_TOKEN} from "../services/token";
 import {AuthController} from "./controller/auth.controller";
 import http from "http";
 import {TeamController} from "./controller/team.controller";
@@ -12,7 +12,7 @@ import {UserController} from "./controller/user.controller";
 import {ChannelController} from "./controller/channel.controller";
 import {StandupController} from "./controller/standup.controllert";
 import {OptionController} from "./controller/option.controller";
-import {Logger} from "winston";
+import {Logger} from "pino";
 import {createMessageAdapter} from "@slack/interactive-messages";
 import {emStorage, IAppConfig, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from "../slack/slack-bot-transport.service";
@@ -54,7 +54,7 @@ export class ResourceNotFoundError extends Error {
 export class BadRequestError extends Error {
 }
 
-const errorHandler = (config: IAppConfig,logger: Logger) => (err, req, res, next) => {
+const errorHandler = (config: IAppConfig, logger: Logger) => (err, req, res, next) => {
   if (err instanceof AccessDenyError) {
     res.status(403).send(); // check if not sent yet
   } else if (err instanceof BadRequestError) {
@@ -62,7 +62,7 @@ const errorHandler = (config: IAppConfig,logger: Logger) => (err, req, res, next
   } else if (err instanceof ResourceNotFoundError) {
     res.status(404).send();
   } else {
-    logger.error("Catch express middleware error", {error: err})
+    logger.error(err, "Catch express middleware error")
     if (err.statusCode !== 'ERR_HTTP_HEADERS_SENT') {
       res.status(502).send(config.env !== 'prod' ? stringifyError(err) : '');
     }
@@ -134,7 +134,7 @@ export class ApiMiddleware {
       res.type('txt').send('Not found');
     })
 
-    router.use(errorHandler(injector.get(CONFIG_TOKEN), injector.get(LOGGER_TOKEN)))
+    router.use(errorHandler(injector.get(CONFIG_TOKEN), injector.get(LOG_TOKEN)))
 
     return router;
   }
@@ -145,7 +145,7 @@ export class ApiMiddleware {
     const config = this.injector.get(CONFIG_TOKEN)
     const queueRegistry = this.injector.get(QueueRegistry);
     const slackEvents = this.injector.get(SlackEventAdapter);
-    const logger = this.injector.get(LOGGER_TOKEN);
+    const logger = this.injector.get(LOG_TOKEN);
 
     if (config.debug) {
       router.use(createLoggerMiddleware(logger))

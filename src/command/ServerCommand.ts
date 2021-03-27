@@ -1,14 +1,13 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  LOGGER_TOKEN, MIKRO_TOKEN, REDIS_TOKEN, TERMINATE,
+  LOG_TOKEN, MIKRO_TOKEN, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
 import express from 'express'
 import 'express-async-errors';
 import http from "http";
 import {ApiMiddleware} from "../http/ApiMiddleware";
 import {Redis} from "ioredis";
-import {Logger} from "winston";
 import {Observable} from "rxjs";
 import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
@@ -29,7 +28,7 @@ export class ServerCommand implements yargs.CommandModule {
     @Inject(MIKRO_TOKEN) private mikroORM,
     private slackEventListener: SlackEventListener,
     @Inject(REDIS_TOKEN) private redis: Redis,
-    @Inject(LOGGER_TOKEN) protected logger: Logger,
+    @Inject(LOG_TOKEN) protected log,
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 
@@ -48,7 +47,7 @@ export class ServerCommand implements yargs.CommandModule {
     try {
       await this.startServer(args.port as string)
     } catch (e) {
-      this.logger.error("Start server error", {error: e})
+      this.log.error(e, "Start server error")
     }
   }
 
@@ -96,7 +95,7 @@ export class ServerCommand implements yargs.CommandModule {
     const options = {}
     port = port || 3001
 
-    this.logger.debug(`Start server. Listen ${port}`);
+    this.log.info(`Start server. Listen ${port}`);
     const server = http.createServer(options, expressApp)
 
     if (fs.existsSync(port as any)) {
@@ -105,18 +104,18 @@ export class ServerCommand implements yargs.CommandModule {
 
     server.listen(port)
       .on('error', (error) => {
-        this.logger.error('Server error', {error});
+        this.log.error(error, 'Server error');
         this.close();
       })
       .on('close', () => {
-        this.logger.debug('Server closed');
+        this.log.debug('Server closed');
         this.close();
       });
 
     this.terminate$.subscribe(() => {
       server.close((error) => {
         if (error) {
-          this.logger.error('Sever closing', {error});
+          this.log.error(error, 'Sever closing');
         }
       });
     })
@@ -128,7 +127,7 @@ export class ServerCommand implements yargs.CommandModule {
       this.redis.disconnect()
     } catch (e) {
       if (!e.message.startsWith('Connection is closed')) {
-        this.logger.error('Close redis error', {error: e})
+        this.log.error(e, 'Close redis error')
       }
     }
   }

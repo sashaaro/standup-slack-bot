@@ -1,22 +1,18 @@
 import {Inject, Injectable} from "injection-js";
 import User from "../model/User";
 import Standup from "../model/Standup";
-import groupBy from "lodash.groupby";
 import {
   ChatPostMessageArguments,
-  ChatUpdateArguments, CodedError,
-  WebAPICallError,
-  WebAPIPlatformError,
+  ChatUpdateArguments,
   WebClient
 } from '@slack/web-api'
-import {LOGGER_TOKEN} from "../services/token";
-import {Logger} from "winston";
-import {Block, KnownBlock} from "@slack/types";
+import {Logger} from "pino";
 import {ContextualError, isPlatformError} from "../services/utils";
 import {MessageResult} from "./model/MessageResult";
 import UserStandup from "../model/UserStandup";
 import {OpenViewResult} from "./model/OpenViewResult";
 import {greetingBlocks} from "./slack-blocks";
+import {LOG_TOKEN} from "../services/token";
 
 const standupFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
 
@@ -30,7 +26,7 @@ export const ACTION_OPEN_REPORT = 'open_report'
 @Injectable()
 export class SlackBotTransport {
   constructor(
-    @Inject(LOGGER_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private logger: Logger,
     private webClient: WebClient
   ) {
   }
@@ -69,7 +65,7 @@ export class SlackBotTransport {
       view: view,
       trigger_id: triggerId,
     }
-    this.logger.debug('Call webClient.views.open', {args: args})
+    this.logger.debug(args, 'Call webClient.views.open')
 
     const r = await this.webClient.views.open({
       ...args,
@@ -206,7 +202,7 @@ export class SlackBotTransport {
       view: view,
       trigger_id: triggerId,
     }
-    this.logger.debug('Call webClient.views.open', {args: args})
+    this.logger.debug(args, 'Call webClient.views.open')
     const result: OpenViewResult|any = await this.webClient.views.open({
       ...args,
       token: standup.team.originTeam.workspace.accessToken
@@ -259,7 +255,7 @@ export class SlackBotTransport {
         const question = answer.question;
         const hasOptions = answer.question.options.length
         if (!answer) {
-          this.logger.warn('Answer not found', {user: user.id, question: question.id});
+          this.logger.warn({user: user.id, question: question.id}, 'Answer not found');
           return
         }
 
@@ -323,10 +319,10 @@ export class SlackBotTransport {
         throw error // TODO
       } else if (isPlatformError(error) && error.data.error === 'not_in_channel') {
         // TODO notify
-        this.logger.info('bot are not joined in report channel', {
+        this.logger.info({
           channel: standup.team.originTeam.reportChannel.id,
           standup: standup.id,
-        })
+        }, 'bot are not joined in report channel')
       } else {
         throw error
       }
@@ -352,7 +348,7 @@ export class SlackBotTransport {
   }
 
   private async postMessage(args: ChatPostMessageArguments, token: string): Promise<MessageResult> {
-    this.logger.debug('Call webClient.chat.postMessage', args)
+    this.logger.debug(args, 'Call webClient.chat.postMessage')
     const result: MessageResult = await this.webClient.chat.postMessage({
       ...args,
       token
