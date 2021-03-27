@@ -57,7 +57,7 @@ export class User {
     length: 20,
     nullable: true,
   })
-  im: string;
+  im: string; // TODO check.
 
   // https://api.slack.com/authentication/token-types#user
   @Exclude()

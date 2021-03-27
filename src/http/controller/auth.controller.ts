@@ -134,10 +134,14 @@ export class AuthController {
 
     req.context.authenticate(response.authed_user, user);
 
+    if (newWorkspace) {
+      await this.syncSlackService.syncForWorkspace(workspace);
+    }
+
     res.redirect('/')
 
-    //if (newWorkspace) {
+    if (!newWorkspace) {
       await this.syncSlackService.syncForWorkspace(workspace);
-    //}
+    }
   }
 }

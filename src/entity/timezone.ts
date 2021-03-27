@@ -23,7 +23,7 @@ class Timezone {
   @PrimaryKey()
   id: number;
 
-  @Property({type: "interval"})
+  @Property({columnType: "interval"})
   utc_offset: any|IPostgresInterval;
 
   @Property()

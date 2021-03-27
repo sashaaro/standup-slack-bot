@@ -6,6 +6,7 @@ import {MIKRO_TOKEN} from "../services/token";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import SlackWorkspace from "../entity/slack-workspace";
+import {emStorage} from "../services/providers";
 
 @Injectable()
 export class SyncSlackCommand implements yargs.CommandModule<any, any> {
@@ -29,8 +30,11 @@ export class SyncSlackCommand implements yargs.CommandModule<any, any> {
     }
 
     const workspaces = await mikroORM.em.getRepository(SlackWorkspace).findAll()
-    for(const workspace of workspaces) {
-      await this.syncSlackService.syncForWorkspace(workspace)
-    }
+
+    emStorage.run(mikroORM.em, async (em) => {
+      for(const workspace of workspaces) {
+        await this.syncSlackService.syncForWorkspace(workspace)
+      }
+    })
   }
 }

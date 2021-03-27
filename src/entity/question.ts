@@ -1,4 +1,4 @@
-import {Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
+import {BeforeCreate, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
 import QuestionOption from "./question-option";
 import {Team} from "./team";
 import {ArrayMinSize, IsArray, IsInt, IsNotEmpty, MaxLength, MinLength} from "class-validator";
@@ -50,10 +50,10 @@ class Question {
   })
   team: Team;
 
-  // @BeforeInsert()
+  @BeforeCreate()
   setupCreatedAt() {
     this.createdAt = new Date();
-    this.index = this.index !== undefined ? this.index : this.team?.questions?.indexOf(this);
+    this.index = this.index !== undefined ? this.index : this.team?.questions?.toArray().indexOf(this);
   }
 }
 

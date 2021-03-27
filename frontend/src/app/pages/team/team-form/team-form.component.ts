@@ -287,9 +287,12 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       options: (control.get('options') as FormArray).controls.map((oc, index) => ({...oc.value, index}))
     })) //value.questions.map((q, index) => ({...q, index}));
     value.questions.forEach((q) => q.text = q.text?.trim());
-    value.users = value.users.map(u => ({id: u.id}));
-    value.timezone = {id: value.timezone.id};
-    value.reportChannel = {id: value.reportChannel.id};
+    //value.users = value.users.map(u => ({id: u.id}));
+    value.userIds = value.users.map(u => u.id);
+    //value.timezone = {id: value.timezone.id};
+    value.timezoneId = value.timezone.id;
+    //value.reportChannel = {id: value.reportChannel.id};
+    value.reportChannelId = value.reportChannel.id
     value.days = value.days.map((v, i) => v ? i : null).filter(v => v !== null);
 
     (this.team ?

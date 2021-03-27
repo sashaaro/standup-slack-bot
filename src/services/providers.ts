@@ -25,20 +25,8 @@ import {QueueRegistry} from "./queue.registry";
 import {enumerateErrorFormat} from "./utils";
 import {MikroORM} from "@mikro-orm/core";
 import {EntityManager, PostgreSqlDriver} from "@mikro-orm/postgresql";
-import {Team} from "../entity/team";
 import { AsyncLocalStorage } from "async_hooks";
-import {User} from "../entity/user";
-import Timezone from "../entity/timezone";
-import SlackWorkspace from "../entity/slack-workspace";
-import Question from "../entity/question";
-import QuestionOption from "../entity/question-option";
-import QuestionSnapshot from "../entity/question-snapshot";
-import QuestionOptionSnapshot from "../entity/question-option-snapshot";
-import {TeamSnapshot} from "../entity/team-snapshot";
-import Standup from "../entity/standup";
-import UserStandup from "../entity/user-standup";
-import AnswerRequest from "../entity/answer-request";
-import {Channel} from "../entity/channel";
+import * as entities from "../entity";
 
 export interface IAppConfig {
   env: string,
@@ -63,12 +51,6 @@ export interface IAppConfig {
 
 const migrationsDir = __dirname + '/../migrations';
 // const migrationsDir = __dirname + '/../../../src/migrations';// TODO
-
-
-export const initFixtures = async (connection) => {
-  // TODO mikroorm
-  await connection.query(fs.readFileSync('resources/timezone.sql').toString());
-}
 
 export const QUEUE_NAME_SLACK_EVENTS = 'slack_events';
 export const QUEUE_NAME_SLACK_INTERACTIVE = 'slack_interactive';
@@ -119,15 +101,8 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       provide: MIKRO_TOKEN,
       useFactory: async (config: IAppConfig) => {
         return MikroORM.init({
-          entities: [
-            Channel,
-            User, SlackWorkspace,
-            Timezone, Team,
-            Question, QuestionOption,
-            TeamSnapshot,
-            QuestionSnapshot, QuestionOptionSnapshot,
-            Standup, UserStandup, AnswerRequest
-          ],
+          entities: Object.values(entities),
+          debug: config.debug,
           host: config.db.host,
           user: config.db.username,
           password: config.db.password,

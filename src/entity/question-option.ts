@@ -1,4 +1,13 @@
-import {Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryKey,
+  Property
+} from "@mikro-orm/core";
 import Question from "./question";
 import {IsInt, IsNotEmpty, IsString} from "class-validator";
 import {Exclude, Expose, Transform} from "class-transformer";
@@ -38,12 +47,12 @@ export default class QuestionOption {
   @Property()
   createdAt: Date;
 
-  //@BeforeInsert()
+  @BeforeCreate()
   beforeInsert() {
     this.createdAt = new Date();
     this.updatedAt = new Date();
   }
-  //@BeforeUpdate()
+  @BeforeUpdate()
   beforeUpdate() {
     this.updatedAt = new Date();
   }

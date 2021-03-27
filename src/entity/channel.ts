@@ -23,13 +23,10 @@ export class Channel {
 
   // TODO isPrivate: boolean;
 
-  @ManyToOne(() => User, {
-    eager: true
-  })
+  @ManyToOne(() => User)
   createdBy: User
 
   @ManyToOne(() => SlackWorkspace, {
-    eager: true,
     nullable: false
   })
   workspace: SlackWorkspace

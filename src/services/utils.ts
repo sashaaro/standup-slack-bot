@@ -88,6 +88,10 @@ export class IntArrayType extends Type {
     return value;
   }
 
+  compareAsType(): string {
+    return 'integer[]';
+  }
+
   getColumnType() {
     return 'integer[]';
   }

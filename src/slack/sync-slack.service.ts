@@ -1,16 +1,17 @@
 import {SlackTeam} from "./model/SlackTeam";
-import {User} from "../entity/user";
+import {User} from "../entity";
 import {ISlackUser} from "./model/SlackUser";
 import {SlackIm} from "./model/ScopeGranted";
 import {SlackChannel, SlackConversation} from "./model/SlackChannel";
 import {ChannelRepository} from "../repository/ChannelRepository";
-import {Channel} from "../model/Channel";
+import {Channel} from "../entity";
 import {Inject, Injectable} from "injection-js";
 import {LOGGER_TOKEN} from "../services/token";
 import {Logger} from "winston";
 import {WebClient} from "@slack/web-api";
 import SlackWorkspace from "../entity/slack-workspace";
 import {em} from "../services/providers";
+import {wrap} from "@mikro-orm/core";
 
 @Injectable()
 export class SyncSlackService {
@@ -28,12 +29,14 @@ export class SyncSlackService {
     })) as any;
     workspace.slackData = teamInfo.team;
 
-    return workspace; // TODO await this.connection.getRepository(SlackWorkspace).save(workspace)
+    await em().persistAndFlush(workspace)
+    return workspace;
   }
 
   async syncForWorkspace(workspace: SlackWorkspace) {
     await this.updateWorkspace(workspace);
     await this.updateUsers(workspace);
+    // TODO await this.updateIm(workspace);
     await this.updateChannels(workspace);
   }
 
@@ -63,7 +66,7 @@ export class SyncSlackService {
               && !u.is_app_user
               && u.id !== 'USLACKBOT' // https://stackoverflow.com/a/40681457
       )
-      this.logger.debug('webClient.users.list', {users: members})
+      this.logger.debug('webClient.users.list', {users: response.members, filtered: members.length})
 
       const list = []
       for (const member of members) {
@@ -71,7 +74,7 @@ export class SyncSlackService {
           throw new Error(`Workspace #${workspace.id} is not equal to member.team_id as ${member.team_id}`)
         }
 
-        let user = await userRepository.findOne(member.id);
+        let user = await userRepository.findOne(member.id); // TODO "in" => [ids..]
         if (!user) {
           user = new User();
           user.id = member.id
@@ -84,12 +87,16 @@ export class SyncSlackService {
         list.push(user);
       }
       await userRepository.persist(list)
+      await userRepository.flush()
 
     } while (response.response_metadata.next_cursor);
+  }
 
+  private async updateIm(workspace: SlackWorkspace) {
+    const userRepository = em().getRepository(User)
 
     let conversationsResponse;
-    cursor = null;
+    let cursor = null;
     do {
       cursor = conversationsResponse?.response_metadata?.next_cursor;
       conversationsResponse = await this.webClient.conversations.list({
@@ -110,12 +117,13 @@ export class SyncSlackService {
           await userRepository.persist(user);
         }
       }
+      await userRepository.flush();
     } while (conversationsResponse.response_metadata.next_cursor);
   }
 
   private async updateChannels(workspace: SlackWorkspace) {
     // TODO fix update private channel where bot invited already
-    const userRepository = {} as any; // this.connection.getRepository(User);
+    const userRepository = await em().getRepository(User)
 
     // uncomment and migrate to mikroorm
     // await this.connection.createQueryBuilder()
@@ -124,7 +132,7 @@ export class SyncSlackService {
     //     .set({isArchived: true})
     //     .execute()
 
-    const channelRepository = {} as any; // this.connection.getCustomRepository(ChannelRepository);
+    const channelRepository = await em().getRepository(SlackWorkspace)
 
     let response;
     let cursor = null;
@@ -159,19 +167,42 @@ export class SyncSlackService {
       //   .set({isArchived: true})
       //   .execute()
 
-      const list = []
-      for (const channel of channels) {
-        const ch = {} as any; // this.connection.manager.create(Channel, {id: channel.id});
-        ch.name = channel.name
-        ch.nameNormalized = channel.name_normalized
-        ch.isArchived = channel.is_archived;
-        ch.isEnabled = true;
-        //ch.workspace = workspace; TODO uncommend after migrate to mikroorm
-        //ch.createdBy = this.connection.manager.create(User, {id: channel.creator});
 
-        list.push(ch);
+
+      await em().begin()
+      for (const channel of channels) {
+        const d = {
+          name: channel.name,
+          name_normalized: channel.name_normalized,
+          is_archived: channel.is_archived,
+          is_enabled: true,
+          workspace_id: workspace.id,
+          created_by_id: channel.creator
+        }
+
+        console.log(em()
+          .createQueryBuilder(Channel, 'ch')
+          .insert({...d, id: channel.id})
+          .onConflict('id')
+          .merge(d)
+          .getQuery())
+        await em()
+          .createQueryBuilder(Channel, 'ch')
+          .insert({...d, id: channel.id})
+          .onConflict('id').merge(d)
+          //.onConflict('created_by_id').ignore()
+          .execute()
+
+
+//         await conn.execute(`INSERT INTO customers (id, name, email)
+//        VALUES('Microsoft','hotline@microsoft.com') ON CONFLICT (channel_pkey)
+// DO UPDATE SET
+//     email = EXCLUDED.email, customers.email;`, [
+//
+//         ])
       }
-      await channelRepository.save(list);
+      await em().commit()
+      //await channelRepository.persistAndFlush(list);
     } while (response.response_metadata.next_cursor)
   }
 
@@ -202,7 +233,7 @@ export class SyncSlackService {
     })
   }
 
-  async joinSlackChannel(channelID: string, updateData?: Channel) {
+  async joinSlackChannel(channelID: string, updateData?: Partial<Channel>) {
     const repo = {} as any; // this.connection.getCustomRepository(ChannelRepository);
 
     const {channel} = await repo.findOrCreateChannel(channelID);

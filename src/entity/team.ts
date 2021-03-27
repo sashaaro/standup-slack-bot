@@ -1,4 +1,4 @@
-import {Expose, Type} from "class-transformer";
+import {Expose, Transform, Type, TransformFnParams} from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
@@ -27,9 +27,13 @@ import {User} from "./user";
 import SlackWorkspace from "./slack-workspace";
 import Question from "./question";
 import {IntArrayType} from "../services/utils";
+import {TeamRepository} from "../repository/team.repository";
+import {em} from "../services/providers";
+import {Channel} from "./channel";
 
-@Entity()
+@Entity({customRepository: () => TeamRepository})
 export class Team {
+  @Expose()
   @PrimaryKey()
   @SerializedPrimaryKey()
   id: number;
@@ -44,26 +48,46 @@ export class Team {
   @Property({type: 'smallint'})
   status: number = TEAM_STATUS_ACTIVATED;
 
+  @Expose()
   @ManyToOne(() => SlackWorkspace, {})
   workspace: SlackWorkspace;
 
   @Expose()
+  @Transform((params: TransformFnParams) => {
+    return params.value.map(v => em().getReference(User, v.id))
+  }, {
+    toClassOnly: true
+  })
+  @Transform((params: TransformFnParams) => params.value.toArray(), {
+    toPlainOnly: true
+  })
   @Type(() => User)
   // @Min(1)
   @IsNotEmpty()
-  @ManyToMany(() => User, u => u.teams)
-  users = new Collection<User>(this)
+  @ManyToMany(() => User, u => u.teams, {})
+  users = new Collection<User, Team>(this)
 
+  @Expose()
   @Property({default: 30, nullable: false})
   duration: number
 
+  @Expose()
   @Property({default: '11:00', nullable: false})
   start: string
 
+  @Expose()
   @Property({type: IntArrayType, defaultRaw: "'{0,1,2,3,4}'"})
   days: number[] = [0, 1, 2, 3, 4];
 
   @Expose()
+  @Transform((params: TransformFnParams) => {
+    return params.value.map(v => em().getReference(Question, v.id))
+  }, {
+    toClassOnly: true
+  })
+  @Transform((params: TransformFnParams) => params.value.toArray(), {
+    toPlainOnly: true
+  })
   @Type(() => Question)
   @IsNotEmpty()
   @IsArray()
@@ -72,10 +96,19 @@ export class Team {
   @OneToMany(type => Question, question => question.team, {
     //cascade: true,
   })
-  questions: Question[];
+  questions = new Collection<Question, Team>(this)
 
+  @Expose()
   @ManyToOne(() => Timezone, {})
   timezone: Timezone;
+
+  @Expose()
+  @Type(() => Channel)
+  @IsNotEmpty()
+  @ManyToOne(type => Channel, {
+    nullable: false,
+  })
+  reportChannel: Channel
 
   @ManyToOne(() => User, {
     //eager: true,

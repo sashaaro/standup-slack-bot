@@ -1,7 +1,6 @@
 import {Injectable} from 'injection-js';
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../ApiMiddleware";
 import {IHttpAction} from "./index";
-import Timezone from "../../model/Timezone";
 import {classToPlain, plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";
 import {
@@ -10,7 +9,10 @@ import {
   teamStatuses
 } from "../../model/Team";
 import {em} from "../../services/providers";
-import {Team} from "../../entity/team";
+import {Channel, Question, Team, Timezone, User} from "../../entity";
+import {TeamRepository} from "../../repository/team.repository";
+import {Collection} from "@mikro-orm/core";
+import {TeamDTO} from "../../dto/team-dto";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -23,7 +25,6 @@ const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] 
 
 @Injectable()
 export class TeamController {
-  teamRepository: any;
   list: IHttpAction = async (req, res) => {
 
     let status = parseInt(req.query.status as string);
@@ -52,11 +53,19 @@ export class TeamController {
     res.send(teams);
   }
 
-  private handleRequest(plainObject: object, team: Team): ValidationError[]
+  private handleRequest(plainObject: any, team: Team): ValidationError[]
   {
-    plainToClassFromExist(team, plainObject, {
-      strategy: 'excludeAll'
-    });
+    // plainToClassFromExist(team, plainObject, {
+    //   strategy: 'excludeAll'
+    // });
+    team.name = plainObject.name;
+    team.days = plainObject.days;
+    team.start = plainObject.start;
+    team.timezone = em().getReference(Timezone, plainObject.timezone.id);
+    team.users = new Collection<User, Team>(team, plainObject.users.map(u => em().getReference(User, u.id, true)));
+    team.reportChannel = em().getReference(Channel, plainObject.reportChannel.id);
+    team.questions = new Collection<Question, Team>(team, plainObject.questions.map(q => em().create(Question, q)));
+    return [];
     const errors = validateSync(team);
 
     return clearFromTarget(errors) as ValidationError[];// TODO
@@ -75,12 +84,9 @@ export class TeamController {
 
     if (errors.length === 0) {
       team.status = TEAM_STATUS_ACTIVATED;
-      try {
-        await em().getRepository(Team).persist(team)
-      } catch (e) {
-        res.status(500).send('');
-        throw e;
-      }
+      //const teamRepo = em().getRepository(Team) as TeamRepository
+      //await teamRepo.submit(team)
+      await em().persistAndFlush(team)
       res.send(team);
     } else {
       res.status(400);
@@ -95,7 +101,8 @@ export class TeamController {
 
     const id = req.params.id as number|any
 
-    const team = await this.teamRepository.findActiveById(id);
+    const teamRepo = em().getRepository(Team) as TeamRepository
+    const team = await teamRepo.findActiveById(id);
 
     if (!team) {
       throw new ResourceNotFoundError('Team is not found');
@@ -112,14 +119,20 @@ export class TeamController {
     const errors = this.handleRequest(req.body, team);
 
     if (errors.length === 0) {
-      await this.teamRepository.submit(team);
+      //console.log(team.users);
+      //await em().persist(team);
+      //await em().flush();
+      const teamDto = new TeamDTO();
+      Object.assign(teamDto, req.body)
+      teamDto.id = parseInt(req.params.id)
+      await teamRepo.submit(teamDto);
     }
 
     res.setHeader('Content-Type', 'application/json');
     if (errors.length === 0) {
       // load team from db?!
-      team.questions.forEach(q => delete q.team);
-      team.questions.forEach(q => q.options.forEach(o => delete o.question));// remove cycle deps for correct stringify
+      //team.questions.forEach(q => delete q.team);
+      //team.questions.forEach(q => q.options.forEach(o => delete o.question));// remove cycle deps for correct stringify
 
       res.send(classToPlain(team));
     } else {
@@ -129,7 +142,7 @@ export class TeamController {
 
   timezone: IHttpAction = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    res.send([])//await this.connection.getRepository(Timezone).find())
+    res.send(await em().find(Timezone, {}))
   }
 
   get: IHttpAction = async (req, res) => {
@@ -142,17 +155,17 @@ export class TeamController {
       throw new BadRequestError();
     }
 
-    const team = await this.teamRepository.findOne(id, {relations: ['questions', 'timezone', 'reportChannel', 'users']});
+    const team = await em().findOne(Team, id, {populate: ['questions', 'timezone', 'reportChannel', 'users']});
     if (!team) {
-      throw new BadRequestError();
+      throw new BadRequestError(); // 404
     }
 
-    team.questions = team.questions.filter(q => q.isEnabled) // TODO serializer rule or sql?
-    team.questions.forEach(q => {
-      q.options = q.options.filter(o => o.isEnabled)
-    })
+    // team.questions = team.questions.filter(q => q.isEnabled) // TODO serializer rule or sql?
+    // team.questions.forEach(q => {
+    //   q.options = q.options.filter(o => o.isEnabled)
+    // })
 
-    res.send(classToPlain(team));
+    res.send(classToPlain(team, {strategy: 'excludeAll'}));
   }
 
   status: IHttpAction = async (req, res) => {
@@ -170,12 +183,16 @@ export class TeamController {
       throw new BadRequestError();
     }
 
-    const team = await this.teamRepository.findOne(id);
+    const team = await em().findOne(Team, id);
     if (!team) {
       throw new BadRequestError();
     }
 
-    await this.teamRepository.update({id: team.id}, {status: status})
+    await em().createQueryBuilder(Team, 't')
+      .where({id: team.id})
+      .update({status: status})
+      .execute()
+
     team.status = status;
     res.status(200).send(team);
   }
