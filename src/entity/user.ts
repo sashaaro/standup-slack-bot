@@ -42,9 +42,11 @@ class Profile implements SlackUserProfile {
 
 @Entity()
 export class User {
+  @Expose()
   @PrimaryKey()
   id: string;
 
+  @Expose()
   @Property({
     length: 500
   })
@@ -64,6 +66,7 @@ export class User {
   @Property({nullable: true})
   accessToken: string;
 
+  @Expose()
   @Property({type: 'jsonb'})
   profile: SlackUserProfile = new Profile();
 

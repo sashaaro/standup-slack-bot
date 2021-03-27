@@ -1,9 +1,19 @@
-import {BeforeCreate, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
+import {
+  BeforeCreate,
+  Collection,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryKey,
+  Property
+} from "@mikro-orm/core";
 import QuestionOption from "./question-option";
 import {Team} from "./team";
 import {ArrayMinSize, IsArray, IsInt, IsNotEmpty, MaxLength, MinLength} from "class-validator";
 import {Exclude, Expose, Transform, Type} from "class-transformer";
 import {TransformFnParams} from "class-transformer/types/interfaces";
+import QuestionOptionSnapshot from "./question-option-snapshot";
 
 @Entity()
 class Question {
@@ -32,14 +42,16 @@ class Question {
 
   @Expose()
   @Type(() => QuestionOption)
-  @Transform((params: TransformFnParams) => params.value || [])
+  @Transform((params: TransformFnParams) => params.value.getItems(), {
+    toPlainOnly: true
+  })
   @IsArray()
   //@ArrayMinSize(2)
   @OneToMany(() => QuestionOption, o => o.question, {
     //eager: true,
     //cascade: true
   })
-  options: QuestionOption[];
+  options = new Collection<QuestionOption, Question>(this);
 
   @Property()
   createdAt: Date;
@@ -53,7 +65,7 @@ class Question {
   @BeforeCreate()
   setupCreatedAt() {
     this.createdAt = new Date();
-    this.index = this.index !== undefined ? this.index : this.team?.questions?.toArray().indexOf(this);
+    this.index = this.index !== undefined ? this.index : this.team?.questions?.getItems().indexOf(this);
   }
 }
 

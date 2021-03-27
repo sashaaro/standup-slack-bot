@@ -1,4 +1,4 @@
-import {Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
+import {Collection, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
 import Question from "./question";
 import {TeamSnapshot} from "./team-snapshot";
 import QuestionOptionSnapshot from "./question-option-snapshot";
@@ -18,7 +18,7 @@ class QuestionSnapshot {
     //eager: true,
     //cascade: ["insert"],
   })
-  options: QuestionOptionSnapshot[];
+  options = new Collection<QuestionOptionSnapshot, QuestionSnapshot>(this);
 
   @ManyToOne(type => Question, {
     //eager: true

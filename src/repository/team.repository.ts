@@ -55,20 +55,18 @@ export class TeamRepository extends EntityRepository<Team> {
 
   async add(team: Team) {
     return await this.em.transactional( async manager => {
-      console.log(team.questions.map(q => q.id))
       await manager.getRepository(Team).persist(team)
-      console.log(team.questions.map(q => q.id))
       await this.insertSnapshot(team, manager)
     });
   }
 
-  async findSnapshot(team: Team) {
-    // return await this.em.findOne(TeamSnapshot, {
-    //   'originTeam.id': team.id
-    // }, [
-    //   'users', 'questions', 'questions.options', 'questions.originQuestion', 'originTeam',
-    //   'originTeam.workspace'
-    // ], {'ts.createdAt': 'DESC'})
+  async findSnapshot(team: Team): Promise<TeamSnapshot> {
+    return await this.em.findOne(TeamSnapshot, {
+      'originTeam': team
+    }, [
+      'users', 'questions', 'questions.options', 'questions.originQuestion', 'originTeam',
+      'originTeam.workspace'
+    ], {'createdAt': 'DESC'})
   }
 
   async insertSnapshot(team: Team, manager): Promise<TeamSnapshot> {
@@ -80,24 +78,24 @@ export class TeamRepository extends EntityRepository<Team> {
   createSnapshot(team: Team): TeamSnapshot {
     const teamSnapshot = new TeamSnapshot();
     teamSnapshot.originTeam = team;
-    teamSnapshot.users = [...team.users];
-    teamSnapshot.questions = team.questions.filter(q => q.isEnabled).map(q => {
+    team.users.getItems().forEach(u => teamSnapshot.users.add(u));
+    team.questions.getItems().filter(q => q.isEnabled).forEach(q => {
       const questionSnapshot = new QuestionSnapshot()
       questionSnapshot.originQuestion = q
       questionSnapshot.text = q.text
       questionSnapshot.index = q.index
       questionSnapshot.team = teamSnapshot
-      questionSnapshot.options = q.options.filter(o => o.isEnabled).map(o => {
+      q.options.getItems().filter(o => o.isEnabled).map(o => {
         const optionSnapshot = new QuestionOptionSnapshot()
         optionSnapshot.originOption = o;
         optionSnapshot.question = questionSnapshot;
         optionSnapshot.index = o.index
         optionSnapshot.text = o.text
 
-        return optionSnapshot;
+        questionSnapshot.options.add(optionSnapshot);
       })
 
-      return questionSnapshot;
+      teamSnapshot.questions.add(questionSnapshot)
     })
 
     teamSnapshot.normalizeSort();
@@ -115,107 +113,97 @@ export class TeamRepository extends EntityRepository<Team> {
     // TODO
   }
 
-  async submit(teamDTO: TeamDTO) {
-    return await this.em.transactional( async (em) => {
-      if (teamDTO.id) {
-        await em
-          .createQueryBuilder(Team)
-          .update({
-            name: teamDTO.name,
-            duration: teamDTO.duration,
-            timezone: em.getReference(Timezone, teamDTO.timezoneId),
-            start: teamDTO.start,
-            reportChannel: em.getReference(Channel, teamDTO.reportChannelId),
-            days: teamDTO.days
-            // users: team.users
-          })
-          .where({id: teamDTO.id})
-          .execute();
-      } else {
-        // insert?!
-      }
+  async submit(teamDTO: TeamDTO): Promise<Team> {
+    const em = this.em;
+    await em
+      .createQueryBuilder(Team)
+      .update({
+        name: teamDTO.name,
+        days: teamDTO.days,
+        start: teamDTO.start,
+        timezone: em.getReference(Timezone, teamDTO.timezoneId),
+        duration: teamDTO.duration,
+        reportChannel: em.getReference(Channel, teamDTO.reportChannelId),
+      })
+      .where({id: teamDTO.id})
+      .execute();
 
-      const team = await em.findOneOrFail(Team, teamDTO.id)
-
-      // remove users which not include in users
-      let sql = `DELETE FROM user_teams WHERE "team_id" = ? AND "user_id" NOT IN (${teamDTO.userIds.map((u, i) => `?`).join(',') })`
-      await em.execute(sql, [
-          team.id,
-          ...teamDTO.userIds
-        ]);
-      // add new users
-      await em.execute(
-        `INSERT INTO user_teams ("team_id", "user_id") VALUES ${teamDTO.userIds.map((u, i) => `(?, ?)`).join(',')} ON CONFLICT DO NOTHING`,
-        teamDTO.userIds.map(uid => [teamDTO.id, uid]).flat()
-      );
+    // remove users which not include in users
+    let sql = `DELETE FROM user_teams WHERE "team_id" = ? AND "user_id" NOT IN (${teamDTO.userIds.map((u, i) => `?`).join(',') })`
+    await em.execute(sql, [
+      teamDTO.id,
+        ...teamDTO.userIds
+      ]);
+    // add new users
+    await em.execute(
+      `INSERT INTO user_teams ("team_id", "user_id") VALUES ${teamDTO.userIds.map((u, i) => `(?, ?)`).join(',')} ON CONFLICT DO NOTHING`,
+      teamDTO.userIds.map(uid => [teamDTO.id, uid]).flat()
+    );
 
 
-      const newQuestions = teamDTO.questions.filter(q => !q.id)
-      const existQuestions = teamDTO.questions.filter(q => !!q.id)
+    const newQuestions = teamDTO.questions.filter(q => !q.id)
+    const existQuestions = teamDTO.questions.filter(q => !!q.id)
 
-      // mark as disabled removed questions
-      let qb: QueryBuilder<any> = em.createQueryBuilder(Question)
+    // mark as disabled removed questions
+    let qb: QueryBuilder<any> = em.createQueryBuilder(Question)
+      .update({isEnabled: false})
+      .where('team_id = ?', [teamDTO.id])
+    if (existQuestions.length) {
+      qb = qb.andWhere(`id NOT IN(${existQuestions.map(d => '?').join(',')})`, existQuestions.map(q => q.id))
+    }
+    await qb.execute();
+
+    await Promise.all([
+      // update existed questions
+      ...existQuestions.map(q => em
+          .createQueryBuilder(Question)
+          .update({text: q.text, index: q.index})
+          .where({id: q.id})
+          .execute()),
+    ]);
+    const newQ = newQuestions.map(q => em.create(Question, {...q, team: em.getReference(Team, teamDTO.id)}))
+    await em.persist(newQ); // TODO remove?!
+
+    for (const q of teamDTO.questions) {
+      const options = q.options.sort(sortByIndex)
+
+      const newOptions = options.filter(o => !o.id);
+      const existOptions = options.filter(o => !!o.id)
+
+      // mark as disabled removed options
+      qb = em
+        .createQueryBuilder(QuestionOption)
         .update({isEnabled: false})
-        .where('team_id = ?', [teamDTO.id])
-
-      if (existQuestions.length) {
-        qb = qb.andWhere(`id NOT IN(${existQuestions.map(d => '?').join(',')})`, [existQuestions.map(q => q.id)])
+        .where({question_id: q.id})
+      if (existOptions.length) {
+        qb = qb.andWhere({id: {$in: existOptions.map(o => o.id)}})
       }
-      await qb.execute();
+      await qb.execute()
+      await Promise.all([
+        ...existOptions.map(o => em
+            .createQueryBuilder(QuestionOption)
+            .update({text: o.text, index: o.index})
+            .where({id: o.id})
+            .execute()
+        ),
+      ])
 
-      // await Promise.all([
-      //   // update existed questions
-      //   ...existQuestions.map(q => em
-      //       .createQueryBuilder(Question)
-      //       .update({text: q.text, index: q.index})
-      //       .where({id: q.id})
-      //       .execute()),
-      // ]);
-      const newQ = newQuestions.map(q => em.create(Question, {...q, team: em.getReference(Team, teamDTO.id)}))
-      //await em.persist(newQ);
+      await em.persist( // TODO remove persist?!
+        newOptions.map(o => em.create(QuestionOption, {...o, question: q})) // TODO find same
+      );
+    }
 
-      for (const q of teamDTO.questions) {
-        const options = q.options.sort(sortByIndex)
+    const team = await this.findOneOrFail(teamDTO.id, ['users', 'questions', 'questions.options'])
+    const lastSnapshot = await this.findSnapshot(team);
+    const newSnapshot = this.createSnapshot(team);
 
-        const newOptions = options.filter(o => !o.id);
-        const existOptions = options.filter(o => !!o.id)
+    // lastSnapshot?.normalizeSort()
 
-        // mark as disabled removed options
-        // qb = em
-        //   .createQueryBuilder(QuestionOption)
-        //   .update({isEnabled: false})
-        //   .where({question_id: q.id})
-        // if (existOptions.length) {
-        //   qb = qb.andWhere({id: {$in: existOptions.map(o => o.id)}})
-        // }
-        // await qb.execute()
-        // await Promise.all([
-        //   ...existOptions.map(o => em
-        //       .createQueryBuilder(QuestionOption)
-        //       .update({text: o.text, index: o.index})
-        //       .where({id: o.id})
-        //       .execute()
-        //   ),
-        // ])
 
-        // await Promise.all([
-        //   ...newOptions.map(o => {
-        //     // TODO find same
-        //     return em.persist(em.create(QuestionOption, {...o, question: q}));
-        //   })
-        // ]);
-      }
+    if (!lastSnapshot || !lastSnapshot.equals(newSnapshot)) {
+      await em.create(TeamSnapshot, newSnapshot) // TODO persist
+    }
 
-      // const lastSnapshot = await this.findSnapshot(team, em);
-      // const newSnapshot = this.createSnapshot(await em.findOne(Team, team.id, {
-      //   relations: ['users', 'questions']
-      // }));
-      //
-      //lastSnapshot?.normalizeSort()
-      //
-      // if (!lastSnapshot || !lastSnapshot.equals(newSnapshot)) {
-      //   await manager.getRepository(TeamSnapshot).save(newSnapshot)
-      // }
-    })
+    return team;
   }
 }

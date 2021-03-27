@@ -1,25 +1,15 @@
-import {Expose, Transform, Type, TransformFnParams} from "class-transformer";
+import {Expose, Transform, TransformFnParams, Type} from "class-transformer";
+import {ArrayMinSize, IsArray, IsNotEmpty, MaxLength, MinLength, ValidateNested} from "class-validator";
 import {
-  ArrayMinSize,
-  IsArray,
-  IsInt,
-  IsMilitaryTime,
-  IsNotEmpty,
-  Max,
-  MaxLength,
-  Min,
-  MinLength,
-  ValidateNested
-} from "class-validator";
-import {
+  Cascade,
   Collection,
   Entity,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryKey,
   Property,
-  SerializedPrimaryKey,
-  OneToMany, ArrayType
+  SerializedPrimaryKey
 } from "@mikro-orm/core";
 import {TEAM_STATUS_ACTIVATED} from "../model/Team";
 import Timezone from "./timezone";
@@ -28,7 +18,6 @@ import SlackWorkspace from "./slack-workspace";
 import Question from "./question";
 import {IntArrayType} from "../services/utils";
 import {TeamRepository} from "../repository/team.repository";
-import {em} from "../services/providers";
 import {Channel} from "./channel";
 
 @Entity({customRepository: () => TeamRepository})
@@ -53,18 +42,15 @@ export class Team {
   workspace: SlackWorkspace;
 
   @Expose()
-  @Transform((params: TransformFnParams) => {
-    return params.value.map(v => em().getReference(User, v.id))
-  }, {
-    toClassOnly: true
-  })
-  @Transform((params: TransformFnParams) => params.value.toArray(), {
+  @Transform((params: TransformFnParams) => params.value.getItems(), {
     toPlainOnly: true
   })
   @Type(() => User)
   // @Min(1)
   @IsNotEmpty()
-  @ManyToMany(() => User, u => u.teams, {})
+  @ManyToMany(() => User, u => u.teams, {
+    cascade: [Cascade.PERSIST],
+  })
   users = new Collection<User, Team>(this)
 
   @Expose()
@@ -80,12 +66,7 @@ export class Team {
   days: number[] = [0, 1, 2, 3, 4];
 
   @Expose()
-  @Transform((params: TransformFnParams) => {
-    return params.value.map(v => em().getReference(Question, v.id))
-  }, {
-    toClassOnly: true
-  })
-  @Transform((params: TransformFnParams) => params.value.toArray(), {
+  @Transform((params: TransformFnParams) => params.value.getItems(), {
     toPlainOnly: true
   })
   @Type(() => Question)
@@ -94,7 +75,7 @@ export class Team {
   @ArrayMinSize(1)
   @ValidateNested()
   @OneToMany(type => Question, question => question.team, {
-    //cascade: true,
+    cascade: [Cascade.PERSIST],
   })
   questions = new Collection<Question, Team>(this)
 

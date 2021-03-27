@@ -278,26 +278,25 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       this.form.markAllAsTouched();
       return;
     }
-    const value = {...this.form.value};
-
-    value.duration = Number.parseInt(value.duration, 10);
-    value.questions = this.questionsControl.controls.map((control, index) => ({
+    const teamDTO: any = {};
+    const value = this.form.value;
+    teamDTO.name = value.name
+    teamDTO.days = value.days.map((v, i) => v ? i : null).filter(v => v !== null);
+    teamDTO.start = value.start
+    teamDTO.timezoneId = value.timezone.id;
+    teamDTO.duration = Number.parseInt(value.duration, 10);
+    teamDTO.userIds = value.users.map(u => u.id);
+    teamDTO.reportChannelId = value.reportChannel.id
+    teamDTO.questions = this.questionsControl.controls.map((control, index) => ({
       ...control.value,
       index,
       options: (control.get('options') as FormArray).controls.map((oc, index) => ({...oc.value, index}))
     })) //value.questions.map((q, index) => ({...q, index}));
-    value.questions.forEach((q) => q.text = q.text?.trim());
-    //value.users = value.users.map(u => ({id: u.id}));
-    value.userIds = value.users.map(u => u.id);
-    //value.timezone = {id: value.timezone.id};
-    value.timezoneId = value.timezone.id;
-    //value.reportChannel = {id: value.reportChannel.id};
-    value.reportChannelId = value.reportChannel.id
-    value.days = value.days.map((v, i) => v ? i : null).filter(v => v !== null);
+    teamDTO.questions.forEach((q) => q.text = q.text?.trim());
 
     (this.team ?
-      this.teamService.updateTeam(this.team.id, value) :
-      this.teamService.createTeam(value)
+      this.teamService.updateTeam(this.team.id, teamDTO) :
+      this.teamService.createTeam(teamDTO)
     ).pipe(
       tap(_ => this.submit$.next(true)),
       untilDestroyed(this)

@@ -19,6 +19,7 @@
     "@mikro-orm/cli": "^4.5.1",
     "@mikro-orm/core": "^4.5.1",
     "@mikro-orm/postgresql": "^4.5.1",
+    "@mikro-orm/sql-highlighter": "^1.0.1",
     "@slack/events-api": "^3.0.0",
     "@slack/interactive-messages": "^2.0.1",
     "@slack/rtm-api": "^6.0.0",

@@ -3,7 +3,8 @@ import {Expose, Type} from "class-transformer";
 import {Team} from "./team";
 import QuestionSnapshot from "./question-snapshot";
 import {sortByIndex} from "../services/utils";
-import {Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
+import {Collection, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
+import Question from "./question";
 
 
 @Entity()
@@ -22,7 +23,7 @@ export class TeamSnapshot {
   @ManyToMany(() => User, u => u.teamSnapshots, {
     //cascade: ["persist"],
   })
-  users: Array<User>
+  users = new Collection<User, TeamSnapshot>(this);
 
   @Expose()
   @Type(() => QuestionSnapshot)
@@ -30,7 +31,7 @@ export class TeamSnapshot {
     //eager: true,
     //cascade: true,
   })
-  questions: QuestionSnapshot[];
+  questions = new Collection<QuestionSnapshot, TeamSnapshot>(this);
 
   @Property({nullable: false})
   createdAt: Date;
@@ -45,11 +46,11 @@ export class TeamSnapshot {
     if (this.questions == null) {
       return;
     }
-    this.questions = this.questions.sort(sortByIndex)
-
-    this.questions.forEach(q => {
-      q.options = q.options.sort(sortByIndex)
-    })
+    // TODO this.questions = this.questions.sort(sortByIndex)
+    //
+    // this.questions.forEach(q => {
+    //   q.options = q.options.sort(sortByIndex)
+    // })
   }
 
   // @Expose()
@@ -62,12 +63,12 @@ export class TeamSnapshot {
 
   simplify() {
     return {
-      users: this.users.map(u => u.id),
-      questions: this.questions.map(q => ({
+      users: this.users.getIdentifiers(),
+      questions: this.questions.getItems().map(q => ({
         index: q.index, // TODO ensure correct order
         text: q.text,
         originQuestionId: q.originQuestion.id,
-        options: q.options.map(o => ({
+        options: q.options.getItems().map(o => ({
           originOptionId: o.originOption.id,
           index: o.index,
           text: o.text
