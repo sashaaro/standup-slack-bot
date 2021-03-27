@@ -1,5 +1,3 @@
-import {format} from "winston";
-import {TransformableInfo} from "logform";
 import {CodedError, WebAPIPlatformError} from "@slack/web-api";
 
 export function groupBy<T>(list: T[], by: (item: T) => string|number): {[key: string]: T[]} {
@@ -38,13 +36,6 @@ export const stringifyError = (error: Error) => Object.assign({
   stack: error.stack
 }, error)
 
-export const enumerateErrorFormat = format((info: TransformableInfo): any => {
-  if (info.error instanceof Error) {
-    info.error = stringifyError(info.error);
-  }
-
-  return info;
-});
 
 export const groupByData = (data: any[], options: { groupBy: string, groupProps: string[], listProp: string }) => {
   const list = groupBy(data, i => i[options.groupBy])
@@ -72,5 +63,8 @@ export const groupByData = (data: any[], options: { groupBy: string, groupProps:
   return items;
 }
 
+export class HasPreviousError extends Error {
+  public previous: Error;
+}
 
 export const isPlatformError = (e: CodedError): e is WebAPIPlatformError => e.code === 'slack_webapi_platform_error'

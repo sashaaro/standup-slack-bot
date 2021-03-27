@@ -1,11 +1,10 @@
 import {Inject} from "injection-js";
-import {LOGGER_TOKEN} from "../services/token";
 import {QUEUE_NAME_SLACK_EVENTS} from "../services/providers";
 import {MessageResponse} from "./model/MessageResponse";
 import {ChannelLeft, MemberJoinedChannel} from "./model/SlackChannel";
 import SlackWorkspace from "../model/SlackWorkspace";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
-import {Logger} from "winston";
+import {Logger} from "pino";
 import User from "../model/User";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, SlackBotTransport} from "./slack-bot-transport.service";
 import {Connection} from "typeorm";
@@ -17,6 +16,7 @@ import {QueueRegistry} from "../services/queue.registry";
 import {ContextualError} from "../services/utils";
 import QuestionSnapshot from "../model/QuestionSnapshot";
 import {greetingBlocks} from "./slack-blocks";
+import {LOG_TOKEN} from "../services/token";
 
 export class SlackEventListener {
   evensHandlers: {[event:string]: (data: any) => Promise<any>|any} = {
@@ -48,7 +48,7 @@ export class SlackEventListener {
 
       return await this.slackBotTransport.sendMessage(user, "Click \"Open dialog\" above")
     },
-    error: (data) => this.logger.error('Receive slack events error', {error: data}),
+    error: (data) => this.logger.error(data, 'Receive slack events error'),
     member_left_channel: async (response: MemberJoinedChannel) => { // TODO left interface
       const workspaceRepository = this.connection.getRepository(SlackWorkspace)
 
@@ -85,7 +85,7 @@ export class SlackEventListener {
     private syncSlack: SyncSlackService,
     private queueRegistry: QueueRegistry,
     private connection: Connection,
-    @Inject(LOGGER_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private logger: Logger,
   ) {
   }
 
@@ -110,13 +110,13 @@ export class SlackEventListener {
         try {
           await this.queueRegistry.create(QUEUE_NAME_SLACK_EVENTS).add(event, data);
         } catch (error) {
-          this.logger.error('Add job error', {event, data})
+          this.logger.error(error, 'Add job error')
         }
       })
     }
 
     this.slackEvents.on('error', (error) => {
-      this.logger.error('Slack event error', error)
+      this.logger.error(error, 'Slack event error')
     })
   }
 
@@ -127,7 +127,7 @@ export class SlackEventListener {
 
   public async handleAction(action: SlackAction) {
     if (action.actions.length !== 1) {
-      this.logger.warn('Inconsistent actions length', {action})
+      this.logger.warn({action}, 'Inconsistent actions length')
     }
 
     const userId = action.user.id
@@ -207,7 +207,7 @@ export class SlackEventListener {
       const hasOptions = question.options.length > 1;
 
       if (hasOptions && item.type !== 'static_select') {
-        this.logger.warning('wrong item type', item)
+        this.logger.warning(item, 'wrong item type')
       }
 
       const value = hasOptions ? item.selected_option.value : item.value

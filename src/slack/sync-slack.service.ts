@@ -7,15 +7,15 @@ import {SlackChannel, SlackConversation} from "./model/SlackChannel";
 import {ChannelRepository} from "../repository/ChannelRepository";
 import {Channel} from "../model/Channel";
 import {Inject, Injectable} from "injection-js";
-import {LOGGER_TOKEN} from "../services/token";
-import {Logger} from "winston";
+import {Logger} from "pino";
 import {WebClient} from "@slack/web-api";
 import {Connection, DeepPartial} from "typeorm";
+import {LOG_TOKEN} from "../services/token";
 
 @Injectable()
 export class SyncSlackService {
   constructor(
-    @Inject(LOGGER_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private logger: Logger,
     private webClient: WebClient,
     private connection: Connection,
   ) {
@@ -53,7 +53,7 @@ export class SyncSlackService {
       });
       if (!response.ok) {
         // throw..
-        this.logger.error('Fetch users error', {error: response.error})
+        this.logger.error(response, 'Fetch users error')
         return;
       }
 
@@ -64,7 +64,7 @@ export class SyncSlackService {
               && !u.is_app_user
               && u.id !== 'USLACKBOT' // https://stackoverflow.com/a/40681457
       )
-      this.logger.debug('webClient.users.list', {users: members})
+      this.logger.debug({users: members}, 'webClient.users.list')
 
       const list = []
       for (const member of members) {
@@ -151,7 +151,7 @@ export class SyncSlackService {
           && ch.name !== 'slack-bots'
           && ch.name !== 'random'
       )
-      this.logger.debug('webClient.conversations.list', {channels})
+      this.logger.debug({channels}, 'webClient.conversations.list')
 
       await this.connection.createQueryBuilder()
         .update(Channel)

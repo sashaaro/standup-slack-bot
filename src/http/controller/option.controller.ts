@@ -1,8 +1,7 @@
 import { Injectable, Inject } from 'injection-js';
-import {CONFIG_TOKEN, LOGGER_TOKEN} from "../../services/token";
+import {CONFIG_TOKEN} from "../../services/token";
 import {IAppConfig} from "../../services/providers";
 import {Connection} from "typeorm";
-import {Logger} from "winston";
 import {Request, Response} from "express";
 import QuestionOption from "../../model/QuestionOption";
 import {authorized, bind} from "../../services/decorators";
@@ -12,7 +11,6 @@ export class OptionController {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private connection: Connection,
-    @Inject(LOGGER_TOKEN) private logger: Logger,
   ) {
   }
 

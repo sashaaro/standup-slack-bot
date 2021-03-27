@@ -1,11 +1,10 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  LOGGER_TOKEN,
+  LOG_TOKEN,
   REDIS_TOKEN,
   TERMINATE
 } from "../services/token";
-import {Logger} from "winston";
 import {Connection} from "typeorm";
 import {Redis} from "ioredis";
 import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
@@ -15,12 +14,10 @@ import {SlackEventListener} from "../slack/slack-event-listener";
 import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
 import {bind} from "../services/decorators";
 import {QueueRegistry} from "../services/queue.registry";
+import {HasPreviousError} from "../services/utils";
 
-class HasPreviousError extends Error {
-  public previous: Error;
-}
 
-class ConsumerError extends HasPreviousError {
+class JobError extends HasPreviousError {
   job: Job
 }
 
@@ -50,7 +47,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       try {
         await this.slackEventListener.handleEventJob(job.name, job.data)
       } catch (error) {
-        this.logger.warn('Error slack events job handling', {error, job})
+        this.log.warn(error, 'Error slack events job handling')
       }
     },
     [QUEUE_NAME_SLACK_INTERACTIVE]: async (job: Job) => {
@@ -61,10 +58,13 @@ export class QueueConsumeCommand implements yargs.CommandModule {
         } else if (data.type === InteractiveResponseTypeEnum.view_submission) {
           await this.slackEventListener.handleViewSubmission(data);
         } else {
-          this.logger.warn('No handler for job', {job})
+          this.log.warn(job, 'No handler for job')
         }
       } catch (error) {
-        this.logger.warn('Error slack interactive job handling', {error, job})
+        const er = new JobError()
+        er.previous = error
+        er.job = job
+        this.log.warn(er, 'Error slack interactive job handling')
       }
     }
   }
@@ -72,7 +72,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
   constructor(
     private injector: Injector,
     private slackEventListener: SlackEventListener,
-    @Inject(LOGGER_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private log,
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
     private queueRegistry: QueueRegistry,
@@ -127,18 +127,18 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       });
 
       queue.on('process', (job) => {
-        this.logger.info(`job process ${job.name} #${job.id}`, {data: job.data})
+        this.log.info(job, `job process`)
       });
 
       queue.on('completed', (job) => {
-        this.logger.info(`job complete ${job.name} #${job.id}`)
+        this.log.info(job, `job complete`)
       });
 
       queue.on('failed', async (job, err) => {
-        const error = new ConsumerError()
+        const error = new JobError()
         error.previous = err
         error.job = job
-        this.logger.error(`job failed ${job.name} #${job.id}`, {error: err})
+        this.log.error(error, `job failed`)
         // TODO retry?!
       });
     })

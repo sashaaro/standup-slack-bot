@@ -2,18 +2,15 @@ import * as yargs from "yargs";
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import StandupNotifier from "../slack/standup-notifier";
 import {Inject} from "injection-js";
-import {LOGGER_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
+import {LOG_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
 import {Connection} from "typeorm";
 import {forkJoin, from, Observable, of} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
-import {Logger} from "winston";
 import {map, mapTo, mergeMap, takeUntil} from "rxjs/operators";
 import {bind} from "../services/decorators";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
-import {ContextualError} from "../services/utils";
 import UserStandup from "../model/UserStandup";
-import User from "../model/User";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
   static meta = {
@@ -27,12 +24,12 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     private connection: Connection,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(TERMINATE) protected terminate$: Observable<void>,
-    @Inject(LOGGER_TOKEN) protected logger: Logger,
+    @Inject(LOG_TOKEN) protected log,
   ) {}
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    this.logger.debug('Database connecting...');
+    this.log.info('Database connection estimating...');
     if (!this.connection.isConnected) {
       await this.connection.connect();
     }
@@ -46,7 +43,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
     await redisReady(this.redis);
 
-    this.logger.debug('Start standup notificator loop...');
+    this.log.info('Start standup notificator loop...');
     const {start$, end$} = this.standupNotifier.create()
     start$.pipe(
       mergeMap(standups => forkJoin(
@@ -73,9 +70,9 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       takeUntil(this.terminate$)
     ).subscribe({
       next: list => {
-        this.logger.info('Start daily meetings', {standups: list.map(({standup}) => standup.id)})
+        this.log.info('Start daily meetings', {standups: list.map(({standup}) => standup.id)})
       },
-      error: error => this.logger.error('Start daily meeting error', {error})
+      error: error => this.log.error(error, 'Start daily meeting error')
     });
 
     end$.pipe(
@@ -87,7 +84,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       next: standups => {
         // TODO insert to slack message table?!
       },
-      error: error => this.logger.error('send report error', {error})
+      error: error => this.log.error(error, 'send report error')
     })
 
     this.terminate$.subscribe(() => {

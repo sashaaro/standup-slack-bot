@@ -5,7 +5,7 @@ const backendPort = 3001;
 const backendRoutePrefix = '/api'
 
 const server = http.createServer((request, response) => {
-  console.log('Request: ' + request.url)
+  // console.log('Request: ' + request.url)
 
   const isApi = request.url.startsWith(backendRoutePrefix);
   const options = {

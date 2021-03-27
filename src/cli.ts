@@ -3,7 +3,7 @@ import "reflect-metadata";
 import yargs, {Arguments} from "yargs";
 import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "./services/providers";
-import {CONFIG_TOKEN, LOGGER_TOKEN, TERMINATE} from "./services/token";
+import {CONFIG_TOKEN, LOG_TOKEN, TERMINATE} from "./services/token";
 import Rollbar from "rollbar";
 import "./services/decorators";
 
@@ -18,8 +18,9 @@ const {providers, commands} = createProviders(env);
 const injector = ReflectiveInjector.resolveAndCreate(providers);
 
 const config = injector.get(CONFIG_TOKEN);
-const logger = injector.get(LOGGER_TOKEN);
-console.log(`Environment: ${env}. Debug: ${config.debug ? 'true' : 'false'}`);
+const logger = injector.get(LOG_TOKEN);
+
+logger.info({env, debug: config.debug}, `Start `)
 
 injector.get(TERMINATE).subscribe(() => {
   console.log('Terminate...')
@@ -48,6 +49,6 @@ try {
     .strict()
     .argv
 } catch (e) {
-  logger.error('Application error', {error: e});
+  logger.error(e, 'Application error');
 }
 
