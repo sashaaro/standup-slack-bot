@@ -20,16 +20,16 @@ export class TeamRepository extends EntityRepository<Team> {
     qb.select('*')
     scopeTeamJoins(qb);
 
-    return qb
+    qb
       .joinAndSelect('team.timezone', 'timezone')
       .joinAndSelect('team.workspace', 'workspace')
-      .joinAndSelect( 'pg_timezone_names', 'pg_timezone', 'timezone.name = pg_timezone.name')
-      .andWhere(`(team.start::time - pg_timezone.utc_offset) = ?::time`, [formatTime(startedAt, false)])
+      .andWhere(`(team.start::time - timezone.utc_offset) = ?::time`, [formatTime(startedAt, false)])
       .andWhere({'team.status': TEAM_STATUS_ACTIVATED})
       .andWhere(
-          '((extract("dow" from ? at time zone pg_timezone.name)::int + 6) % 7) = ANY(team.days)',
+          '((extract("dow" from ? at time zone timezone.name)::int + 6) % 7) = ANY(team.days)',
           [startedAt])
-      .getResultList();
+
+    return qb.getResultList()
   }
 
   async findActiveById(id) {
@@ -53,13 +53,6 @@ export class TeamRepository extends EntityRepository<Team> {
       .getSingleResult()
   }
 
-  async add(team: Team) {
-    return await this.em.transactional( async manager => {
-      await manager.getRepository(Team).persist(team)
-      await this.insertSnapshot(team, manager)
-    });
-  }
-
   async findSnapshot(team: Team): Promise<TeamSnapshot> {
     return await this.em.findOne(TeamSnapshot, {
       'originTeam': team
@@ -67,12 +60,6 @@ export class TeamRepository extends EntityRepository<Team> {
       'users', 'questions', 'questions.options', 'questions.originQuestion', 'originTeam',
       'originTeam.workspace'
     ], {'createdAt': 'DESC'})
-  }
-
-  async insertSnapshot(team: Team, manager): Promise<TeamSnapshot> {
-    const teamSnapshot = this.createSnapshot(team);
-    // await this.em.persist(TeamSnapshot, teamSnapshot)
-    return teamSnapshot;
   }
 
   createSnapshot(team: Team): TeamSnapshot {
@@ -188,7 +175,7 @@ export class TeamRepository extends EntityRepository<Team> {
         ),
       ])
 
-      await em.persist( // TODO remove persist?!
+      await em.persist(
         newOptions.map(o => em.create(QuestionOption, {...o, question: q})) // TODO find same
       );
     }
@@ -201,7 +188,7 @@ export class TeamRepository extends EntityRepository<Team> {
 
 
     if (!lastSnapshot || !lastSnapshot.equals(newSnapshot)) {
-      await em.create(TeamSnapshot, newSnapshot) // TODO persist
+      await em.persist(em.create(TeamSnapshot, newSnapshot))
     }
 
     return team;

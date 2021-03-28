@@ -5,7 +5,7 @@ import {ChannelLeft, MemberJoinedChannel} from "./model/SlackChannel";
 import SlackWorkspace from "../entity/slack-workspace";
 import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import {Logger} from "pino";
-import {User} from "../entity/user";
+import {Standup, User} from "../entity";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, SlackBotTransport} from "./slack-bot-transport.service";
 import {SlackAction, ViewSubmission} from "./model/ViewSubmission";
 import AnswerRequest from "../entity/answer-request";
@@ -15,6 +15,7 @@ import {ContextualError} from "../services/utils";
 import QuestionSnapshot from "../entity/question-snapshot";
 import {greetingBlocks} from "./slack-blocks";
 import {LOG_TOKEN} from "../services/token";
+import {StandupRepository} from "../repository/standupRepository";
 
 export class SlackEventListener {
   evensHandlers: {[event:string]: (data: any) => Promise<any>|any} = {
@@ -128,13 +129,14 @@ export class SlackEventListener {
     const openReportAction = action.actions.find(a => a.action_id === ACTION_OPEN_REPORT);
     const openDialogAction = action.actions.find(a => a.action_id === ACTION_OPEN_DIALOG);
 
+    const standupRepo = em().getRepository(Standup) as StandupRepository
     if (openReportAction) {
       const standupId = parseInt(openReportAction.value);
       if (!standupId) {
         throw new Error(`Standup standpId is not defined ${openReportAction.value}`)
       }
 
-      const userStandup = await em().getRepository(User).findUserStandup(userId, standupId);
+      const userStandup = await standupRepo.findUserStandup(userId, standupId);
 
       if (!userStandup) {
         throw new ContextualError(`User standup is not found`, {userId, standupId: standupId})
@@ -145,7 +147,7 @@ export class SlackEventListener {
       const standupId = parseInt(openDialogAction.value);
       // TODO already submit
 
-      let userStandup = await em().getRepository(User).findUserStandup(userId, standupId);
+      let userStandup = await standupRepo.findUserStandup(userId, standupId);
 
       if (!userStandup) {
         throw new ContextualError(`User standup is not found`, {userId, standupId})
@@ -164,7 +166,9 @@ export class SlackEventListener {
     //const msgDate = new Date(parseInt(viewSubmission.ts) * 1000);
 
     const metadata = JSON.parse(viewSubmission.view.private_metadata);
-    const userStandup = await this.standupRepository.findUserStandup(userId, metadata.standup)
+    const standupRepo = em().getRepository(Standup) as StandupRepository
+
+    const userStandup = await standupRepo.findUserStandup(userId, metadata.standup)
     if (!userStandup) {
       // TODO
       throw new ContextualError(`User standup is not found`, {userId, standupId: metadata.standup})
@@ -187,9 +191,16 @@ export class SlackEventListener {
     if (questionsIds.length !== Object.values(viewSubmission.view.state.values).length) {
       throw new ContextualError('question answer are wrong', viewSubmission)
     }
-    const questions = await this.connection.getRepository(QuestionSnapshot).findByIds(questionsIds, {
-      relations: ['options']
-    });
+
+    if (questionsIds.length === 0) {
+      throw new ContextualError('question answers equals zero', viewSubmission)
+    }
+
+    const questions = await em().find(
+      QuestionSnapshot,
+      {id: {$in: questionsIds}},
+      ['options']
+    );
 
     if (questions.length !== questionsIds.length) {
       throw new Error('questions quantity is not same as answers') // TODO
@@ -214,13 +225,13 @@ export class SlackEventListener {
       }
 
       if (hasOptions) {
-        answer.option = question.options.find(o => o.id === parseInt(value))
+        answer.option = question.options.getItems().find(o => o.id === parseInt(value))
       } else {
         answer.answerMessage = value;
       }
     }
 
-    await this.connection.getRepository(AnswerRequest).save(userStandup.answers);
+    await em().persistAndFlush(userStandup.answers);
     await this.slackBotTransport.updateMessage({
       token: 'xoxb-646242827008-1873129895365-hoUmeZfd4ZIgStbKKH5Ct7X0',
       ts: '1616350254.002200',

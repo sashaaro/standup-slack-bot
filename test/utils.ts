@@ -32,11 +32,6 @@ const {providers} = createProviders( 'test');
 export const testInjector = ReflectiveInjector.resolveAndCreate(providers);
 export const testConnection: Connection = testInjector.get(Connection);
 
-
-export function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 export const generateTeam = () => {
   const team = new Team();
   team.name = 'team';

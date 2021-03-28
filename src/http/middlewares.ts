@@ -2,6 +2,9 @@ import express from 'express'
 import 'express-async-errors';
 import getRawBody from "raw-body";
 import {Logger} from "pino";
+import {em, emStorage} from "../services/providers";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
 export const createLoggerMiddleware = (logger: Logger) => (req: express.Request, res: express.Response, next) => {
   (req.originalUrl.startsWith('/api/slack') && req.method === "POST" ? getRawBody(req) : Promise.resolve(null)).then(buff => {
@@ -21,5 +24,20 @@ export const createLoggerMiddleware = (logger: Logger) => (req: express.Request,
   })
 
   next()
+}
+
+export const emMiddleware = (mikro: MikroORM<PostgreSqlDriver>) =>  (req, res, next) => {
+  emStorage.run(mikro.em.fork(true, true), next)
+  // emStorage.run(mikro.em.fork(true, true), (...args) => {
+  //   let result
+  //   try {
+  //     result = next(...args)
+  //   } catch (e) {
+  //     em().getConnection().close();
+  //     throw e;
+  //   }
+  //   em().getConnection().close();
+  //   return result;
+  // })
 }
 

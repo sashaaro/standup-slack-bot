@@ -1,10 +1,8 @@
 import Standup from "../entity/standup";
 import {qbStandupJoins, scopeTeamSnapshotJoins, scopeTeamWorkspaceJoins, scopeUserAnswerQuestion} from "./scopes";
 import UserStandup from "../entity/user-standup";
-import {Repository} from "@mikro-orm/core";
 import {EntityRepository} from "@mikro-orm/postgresql";
 
-@Repository(Standup)
 export class StandupRepository extends EntityRepository<Standup> {
   findByIdAndUser(userId: string, standupId: number): Promise<Standup> {
     const qb = this.em.createQueryBuilder<Standup>('standup');
@@ -31,15 +29,15 @@ export class StandupRepository extends EntityRepository<Standup> {
       .leftJoinAndSelect('team.reportChannel', 'reportChannel')
 
     // TODO! database timzone and nodejs process timezone should be same!
-    qb.andWhere(`date_trunc('minute', standup.endAt) = date_trunc('minute', ?::timestamp)`, [endAt])
+    qb.andWhere(`date_trunc('minute', standup.end_at) = date_trunc('minute', ?::timestamp)`, [endAt])
 
     return qb.getResultList();
   }
 
   findUserStandup(userId: string, standupId: number): Promise<UserStandup> {
     const qb = this.em.getRepository(UserStandup).createQueryBuilder('userStandup')
-      .andWhere({'userStandup.userId': userId}) // TODO add unique index userId standupId
-      .andWhere({'userStandup.standupId': standupId})
+      .andWhere({'userStandup.user_id': userId}) // TODO add unique index userId standupId
+      .andWhere({'userStandup.standup_id': standupId})
       .leftJoinAndSelect('userStandup.user', 'user')
       .leftJoinAndSelect('userStandup.standup', 'standup')
 

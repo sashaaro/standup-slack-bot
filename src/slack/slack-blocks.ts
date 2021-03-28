@@ -1,6 +1,6 @@
 import {Block, KnownBlock} from "@slack/types";
 import {ACTION_OPEN_DIALOG} from "./slack-bot-transport.service";
-import Standup from "../model/Standup";
+import {Standup} from "../entity";
 
 export const greetingBlocks = (standup: Standup, submitted = false) => {
   const fallbackText =  `It's time to start your daily standup ${standup.team.originTeam.name}`;

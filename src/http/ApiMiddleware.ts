@@ -17,7 +17,7 @@ import {createMessageAdapter} from "@slack/interactive-messages";
 import {emStorage, IAppConfig, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from "../slack/slack-bot-transport.service";
 import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
-import {createLoggerMiddleware} from "./middlewares";
+import {createLoggerMiddleware, emMiddleware} from "./middlewares";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import {QueueRegistry} from "../services/queue.registry";
 import {stringifyError} from "../services/utils";
@@ -87,11 +87,7 @@ export class ApiMiddleware {
       //cookie: { secure: true }
     }))
 
-    router.use((req, res, next) => {
-      emStorage.run(mikro.em.fork(true, true), next)
-      // TODO forkEm.close?!
-    });
-
+    router.use(emMiddleware(mikro));
     router.use(createApiContextMiddleware());
 
     const auto = injector.get(AuthController);
@@ -171,10 +167,7 @@ export class ApiMiddleware {
       }
     })
 
-    router.use((req, res, next) => {
-      emStorage.run(mikro.em.fork(true, true), next)
-      // TODO forkEm.close?!
-    });
+    router.use(emMiddleware(mikro));
 
     router.use('/interactive', slackInteractions.expressMiddleware());
     router.use('/events', slackEvents.expressMiddleware());

@@ -27,7 +27,7 @@ class Timezone {
   utc_offset: any|IPostgresInterval;
 
   @Property()
-  name: string;
+  name: string; // valid pg timezone name
 }
 
 export default Timezone;

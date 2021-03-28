@@ -1,6 +1,5 @@
 import {Inject, Injectable} from "injection-js";
-import User from "../model/User";
-import Standup from "../model/Standup";
+import {Standup, User, UserStandup} from "../entity";
 import {
   ChatPostMessageArguments,
   ChatUpdateArguments,
@@ -9,7 +8,6 @@ import {
 import {Logger} from "pino";
 import {ContextualError, isPlatformError} from "../services/utils";
 import {MessageResult} from "./model/MessageResult";
-import UserStandup from "../model/UserStandup";
 import {OpenViewResult} from "./model/OpenViewResult";
 import {greetingBlocks} from "./slack-blocks";
 import {LOG_TOKEN} from "../services/token";
@@ -120,7 +118,7 @@ export class SlackBotTransport {
             "emoji": true
           }
 
-          element.options = question.options.map(pa => ({
+          element.options = question.options.getItems().map(pa => ({
             text: {
               "type": "plain_text",
               "text": pa.text,

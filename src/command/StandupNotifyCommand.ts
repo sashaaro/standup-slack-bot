@@ -3,13 +3,13 @@ import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import StandupNotifier from "../slack/standup-notifier";
 import {Inject} from "injection-js";
 import {LOG_TOKEN, MIKRO_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
-import {forkJoin, from, Observable, of} from "rxjs";
+import {forkJoin, Observable} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
-import {map, mapTo, mergeMap, takeUntil} from "rxjs/operators";
+import {mapTo, mergeMap, takeUntil} from "rxjs/operators";
 import {bind} from "../services/decorators";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
-import UserStandup from "../model/UserStandup";
+import {UserStandup} from "../entity";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
@@ -26,7 +26,6 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     @Inject(TERMINATE) protected terminate$: Observable<void>,
     @Inject(LOG_TOKEN) protected log,
     @Inject(MIKRO_TOKEN) private mikroORM,
-
   ) {}
 
   @bind
@@ -37,6 +36,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
     if (!await mikroORM.isConnected()) {
       await mikroORM.connect()
+      await mikroORM.em.execute('set application_name to "Standup Bot Notifier";');
     }
 
     try {
@@ -50,11 +50,11 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     await redisReady(this.redis);
 
     this.log.info('Start standup notificator loop...');
-    const {start$, end$} = this.standupNotifier.create()
+    const {start$, end$} = this.standupNotifier.create(mikroORM)
     start$.pipe(
       mergeMap(standups => forkJoin(
         standups.map(standup =>
-          standup.team.users.map(
+          standup.team.users.getItems().map(
             user => fromPromise(this.slackTransport.sendGreetingMessage(user, standup).then(messageResult => ({
               messageResult, user, standup
             })))
@@ -83,12 +83,17 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
     end$.pipe(
       mergeMap(standups => fromPromise(
-        Promise.all(standups.map(standup => this.slackTransport.sendReport(standup))))
+        Promise.all( // TODO allStandup
+          standups.map(standup =>
+            this.slackTransport.sendReport(standup).then(msg => standup)
+          ))
+        )
       ),
       takeUntil(this.terminate$)
     ).subscribe({
       next: standups => {
         // TODO insert to slack message table?!
+        this.log.info(standups.map(s => s.id), 'Report send');
       },
       error: error => this.log.error(error, 'send report error')
     })
@@ -97,6 +102,6 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       this.mikroORM.close()
     });
 
-    console.log('Notifier listen!');
+    this.log.info('Notifier listen');
   }
 }

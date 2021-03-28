@@ -1,7 +1,7 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  LOG_TOKEN,
+  LOG_TOKEN, MIKRO_TOKEN,
   REDIS_TOKEN,
   TERMINATE
 } from "../services/token";
@@ -15,6 +15,8 @@ import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
 import {bind} from "../services/decorators";
 import {QueueRegistry} from "../services/queue.registry";
 import {HasPreviousError} from "../services/utils";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
 
 class JobError extends HasPreviousError {
@@ -73,7 +75,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     private injector: Injector,
     private slackEventListener: SlackEventListener,
     @Inject(LOG_TOKEN) private log,
-    private connection: Connection,
+    @Inject(MIKRO_TOKEN) private mikroORM,
     @Inject(REDIS_TOKEN) private redis: Redis,
     private queueRegistry: QueueRegistry,
     @Inject(TERMINATE) protected terminate$: Observable<void>
@@ -91,6 +93,14 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
+    let mikroORM: MikroORM<PostgreSqlDriver>;
+    mikroORM = await this.mikroORM
+
+    if (!await mikroORM.isConnected()) {
+      await mikroORM.connect()
+      await mikroORM.em.execute('set application_name to "Standup Bot Consumer";');
+    }
+
     const queue = args.queue as string;
     const availableQueues = Object.keys(this.queueHandlers);
     if (queue && !availableQueues.includes(queue)) {
@@ -107,9 +117,6 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       }
     }
     await redisReady(this.redis);
-    if (!this.connection.isConnected) {
-      await this.connection.connect();
-    }
 
     const queues = queueNames.map(q => this.queueRegistry.create(q))
 
@@ -154,7 +161,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     this.terminate$.subscribe(() => {
       queues.forEach(q => q.close())
 
-      this.connection.close()
+      this.mikroORM.close()
       this.redis.disconnect()
     })
   }

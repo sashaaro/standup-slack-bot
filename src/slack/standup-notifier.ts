@@ -1,13 +1,16 @@
 import { Injectable, Inject } from 'injection-js';
-import {forkJoin, from, NEVER, of, timer} from "rxjs";
+import {timer} from "rxjs";
 import {delay, map, mapTo, mergeMap, share, tap} from "rxjs/operators";
 import {Logger} from "pino";
-import Standup from "../model/Standup";
 import {TeamRepository} from "../repository/team.repository";
 import {StandupRepository} from "../repository/standupRepository";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
-import {Connection} from "typeorm";
 import {LOG_TOKEN} from "../services/token";
+import {em, emStorage} from "../services/providers";
+import {Team, Standup} from "../entity";
+import {withinContext} from "../operator/within-context.operator";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
 const standupGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standupGoodBye = 'Have good day. Good bye.';
@@ -17,10 +20,7 @@ const standupWillRemindYouNextTime = `I will remind you when your next standup i
 export default class StandupNotifier {
   constructor(@Inject(LOG_TOKEN) protected logger: Logger){}
 
-  create() {
-    const teamRepository = {} as any; // this.connection.getCustomRepository(TeamRepository)
-    const standupRepository = {} as any; // this.connection.getCustomRepository(StandupRepository)
-
+  create(mikroORM: MikroORM<PostgreSqlDriver>) {
     const intervalMs = 60 * 1000;  // every minutes
 
     const now = new Date();
@@ -41,35 +41,37 @@ export default class StandupNotifier {
 
     const start$ = interval$.pipe(
       mergeMap(date =>
-        fromPromise(teamRepository.findByStart(date)).pipe(
+        fromPromise((em().getRepository(Team) as TeamRepository).findByStart(date)).pipe(
           map(teams => ({teams, date}))
         )
       ),
-      mergeMap(({teams, date}) =>
-        forkJoin(
-          teams.map(team =>
-            fromPromise((async () => {
+      withinContext(emStorage, () => mikroORM.em.fork(true, true)),
+      mergeMap(({teams, date}) => {
+        return fromPromise(
+          Promise.all( // TODO Promise.settled
+            teams.map(async team => {
+              const teamRepository = em().getRepository(Team) as TeamRepository;
+
               const standup = new Standup();
 
               standup.startAt = date;
               // TODO ?! standup.startAt = new Date(Math.floor(date.getTime() / (60 * 1000)) * 60 * 1000)
               // TODO transaction
-              standup.team = await teamRepository.findSnapshot(team); // disable edger?!
+              standup.team = await teamRepository.findSnapshot(team); // TODO disable edger?! IN?
               if (!standup.team) {
-                  standup.team = await teamRepository.insertSnapshot(team);
+                standup.team = teamRepository.createSnapshot(team);
               }
               return standup;
-            })())
+            })
           )
+        ).pipe(
+          mergeMap(standups => fromPromise(em().persistAndFlush(standups)).pipe(mapTo(standups)))
         )
-      ),
-      mergeMap(standups =>
-        fromPromise(standupRepository.insert(standups)).pipe(mapTo(standups))
-      )
+      }),
     )
 
     const end$ = interval$.pipe(
-      mergeMap(date => fromPromise(standupRepository.findEnd(date)))
+      mergeMap(date => fromPromise((em().getRepository(Standup) as StandupRepository).findEnd(date)))
     )
 
     return {start$, end$};

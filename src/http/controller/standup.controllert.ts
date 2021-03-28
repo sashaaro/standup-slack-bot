@@ -30,8 +30,8 @@ export class StandupController {
 
     const qb = em().createQueryBuilder(Standup, 'standup')
     qb.select('*')
-    qb.offset(offset)
-      .limit(limit)
+    qb
+      .limit(limit, offset)
       .setFlag(QueryFlag.PAGINATE)
 
     qb
@@ -43,15 +43,15 @@ export class StandupController {
       //.joinAndSelect('userStandups.answers', 'answers')
       //.joinAndSelect('answers.question', 'answersQuestion')
       //.leftJoinAndSelect('answers.option', 'answersOption')
-      .andWhere('teamSnapshot.originTeamId = ?', [teamID])
+      //.andWhere('teamSnapshot.originTeamId = ?', [teamID])
 
-    res.setHeader( 'X-Total', total)
-    res.setHeader('Access-Control-Allow-Headers', 'x-total')
-    res.setHeader('Content-Type', 'application/json');
+    // res.setHeader( 'X-Total', total)
+    // res.setHeader('Access-Control-Allow-Headers', 'x-total')
+    // res.setHeader('Content-Type', 'application/json');
 
     // res.send([]);
     // return;
-
+console.log(111);
     res.send(
       //'111'
       qb.getQuery()

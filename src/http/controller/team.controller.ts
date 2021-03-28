@@ -14,6 +14,7 @@ import {TeamRepository} from "../../repository/team.repository";
 import {TeamDTO} from "../../dto/team-dto";
 import {LOG_TOKEN} from "../../services/token";
 import {Logger} from "pino";
+import {sleep} from "../../services/utils";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -54,6 +55,8 @@ export class TeamController {
     }
 
     const teams = await qb.getResultList()
+
+    //await em().execute('rollback');
 
     res.setHeader('Content-Type', 'application/json');
     res.send(teams);
@@ -112,6 +115,7 @@ export class TeamController {
     const id = req.params.id as number|any
 
     await tem.begin()
+    // TODO await tem.execute('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
     try {
       const teamRepo = tem.getRepository(Team) as TeamRepository
       const team = await teamRepo.findActiveById(id);
@@ -130,15 +134,12 @@ export class TeamController {
 
       res.setHeader('Content-Type', 'application/json');
       if (errors.length === 0) {
-        //console.log(team.users);
-        //await em().persist(team);
-        //await em().flush();
         teamDTO.id = team.id
         const updatedTeam = await teamRepo.submit(teamDTO);
         await tem.commit();
         res.send(classToPlain(updatedTeam, {strategy: 'excludeAll'}));
       } else {
-        tem.rollback();
+        tem.rollback(); //release
         res.status(400).send(errors);
       }
     } catch (error) {

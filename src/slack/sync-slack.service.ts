@@ -3,14 +3,12 @@ import {User} from "../entity";
 import {ISlackUser} from "./model/SlackUser";
 import {SlackIm} from "./model/ScopeGranted";
 import {SlackChannel, SlackConversation} from "./model/SlackChannel";
-import {ChannelRepository} from "../repository/ChannelRepository";
 import {Channel} from "../entity";
 import {Inject, Injectable} from "injection-js";
 import {Logger} from "pino";
 import {WebClient} from "@slack/web-api";
 import SlackWorkspace from "../entity/slack-workspace";
 import {em} from "../services/providers";
-import {wrap} from "@mikro-orm/core";
 import {LOG_TOKEN} from "../services/token";
 
 @Injectable()
@@ -206,7 +204,7 @@ export class SyncSlackService {
     } while (response.response_metadata.next_cursor)
   }
 
-  async findOrCreateAndUpdate(channelID: string, data: Channel): Promise<{channel: Channel, isNew: boolean}> {
+  async findOrCreateAndUpdate(channelID: string, data: Partial<Channel>): Promise<{channel: Channel, isNew: boolean}> {
     const repo = {} as any; // this.connection.getCustomRepository(ChannelRepository);
     const {channel, isNew} = await repo.findOrCreateChannel(channelID);
     Object.assign(channel, data);

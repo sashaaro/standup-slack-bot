@@ -58,6 +58,7 @@ export class ServerCommand implements yargs.CommandModule {
 
     if (!await mikroORM.isConnected()) {
       await mikroORM.connect()
+      await mikroORM.em.execute('set application_name to "Standup Bot Server";');
     }
 
     try {

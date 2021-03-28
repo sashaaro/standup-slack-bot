@@ -17,6 +17,10 @@
   }
 }
 
+:host-context(.light) {
+  background-color: rgba(255,255,255,.70);
+}
+
 @keyframes loader {
   from {
     -webkit-transform: rotate(0);

@@ -2,8 +2,11 @@ import {Collection, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Proper
 import {TeamSnapshot} from "./team-snapshot";
 import UserStandup from "./user-standup";
 import {Exclude} from "class-transformer";
+import {StandupRepository} from "../repository/standupRepository";
 
-@Entity()
+@Entity({
+  customRepository: () => StandupRepository
+})
 export default class Standup {
   @PrimaryKey()
   id: number;

@@ -190,7 +190,7 @@
         <mat-error>{{ questionControl.getError('custom') }}</mat-error>
       </div>
     </div>
-    <button type="button" class="add-question" color="primary" mat-flat-button [disabled]="submit$ | async" (click)="add()">
+    <button type="button" class="add-question" color="primary" mat-flat-button (click)="add()">
       <i class="icon save"></i> Add question
     </button>
     <mat-error>{{ questionsControl.getError('custom') }}</mat-error>

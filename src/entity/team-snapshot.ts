@@ -3,7 +3,16 @@ import {Expose, Type} from "class-transformer";
 import {Team} from "./team";
 import QuestionSnapshot from "./question-snapshot";
 import {sortByIndex} from "../services/utils";
-import {Collection, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
+import {
+  BeforeCreate,
+  Collection,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryKey,
+  Property
+} from "@mikro-orm/core";
 import Question from "./question";
 
 
@@ -33,10 +42,10 @@ export class TeamSnapshot {
   })
   questions = new Collection<QuestionSnapshot, TeamSnapshot>(this);
 
-  @Property({nullable: false})
+  @Property({nullable: false, defaultRaw: 'CURRENT_TIMESTAMP'})
   createdAt: Date;
 
-  //@BeforeInsert()
+  @BeforeCreate()
   setupCreatedAt() {
     this.createdAt = new Date();
   }

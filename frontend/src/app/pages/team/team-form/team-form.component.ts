@@ -1,6 +1,6 @@
 import {
   AfterViewInit,
-  Component, ElementRef,
+  Component, ElementRef, Inject,
   Input,
   OnChanges,
   OnInit, QueryList,
@@ -41,6 +41,7 @@ import {MatSnackBar} from "@angular/material/snack-bar";
 import {log} from "../../../operator/log";
 import {chartConfig} from "../stat-team/stat-team.component";
 import {chartColors} from "../../../service/utils";
+import {CONTAINER_LOADING} from "../../../component/async.directive";
 
 export const weekDays = [
   'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
@@ -140,6 +141,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     public dialog: MatDialog,
     public snackBar: MatSnackBar,
     public elementRef: ElementRef<HTMLElement>,
+    @Inject(CONTAINER_LOADING) private loading: Subject<boolean>
   ) {
   }
 
@@ -294,12 +296,14 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     })) //value.questions.map((q, index) => ({...q, index}));
     teamDTO.questions.forEach((q) => q.text = q.text?.trim());
 
+    this.submit$.next(true)
+    this.loading.next(true);
+
     (this.team ?
       this.teamService.updateTeam(this.team.id, teamDTO) :
       this.teamService.createTeam(teamDTO)
     ).pipe(
-      tap(_ => this.submit$.next(true)),
-      untilDestroyed(this)
+      // untilDestroyed(this)
     ).subscribe(team => {
       // todo notification
       this.snackBar.open(this.team ?'Successfully updated' : 'Successfully created', 'Ok', {
@@ -314,8 +318,10 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
         this.applyFormErrors(errors, this.form);
       }
       this.submit$.next(false)
+      this.loading.next(false)
     }, () => {
       this.submit$.next(false)
+      this.loading.next(false)
     })
   }
 
