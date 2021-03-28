@@ -1,7 +1,17 @@
+@import "../mixin";
+
 .content {
   width: 1127px;
   margin-left: auto;
   margin-right: auto;
+
+  @include media("only screen and (max-width: 1130px)") {
+    width: 780px;
+  }
+
+  @include onlyMobile {
+    width: 100%;
+  }
 }
 
 .container {
@@ -99,6 +109,9 @@
 
 .logo {
   margin-left: 5px;
+  @include onlyMobile {
+    display: none;
+  }
 }
 
 

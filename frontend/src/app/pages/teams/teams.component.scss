@@ -13,6 +13,9 @@
     white-space: nowrap;
     font-weight: 600;
     margin-right: 7px;
+    @include onlyMobile {
+      display: none;
+    }
   }
 
   &__item {
@@ -27,6 +30,11 @@
 .desc {
   display: flex;
   align-items: center;
+
+  @include onlyMobile {
+    flex-direction: column;
+  }
+
   &__time {
     display: flex;
     align-items: center;

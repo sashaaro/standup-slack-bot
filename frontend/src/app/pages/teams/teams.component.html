@@ -25,7 +25,7 @@
       <div class="team__users users">
         <div class="users__count">{{ team.users?.length }} respondents</div>
 
-        <div class="users__list">
+        <div class="users__list" title="{{ team.users?.length }} respondents">
           <img *ngFor="let user of team.users" class="users__item" [src]="user.profile.image_24"/>
         </div>
 

@@ -69,6 +69,11 @@ form {
   border-radius: 5px;
   padding: 14px 12px;
 
+  @include onlyMobile {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   &.ng-invalid.ng-touched {
     color: rgb(244, 67, 54);
     border-color: rgb(244, 67, 54);
@@ -212,6 +217,10 @@ ng-select {
   line-height: 51px;
   width: 100%;
   font-size: 20px;
+
+  @include onlyMobile {
+    margin-top: 15px;
+  }
 }
 
 

@@ -93,10 +93,6 @@
         </mat-error>
       </mat-form-field>
     </div>
-
-    <button class="submit" color="primary" mat-flat-button [class.loading]="submitting" (click)="submit()">
-      <i class="icon save"></i> Save settings
-    </button>
   </div>
 
 
@@ -196,6 +192,10 @@
     <mat-error>{{ questionsControl.getError('custom') }}</mat-error>
 
   </div>
+
+  <button class="submit" color="primary" mat-flat-button [class.loading]="submitting" (click)="submit()">
+    <i class="icon save"></i> Save settings
+  </button>
 </form>
 
 <mat-autocomplete #questionAutocomplete="matAutocomplete">

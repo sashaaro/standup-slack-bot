@@ -81,7 +81,7 @@ import {ApiStatusInterceptor} from "./interceptor/api-status.interceptor";
     NgxPaginationModule,
     MatSnackBarModule,
     MatDialogModule,
-    MatCheckboxModule
+    MatCheckboxModule,
   ],
   providers: [
     {
