@@ -128,7 +128,7 @@ export class TeamRepository extends EntityRepository<Team> {
     // add new users
     await em.execute(
       `INSERT INTO user_teams ("team_id", "user_id") VALUES ${teamDTO.userIds.map((u, i) => `(?, ?)`).join(',')} ON CONFLICT DO NOTHING`,
-      teamDTO.userIds.map(uid => [teamDTO.id, uid]).flat()
+      teamDTO.userIds.map(uid => [teamDTO.id, uid]).flat() // TODO validate your workspace!
     );
 
 

@@ -89,6 +89,8 @@ export class TeamSnapshot {
   }
 
   equals(team: TeamSnapshot) {
+    console.log(this.simplify())
+    console.log(team.simplify())
     return JSON.stringify(this.simplify()) === JSON.stringify(team.simplify())
   }
 }

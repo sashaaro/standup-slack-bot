@@ -15,6 +15,7 @@ import {TeamDTO} from "../../dto/team-dto";
 import {LOG_TOKEN} from "../../services/token";
 import {Logger} from "pino";
 import {sleep} from "../../services/utils";
+import {DeadlockException, ServerException} from "@mikro-orm/core";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -107,7 +108,6 @@ export class TeamController {
       throw new AccessDenyError();
     }
 
-
     const teamDTO = new TeamDTO();
     const errors = this.handleRequest(req.body, teamDTO);
 
@@ -115,7 +115,9 @@ export class TeamController {
     const id = req.params.id as number|any
 
     await tem.begin()
-    // TODO await tem.execute('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+    await tem.execute('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+
+    let updatedTeam;
     try {
       const teamRepo = tem.getRepository(Team) as TeamRepository
       const team = await teamRepo.findActiveById(id);
@@ -125,30 +127,39 @@ export class TeamController {
       }
 
       if (req.context.user.id !== team.createdBy.id) {
-        throw new ResourceNotFoundError('Team is not found');
+        throw new ResourceNotFoundError('Team is not your own');
       }
 
       if (req.context.user.workspace.id !== team.workspace.id) {
-        throw new ResourceNotFoundError('Team is not found');
+        throw new ResourceNotFoundError('Team is not your own');
       }
 
       res.setHeader('Content-Type', 'application/json');
       if (errors.length === 0) {
         teamDTO.id = team.id
-        const updatedTeam = await teamRepo.submit(teamDTO);
+        updatedTeam = await teamRepo.submit(teamDTO);
+        await sleep(5000)
         await tem.commit();
-        res.send(classToPlain(updatedTeam, {strategy: 'excludeAll'}));
       } else {
         tem.rollback(); //release
         res.status(400).send(errors);
       }
     } catch (error) {
-      if (!(error instanceof ResourceNotFoundError)) {
-        this.log.error(error, 'Error submit team')
+      if (error instanceof ServerException && '40001' === error.code) {
+        await tem.commit();
+      } else if (error instanceof ResourceNotFoundError) {
+        this.log.debug(error.message)
+        res.status(404).send('');
+        return;
+      } else {
+        //res.status(500).send('');
+        await tem.rollback();
+        throw new error; // would return 500
+        // return;
       }
-      tem.rollback();
-      res.status(500).send('');
     }
+
+    res.send(classToPlain(updatedTeam, {strategy: 'excludeAll'}));
   }
 
   timezone: IHttpAction = async (req, res) => {

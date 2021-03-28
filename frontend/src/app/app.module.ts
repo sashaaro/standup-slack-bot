@@ -5,7 +5,7 @@ import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {AuthComponent} from './pages/auth/auth.component';
 import {ApiModule, Configuration} from "../api/auto";
-import {HttpClientModule} from "@angular/common/http";
+import {HTTP_INTERCEPTORS, HttpClientModule} from "@angular/common/http";
 import {TeamsComponent} from './pages/teams/teams.component';
 import {WelcomeComponent} from './pages/welcome/welcome.component';
 import {TeamComponent} from './pages/team/team.component';
@@ -38,6 +38,7 @@ import {PricingComponent} from './pages/pricing/pricing.component';
 import {MatSnackBarModule} from "@angular/material/snack-bar";
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatCheckboxModule} from "@angular/material/checkbox";
+import {ApiStatusInterceptor} from "./interceptor/api-status.interceptor";
 
 @NgModule({
   declarations: [
@@ -89,7 +90,12 @@ import {MatCheckboxModule} from "@angular/material/checkbox";
         basePath: location.origin + '/api'
       })
     },
-    AuthorizedGuard
+    AuthorizedGuard,
+    {
+      provide: HTTP_INTERCEPTORS,
+      multi: true,
+      useClass: ApiStatusInterceptor
+    }
   ],
   bootstrap: [AppComponent]
 })

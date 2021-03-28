@@ -9,18 +9,19 @@ import {StandupsComponent} from "./pages/standups/standups.component";
 import {StatTeamComponent} from "./pages/team/stat-team/stat-team.component";
 import {SettingsComponent} from "./pages/settings/settings.component";
 import {PricingComponent} from "./pages/pricing/pricing.component";
+import {GuestGuard} from "./guard/guest.guard";
 
 const routes: Routes = [
   {
     path: 'welcome',
     component: WelcomeComponent,
-    canActivate: [] // TODO GuestGuard
+    canActivate: [GuestGuard]
   },
-  {
-    path: 'pricing',
-    component: PricingComponent,
-    canActivate: []
-  },
+  // {
+  //   path: 'pricing',
+  //   component: PricingComponent,
+  //   canActivate: []
+  // },
   {
     path: '',
     component: TeamsComponent,
