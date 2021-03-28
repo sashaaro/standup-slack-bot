@@ -1,8 +1,7 @@
-import {EntityRepository, Repository} from "typeorm";
-import {Channel} from "../model/Channel";
+import {EntityRepository} from "@mikro-orm/postgresql";
+import {Channel} from "../entity";
 
-@EntityRepository(Channel)
-export class ChannelRepository extends Repository<Channel>
+export class ChannelRepository extends EntityRepository<Channel>
 {
   public async findOrCreateChannel(channelID: string): Promise<{channel: Channel, isNew: boolean}>{
     let channel = await this.findOne(channelID);

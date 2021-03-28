@@ -5,7 +5,6 @@ import {
   REDIS_TOKEN,
   TERMINATE
 } from "../services/token";
-import {Connection} from "typeorm";
 import {Redis} from "ioredis";
 import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {Observable} from "rxjs";

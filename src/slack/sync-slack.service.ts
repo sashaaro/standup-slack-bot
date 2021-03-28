@@ -10,6 +10,7 @@ import {WebClient} from "@slack/web-api";
 import SlackWorkspace from "../entity/slack-workspace";
 import {em} from "../services/providers";
 import {LOG_TOKEN} from "../services/token";
+import {ChannelRepository} from "../repository/channel.repository";
 
 @Injectable()
 export class SyncSlackService {
@@ -206,7 +207,7 @@ export class SyncSlackService {
   }
 
   async findOrCreateAndUpdate(channelID: string, data: Partial<Channel>): Promise<{channel: Channel, isNew: boolean}> {
-    const repo = {} as any; // this.connection.getCustomRepository(ChannelRepository);
+    const repo = em().getRepository(Channel) as ChannelRepository
     const {channel, isNew} = await repo.findOrCreateChannel(channelID);
     Object.assign(channel, data);
     if (isNew) {
@@ -218,7 +219,7 @@ export class SyncSlackService {
       channel.name = channelInfo.name;
       channel.nameNormalized = channelInfo.name_normalized;
     }
-    await repo.save(channel);
+    await repo.persistAndFlush(channel);
 
     return {channel, isNew}
   };
@@ -233,7 +234,7 @@ export class SyncSlackService {
   }
 
   async joinSlackChannel(channelID: string, updateData?: Partial<Channel>) {
-    const repo = {} as any; // this.connection.getCustomRepository(ChannelRepository);
+    const repo = em().getRepository(Channel) as ChannelRepository
 
     const {channel} = await repo.findOrCreateChannel(channelID);
 
@@ -243,8 +244,7 @@ export class SyncSlackService {
       Object.assign(channel, updateData);
     }
 
-    const channelRepository = {} as any; // this.connection.getCustomRepository(ChannelRepository);
-    await channelRepository.save(channel);
+    await repo.persistAndFlush(channel);
     /*await this.postMessage({
       channel: channel.id,
       text: 'Hi everyone, I am here! Every one here will be receive questions. Open settings if want change'

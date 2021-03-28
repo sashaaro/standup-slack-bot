@@ -2,8 +2,9 @@ import {Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@m
 import {Expose} from "class-transformer";
 import SlackWorkspace from "./slack-workspace";
 import {User} from "./user";
+import {ChannelRepository} from "../repository/channel.repository";
 
-@Entity()
+@Entity({customRepository: () => ChannelRepository})
 export class Channel {
   @Expose()
   @PrimaryKey()
