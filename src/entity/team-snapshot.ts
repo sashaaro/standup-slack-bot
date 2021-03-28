@@ -4,12 +4,13 @@ import {Team} from "./team";
 import QuestionSnapshot from "./question-snapshot";
 import {sortByIndex} from "../services/utils";
 import {
+  AfterCreate,
   BeforeCreate,
   Collection,
   Entity,
   ManyToMany,
   ManyToOne,
-  OneToMany,
+  OneToMany, OnInit,
   PrimaryKey,
   Property
 } from "@mikro-orm/core";
@@ -50,16 +51,17 @@ export class TeamSnapshot {
     this.createdAt = new Date();
   }
 
-  //@AfterLoad()
+  @AfterCreate()
   normalizeSort() {
-    if (this.questions == null) {
-      return;
-    }
-    // TODO this.questions = this.questions.sort(sortByIndex)
-    //
-    // this.questions.forEach(q => {
-    //   q.options = q.options.sort(sortByIndex)
-    // })
+    // if (!this.questions.isInitialized()) {
+    //   return;
+    // }
+
+    this.questions.set(this.questions.getItems().sort(sortByIndex))
+
+    this.questions.getItems().forEach(q => {
+      q.options.set(q.options.getItems().sort(sortByIndex))
+    })
   }
 
   // @Expose()

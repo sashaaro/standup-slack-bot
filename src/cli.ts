@@ -23,7 +23,7 @@ const logger = injector.get(LOG_TOKEN);
 logger.info({env, debug: config.debug}, `Start `)
 
 injector.get(TERMINATE).subscribe(() => {
-  console.log('Terminate...')
+  logger.info('Terminate...')
 })
 
 if (config.rollBarAccessToken) {

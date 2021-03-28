@@ -59,7 +59,11 @@ export class TeamRepository extends EntityRepository<Team> {
     }, [
       'users', 'questions', 'questions.options', 'questions.originQuestion', 'originTeam',
       'originTeam.workspace'
-    ], {'createdAt': 'DESC'})
+    ], {
+      'createdAt': 'DESC',
+      // 'questions.index': 'ASC',
+      // 'questions.options.index': 'ASC'
+    })
   }
 
   createSnapshot(team: Team): TeamSnapshot {
@@ -72,7 +76,7 @@ export class TeamRepository extends EntityRepository<Team> {
       questionSnapshot.text = q.text
       questionSnapshot.index = q.index
       questionSnapshot.team = teamSnapshot
-      q.options.getItems().filter(o => o.isEnabled).map(o => {
+      q.options.getItems().filter(o => o.isEnabled).forEach(o => {
         const optionSnapshot = new QuestionOptionSnapshot()
         optionSnapshot.originOption = o;
         optionSnapshot.question = questionSnapshot;
@@ -93,9 +97,9 @@ export class TeamRepository extends EntityRepository<Team> {
   async clearUnneededSnapshots() {
     const sql = `DELETE FROM team_snapshot WHERE id in (
         SELECT id FROM (
-           SELECT team_snapshot.*, row_number() over (PARTITION BY team_snapshot."originTeamId" ORDER BY "createdAt" DESC) FROM team_snapshot
-            left join stand_up su on team_snapshot.id = su."teamId" and su.id is null
-        ) AS snapshow WHERE snapshow.row_number > 1
+         SELECT team_snapshot.*, row_number() over (PARTITION BY team_snapshot."origin_team_id" ORDER BY "created_at" DESC) 
+         FROM team_snapshot left join standup su on team_snapshot.id = su."team_id" and su.id is null
+     ) AS snapshow WHERE snapshow.row_number > 1
     )`;
     // TODO
   }
@@ -184,11 +188,10 @@ export class TeamRepository extends EntityRepository<Team> {
     const lastSnapshot = await this.findSnapshot(team);
     const newSnapshot = this.createSnapshot(team);
 
-    // lastSnapshot?.normalizeSort()
-
+    //lastSnapshot?.normalizeSort()
 
     if (!lastSnapshot || !lastSnapshot.equals(newSnapshot)) {
-      await em.persist(em.create(TeamSnapshot, newSnapshot))
+      await em.persist(newSnapshot)
     }
 
     return team;

@@ -178,6 +178,7 @@ export class SyncSlackService {
           created_by_id: channel.creator
         }
 
+        // TODO
         console.log(em()
           .createQueryBuilder(Channel, 'ch')
           .insert({...d, id: channel.id})
