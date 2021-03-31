@@ -11,11 +11,11 @@ import {Observable} from "rxjs";
 import {Job} from "bull";
 import {SlackEventListener} from "../slack/slack-event-listener";
 import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
-import {bind} from "../services/decorators";
 import {QueueRegistry} from "../services/queue.registry";
 import {HasPreviousError} from "../services/utils";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
+import {bind} from "../decorator/bind";
 
 
 class JobError extends HasPreviousError {

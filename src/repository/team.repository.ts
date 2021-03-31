@@ -1,4 +1,3 @@
-import {TEAM_STATUS_ACTIVATED} from "../model/Team";
 import {scopeTeamJoins} from "./scopes";
 import {formatTime, sortByIndex} from "../services/utils";
 import {EntityRepository, QueryBuilder} from "@mikro-orm/postgresql";
@@ -13,6 +12,8 @@ import {
   QuestionOption
 } from "../entity";
 import {TeamDTO} from "../dto/team-dto";
+import {TEAM_STATUS_ACTIVATED} from "../entity/team";
+import {retriedTx} from "../decorator/retried-tx";
 
 export class TeamRepository extends EntityRepository<Team> {
   findByStart(startedAt: Date): Promise<Team[]> {
@@ -104,6 +105,7 @@ export class TeamRepository extends EntityRepository<Team> {
     // TODO
   }
 
+  @retriedTx
   async submit(teamDTO: TeamDTO): Promise<Team> {
     const em = this.em;
     await em

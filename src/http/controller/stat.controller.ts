@@ -1,7 +1,8 @@
 import {Injectable} from 'injection-js';
 import {Request, Response} from "express";
-import {authorized, bind} from "../../services/decorators";
 import {em} from "../../services/providers";
+import {bind} from "../../decorator/bind";
+import {authorized} from "../../decorator/authorized";
 
 @Injectable()
 export class StatController {

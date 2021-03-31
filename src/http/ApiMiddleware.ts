@@ -61,6 +61,8 @@ const errorHandler = (config: IAppConfig, logger: Logger) => (err, req, res, nex
     res.status(400).send();
   } else if (err instanceof ResourceNotFoundError) {
     res.status(404).send();
+  // } else if (err instanceof ConnectionException) { // mysql disconnect..
+  //  // try reconnect multi retry with delay
   } else {
     logger.error(err, "Catch express middleware error")
     if (err.statusCode !== 'ERR_HTTP_HEADERS_SENT') {

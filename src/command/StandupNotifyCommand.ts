@@ -7,11 +7,11 @@ import {forkJoin, Observable} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
 import {mapTo, mergeMap, takeUntil} from "rxjs/operators";
-import {bind} from "../services/decorators";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {UserStandup} from "../entity";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
+import {bind} from "../decorator/bind";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
   static meta = {

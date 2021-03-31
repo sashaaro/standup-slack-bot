@@ -2,9 +2,10 @@ import { Injectable, Inject } from 'injection-js';
 import {CONFIG_TOKEN} from "../../services/token";
 import {em, IAppConfig} from "../../services/providers";
 import {Request, Response} from "express";
-import {authorized, bind} from "../../services/decorators";
 import {Channel} from "../../entity";
 import {serialize} from "class-transformer";
+import {bind} from "../../decorator/bind";
+import {authorized} from "../../decorator/authorized";
 
 @Injectable()
 export class ChannelController {

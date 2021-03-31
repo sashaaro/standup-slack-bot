@@ -9,10 +9,10 @@ import {AccessDenyError, ResourceNotFoundError} from "../ApiMiddleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
 import {Logger} from "pino";
 import {SyncSlackService} from "../../slack/sync-slack.service";
-import {bind} from "../../services/decorators";
 import {ContextualError, isPlatformError} from "../../services/utils";
 import SlackWorkspace from "../../entity/slack-workspace";
-import {User} from "../../entity/user";
+import {User} from "../../entity";
+import {bind} from "../../decorator/bind";
 
 @Injectable()
 export class AuthController {

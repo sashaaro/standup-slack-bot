@@ -1,9 +1,9 @@
 import * as yargs from "yargs";
 import {Inject, Injectable} from "injection-js";
-import {bind} from "../services/decorators";
 import {MIKRO_TOKEN} from "../services/token";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
+import {bind} from "../decorator/bind";
 
 @Injectable()
 export class MigrationGenerateCommand implements yargs.CommandModule {

@@ -3,11 +3,6 @@ import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../ApiMid
 import {IHttpAction} from "./index";
 import {classToPlain, plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";
-import {
-  TEAM_STATUS_ACHIEVED,
-  TEAM_STATUS_ACTIVATED,
-  teamStatuses
-} from "../../model/Team";
 import {em} from "../../services/providers";
 import {Channel, Question, Team, Timezone, User} from "../../entity";
 import {TeamRepository} from "../../repository/team.repository";
@@ -16,6 +11,7 @@ import {LOG_TOKEN} from "../../services/token";
 import {Logger} from "pino";
 import {sleep} from "../../services/utils";
 import {DeadlockException, ServerException} from "@mikro-orm/core";
+import {TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, teamStatuses} from "../../entity/team";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -114,49 +110,28 @@ export class TeamController {
     const tem = await em().fork(false);
     const id = req.params.id as number|any
 
-    await tem.begin()
-    await tem.execute('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+    const teamRepo = tem.getRepository(Team) as TeamRepository
+    const team = await teamRepo.findActiveById(id);
+
+    if (!team) {
+      throw new ResourceNotFoundError('Team is not found');
+    }
+
+    if (req.context.user.id !== team.createdBy.id) {
+      throw new ResourceNotFoundError('Team is not your own');
+    }
+
+    if (req.context.user.workspace.id !== team.workspace.id) {
+      throw new ResourceNotFoundError('Team is not your own');
+    }
 
     let updatedTeam;
-    try {
-      const teamRepo = tem.getRepository(Team) as TeamRepository
-      const team = await teamRepo.findActiveById(id);
-
-      if (!team) {
-        throw new ResourceNotFoundError('Team is not found');
-      }
-
-      if (req.context.user.id !== team.createdBy.id) {
-        throw new ResourceNotFoundError('Team is not your own');
-      }
-
-      if (req.context.user.workspace.id !== team.workspace.id) {
-        throw new ResourceNotFoundError('Team is not your own');
-      }
-
-      res.setHeader('Content-Type', 'application/json');
-      if (errors.length === 0) {
-        teamDTO.id = team.id
-        updatedTeam = await teamRepo.submit(teamDTO);
-        await sleep(5000)
-        await tem.commit();
-      } else {
-        tem.rollback(); //release
-        res.status(400).send(errors);
-      }
-    } catch (error) {
-      if (error instanceof ServerException && '40001' === error.code) {
-        await tem.commit();
-      } else if (error instanceof ResourceNotFoundError) {
-        this.log.debug(error.message)
-        res.status(404).send('');
-        return;
-      } else {
-        //res.status(500).send('');
-        await tem.rollback();
-        throw new error; // would return 500
-        // return;
-      }
+    res.setHeader('Content-Type', 'application/json');
+    if (errors.length === 0) {
+      teamDTO.id = team.id
+      updatedTeam = await teamRepo.submit(teamDTO);
+    } else {
+      res.status(400).send(errors);
     }
 
     res.send(classToPlain(updatedTeam, {strategy: 'excludeAll'}));

@@ -1,22 +1,3 @@
-import {Request} from "express";
-import {AccessDenyError} from "../http/ApiMiddleware";
-
-export const authorized = (
-  target: object,
-  propertyKey: string,
-  descriptor: PropertyDescriptor
-) => {
-  const originalMethod = descriptor.value;
-  descriptor.value = function (...args) {
-    const req = args[0] as Request
-    if (!req.context.user) {
-      throw new AccessDenyError('No authorized');
-    }
-
-    return originalMethod.apply(this, args);
-  }
-}
-
 export function bind<T extends Function>(
   target: object,
   propertyKey: string,

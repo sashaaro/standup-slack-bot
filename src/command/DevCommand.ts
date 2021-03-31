@@ -2,11 +2,11 @@ import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {ServerCommand} from "./ServerCommand";
 import {StandupNotifyCommand} from "./StandupNotifyCommand";
-import {bind} from "../services/decorators";
 import {MIKRO_TOKEN} from "../services/token";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {sleep} from "../services/utils";
+import {bind} from "../decorator/bind";
 
 export class DevCommand implements yargs.CommandModule {
   static meta = {
