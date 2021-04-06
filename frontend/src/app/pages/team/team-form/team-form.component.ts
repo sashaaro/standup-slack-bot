@@ -38,8 +38,6 @@ import {BACKSPACE, SPACE} from "@angular/cdk/keycodes";
 import {FocusMonitor} from "@angular/cdk/a11y";
 import {MatDialog} from "@angular/material/dialog";
 import {MatSnackBar} from "@angular/material/snack-bar";
-import {log} from "../../../operator/log";
-import {chartConfig} from "../stat-team/stat-team.component";
 import {chartColors} from "../../../service/utils";
 import {CONTAINER_LOADING} from "../../../component/async.directive";
 

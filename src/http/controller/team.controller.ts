@@ -9,8 +9,6 @@ import {TeamRepository} from "../../repository/team.repository";
 import {TeamDTO} from "../../dto/team-dto";
 import {LOG_TOKEN} from "../../services/token";
 import {Logger} from "pino";
-import {sleep} from "../../services/utils";
-import {DeadlockException, ServerException} from "@mikro-orm/core";
 import {TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, teamStatuses} from "../../entity/team";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
@@ -83,7 +81,7 @@ export class TeamController {
       team.days = teamDTO.days;
       team.start = teamDTO.start;
       team.timezone = em().getReference(Timezone, teamDTO.timezoneId);
-      teamDTO.userIds.map(u => team.users.add(em().getReference(User, u)))
+      teamDTO.userIds.forEach(u => team.users.add(em().getReference(User, u)))
       team.reportChannel = em().getReference(Channel, teamDTO.reportChannelId);
       teamDTO.questions.forEach(q => team.questions.add(em().create(Question, q)));
 
@@ -107,7 +105,7 @@ export class TeamController {
     const teamDTO = new TeamDTO();
     const errors = this.handleRequest(req.body, teamDTO);
 
-    const tem = await em().fork(false);
+    const tem = await em();
     const id = req.params.id as number|any
 
     const teamRepo = tem.getRepository(Team) as TeamRepository

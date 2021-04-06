@@ -1,14 +1,24 @@
-import {Collection, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
+import {
+  BeforeCreate,
+  Collection,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryKey,
+  Property
+} from "@mikro-orm/core";
 import Standup from "./standup";
 import {User} from "./user";
 import {MessageResult} from "../slack/model/MessageResult";
 import AnswerRequest from "./answer-request";
 import {Exclude} from "class-transformer";
 
+// todo user standup index
 @Entity()
 class UserStandup {
   @PrimaryKey()
-  id: string
+  id: number
 
   @ManyToOne(() => User, {
     //eager: true
@@ -32,7 +42,7 @@ class UserStandup {
   @Property({type: "jsonb"})
   slackMessage: MessageResult
 
-  //@BeforeInsert()
+  @BeforeCreate()
   setupCreatedAt() {
     this.createdAt = new Date();
   }

@@ -3,7 +3,6 @@ import {em, QUEUE_NAME_SLACK_EVENTS} from "../services/providers";
 import {MessageResponse} from "./model/MessageResponse";
 import {ChannelLeft, MemberJoinedChannel} from "./model/SlackChannel";
 import SlackWorkspace from "../entity/slack-workspace";
-import {SlackEventAdapter} from "@slack/events-api/dist/adapter";
 import {Logger} from "pino";
 import {Standup, User} from "../entity";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, SlackBotTransport} from "./slack-bot-transport.service";
@@ -17,13 +16,21 @@ import {greetingBlocks} from "./slack-blocks";
 import {LOG_TOKEN} from "../services/token";
 import {StandupRepository} from "../repository/standupRepository";
 
+interface IEventHandler {
+  (data: any): Promise<any>|any
+}
+
 export class SlackEventListener {
-  evensHandlers: {[event:string]: (data: any) => Promise<any>|any} = {
+  evensHandlers: {[event:string]: IEventHandler} = {
     message: async (messageResponse: MessageResponse) => { // todo insert db?!
+      if (messageResponse.bot_id) {
+        this.logger.info(messageResponse, 'Bot message received')
+        return;
+      }
       const user = await em().getRepository(User).findOne(messageResponse.user)
 
       if (!user) { // TODO skip bot message
-        throw new ContextualError('Message author is not found', { messageResponse })
+        throw new ContextualError('Message author is not found', messageResponse)
       }
 
       // try {
@@ -77,42 +84,19 @@ export class SlackEventListener {
   }
 
   constructor(
-    @Inject(SlackEventAdapter) private slackEvents: SlackEventAdapter,
     private slackBotTransport: SlackBotTransport,
     private syncSlack: SyncSlackService,
     private queueRegistry: QueueRegistry,
     @Inject(LOG_TOKEN) private logger: Logger,
   ) {
-  }
-
-  init(): void {
-    // https://api.slack.com/events/scope_granted
-    // this.slackEvents.on('scope_granted', async (scopeGranted: ScopeGranted) => {
-    //   this.logger.info(`Scope granted for team`, {team: scopeGranted.team_id})
-    //
-    //   let workspace = await this.connection.getRepository(SlackWorkspace).findOne(scopeGranted.team_id);
-    //   if (!workspace) {
-    //     workspace = new SlackWorkspace();
-    //     workspace.id = scopeGranted.team_id;
-    //     this.syncSlackService.updateWorkspace(workspace, 'TODO')
-    //   }
-    // })
-
     for (const event in this.evensHandlers) {
       const handler = this.evensHandlers[event]
       handler.bind(this);
-      this.slackEvents.on(event, async (data) => {
-        try {
-          await this.queueRegistry.create(QUEUE_NAME_SLACK_EVENTS).add(event, data);
-        } catch (error) {
-          this.logger.error(error, 'Add job error')
-        }
-      })
     }
+  }
 
-    this.slackEvents.on('error', (error) => {
-      this.logger.error(error, 'Slack event error')
-    })
+  public events() {
+    return Object.keys(this.evensHandlers)
   }
 
   public handleEventJob(event: string, data: any): Promise<void> {

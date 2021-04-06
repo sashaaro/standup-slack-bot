@@ -1,13 +1,9 @@
 import {createProviders} from "../src/services/providers";
 import {ReflectiveInjector} from "injection-js";
-import {Connection, EntityManager} from "typeorm";
-import Timezone from "../src/model/Timezone";
-import {Team, TEAM_STATUS_ACTIVATED} from "../src/model/Team";
-import SlackWorkspace from "../src/model/SlackWorkspace";
-import {Channel} from "../src/model/Channel";
-import Question from "../src/model/Question";
-import User from "../src/model/User";
 import {TeamRepository} from "../src/repository/team.repository";
+import {Channel, Question, SlackWorkspace, Team, Timezone, User} from "../src/entity";
+import {TEAM_STATUS_ACTIVATED} from "../src/entity/team";
+import {EntityManager} from "@mikro-orm/postgresql";
 
 const {providers} = createProviders( 'test');
 
@@ -30,7 +26,7 @@ const {providers} = createProviders( 'test');
 }*/
 
 export const testInjector = ReflectiveInjector.resolveAndCreate(providers);
-export const testConnection: Connection = testInjector.get(Connection);
+export const testConnection: any = {}; // TODO
 
 export const generateTeam = () => {
   const team = new Team();
@@ -67,7 +63,7 @@ export const createQuestion = (text: string) => {
   return q;
 }
 
-export const simpleFixture = async (manager: EntityManager) => {
+export const simpleFixture = async (manager: EntityManager|any) => {
   const workspace = generateWorkspace();
   await manager.getRepository(SlackWorkspace).save(workspace);
 
@@ -85,14 +81,14 @@ export const simpleFixture = async (manager: EntityManager) => {
   team.start = '13:05';
   team.reportChannel = channel;
   team.workspace = workspace;
-  team.users = [user];
+  team.users.add(user);
   team.createdBy = user;
-  team.questions = [
+  team.questions.add(...[
     createQuestion('What did you do yesterday?'),
     createQuestion('What you do today?'),
     createQuestion('Problem?')
-  ];
-  team.questions.map((q, index) => q.index = index); // recalculate question index
+  ]);
+  team.questions.getItems().map((q, index) => q.index = index); // recalculate question index
   await manager.getRepository(Team).save(team);
   team = await manager.getCustomRepository(TeamRepository).findActiveById(team.id);
 

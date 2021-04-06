@@ -9,7 +9,7 @@ import {
   TemplateRef,
   ViewContainerRef
 } from '@angular/core';
-import {Observable, Subject} from "rxjs";
+import {Observable, of, Subject} from "rxjs";
 import {LoaderComponent} from "./loader/loader.component";
 import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
 import {withLatestFrom} from "rxjs/operators";
@@ -29,7 +29,7 @@ export const CONTAINER_LOADING = new InjectionToken<Subject<boolean>>('app.conta
   ]
 })
 export class AsyncDirective<T> implements OnInit {
-  @Input('appAsync') stream$: Observable<T>
+  @Input('appAsync') stream$: Observable<T> = of(null)
   @Input('appAsyncPlaceholder') placeholder = false
 
   public context: {

@@ -1,5 +1,5 @@
 import {scopeTeamJoins} from "./scopes";
-import {formatTime, sortByIndex} from "../services/utils";
+import {formatTime, sleep, sortByIndex} from "../services/utils";
 import {EntityRepository, QueryBuilder} from "@mikro-orm/postgresql";
 import {
   Team,
@@ -24,7 +24,7 @@ export class TeamRepository extends EntityRepository<Team> {
     qb
       .joinAndSelect('team.timezone', 'timezone')
       .joinAndSelect('team.workspace', 'workspace')
-      .andWhere(`(team.start::time - timezone.utc_offset) = ?::time`, [formatTime(startedAt, false)])
+      //.andWhere(`(team.start::time - timezone.utc_offset) = ?::time`, [formatTime(startedAt, false)])
       .andWhere({'team.status': TEAM_STATUS_ACTIVATED})
       .andWhere(
           '((extract("dow" from ? at time zone timezone.name)::int + 6) % 7) = ANY(team.days)',
@@ -102,7 +102,7 @@ export class TeamRepository extends EntityRepository<Team> {
          FROM team_snapshot left join standup su on team_snapshot.id = su."team_id" and su.id is null
      ) AS snapshow WHERE snapshow.row_number > 1
     )`;
-    // TODO
+    await this.em.execute(sql)
   }
 
   @retriedTx
@@ -195,6 +195,8 @@ export class TeamRepository extends EntityRepository<Team> {
     if (!lastSnapshot || !lastSnapshot.equals(newSnapshot)) {
       await em.persist(newSnapshot)
     }
+
+    await sleep(10000);
 
     return team;
   }

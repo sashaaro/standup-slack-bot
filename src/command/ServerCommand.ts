@@ -1,7 +1,8 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  LOG_TOKEN, MIKRO_TOKEN, REDIS_TOKEN, TERMINATE,
+  IMikroFactory,
+  LOG_TOKEN, MIKRO_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
 import express from 'express'
 import 'express-async-errors';
@@ -11,9 +12,6 @@ import {Redis} from "ioredis";
 import {Observable} from "rxjs";
 import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
-import {SlackEventListener} from "../slack/slack-event-listener";
-import {MikroORM} from "@mikro-orm/core";
-import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {bind} from "../decorator/bind";
 
 export class ServerCommand implements yargs.CommandModule {
@@ -25,8 +23,7 @@ export class ServerCommand implements yargs.CommandModule {
 
   constructor(
     private injector: Injector,
-    @Inject(MIKRO_TOKEN) private mikroORM,
-    private slackEventListener: SlackEventListener,
+    @Inject(MIKRO_FACTORY_TOKEN) private mikroFactory: IMikroFactory,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(LOG_TOKEN) protected log,
     @Inject(TERMINATE) protected terminate$: Observable<void>
@@ -53,13 +50,8 @@ export class ServerCommand implements yargs.CommandModule {
 
   private async startServer(port?: string|number)
   {
-    let mikroORM: MikroORM<PostgreSqlDriver>;
-    mikroORM = await this.mikroORM
-
-    if (!await mikroORM.isConnected()) {
-      await mikroORM.connect()
-      await mikroORM.em.execute('set application_name to "Standup Bot Server";');
-    }
+    const mikroORM = await this.mikroFactory('Standup Bot Server')
+    await mikroORM.connect()
 
     try {
       await this.redis.connect();
@@ -76,9 +68,6 @@ export class ServerCommand implements yargs.CommandModule {
     const apiMiddleware = new ApiMiddleware(this.injector)
 
     expressApp.use('/api/slack', apiMiddleware.useSlackApi(mikroORM));
-
-    this.slackEventListener.init();
-
     expressApp.use('/api/doc', express.static('./resources/public'));
     expressApp.use('/api', apiMiddleware.use(mikroORM));
 

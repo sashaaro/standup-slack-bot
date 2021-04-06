@@ -29,7 +29,7 @@ export function formatTime(date: Date, seconds = true): string {
 }
 
 export class ContextualError extends Error {
-  constructor(message?: string, context = {}) {
+  constructor(message?: string, public context = {}) {
     super(message);
   }
 }

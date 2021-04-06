@@ -33,6 +33,7 @@
 
   @include onlyMobile {
     flex-direction: column;
+    align-items: flex-start;
   }
 
   &__time {
@@ -92,9 +93,19 @@
 
   &__actions {
     align-self: flex-end;
+
+    @include onlyMobile {
+      display: flex;
+      flex-direction: column;
+    }
+
     button {
       line-height: 30px;
       margin-left: 12px;
+      @include onlyMobile {
+        margin-left: 0;
+        margin-top: 5px;
+      }
     }
     mat-icon {
       font-size: 20px;
@@ -103,6 +114,9 @@
 
   &__users {
     margin-right: 30px;
+    @include onlyMobile {
+      display: none;
+    }
   }
 
   &__created {

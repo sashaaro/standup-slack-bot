@@ -68,7 +68,7 @@ export class Team {
   start: string
 
   @Expose()
-  @Property({type: IntArrayType, defaultRaw: "'{0,1,2,3,4}'"})
+  @Property({type: IntArrayType, defaultRaw: "'{0,1,2,3,4}'"}) // TODO bitmask
   days: number[] = [0, 1, 2, 3, 4];
 
   @Expose()

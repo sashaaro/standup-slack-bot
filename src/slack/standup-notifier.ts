@@ -1,5 +1,5 @@
 import { Injectable, Inject } from 'injection-js';
-import {timer} from "rxjs";
+import {of, timer} from "rxjs";
 import {delay, map, mapTo, mergeMap, share, tap} from "rxjs/operators";
 import {Logger} from "pino";
 import {TeamRepository} from "../repository/team.repository";
@@ -7,7 +7,7 @@ import {StandupRepository} from "../repository/standupRepository";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {LOG_TOKEN} from "../services/token";
 import {em, emStorage} from "../services/providers";
-import {Team, Standup} from "../entity";
+import {Team, Standup, UserStandup} from "../entity";
 import {withinContext} from "../operator/within-context.operator";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
@@ -41,40 +41,53 @@ export default class StandupNotifier {
 
     const start$ = interval$.pipe(
       mergeMap(date =>
-        fromPromise((em().getRepository(Team) as TeamRepository).findByStart(date)).pipe(
+        fromPromise(
+          (mikroORM.em.getRepository(Team) as TeamRepository).findByStart(date)
+        ).pipe(
+          tap(teams => this.logger.debug({teams: teams.map(t => t.id)}, 'Launch standups for teams')),
           map(teams => ({teams, date}))
         )
       ),
-      withinContext(emStorage, () => mikroORM.em.fork(true, true)),
-      mergeMap(({teams, date}) => {
-        return fromPromise(
-          Promise.all( // TODO Promise.settled
-            teams.map(async team => {
-              const teamRepository = em().getRepository(Team) as TeamRepository;
-
-              const standup = new Standup();
-
-              standup.startAt = date;
-              // TODO ?! standup.startAt = new Date(Math.floor(date.getTime() / (60 * 1000)) * 60 * 1000)
-              // TODO transaction
-              standup.team = await teamRepository.findSnapshot(team); // TODO disable edger?! IN?
-              if (!standup.team) {
-                standup.team = teamRepository.createSnapshot(team);
-              }
-              return standup;
-            })
-          )
-        ).pipe(
-          mergeMap(standups => fromPromise(em().persistAndFlush(standups)).pipe(mapTo(standups)))
-        )
-      }),
+      mergeMap(({teams, date}) => of(...teams.map(team => ({team, date})))),
+      // withinContext(emStorage, () => mikroORM.em.fork(true, true)),
+      mergeMap(({team, date}) => fromPromise(this.createStandup(team, date, mikroORM))),
     )
 
     const end$ = interval$.pipe(
-      mergeMap(date => fromPromise((em().getRepository(Standup) as StandupRepository).findEnd(date)))
+      mergeMap(date => fromPromise((mikroORM.em.getRepository(Standup) as StandupRepository).findEnd(date)))
     )
 
     return {start$, end$};
+  }
+
+  private async createStandup(team: Team, date: Date, mikroORM) {
+    const teamRepository = mikroORM.em.getRepository(Team) as TeamRepository;
+
+    console.log(team.questions[0].options)
+    console.log(team.questions[1].options)
+
+    const standup = new Standup();
+
+    standup.startAt = date;
+    // TODO ?! standup.startAt = new Date(Math.floor(date.getTime() / (60 * 1000)) * 60 * 1000)
+    // TODO transaction
+    standup.team = await teamRepository.findSnapshot(team); // TODO disable edger?! IN?
+    const newSnapshot = teamRepository.createSnapshot(team);
+    if (!standup.team || !standup.team.equals(newSnapshot)) {
+      standup.team = newSnapshot
+      await mikroORM.em.persistAndFlush(newSnapshot) // TODO
+    }
+    //
+    // team.users.getItems().forEach(u => {
+    //   standup.users.add(em().create(UserStandup, {
+    //     standup: standup,
+    //     user: u,
+    //   }))
+    // })
+
+    await mikroORM.em.persistAndFlush(standup)
+
+    return standup
   }
 
 }

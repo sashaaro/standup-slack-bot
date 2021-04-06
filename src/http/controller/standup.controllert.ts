@@ -5,6 +5,7 @@ import {serialize} from "class-transformer";
 import {em} from "../../services/providers";
 import Standup from "../../entity/standup";
 import {QueryFlag} from "@mikro-orm/core";
+import {Team} from "../../entity";
 
 @Injectable()
 export class StandupController {
@@ -13,7 +14,7 @@ export class StandupController {
       throw new AccessDenyError();
     }
 
-    const teamID = req.params.id
+    const teamID = parseInt(req.params.id)
 
     let limit = parseInt(req.query.limit as string) || 5;
     if (limit < 1 || limit > 10) {
@@ -28,14 +29,27 @@ export class StandupController {
 
     const offset = (page - 1) * limit
 
-    const qb = em().createQueryBuilder(Standup, 'standup')
-    qb.select('*')
+    const standups = await em().find(Standup, {
+      team: {$eq: teamID}
+    }, {
+      limit,
+      offset,
+      populate: ['team.originTeam.title', 'team.questions'],
+      fields: ['team'],
+      flags: [QueryFlag.PAGINATE]
+    })
+
+    res.send(serialize(standups))
+    return;
+
+    //qb.select('*')
+    const qb = {} as any
     qb
       .limit(limit, offset)
       .setFlag(QueryFlag.PAGINATE)
 
     qb
-      .joinAndSelect('standup.team', 'teamSnapshot')
+      //.joinAndSelect('standup.team', 'teamSnapshot')
       //.joinAndSelect('teamSnapshot.questions', 'questionsSnapshot')
       //.joinAndSelect('questionsSnapshot.options', 'optionsSnapshot')
       //.joinAndSelect('standup.users', 'userStandups')
@@ -51,9 +65,9 @@ export class StandupController {
 
     // res.send([]);
     // return;
-console.log(111);
+console.log(qb.getQuery());
     res.send(
-      //'111'
+
       qb.getQuery()
     )
     return;

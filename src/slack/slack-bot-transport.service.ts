@@ -252,11 +252,6 @@ export class SlackBotTransport {
         // const index = standUp.team.questions.indexOf(question);
         const question = answer.question;
         const hasOptions = answer.question.options.length
-        if (!answer) {
-          this.logger.warn({user: user.id, question: question.id}, 'Answer not found');
-          return
-        }
-
         body += `*${question.text}*\n${(hasOptions ? answer.option?.text : answer.answerMessage) || '-'}\n`
       }
 

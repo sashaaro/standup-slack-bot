@@ -1,6 +1,6 @@
 import {Provider} from "injection-js";
 import {
-  CONFIG_TOKEN, LOG_TOKEN, MIKRO_TOKEN,
+  CONFIG_TOKEN, IMikroFactory, LOG_TOKEN, MIKRO_FACTORY_TOKEN, MIKRO_TOKEN,
   REDIS_TOKEN,
   TERMINATE,
 } from "./token";
@@ -106,9 +106,11 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       deps: [CONFIG_TOKEN]
     },
     {
-      provide: MIKRO_TOKEN,
-      useFactory: async (config: IAppConfig) => {
-        return MikroORM.init({
+      provide: MIKRO_FACTORY_TOKEN,
+      useFactory: (config: IAppConfig): IMikroFactory => async (applicationName: string) => {
+        const clientUrl =
+          `postgresql://${config.db.username}:${config.db.password}@${config.db.host}:5432/${config.db.database}`
+        const mikroORM: MikroORM<PostgreSqlDriver> = await MikroORM.init({
           entities: Object.values(entities),
           highlighter: config.debug ? new SqlHighlighter() : undefined,
           debug: config.debug,
@@ -117,7 +119,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
           // password: config.db.password,
           // host: config.db.host,
           // dbName: config.db.database,
-          clientUrl: `postgresql://${config.db.username}:${config.db.password}@${config.db.host}:5432/${config.db.database}`,
+          clientUrl,
           context: () => emStorage.getStore(),
           migrations: {
             transactional: true,
@@ -128,9 +130,18 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
             dropTables: false,
             emit: 'ts'
           }
-        }, false);
+        });
+        await mikroORM.em.execute(`set application_name to "${applicationName}";`)
+        return mikroORM
       },
       deps: [CONFIG_TOKEN]
+    },
+    {
+      provide: MIKRO_TOKEN,
+      useFactory: (factory: IMikroFactory) => {
+        return factory('Standup_bot')
+      },
+      deps: [MIKRO_FACTORY_TOKEN]
     },
     QueueRegistry,
     {

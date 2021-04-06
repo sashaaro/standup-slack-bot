@@ -2,11 +2,11 @@ import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {ServerCommand} from "./ServerCommand";
 import {StandupNotifyCommand} from "./StandupNotifyCommand";
-import {MIKRO_TOKEN} from "../services/token";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {sleep} from "../services/utils";
 import {bind} from "../decorator/bind";
+import {QueueConsumeCommand} from "./QueueConsumeCommand";
 
 export class DevCommand implements yargs.CommandModule {
   static meta = {
@@ -16,25 +16,15 @@ export class DevCommand implements yargs.CommandModule {
 
   constructor(
     @Inject(Injector) private injector: Injector,
-    @Inject(MIKRO_TOKEN) private mikroORM,
   ) {
   }
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-
-    let mikroORM: MikroORM<PostgreSqlDriver>;
-    mikroORM = await this.mikroORM
-
-    if (!await mikroORM.isConnected()) {
-      await mikroORM.connect()
-      await mikroORM.em.execute('set application_name to "Standup Bot Dev";');
-    }
-
     const commands = [
       ServerCommand,
       StandupNotifyCommand,
-      // QueueConsumeCommand
+      QueueConsumeCommand
     ]
 
     for (const command of commands) {
@@ -43,6 +33,7 @@ export class DevCommand implements yargs.CommandModule {
     }
 
     //this.deadlock(mikroORM);
+    //this.test1(mikroORM)
   }
 
   private async deadlock(mikroORM: MikroORM<PostgreSqlDriver>) {
@@ -102,5 +93,14 @@ export class DevCommand implements yargs.CommandModule {
       await aliceCon.commit();
       console.log('[Alice] committed');
     })()
+  }
+
+  private test1(mikroORM: MikroORM<PostgreSqlDriver>) {
+    mikroORM.em.execute('SELECT *, pg_sleep(2) FROM channel').then(f => {
+      console.log(f)
+    })
+    mikroORM.em.execute('SELECT *, pg_sleep(2) FROM channel').then(f => {
+      console.log(f)
+    })
   }
 }

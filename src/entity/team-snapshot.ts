@@ -6,15 +6,15 @@ import {sortByIndex} from "../services/utils";
 import {
   AfterCreate,
   BeforeCreate,
+  Cascade,
   Collection,
   Entity,
   ManyToMany,
   ManyToOne,
-  OneToMany, OnInit,
+  OneToMany,
   PrimaryKey,
   Property
 } from "@mikro-orm/core";
-import Question from "./question";
 
 
 @Entity()
@@ -39,7 +39,7 @@ export class TeamSnapshot {
   @Type(() => QuestionSnapshot)
   @OneToMany(() => QuestionSnapshot, question => question.team, {
     //eager: true,
-    //cascade: true,
+    cascade: [Cascade.PERSIST],
   })
   questions = new Collection<QuestionSnapshot, TeamSnapshot>(this);
 

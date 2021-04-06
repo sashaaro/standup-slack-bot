@@ -1,20 +1,19 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  LOG_TOKEN, MIKRO_TOKEN,
+  IMikroFactory,
+  LOG_TOKEN, MIKRO_FACTORY_TOKEN,
   REDIS_TOKEN,
   TERMINATE
 } from "../services/token";
 import {Redis} from "ioredis";
-import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
+import {emStorage, QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {Observable} from "rxjs";
 import {Job} from "bull";
 import {SlackEventListener} from "../slack/slack-event-listener";
 import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
 import {QueueRegistry} from "../services/queue.registry";
 import {HasPreviousError} from "../services/utils";
-import {MikroORM} from "@mikro-orm/core";
-import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {bind} from "../decorator/bind";
 
 
@@ -48,7 +47,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       try {
         await this.slackEventListener.handleEventJob(job.name, job.data)
       } catch (error) {
-        this.log.warn(error, 'Error slack events job handling')
+        this.log.error(error, 'Error slack events job handling')
       }
     },
     [QUEUE_NAME_SLACK_INTERACTIVE]: async (job: Job) => {
@@ -65,7 +64,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
         const er = new JobError()
         er.previous = error
         er.job = job
-        this.log.warn(er, 'Error slack interactive job handling')
+        this.log.error(error, 'Error slack interactive job handling')
       }
     }
   }
@@ -74,7 +73,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     private injector: Injector,
     private slackEventListener: SlackEventListener,
     @Inject(LOG_TOKEN) private log,
-    @Inject(MIKRO_TOKEN) private mikroORM,
+    @Inject(MIKRO_FACTORY_TOKEN) private mikroFactory: IMikroFactory,
     @Inject(REDIS_TOKEN) private redis: Redis,
     private queueRegistry: QueueRegistry,
     @Inject(TERMINATE) protected terminate$: Observable<void>
@@ -92,13 +91,9 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    let mikroORM: MikroORM<PostgreSqlDriver>;
-    mikroORM = await this.mikroORM
-
-    if (!await mikroORM.isConnected()) {
-      await mikroORM.connect()
-      await mikroORM.em.execute('set application_name to "Standup Bot Consumer";');
-    }
+    const mikroORM = await this.mikroFactory('Standup Bot Consumer')
+    await mikroORM.connect()
+    emStorage.enterWith(mikroORM.em)
 
     const queue = args.queue as string;
     const availableQueues = Object.keys(this.queueHandlers);
@@ -133,11 +128,11 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       });
 
       queue.on('process', (job) => {
-        this.log.info(job, `job process`)
+        this.log.info({name: job.name, data: job.data}, `job process`)
       });
 
       queue.on('completed', (job) => {
-        this.log.info(job, `job complete`)
+        this.log.info({name: job.name, data: job.data}, `job complete`)
       });
 
       queue.on('failed', async (job, err) => {
@@ -160,7 +155,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
     this.terminate$.subscribe(() => {
       queues.forEach(q => q.close())
 
-      this.mikroORM.close()
+      mikroORM.close()
       this.redis.disconnect()
     })
   }

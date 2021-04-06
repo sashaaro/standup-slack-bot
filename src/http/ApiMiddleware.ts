@@ -14,7 +14,7 @@ import {StandupController} from "./controller/standup.controllert";
 import {OptionController} from "./controller/option.controller";
 import {Logger} from "pino";
 import {createMessageAdapter} from "@slack/interactive-messages";
-import {emStorage, IAppConfig, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
+import {emStorage, IAppConfig, QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from "../slack/slack-bot-transport.service";
 import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
 import {createLoggerMiddleware, emMiddleware} from "./middlewares";
@@ -24,6 +24,7 @@ import {stringifyError} from "../services/utils";
 import {StatController} from "./controller/stat.controller";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
+import {SlackEventListener} from "../slack/slack-event-listener";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
@@ -145,6 +146,20 @@ export class ApiMiddleware {
     const slackEvents = this.injector.get(SlackEventAdapter);
     const logger = this.injector.get(LOG_TOKEN);
 
+    for (const event of this.injector.get(SlackEventListener).events()) {
+      slackEvents.on(event, async (data) => {
+        try {
+          await queueRegistry.create(QUEUE_NAME_SLACK_EVENTS).add(event, data);
+        } catch (error) {
+          logger.error(error, 'Add job error')
+        }
+      })
+    }
+
+    slackEvents.on('error', (error) => {
+      logger.error(error, 'Slack event error')
+    })
+
     if (config.debug) {
       router.use(createLoggerMiddleware(logger))
     }
@@ -156,7 +171,7 @@ export class ApiMiddleware {
       try {
         const job = await queue.add(response);
       } catch (error) {
-        logger.error('Error put slack view submission to queue', {error})
+        logger.error(error, 'Error put slack view submission to queue')
       }
     })
     slackInteractions.action({actionId: new RegExp(
@@ -165,7 +180,7 @@ export class ApiMiddleware {
       try {
         const job = await queue.add(response);
       } catch (error) {
-        logger.error('Error put slack action to queue', {error})
+        logger.error(error, 'Error put slack action to queue')
       }
     })
 

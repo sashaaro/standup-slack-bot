@@ -78,6 +78,10 @@ body {
   border-radius: 10px;
   box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15);
   position: relative;
+
+  @include onlyMobile {
+    border-radius: 0;
+  }
 }
 
 #pagination {

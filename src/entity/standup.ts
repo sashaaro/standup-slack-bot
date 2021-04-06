@@ -1,4 +1,13 @@
-import {Collection, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
+import {
+  BeforeCreate,
+  Collection,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryKey,
+  Property
+} from "@mikro-orm/core";
 import {TeamSnapshot} from "./team-snapshot";
 import UserStandup from "./user-standup";
 import {Exclude} from "class-transformer";
@@ -24,10 +33,10 @@ export default class Standup {
   @Property()
   endAt: Date;
 
-  @OneToMany(type => UserStandup, us => us.standup)
-  users: UserStandup[];
+  @OneToMany(type => UserStandup, 'standup')
+  users = new Collection<UserStandup, Standup>(this);
 
-  //@BeforeInsert()
+  @BeforeCreate()
   calculateEndAt() {
     this.endAt = new Date(this.startAt.getTime() + this.team.originTeam.duration * 60 * 1000);
   }

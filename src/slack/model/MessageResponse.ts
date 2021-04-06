@@ -1,6 +1,7 @@
 // https://api.slack.com/events/message
 export interface MessageResponse
 {
+    bot_id: string,
     type: string,
     user: string,
     text: string,
