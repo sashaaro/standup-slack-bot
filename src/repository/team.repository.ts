@@ -1,19 +1,20 @@
 import {scopeTeamJoins} from "./scopes";
 import {formatTime, sleep, sortByIndex} from "../services/utils";
-import {EntityRepository, QueryBuilder} from "@mikro-orm/postgresql";
+import {EntityManager, EntityRepository, QueryBuilder} from "@mikro-orm/postgresql";
 import {
-  Team,
-  TeamSnapshot,
-  QuestionSnapshot,
-  QuestionOptionSnapshot,
-  Timezone,
   Channel,
   Question,
-  QuestionOption
+  QuestionOption,
+  QuestionOptionSnapshot,
+  QuestionSnapshot,
+  Team,
+  TeamSnapshot,
+  Timezone
 } from "../entity";
 import {TeamDTO} from "../dto/team-dto";
 import {TEAM_STATUS_ACTIVATED} from "../entity/team";
 import {retriedTx} from "../decorator/retried-tx";
+import {QueryFlag} from "@mikro-orm/core";
 
 export class TeamRepository extends EntityRepository<Team> {
   findByStart(startedAt: Date): Promise<Team[]> {
@@ -24,7 +25,7 @@ export class TeamRepository extends EntityRepository<Team> {
     qb
       .joinAndSelect('team.timezone', 'timezone')
       .joinAndSelect('team.workspace', 'workspace')
-      //.andWhere(`(team.start::time - timezone.utc_offset) = ?::time`, [formatTime(startedAt, false)])
+      .andWhere(`(team.start::time - timezone.utc_offset) = ?::time`, [formatTime(startedAt, false)])
       .andWhere({'team.status': TEAM_STATUS_ACTIVATED})
       .andWhere(
           '((extract("dow" from ? at time zone timezone.name)::int + 6) % 7) = ANY(team.days)',
@@ -34,9 +35,20 @@ export class TeamRepository extends EntityRepository<Team> {
   }
 
   async findActiveById(id) {
+    return await this.em.findOne(Team, {
+      id,
+      status: TEAM_STATUS_ACTIVATED,
+      questions: {
+        isEnabled: true
+      } as any
+    }, [
+      'users',
+      'questions',
+      'questions.options'
+    ])
     return await this.em
       .createQueryBuilder(Team, 't')
-      .select('*')
+      //.select('*')
       .leftJoinAndSelect('t.timezone', 'timezone')
       .leftJoinAndSelect('t.questions', 'questions')
       .leftJoinAndSelect('t.workspace', 'workspace')
@@ -50,12 +62,13 @@ export class TeamRepository extends EntityRepository<Team> {
         't.status': TEAM_STATUS_ACTIVATED
       })
       .orderBy({"questions.index": "asc", "options.index": "asc"})
+      .setFlag(QueryFlag.PAGINATE)
       .limit(1)
       .getSingleResult()
   }
 
-  async findSnapshot(team: Team): Promise<TeamSnapshot> {
-    return await this.em.findOne(TeamSnapshot, {
+  async findSnapshot(team: Team, em?: EntityManager): Promise<TeamSnapshot> {
+    return await (em || this.em).findOne(TeamSnapshot, {
       'originTeam': team
     }, [
       'users', 'questions', 'questions.options', 'questions.originQuestion', 'originTeam',
@@ -122,14 +135,14 @@ export class TeamRepository extends EntityRepository<Team> {
       .execute();
 
     // remove users which not include in users
-    let sql = `DELETE FROM user_teams WHERE "team_id" = ? AND "user_id" NOT IN (${teamDTO.userIds.map((u, i) => `?`).join(',') })`
+    let sql = `DELETE FROM team_users WHERE "team_id" = ? AND "user_id" NOT IN (${teamDTO.userIds.map((u, i) => `?`).join(',') })`
     await em.execute(sql, [
       teamDTO.id,
         ...teamDTO.userIds
       ]);
     // add new users
     await em.execute(
-      `INSERT INTO user_teams ("team_id", "user_id") VALUES ${teamDTO.userIds.map((u, i) => `(?, ?)`).join(',')} ON CONFLICT DO NOTHING`,
+      `INSERT INTO team_users ("team_id", "user_id") VALUES ${teamDTO.userIds.map((u, i) => `(?, ?)`).join(',')} ON CONFLICT DO NOTHING`,
       teamDTO.userIds.map(uid => [teamDTO.id, uid]).flat() // TODO validate your workspace!
     );
 
@@ -186,17 +199,18 @@ export class TeamRepository extends EntityRepository<Team> {
       );
     }
 
-    const team = await this.findOneOrFail(teamDTO.id, ['users', 'questions', 'questions.options'])
-    const lastSnapshot = await this.findSnapshot(team);
+    const team = await em.findOneOrFail(Team, teamDTO.id, ['users', 'questions', 'questions.options'])
+    const lastSnapshot = await this.findSnapshot(team, em);
     const newSnapshot = this.createSnapshot(team);
 
     //lastSnapshot?.normalizeSort()
 
+    console.log('equals', lastSnapshot.equals(newSnapshot))
     if (!lastSnapshot || !lastSnapshot.equals(newSnapshot)) {
       await em.persist(newSnapshot)
     }
 
-    await sleep(10000);
+    //await sleep(10000);
 
     return team;
   }

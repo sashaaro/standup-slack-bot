@@ -30,8 +30,9 @@ export class TeamSnapshot {
 
   @Expose()
   @Type(() => User)
-  @ManyToMany(() => User, u => u.teamSnapshots, {
-    //cascade: ["persist"],
+  @ManyToMany(() => User, 'teamSnapshots', {
+    //cascade: [Cascade.PERSIST],
+    owner: true
   })
   users = new Collection<User, TeamSnapshot>(this);
 
@@ -57,11 +58,11 @@ export class TeamSnapshot {
     //   return;
     // }
 
-    this.questions.set(this.questions.getItems().sort(sortByIndex))
-
-    this.questions.getItems().forEach(q => {
-      q.options.set(q.options.getItems().sort(sortByIndex))
-    })
+    // this.questions.set(this.questions.getItems().sort(sortByIndex))
+    //
+    // this.questions.getItems().forEach(q => {
+    //   q.options.set(q.options.getItems().sort(sortByIndex))
+    // })
   }
 
   // @Expose()
@@ -73,6 +74,7 @@ export class TeamSnapshot {
   // reportChannel: Channel
 
   simplify() {
+    //console.log(this.questions.getItems().map(q => console.log(q.options)))
     return {
       users: this.users.getIdentifiers(),
       questions: this.questions.getItems().map(q => ({
@@ -89,8 +91,8 @@ export class TeamSnapshot {
   }
 
   equals(team: TeamSnapshot) {
-    console.log(this.simplify())
-    console.log(team.simplify())
+    //console.log(this.simplify())
+    //console.log(team.simplify())
     return JSON.stringify(this.simplify()) === JSON.stringify(team.simplify())
   }
 }

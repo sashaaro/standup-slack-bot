@@ -47,15 +47,16 @@ export class Team {
   @ManyToOne(() => SlackWorkspace, {})
   workspace: SlackWorkspace;
 
-  @Expose()
-  @Transform((params: TransformFnParams) => params.value.getItems(), {
-    toPlainOnly: true
-  })
-  @Type(() => User)
+  // @Expose()
+  // TODO ? @Transform((params: TransformFnParams) => params.value.getItems(), {
+  //   toPlainOnly: true
+  // })
+  // TODO @Type(() => User)
   // @Min(1)
   @IsNotEmpty()
-  @ManyToMany(() => User, u => u.teams, {
+  @ManyToMany(() => User, 'teams', {
     cascade: [Cascade.PERSIST],
+    owner: true
   })
   users = new Collection<User, Team>(this)
 
@@ -71,7 +72,7 @@ export class Team {
   @Property({type: IntArrayType, defaultRaw: "'{0,1,2,3,4}'"}) // TODO bitmask
   days: number[] = [0, 1, 2, 3, 4];
 
-  @Expose()
+  @Expose({groups: ["edit"]})
   @Transform((params: TransformFnParams) => params.value.getItems(), {
     toPlainOnly: true
   })

@@ -71,12 +71,12 @@ export class User {
   profile: SlackUserProfile = new Profile();
 
   @ManyToMany(() => Team, null, {
-    inversedBy: 'users'
+    mappedBy: 'users'
   })
   teams = new Collection<Team>(this);
 
   @ManyToMany(() => TeamSnapshot, null, {
-    inversedBy: 'users'
+    mappedBy: 'users'
   })
   teamSnapshots = new Collection<Team>(this);
 

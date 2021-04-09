@@ -5,7 +5,6 @@ import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "./services/providers";
 import {CONFIG_TOKEN, LOG_TOKEN, TERMINATE} from "./services/token";
 import Rollbar from "rollbar";
-import "./services/decorators";
 
 let argv = yargs.option('env', {
   default: 'dev',

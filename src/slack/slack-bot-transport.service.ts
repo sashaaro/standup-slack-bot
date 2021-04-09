@@ -102,7 +102,7 @@ export class SlackBotTransport {
     const standup = userStandup.standup
 
     for (const question of standup.team.questions) {
-      const answer = userStandup.answers.find(answer => answer.question.id === question.id);
+      const answer = userStandup.answers.getItems().find(answer => answer.question.id === question.id);
 
       const hasOptions = question.options.length > 1;
       const element: any = {

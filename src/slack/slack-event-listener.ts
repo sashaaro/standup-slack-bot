@@ -132,7 +132,7 @@ export class SlackEventListener {
       // TODO already submit
 
       let userStandup = await standupRepo.findUserStandup(userId, standupId);
-
+      console.log(22222)
       if (!userStandup) {
         throw new ContextualError(`User standup is not found`, {userId, standupId})
       }
@@ -200,11 +200,11 @@ export class SlackEventListener {
       }
 
       const value = hasOptions ? item.selected_option.value : item.value
-      let answer = userStandup.answers.find(answer => answer.question.id === question.id)
+      let answer = userStandup.answers.getItems().find(answer => answer.question.id === question.id)
       if (!answer) {
         answer = new AnswerRequest()
         answer.question = question
-        userStandup.answers.push(answer)
+        userStandup.answers.add(answer)
         answer.userStandup = userStandup;
       }
 

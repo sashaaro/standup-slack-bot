@@ -2,6 +2,8 @@ import Standup from "../entity/standup";
 import {qbStandupJoins, scopeTeamSnapshotJoins, scopeTeamWorkspaceJoins, scopeUserAnswerQuestion} from "./scopes";
 import UserStandup from "../entity/user-standup";
 import {EntityRepository} from "@mikro-orm/postgresql";
+import {QueryFlag} from "@mikro-orm/core";
+import {User} from "../entity";
 
 export class StandupRepository extends EntityRepository<Standup> {
   findByIdAndUser(userId: string, standupId: number): Promise<Standup> {
@@ -35,9 +37,22 @@ export class StandupRepository extends EntityRepository<Standup> {
   }
 
   findUserStandup(userId: string, standupId: number): Promise<UserStandup> {
+    return this.em.findOne(UserStandup, {
+      user: this.em.getReference(User, userId),
+      standup: this.em.getReference(Standup, standupId)
+    }, [
+      'user',
+      'standup',
+      'standup.team',
+      'standup.team.questions',
+      'standup.team.questions.options',
+      'standup.team.originTeam',
+      'standup.team.originTeam.workspace',
+      'answers',
+      'answers.question',
+    ])
     const qb = this.em.getRepository(UserStandup).createQueryBuilder('userStandup')
-      .andWhere({'userStandup.user_id': userId}) // TODO add unique index userId standupId
-      .andWhere({'userStandup.standup_id': standupId})
+      .where({user_id: userId, standup_id: standupId}) // TODO add unique index userId standupId
       .leftJoinAndSelect('userStandup.user', 'user')
       .leftJoinAndSelect('userStandup.standup', 'standup')
 
@@ -47,8 +62,10 @@ export class StandupRepository extends EntityRepository<Standup> {
 
     qb.leftJoinAndSelect('answers.option', 'optionAnswer')
 
+    console.log(111111);
     return qb
-      //TODO .take(1)
-      .getSingleResult()
+      //.setFlag(QueryFlag.PAGINATE)
+      .limit(1)
+      .execute()
   }
 }

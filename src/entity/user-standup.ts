@@ -32,7 +32,7 @@ class UserStandup {
   standup: Standup;
 
   @OneToMany(() => AnswerRequest, answer => answer.userStandup)
-  answers: AnswerRequest[];
+  answers = new Collection<AnswerRequest, UserStandup>(this);
 
   @Property()
   createdAt: Date;

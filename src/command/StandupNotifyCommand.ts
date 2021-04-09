@@ -56,9 +56,8 @@ export class StandupNotifyCommand implements yargs.CommandModule {
             mergeMap(messageResult => {
               const userStandup = new UserStandup()
               userStandup.standup = standup;
-              userStandup.answers = [];
               userStandup.user = user;
-
+console.log(userStandup.standup?.id, userStandup.user?.id)
               userStandup.slackMessage = messageResult;
               //console.log(userStandup);
               return fromPromise(em.persistAndFlush(userStandup)).pipe(mapTo(userStandup))

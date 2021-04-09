@@ -30,12 +30,20 @@ export class StandupController {
     const offset = (page - 1) * limit
 
     const standups = await em().find(Standup, {
-      team: {$eq: teamID}
+      team: {originTeam: teamID}
     }, {
       limit,
       offset,
-      populate: ['team.originTeam.title', 'team.questions'],
-      fields: ['team'],
+      populate: [
+        'team',
+        'team.originTeam',
+        'team.questions',
+        'team.questions.options',
+        'users',
+        'users.user',
+        'users.answers',
+      ],
+      //fields: ['team'],
       flags: [QueryFlag.PAGINATE]
     })
 

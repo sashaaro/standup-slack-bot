@@ -21,7 +21,6 @@ docker-compose exec -u $(id -u) serve sh
 Create new migration
 ```bash
 ./cli.sh migration:generate --name=init
-# ./node_modules/typeorm/cli.js migration:generate --name=name
 ```
 
 Run migrations

@@ -14,13 +14,14 @@ export function retriedTx(
     await em.execute('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
 
     let result
-    result = await originalMethod.apply(this, args);
-
     const retry = 4;
 
     let attempt = 0
     for (const _ of new Array(retry)) {
       try {
+        if (attempt === 0) {
+          result = await originalMethod.apply(this, args);
+        }
         await em.commit()
         break;
       } catch (e) {

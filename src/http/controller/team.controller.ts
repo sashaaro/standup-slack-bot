@@ -132,7 +132,7 @@ export class TeamController {
       res.status(400).send(errors);
     }
 
-    res.send(classToPlain(updatedTeam, {strategy: 'excludeAll'}));
+    res.send(classToPlain(updatedTeam, {strategy: 'excludeAll', groups: ["edit"]}));
   }
 
   timezone: IHttpAction = async (req, res) => {
@@ -150,9 +150,10 @@ export class TeamController {
       throw new BadRequestError();
     }
 
-    const team = await em().findOne(Team, id, {populate: ['questions', 'questions.options', 'timezone', 'reportChannel', 'users']});
+    const teamRepo = em().getRepository(Team) as TeamRepository
+    const team = await teamRepo.findActiveById(id);
     if (!team) {
-      throw new BadRequestError(); // 404
+      throw new ResourceNotFoundError(); // 404
     }
 
     // team.questions = team.questions.filter(q => q.isEnabled) // TODO serializer rule or sql?
@@ -160,7 +161,7 @@ export class TeamController {
     //   q.options = q.options.filter(o => o.isEnabled)
     // })
 
-    res.send(classToPlain(team, {strategy: 'excludeAll'}));
+    res.send(classToPlain(team, {strategy: 'excludeAll', groups: ["edit"]}));
   }
 
   status: IHttpAction = async (req, res) => {

@@ -63,9 +63,6 @@ export default class StandupNotifier {
   private async createStandup(team: Team, date: Date, mikroORM) {
     const teamRepository = mikroORM.em.getRepository(Team) as TeamRepository;
 
-    console.log(team.questions[0].options)
-    console.log(team.questions[1].options)
-
     const standup = new Standup();
 
     standup.startAt = date;
