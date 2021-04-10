@@ -20,7 +20,7 @@ import {SlackEventListener} from "../slack/slack-event-listener";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {QueueRegistry} from "./queue.registry";
 import pino, {Logger} from "pino";
-import {MikroORM} from "@mikro-orm/core";
+import {LoadStrategy, MikroORM} from "@mikro-orm/core";
 import {EntityManager, PostgreSqlDriver} from "@mikro-orm/postgresql";
 import { AsyncLocalStorage } from "async_hooks";
 import * as entities from "../entity";
@@ -115,6 +115,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
           highlighter: config.debug ? new SqlHighlighter() : undefined,
           debug: config.debug,
           type: 'postgresql',
+          // TODO loadStrategy: LoadStrategy.JOINED,
           // user: config.db.username,
           // password: config.db.password,
           // host: config.db.host,

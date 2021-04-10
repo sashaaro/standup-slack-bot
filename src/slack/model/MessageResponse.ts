@@ -3,6 +3,7 @@ export interface MessageResponse
 {
     bot_id: string,
     type: string,
+    subtype?: string,
     user: string,
     text: string,
     client_msg_id: string,

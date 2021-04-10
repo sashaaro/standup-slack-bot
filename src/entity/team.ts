@@ -15,7 +15,7 @@ import Timezone from "./timezone";
 import {User} from "./user";
 import SlackWorkspace from "./slack-workspace";
 import Question from "./question";
-import {IntArrayType} from "../services/utils";
+import {IntArrayType, transformCollection} from "../services/utils";
 import {TeamRepository} from "../repository/team.repository";
 import {Channel} from "./channel";
 
@@ -47,10 +47,8 @@ export class Team {
   @ManyToOne(() => SlackWorkspace, {})
   workspace: SlackWorkspace;
 
-  // @Expose()
-  // TODO ? @Transform((params: TransformFnParams) => params.value.getItems(), {
-  //   toPlainOnly: true
-  // })
+  @Expose({groups: ['edit']})
+  @Transform(transformCollection)
   // TODO @Type(() => User)
   // @Min(1)
   @IsNotEmpty()
@@ -73,7 +71,7 @@ export class Team {
   days: number[] = [0, 1, 2, 3, 4];
 
   @Expose({groups: ["edit"]})
-  @Transform((params: TransformFnParams) => params.value.getItems(), {
+  @Transform(transformCollection, {
     toPlainOnly: true
   })
   @Type(() => Question)

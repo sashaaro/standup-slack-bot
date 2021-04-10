@@ -43,11 +43,12 @@ export class StandupController {
         'users.user',
         'users.answers',
       ],
+      orderBy: {startAt: -1},
       //fields: ['team'],
       flags: [QueryFlag.PAGINATE]
     })
 
-    res.send(serialize(standups))
+    res.send(serialize(standups, {strategy: 'excludeAll', groups: ["view_standups"]}))
     return;
 
     //qb.select('*')

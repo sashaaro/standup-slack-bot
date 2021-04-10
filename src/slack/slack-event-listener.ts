@@ -26,8 +26,12 @@ export class SlackEventListener {
       if (messageResponse.bot_id) {
         this.logger.info(messageResponse, 'Bot message received')
         return;
+      } else if (messageResponse.subtype) {
+        this.logger.info(messageResponse, 'Sub type message received. Skip')
+        return;
       }
-      const user = await em().getRepository(User).findOne(messageResponse.user)
+
+      const user = await em().getRepository(User).findOne({id: messageResponse.user})
 
       if (!user) { // TODO skip bot message
         throw new ContextualError('Message author is not found', messageResponse)
@@ -215,7 +219,7 @@ export class SlackEventListener {
       }
     }
 
-    await em().persistAndFlush(userStandup.answers);
+    await em().persistAndFlush(userStandup.answers.getItems());
     await this.slackBotTransport.updateMessage({
       token: 'xoxb-646242827008-1873129895365-hoUmeZfd4ZIgStbKKH5Ct7X0',
       ts: '1616350254.002200',

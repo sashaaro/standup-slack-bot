@@ -42,11 +42,11 @@ class Profile implements SlackUserProfile {
 
 @Entity()
 export class User {
-  @Expose()
+  @Expose({groups: ['view_standups', 'edit']})
   @PrimaryKey()
   id: string;
 
-  @Expose()
+  @Expose({groups: ['view_standups', 'edit']})
   @Property({
     length: 500
   })
@@ -66,7 +66,7 @@ export class User {
   @Property({nullable: true})
   accessToken: string;
 
-  @Expose()
+  @Expose({groups: ['edit']})
   @Property({type: 'jsonb'})
   profile: SlackUserProfile = new Profile();
 

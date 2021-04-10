@@ -12,7 +12,8 @@ import Standup from "./standup";
 import {User} from "./user";
 import {MessageResult} from "../slack/model/MessageResult";
 import AnswerRequest from "./answer-request";
-import {Exclude} from "class-transformer";
+import {Exclude, Expose, Transform, Type} from "class-transformer";
+import {transformCollection} from "../services/utils";
 
 // todo user standup index
 @Entity()
@@ -20,17 +21,21 @@ class UserStandup {
   @PrimaryKey()
   id: number
 
+  @Expose({groups: ["view_standups"]})
+  @Type(_ => User)
   @ManyToOne(() => User, {
     //eager: true
   })
   user: User;
 
-  @Exclude()
+  @Type(_ => Standup)
   @ManyToOne(() => Standup, {
     //eager: true
   })
   standup: Standup;
 
+  @Expose({groups: ["view_standups"]})
+  @Transform(transformCollection)
   @OneToMany(() => AnswerRequest, answer => answer.userStandup)
   answers = new Collection<AnswerRequest, UserStandup>(this);
 

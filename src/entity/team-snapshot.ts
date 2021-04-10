@@ -1,8 +1,8 @@
 import {User} from "./user";
-import {Expose, Type} from "class-transformer";
+import {Expose, Transform, Type} from "class-transformer";
 import {Team} from "./team";
 import QuestionSnapshot from "./question-snapshot";
-import {sortByIndex} from "../services/utils";
+import {sortByIndex, transformCollection} from "../services/utils";
 import {
   AfterCreate,
   BeforeCreate,
@@ -28,22 +28,23 @@ export class TeamSnapshot {
   })
   originTeam: Team;
 
-  @Expose()
-  @Type(() => User)
+  // @Expose({groups: ["view_standups"]})
+  // @Transform(transformCollection)
   @ManyToMany(() => User, 'teamSnapshots', {
     //cascade: [Cascade.PERSIST],
     owner: true
   })
   users = new Collection<User, TeamSnapshot>(this);
 
-  @Expose()
-  @Type(() => QuestionSnapshot)
+  @Expose({groups: ["view_standups"]})
+  @Transform(transformCollection)
   @OneToMany(() => QuestionSnapshot, question => question.team, {
     //eager: true,
     cascade: [Cascade.PERSIST],
   })
   questions = new Collection<QuestionSnapshot, TeamSnapshot>(this);
 
+  @Expose({groups: ["view_standups"]})
   @Property({nullable: false, defaultRaw: 'CURRENT_TIMESTAMP'})
   createdAt: Date;
 

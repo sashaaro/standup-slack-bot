@@ -20,7 +20,7 @@ docker-compose exec -u $(id -u) serve sh
 
 Create new migration
 ```bash
-./cli.sh migration:generate --name=init
+./cli.sh migration:generate
 ```
 
 Run migrations

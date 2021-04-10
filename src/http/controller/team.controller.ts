@@ -123,16 +123,14 @@ export class TeamController {
       throw new ResourceNotFoundError('Team is not your own');
     }
 
-    let updatedTeam;
     res.setHeader('Content-Type', 'application/json');
     if (errors.length === 0) {
       teamDTO.id = team.id
-      updatedTeam = await teamRepo.submit(teamDTO);
+      const updatedTeam = await teamRepo.submit(teamDTO);
+      res.send(classToPlain(updatedTeam, {strategy: 'excludeAll', groups: ["edit"]}));
     } else {
       res.status(400).send(errors);
     }
-
-    res.send(classToPlain(updatedTeam, {strategy: 'excludeAll', groups: ["edit"]}));
   }
 
   timezone: IHttpAction = async (req, res) => {

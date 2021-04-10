@@ -2,18 +2,24 @@ import {Cascade, Collection, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKe
 import Question from "./question";
 import {TeamSnapshot} from "./team-snapshot";
 import QuestionOptionSnapshot from "./question-option-snapshot";
+import {Expose, Transform} from "class-transformer";
+import {transformCollection} from "../services/utils";
 
 @Entity()
 class QuestionSnapshot {
   @PrimaryKey()
   id: number;
 
+  @Expose({groups: ["view_standups"]})
   @Property()
   index: number;
 
+  @Expose({groups: ["view_standups"]})
   @Property()
   text: string;
 
+  @Expose({groups: ["view_standups"]})
+  @Transform(transformCollection)
   @OneToMany(() => QuestionOptionSnapshot, o => o.question, {
     //eager: true,
     //cascade: ["insert"],
