@@ -204,8 +204,6 @@ export class TeamRepository extends EntityRepository<Team> {
     const newSnapshot = this.createSnapshot(team);
 
     //lastSnapshot?.normalizeSort()
-
-    console.log('equals', lastSnapshot.equals(newSnapshot))
     if (!lastSnapshot || !lastSnapshot.equals(newSnapshot)) {
       await em.persist(newSnapshot)
     }

@@ -100,7 +100,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       useFactory: (config: IAppConfig) => {
         return pino({
           prettyPrint: config.debug,
-          level: config.debug ? 'trace' : undefined
+          level: config.debug ? 'trace' : 'warn'
         })
       },
       deps: [CONFIG_TOKEN]

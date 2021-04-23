@@ -11,6 +11,7 @@ import {Team, Standup, UserStandup} from "../entity";
 import {withinContext} from "../operator/within-context.operator";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
+import {formatTime} from "../services/utils";
 
 const standupGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standupGoodBye = 'Have good day. Good bye.';
@@ -44,7 +45,10 @@ export default class StandupNotifier {
         fromPromise(
           (mikroORM.em.getRepository(Team) as TeamRepository).findByStart(date)
         ).pipe(
-          tap(teams => this.logger.debug({teams: teams.map(t => t.id)}, 'Launch standups for teams')),
+          tap(teams => this.logger.debug({
+            inTime: formatTime(date, false),
+            teams: teams.map(t => t.id)
+          }, 'Launch standups for teams')),
           map(teams => ({teams, date}))
         )
       ),

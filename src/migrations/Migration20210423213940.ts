@@ -1,6 +1,6 @@
 import { Migration } from '@mikro-orm/migrations';
 
-export class Migration20210403091701 extends Migration {
+export class Migration20210423213940 extends Migration {
 
   async up(): Promise<void> {
     this.addSql('create table "slack_workspace" ("id" varchar(255) not null, "name" varchar(255) not null, "domain" varchar(255) not null, "slack_data" jsonb null, "access_token" varchar(255) not null);');
@@ -30,14 +30,19 @@ export class Migration20210403091701 extends Migration {
 
     this.addSql('create table "question_option_snapshot" ("id" serial primary key, "index" int4 not null, "text" varchar(255) not null, "question_id" int4 not null, "origin_option_id" int4 not null);');
 
-    this.addSql('create table "answer_request" ("id" varchar(255) not null, "user_standup_id" int4 not null, "question_id" int4 not null, "answer_message" varchar(255) null, "option_id" int4 not null, "created_at" timestamptz(0) not null, "answer_created_at" timestamptz(0) null);');
-    this.addSql('alter table "answer_request" add constraint "answer_request_pkey" primary key ("id");');
+    this.addSql('create table "answer_request" ("id" serial primary key, "user_standup_id" int4 not null, "question_id" int4 not null, "answer_message" varchar(255) null, "option_id" int4 null, "created_at" timestamptz(0) not null, "answer_created_at" timestamptz(0) null);');
 
     this.addSql('create table "user_team_snapshots" ("user_id" varchar(255) not null, "team_snapshot_id" int4 not null);');
     this.addSql('alter table "user_team_snapshots" add constraint "user_team_snapshots_pkey" primary key ("user_id", "team_snapshot_id");');
 
+    this.addSql('create table "team_snapshot_users" ("team_snapshot_id" int4 not null, "user_id" varchar(255) not null);');
+    this.addSql('alter table "team_snapshot_users" add constraint "team_snapshot_users_pkey" primary key ("team_snapshot_id", "user_id");');
+
     this.addSql('create table "user_teams" ("user_id" varchar(255) not null, "team_id" int4 not null);');
     this.addSql('alter table "user_teams" add constraint "user_teams_pkey" primary key ("user_id", "team_id");');
+
+    this.addSql('create table "team_users" ("team_id" int4 not null, "user_id" varchar(255) not null);');
+    this.addSql('alter table "team_users" add constraint "team_users_pkey" primary key ("team_id", "user_id");');
 
     this.addSql('alter table "user" add constraint "user_workspace_id_foreign" foreign key ("workspace_id") references "slack_workspace" ("id") on update cascade;');
 
@@ -68,13 +73,19 @@ export class Migration20210403091701 extends Migration {
 
     this.addSql('alter table "answer_request" add constraint "answer_request_user_standup_id_foreign" foreign key ("user_standup_id") references "user_standup" ("id") on update cascade;');
     this.addSql('alter table "answer_request" add constraint "answer_request_question_id_foreign" foreign key ("question_id") references "question_snapshot" ("id") on update cascade;');
-    this.addSql('alter table "answer_request" add constraint "answer_request_option_id_foreign" foreign key ("option_id") references "question_option_snapshot" ("id") on update cascade;');
+    this.addSql('alter table "answer_request" add constraint "answer_request_option_id_foreign" foreign key ("option_id") references "question_option_snapshot" ("id") on update cascade on delete set null;');
 
     this.addSql('alter table "user_team_snapshots" add constraint "user_team_snapshots_user_id_foreign" foreign key ("user_id") references "user" ("id") on update cascade on delete cascade;');
     this.addSql('alter table "user_team_snapshots" add constraint "user_team_snapshots_team_snapshot_id_foreign" foreign key ("team_snapshot_id") references "team_snapshot" ("id") on update cascade on delete cascade;');
 
+    this.addSql('alter table "team_snapshot_users" add constraint "team_snapshot_users_team_snapshot_id_foreign" foreign key ("team_snapshot_id") references "team_snapshot" ("id") on update cascade on delete cascade;');
+    this.addSql('alter table "team_snapshot_users" add constraint "team_snapshot_users_user_id_foreign" foreign key ("user_id") references "user" ("id") on update cascade on delete cascade;');
+
     this.addSql('alter table "user_teams" add constraint "user_teams_user_id_foreign" foreign key ("user_id") references "user" ("id") on update cascade on delete cascade;');
     this.addSql('alter table "user_teams" add constraint "user_teams_team_id_foreign" foreign key ("team_id") references "team" ("id") on update cascade on delete cascade;');
+
+    this.addSql('alter table "team_users" add constraint "team_users_team_id_foreign" foreign key ("team_id") references "team" ("id") on update cascade on delete cascade;');
+    this.addSql('alter table "team_users" add constraint "team_users_user_id_foreign" foreign key ("user_id") references "user" ("id") on update cascade on delete cascade;');
   }
 
 }
