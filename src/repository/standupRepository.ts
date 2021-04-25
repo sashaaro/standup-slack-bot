@@ -25,13 +25,15 @@ export class StandupRepository extends EntityRepository<Standup> {
 
   findEnd(endAt: Date): Promise<Standup[]> {
     const qb = this.createQueryBuilder('standup');
+    qb.select('*')
     qbStandupJoins(qb);
     qb.leftJoinAndSelect('answersQuestion.options', 'answersQuestionOptions')
       .leftJoinAndSelect('userStandup.user', 'user')
       .leftJoinAndSelect('team.reportChannel', 'reportChannel')
 
     // TODO! database timzone and nodejs process timezone should be same!
-    qb.andWhere(`date_trunc('minute', standup.end_at) = date_trunc('minute', ?::timestamp)`, [endAt])
+    //qb.andWhere(`date_trunc('minute', standup.end_at) = date_trunc('minute', ?::timestamp)`, [endAt])
+    qb.andWhere('standup.id = 7')
 
     return qb.getResultList();
   }

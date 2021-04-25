@@ -2,10 +2,10 @@ import {DatabaseMigrateCommand} from "./DatabaseMigrateCommand";
 import {DatabaseFixtureCommand} from "./DatabaseFixtureCommand";
 import {QueueConsumeCommand} from "./QueueConsumeCommand";
 import {StandupNotifyCommand} from "./StandupNotifyCommand";
-import {ServerCommand} from "./ServerCommand";
+import {ServerCommand} from "./server.command";
 import {MigrationGenerateCommand} from "./MigrationGenerateCommand";
 import {SyncSlackCommand} from "./SyncSlackCommand";
-import {DevCommand} from "./DevCommand";
+import {DevCommand} from "./dev.command";
 
 export const dbCommands: any = [
   MigrationGenerateCommand,

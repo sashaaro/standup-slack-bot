@@ -1,5 +1,5 @@
 import {Request} from "express";
-import {AccessDenyError} from "../http/ApiMiddleware";
+import {AccessDenyError} from "../http/api.middleware";
 
 export const authorized = (
   target: object,

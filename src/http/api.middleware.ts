@@ -12,15 +12,14 @@ import {UserController} from "./controller/user.controller";
 import {ChannelController} from "./controller/channel.controller";
 import {StandupController} from "./controller/standup.controllert";
 import {OptionController} from "./controller/option.controller";
-import {Logger} from "pino";
+import pinoHttp from "pino-http";
 import {createMessageAdapter} from "@slack/interactive-messages";
-import {emStorage, IAppConfig, QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
+import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from "../slack/slack-bot-transport.service";
 import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
-import {createLoggerMiddleware, emMiddleware} from "./middlewares";
+import {emMiddleware} from "./middlewares";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import {QueueRegistry} from "../services/queue.registry";
-import {stringifyError} from "../services/utils";
 import {StatController} from "./controller/stat.controller";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
@@ -36,7 +35,7 @@ declare global {
   }
 }
 
-export const createApiContextMiddleware = () => {
+const createApiContextMiddleware = () => { // TODO use AsyncLocalStorage
   return async (req: http.IncomingMessage | express.Request | express.Router | any, res, next) => {
     const context = new ApiContext(req.session);
     await context.init();
@@ -55,23 +54,6 @@ export class ResourceNotFoundError extends Error {
 export class BadRequestError extends Error {
 }
 
-const errorHandler = (config: IAppConfig, logger: Logger) => (err, req, res, next) => {
-  if (err instanceof AccessDenyError) {
-    res.status(403).send(); // check if not sent yet
-  } else if (err instanceof BadRequestError) {
-    res.status(400).send();
-  } else if (err instanceof ResourceNotFoundError) {
-    res.status(404).send();
-  // } else if (err instanceof ConnectionException) { // mysql disconnect..
-  //  // try reconnect multi retry with delay
-  } else {
-    logger.error(err, "Catch express middleware error")
-    if (err.statusCode !== 'ERR_HTTP_HEADERS_SENT') {
-      res.status(502).send(config.env !== 'prod' ? stringifyError(err) : '');
-    }
-  }
-}
-
 
 export class ApiMiddleware {
   constructor(private injector: Injector) {}
@@ -87,7 +69,7 @@ export class ApiMiddleware {
       resave: true,
       saveUninitialized: true,
       store: new RedisConnectStore({client: injector.get(REDIS_TOKEN)}),
-      //cookie: { secure: true }
+      // TODO ?! cookie: { secure: true }
     }))
 
     router.use(emMiddleware(mikro));
@@ -133,8 +115,6 @@ export class ApiMiddleware {
       res.type('txt').send('Not found');
     })
 
-    router.use(errorHandler(injector.get(CONFIG_TOKEN), injector.get(LOG_TOKEN)))
-
     return router;
   }
 
@@ -149,7 +129,6 @@ export class ApiMiddleware {
 
     for (const event of slackEventListener.events()) {
       slackEvents.on(event, async (data) => {
-        console.log(data)
         try {
           //await slackEventListener.evensHandlers[event](data)
           await queueRegistry.create(QUEUE_NAME_SLACK_EVENTS).add(event, data);
@@ -164,7 +143,10 @@ export class ApiMiddleware {
     })
 
     if (config.debug) {
-      router.use(createLoggerMiddleware(logger))
+      router.use(pinoHttp({
+        logger: logger,
+        useLevel: 'debug'
+      }))
     }
 
     const slackInteractions = createMessageAdapter(config.slackSigningSecret);
@@ -186,6 +168,7 @@ export class ApiMiddleware {
         logger.error(error, 'Error put slack action to queue')
       }
     })
+
 
     router.use(emMiddleware(mikro));
 

@@ -1,5 +1,5 @@
 import {ActionsBlock, Block, KnownBlock, SectionBlock} from "@slack/types";
-import {ACTION_OPEN_DIALOG} from "./slack-bot-transport.service";
+import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT} from "./slack-bot-transport.service";
 import {Standup} from "../entity";
 import {ChatUpdateArguments} from "@slack/web-api";
 
@@ -18,7 +18,7 @@ export const generateStandupMsg = (standup: Standup, submitted = false, done = f
     type: 'actions',
     elements: [
       {
-        type: "button",
+        type: 'button',
         style: submitted ? undefined : 'primary',
         text: {
           type: 'plain_text',
@@ -29,9 +29,24 @@ export const generateStandupMsg = (standup: Standup, submitted = false, done = f
       }
     ]
   }
+
+  const doneBlock: ActionsBlock = {
+    type: 'actions',
+    elements: [
+      {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: 'Open report'
+        },
+        action_id: ACTION_OPEN_REPORT,
+        value: standup.id.toString(),
+      }
+    ]
+  }
   const blocks: KnownBlock[] = [
     sectionBlock,
-    ...(done ? [] : [actionsBlock])
+    ...(done ? [doneBlock] : [actionsBlock])
   ];
 
   return {

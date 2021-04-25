@@ -1,5 +1,5 @@
 import {Inject, Injectable} from 'injection-js';
-import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../ApiMiddleware";
+import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../api.middleware";
 import {IHttpAction} from "./index";
 import {classToPlain, plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";

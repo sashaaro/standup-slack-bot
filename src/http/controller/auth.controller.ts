@@ -5,7 +5,7 @@ import {em, IAppConfig} from "../../services/providers";
 import {WebClient} from "@slack/web-api";
 import {OauthAccessResponse} from "../../slack/model/ScopeGranted";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
-import {AccessDenyError, ResourceNotFoundError} from "../ApiMiddleware";
+import {AccessDenyError, ResourceNotFoundError} from "../api.middleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
 import {Logger} from "pino";
 import {SyncSlackService} from "../../slack/sync-slack.service";

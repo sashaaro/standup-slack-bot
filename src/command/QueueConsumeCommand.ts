@@ -128,11 +128,11 @@ export class QueueConsumeCommand implements yargs.CommandModule {
       });
 
       queue.on('process', (job) => {
-        this.log.info({name: job.name, data: job.data}, `job process`)
+        this.log.debug({name: job.name, data: job.data}, `job process`)
       });
 
       queue.on('completed', (job) => {
-        this.log.info({name: job.name, data: job.data}, `job complete`)
+        this.log.debug({name: job.name, data: job.data}, `job complete`)
       });
 
       queue.on('failed', async (job, err) => {

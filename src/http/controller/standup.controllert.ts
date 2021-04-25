@@ -1,5 +1,5 @@
 import {Injectable} from 'injection-js';
-import {AccessDenyError} from "../ApiMiddleware";
+import {AccessDenyError} from "../api.middleware";
 import {IHttpAction} from "./index";
 import {serialize} from "class-transformer";
 import {em} from "../../services/providers";

@@ -1,18 +1,21 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
+  CONFIG_TOKEN,
   IMikroFactory,
   LOG_TOKEN, MIKRO_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
 import express from 'express'
 import 'express-async-errors';
 import http from "http";
-import {ApiMiddleware} from "../http/ApiMiddleware";
+import {ApiMiddleware} from "../http/api.middleware";
 import {Redis} from "ioredis";
 import {Observable} from "rxjs";
 import {redisReady} from "./QueueConsumeCommand";
 import * as fs from "fs";
 import {bind} from "../decorator/bind";
+import {errorHandler} from "../http/middlewares";
+import {Logger} from "pino";
 
 export class ServerCommand implements yargs.CommandModule {
   static meta: Partial<yargs.CommandModule<any, any>> = {
@@ -25,7 +28,7 @@ export class ServerCommand implements yargs.CommandModule {
     private injector: Injector,
     @Inject(MIKRO_FACTORY_TOKEN) private mikroFactory: IMikroFactory,
     @Inject(REDIS_TOKEN) private redis: Redis,
-    @Inject(LOG_TOKEN) protected log,
+    @Inject(LOG_TOKEN) protected log: Logger,
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 
@@ -71,7 +74,7 @@ export class ServerCommand implements yargs.CommandModule {
     expressApp.use('/api/doc', express.static('./resources/public'));
     expressApp.use('/api', apiMiddleware.use(mikroORM));
 
-    expressApp.get('/api/health-check', async (request, response) => {
+    expressApp.get('/health-check', async (request, response) => {
       const redis = this.redis.status === 'connected';
       const postgres = await mikroORM.isConnected()
 
@@ -81,6 +84,8 @@ export class ServerCommand implements yargs.CommandModule {
     });
 
     // todo fallback expressApp.use('/', () => {});
+
+    expressApp.use(errorHandler(this.injector.get(CONFIG_TOKEN).env !== 'prod', this.log))
 
     const options = {}
     port = port || 3001

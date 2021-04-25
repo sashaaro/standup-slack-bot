@@ -85,7 +85,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
         // TODO insert to slack message table?!
         this.log.info({standups: standups.map(s => s.id)}, 'Standups ended and reports were sent');
       },
-      error: error => this.log.error(error, 'send report error')
+      error: error => this.log.error(error, 'Send report error')
     })
 
     this.terminate$.subscribe(() => {

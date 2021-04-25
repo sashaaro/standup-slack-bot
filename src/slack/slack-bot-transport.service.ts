@@ -12,8 +12,6 @@ import {OpenViewResult} from "./model/OpenViewResult";
 import {generateStandupMsg} from "./slack-blocks";
 import {LOG_TOKEN} from "../services/token";
 
-const standupFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
-
 export const hasOptionQuestions = (team) => team.questions.filter(q => q.options.length > 0)
 
 export const CALLBACK_STANDUP_SUBMIT = 'standup_submit'
@@ -101,7 +99,7 @@ export class SlackBotTransport {
 
     const standup = userStandup.standup
 
-    for (const question of standup.team.questions) {
+    for (const question of standup.team.questions.getItems()) {
       const answer = userStandup.answers.getItems().find(answer => answer.question.id === question.id);
 
       const hasOptions = question.options.length > 1;
@@ -321,6 +319,12 @@ export class SlackBotTransport {
       }
     }
 
+    // TODO persist standup.reportMessage = result;
+
+    if (!result.ok) {
+      throw new ContextualError('Send report post message error', result)
+    }
+
     await Promise.all(standup.users.getItems().map((userStandup) => {
       // https://api.slack.com/docs/rate-limits ?!
       return this.updateMessage({
@@ -330,11 +334,6 @@ export class SlackBotTransport {
         ...generateStandupMsg(userStandup.standup, userStandup.answers.length > 0, true),
       } as ChatUpdateArguments)
     }))
-
-
-    if (!result.ok) {
-      throw new ContextualError('Send report post message error', result)
-    }
 
     return result.message;
   }

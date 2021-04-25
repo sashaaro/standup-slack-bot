@@ -1,6 +1,6 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
-import {ServerCommand} from "./ServerCommand";
+import {ServerCommand} from "./server.command";
 import {StandupNotifyCommand} from "./StandupNotifyCommand";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
