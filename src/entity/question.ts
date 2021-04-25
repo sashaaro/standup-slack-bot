@@ -41,7 +41,6 @@ class Question {
   // TODO ?! isOptional: boolean = false;
 
   @Expose({groups: ["edit"]})
-  @Type(() => QuestionOption)
   @Transform((params: TransformFnParams) => params.value.getItems(), {
     toPlainOnly: true
   })

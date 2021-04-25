@@ -135,7 +135,7 @@ export class TeamController {
 
   timezone: IHttpAction = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    res.send(await em().find(Timezone, {}))
+    res.send(await em().find(Timezone, {}, {orderBy: {utc_offset: 'DESC'}}))
   }
 
   get: IHttpAction = async (req, res) => {
@@ -153,6 +153,7 @@ export class TeamController {
     if (!team) {
       throw new ResourceNotFoundError(); // 404
     }
+    console.log(team.timezone.utc_offset)
 
     // team.questions = team.questions.filter(q => q.isEnabled) // TODO serializer rule or sql?
     // team.questions.forEach(q => {

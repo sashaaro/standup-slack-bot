@@ -46,7 +46,7 @@ export default class StandupNotifier {
           (mikroORM.em.getRepository(Team) as TeamRepository).findByStart(date)
         ).pipe(
           tap(teams => this.logger.debug({
-            inTime: formatTime(date, false),
+            inTime: formatTime(date, true),
             teams: teams.map(t => t.id)
           }, 'Launch standups for teams')),
           map(teams => ({teams, date}))

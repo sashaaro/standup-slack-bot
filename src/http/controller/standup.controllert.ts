@@ -48,7 +48,10 @@ export class StandupController {
       flags: [QueryFlag.PAGINATE]
     })
 
-    res.send(serialize(standups, {strategy: 'excludeAll', groups: ["view_standups"]}))
+    res.send(serialize(standups, {
+      strategy: 'excludeAll',
+      groups: ["view_standups"]
+    }))
     return;
 
     //qb.select('*')

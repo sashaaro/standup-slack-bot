@@ -57,9 +57,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
               const userStandup = new UserStandup()
               userStandup.standup = standup;
               userStandup.user = user;
-console.log(userStandup.standup?.id, userStandup.user?.id)
               userStandup.slackMessage = messageResult;
-              //console.log(userStandup);
               return fromPromise(em.persistAndFlush(userStandup)).pipe(mapTo(userStandup))
             }))
           )

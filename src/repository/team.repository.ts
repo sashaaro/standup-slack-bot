@@ -1,5 +1,5 @@
 import {scopeTeamJoins} from "./scopes";
-import {formatTime, sleep, sortByIndex} from "../services/utils";
+import {formatTime, sortByIndex} from "../services/utils";
 import {EntityManager, EntityRepository, QueryBuilder} from "@mikro-orm/postgresql";
 import {
   Channel,
@@ -14,7 +14,7 @@ import {
 import {TeamDTO} from "../dto/team-dto";
 import {TEAM_STATUS_ACTIVATED} from "../entity/team";
 import {retriedTx} from "../decorator/retried-tx";
-import {QueryFlag} from "@mikro-orm/core";
+import {LoadStrategy, QueryFlag} from "@mikro-orm/core";
 
 export class TeamRepository extends EntityRepository<Team> {
   findByStart(startedAt: Date): Promise<Team[]> {
@@ -34,18 +34,22 @@ export class TeamRepository extends EntityRepository<Team> {
     return qb.getResultList()
   }
 
-  async findActiveById(id) {
+  async findActiveById(id): Promise<Team> {
     return await this.em.findOne(Team, {
       id,
       status: TEAM_STATUS_ACTIVATED,
       questions: {
         isEnabled: true
       } as any
-    }, [
-      'users',
-      'questions',
-      'questions.options'
-    ])
+    }, {
+      populate: [
+        'users',
+        'questions',
+        'questions.options',
+        'timezone'
+      ],
+      strategy: LoadStrategy.SELECT_IN
+    })
     return await this.em
       .createQueryBuilder(Team, 't')
       //.select('*')
@@ -68,16 +72,23 @@ export class TeamRepository extends EntityRepository<Team> {
   }
 
   async findSnapshot(team: Team, em?: EntityManager): Promise<TeamSnapshot> {
-    return await (em || this.em).findOne(TeamSnapshot, {
-      'originTeam': team
-    }, [
-      'users', 'questions', 'questions.options', 'questions.originQuestion', 'originTeam',
-      'originTeam.workspace'
-    ], {
-      'createdAt': 'DESC',
-      // 'questions.index': 'ASC',
-      // 'questions.options.index': 'ASC'
-    })
+    em = em || this.em;
+    const qb = em.createQueryBuilder(TeamSnapshot, 'ts')
+    qb
+      .select('*')
+      .where({originTeam: team})
+      .leftJoinAndSelect('ts.users', 'users')
+      .leftJoinAndSelect('ts.originTeam', 'originTeam')
+      .leftJoinAndSelect('originTeam.workspace', 'workspace')
+      .leftJoinAndSelect('ts.questions', 'snapshotQuestions')
+      .leftJoinAndSelect('snapshotQuestions.options', 'snapshotOptions')
+      .leftJoinAndSelect('snapshotQuestions.originQuestion', 'originQuestion')
+      .orderBy({createdAt: 'DESC'})
+      .limit(1)
+      .setFlag(QueryFlag.PAGINATE)
+
+    const list = await qb.getResultList()
+    return list[0] || null;
   }
 
   createSnapshot(team: Team): TeamSnapshot {
@@ -201,6 +212,8 @@ export class TeamRepository extends EntityRepository<Team> {
 
     const team = await em.findOneOrFail(Team, teamDTO.id, ['users', 'questions', 'questions.options'])
     const lastSnapshot = await this.findSnapshot(team, em);
+    console.log(lastSnapshot.questions)
+    console.log(lastSnapshot.simplify())
     const newSnapshot = this.createSnapshot(team);
 
     //lastSnapshot?.normalizeSort()

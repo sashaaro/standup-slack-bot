@@ -1,6 +1,6 @@
 import {SlackUserProfile} from "../slack/model/SlackUser";
 import {Team} from "./team";
-import {Exclude, Expose} from "class-transformer";
+import {Exclude, Expose, Transform, Type} from "class-transformer";
 import {
   BaseEntity,
   Collection,
@@ -28,13 +28,21 @@ class Profile implements SlackUserProfile {
   status_expiration: number;
   avatar_hash: string;
   always_active: boolean;
+  @Expose({groups: ['edit', 'view_standups']})
   first_name: string;
+  @Expose({groups: ['edit', 'view_standups']})
   last_name: string;
+  @Expose({groups: ['edit', 'view_standups']})
   image_24: string;
+  @Expose({groups: ['edit', 'view_standups']})
   image_32: string;
+  @Expose({groups: ['edit', 'view_standups']})
   image_48: string;
+  @Expose({groups: ['edit', 'view_standups']})
   image_72: string;
+  @Expose({groups: ['edit', 'view_standups']})
   image_192: string;
+  @Expose({groups: ['edit', 'view_standups']})
   image_512: string;
   status_text_canonical: string;
   team: string;
@@ -66,7 +74,9 @@ export class User {
   @Property({nullable: true})
   accessToken: string;
 
-  @Expose({groups: ['edit']})
+  @Expose({groups: ['edit', 'view_standups']})
+  // @Transform(params => params.value)
+  @Type(_ => Profile)
   @Property({type: 'jsonb'})
   profile: SlackUserProfile = new Profile();
 

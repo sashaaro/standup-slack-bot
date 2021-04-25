@@ -115,7 +115,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
           highlighter: config.debug ? new SqlHighlighter() : undefined,
           debug: config.debug,
           type: 'postgresql',
-          // TODO loadStrategy: LoadStrategy.JOINED,
+          loadStrategy: LoadStrategy.JOINED,
           // user: config.db.username,
           // password: config.db.password,
           // host: config.db.host,

@@ -16,9 +16,9 @@
     "scripts": "dist/src/migration/*.js"
   },
   "dependencies": {
-    "@mikro-orm/cli": "4.5.4-dev.18",
-    "@mikro-orm/core": "4.5.4-dev.18",
-    "@mikro-orm/postgresql": "4.5.4-dev.18",
+    "@mikro-orm/cli": "4.5.4-dev.20",
+    "@mikro-orm/core": "4.5.4-dev.20",
+    "@mikro-orm/postgresql": "4.5.4-dev.20",
     "@mikro-orm/sql-highlighter": "^1.0.1",
     "@slack/events-api": "^3.0.0",
     "@slack/interactive-messages": "^2.0.1",

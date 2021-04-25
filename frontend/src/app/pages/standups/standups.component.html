@@ -1,7 +1,7 @@
 <div class="stand-up-list" *appAsync="response$; placeholder: true; let response">
   <div *ngFor="let standup of response.standups | paginate: {itemsPerPage: itemsPerPage, currentPage: page, totalItems: response.total}" class="stand-up">
     <div class="stand-up__header">
-      {{ standup.startAt|date }}
+      {{ standup.startAt|date:'MMMM d, h:mm a': response.team.timezone.offset }}
 <!--      if !standUp.isFinished()-->
 <!--      a.ui.teal.label= 'In progress'-->
     </div>

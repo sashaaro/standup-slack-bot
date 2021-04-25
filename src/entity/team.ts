@@ -84,7 +84,8 @@ export class Team {
   })
   questions = new Collection<Question, Team>(this)
 
-  @Expose()
+  @Expose({groups: ["edit"]})
+  @Type(_ => Timezone)
   @ManyToOne(() => Timezone, {})
   timezone: Timezone;
 
