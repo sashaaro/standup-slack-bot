@@ -54,7 +54,6 @@ export const QUEUE_NAME_SLACK_EVENTS = 'slack_events';
 export const QUEUE_NAME_SLACK_INTERACTIVE = 'slack_interactive';
 
 export const emStorage = new AsyncLocalStorage<EntityManager<PostgreSqlDriver>>();
-
 export const em = () => emStorage.getStore()
 
 // TODO https://github.com/microsoft/tsyringe ?!
@@ -100,7 +99,11 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
       useFactory: (config: IAppConfig) => {
         return pino({
           prettyPrint: config.debug,
-          level: config.debug ? 'trace' : 'warn'
+          level: config.debug ?
+            //'trace' :
+            'debug' :
+            'warn',
+          // add request hash
         })
       },
       deps: [CONFIG_TOKEN]

@@ -36,7 +36,7 @@ export class SlackBotTransport {
       type: "modal",
       title: {
         "type": "plain_text",
-        "text": `Report #${standup.team.originTeam.name}`.substr(0, 24).trim(),
+        "text": `Report ${standup.team.originTeam.name}`.substr(0, 24).trim(),
         "emoji": true
       },
       "close": {
@@ -60,13 +60,14 @@ export class SlackBotTransport {
     const args:any = {
       view: view,
       trigger_id: triggerId,
-    }
-    this.logger.debug(args, 'Call webClient.views.open')
-
-    const r = await this.webClient.views.open({
-      ...args,
       token: standup.team.originTeam.workspace.accessToken
-    })
+    }
+    this.logger.trace(args, 'webClient.views.open')
+
+    const r = await this.webClient.views.open(args)
+    if (!r.ok) {
+      throw new ContextualError('webClient.views.open', r)
+    }
   }
 
   async openDialog(userStandup: UserStandup, triggerId: string): Promise<OpenViewResult['view']> {
@@ -197,12 +198,10 @@ export class SlackBotTransport {
     const args:any = {
       view: view,
       trigger_id: triggerId,
-    }
-    this.logger.debug(args, 'Call webClient.views.open')
-    const result: OpenViewResult|any = await this.webClient.views.open({
-      ...args,
       token: standup.team.originTeam.workspace.accessToken
-    })
+    }
+    this.logger.trace(args, 'Call webClient.views.open')
+    const result: OpenViewResult|any = await this.webClient.views.open(args)
 
     if (!result.ok) {
       throw new ContextualError('openDialog', result)
@@ -339,7 +338,7 @@ export class SlackBotTransport {
   }
 
   public async updateMessage(args: ChatUpdateArguments): Promise<MessageResult> {
-    this.logger.debug(args, 'Call webClient.chat.updateMessage')
+    this.logger.trace(args, 'Call webClient.chat.update')
     let result: MessageResult
     //try {
       result = await this.webClient.chat.update({
@@ -359,14 +358,15 @@ export class SlackBotTransport {
   }
 
   private async postMessage(args: ChatPostMessageArguments, token: string): Promise<MessageResult> {
-    this.logger.debug(args, 'Call webClient.chat.postMessage')
-    const result: MessageResult = await this.webClient.chat.postMessage({
+    args = {
       ...args,
       token
-    }) as any;
+    }
+    this.logger.trace(args, 'Call webClient.chat.postMessage')
+    const result = await this.webClient.chat.postMessage(args) as MessageResult;
 
     if (!result.ok) {
-      throw new ContextualError('postMessage', args)
+      throw new ContextualError('webClient.chat.postMessage', args)
     }
 
     return result;

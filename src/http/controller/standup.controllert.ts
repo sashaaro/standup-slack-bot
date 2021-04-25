@@ -1,16 +1,16 @@
 import {Injectable} from 'injection-js';
 import {AccessDenyError} from "../api.middleware";
-import {IHttpAction} from "./index";
 import {serialize} from "class-transformer";
 import {em} from "../../services/providers";
 import Standup from "../../entity/standup";
 import {QueryFlag} from "@mikro-orm/core";
-import {Team} from "../../entity";
+import {reqContext} from "../middlewares";
+import {Handler} from "express";
 
 @Injectable()
 export class StandupController {
-  list: IHttpAction = async (req, res) => {
-    if (!req.context.user) {
+  list: Handler = async (req, res) => {
+    if (!reqContext().user) {
       throw new AccessDenyError();
     }
 

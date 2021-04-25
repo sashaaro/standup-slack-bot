@@ -6,7 +6,7 @@ import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {sleep} from "../services/utils";
 import {bind} from "../decorator/bind";
-import {QueueConsumeCommand} from "./QueueConsumeCommand";
+import {QueueConsumeCommand} from "./queue-consume.command";
 
 export class DevCommand implements yargs.CommandModule {
   static meta = {

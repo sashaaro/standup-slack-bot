@@ -13,6 +13,7 @@ import {ContextualError, isPlatformError} from "../../services/utils";
 import SlackWorkspace from "../../entity/slack-workspace";
 import {User} from "../../entity";
 import {bind} from "../../decorator/bind";
+import {authenticate, reqContext} from "../middlewares";
 
 @Injectable()
 export class AuthController {
@@ -26,8 +27,8 @@ export class AuthController {
 
   session: IHttpAction = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    res.status(req.context.user ? 200 : 404);
-    res.send(req.context.user || JSON.stringify({}));
+    res.status(reqContext().user ? 200 : 404);
+    res.send(reqContext().user || JSON.stringify({}));
   }
 
   logout = (req, res) => {
@@ -43,7 +44,7 @@ export class AuthController {
 
   @bind
   async auth(req, res) {
-    if (req.context.user) {
+    if (reqContext().user) {
       res.redirect('/')
       return;
     }
@@ -129,9 +130,9 @@ export class AuthController {
     }
 
     user.workspace = workspace;
-    await userRepository.persist(user);
+    await userRepository.persistAndFlush(user);
 
-    req.context.authenticate(response.authed_user, user);
+    authenticate(user, req, response.authed_user);
 
     if (newWorkspace) {
       await this.syncSlackService.syncForWorkspace(workspace);

@@ -10,6 +10,8 @@ import {TeamDTO} from "../../dto/team-dto";
 import {LOG_TOKEN} from "../../services/token";
 import {Logger} from "pino";
 import {TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, teamStatuses} from "../../entity/team";
+import {reqContext} from "../middlewares";
+import {authorized} from "../../decorator/authorized";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -40,7 +42,7 @@ export class TeamController {
         .leftJoinAndSelect('t.timezone', 'tz')
         .leftJoinAndSelect('t.createdBy', 'created')
         .leftJoinAndSelect('t.users', 'users')
-        .andWhere({'t.created_by_id': req.context.user.id})
+        .andWhere({'t.created_by_id': reqContext().user.id})
     // TODO .addOrderBy('t.createdAt', "DESC")
 
     if (status) {
@@ -67,8 +69,9 @@ export class TeamController {
     return clearFromTarget(errors) as ValidationError[];// TODO
   }
 
+  // TODO @authorized
   create: IHttpAction = async (req, res) => {
-    if (!req.context.user) {
+    if (!reqContext().user) {
       throw new AccessDenyError();
     }
 
@@ -85,8 +88,8 @@ export class TeamController {
       team.reportChannel = em().getReference(Channel, teamDTO.reportChannelId);
       teamDTO.questions.forEach(q => team.questions.add(em().create(Question, q)));
 
-      team.workspace = req.context.user.workspace;
-      team.createdBy = req.context.user;
+      team.workspace = reqContext().user.workspace;
+      team.createdBy = reqContext().user;
       team.status = TEAM_STATUS_ACTIVATED;
 
       await em().persistAndFlush(team)
@@ -98,7 +101,7 @@ export class TeamController {
   }
 
   edit: IHttpAction = async (req, res) => {
-    if (!req.context.user) {
+    if (!reqContext().user) {
       throw new AccessDenyError();
     }
 
@@ -115,11 +118,11 @@ export class TeamController {
       throw new ResourceNotFoundError('Team is not found');
     }
 
-    if (req.context.user.id !== team.createdBy.id) {
+    if (reqContext().user.id !== team.createdBy.id) {
       throw new ResourceNotFoundError('Team is not your own');
     }
 
-    if (req.context.user.workspace.id !== team.workspace.id) {
+    if (reqContext().user.workspace.id !== team.workspace.id) {
       throw new ResourceNotFoundError('Team is not your own');
     }
 
@@ -139,7 +142,7 @@ export class TeamController {
   }
 
   get: IHttpAction = async (req, res) => {
-    if (!req.context.user) {
+    if (!reqContext().user) {
       throw new AccessDenyError();
     }
 
@@ -153,8 +156,6 @@ export class TeamController {
     if (!team) {
       throw new ResourceNotFoundError(); // 404
     }
-    console.log(team.timezone.utc_offset)
-
     // team.questions = team.questions.filter(q => q.isEnabled) // TODO serializer rule or sql?
     // team.questions.forEach(q => {
     //   q.options = q.options.filter(o => o.isEnabled)
@@ -164,7 +165,7 @@ export class TeamController {
   }
 
   status: IHttpAction = async (req, res) => {
-    if (!req.context.user) {
+    if (!reqContext().user) {
       throw new AccessDenyError();
     }
 
@@ -193,7 +194,7 @@ export class TeamController {
   }
 
   stats: IHttpAction = async (req, res) => {
-    if (!req.context.user) {
+    if (!reqContext().user) {
       throw new AccessDenyError();
     }
 

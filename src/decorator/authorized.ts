@@ -1,5 +1,5 @@
-import {Request} from "express";
 import {AccessDenyError} from "../http/api.middleware";
+import {reqContext} from "../http/middlewares";
 
 export const authorized = (
   target: object,
@@ -8,8 +8,7 @@ export const authorized = (
 ) => {
   const originalMethod = descriptor.value;
   descriptor.value = function (...args) {
-    const req = args[0] as Request
-    if (!req.context.user) {
+    if (!reqContext().user) {
       throw new AccessDenyError('No authorized');
     }
 

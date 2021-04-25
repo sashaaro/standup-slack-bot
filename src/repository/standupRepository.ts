@@ -32,8 +32,7 @@ export class StandupRepository extends EntityRepository<Standup> {
       .leftJoinAndSelect('team.reportChannel', 'reportChannel')
 
     // TODO! database timzone and nodejs process timezone should be same!
-    //qb.andWhere(`date_trunc('minute', standup.end_at) = date_trunc('minute', ?::timestamp)`, [endAt])
-    qb.andWhere('standup.id = 7')
+    qb.andWhere(`date_trunc('minute', standup.end_at) = date_trunc('minute', ?::timestamp)`, [endAt])
 
     return qb.getResultList();
   }
@@ -64,7 +63,6 @@ export class StandupRepository extends EntityRepository<Standup> {
 
     qb.leftJoinAndSelect('answers.option', 'optionAnswer')
 
-    console.log(111111);
     return qb
       //.setFlag(QueryFlag.PAGINATE)
       .limit(1)

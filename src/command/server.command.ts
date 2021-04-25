@@ -11,10 +11,10 @@ import http from "http";
 import {ApiMiddleware} from "../http/api.middleware";
 import {Redis} from "ioredis";
 import {Observable} from "rxjs";
-import {redisReady} from "./QueueConsumeCommand";
+import {redisReady} from "./queue-consume.command";
 import * as fs from "fs";
 import {bind} from "../decorator/bind";
-import {errorHandler} from "../http/middlewares";
+import {errorHandler, requestContextMiddleware} from "../http/middlewares";
 import {Logger} from "pino";
 
 export class ServerCommand implements yargs.CommandModule {
@@ -67,6 +67,7 @@ export class ServerCommand implements yargs.CommandModule {
     await redisReady(this.redis);
 
     const expressApp = express()
+    expressApp.use(requestContextMiddleware);
 
     const apiMiddleware = new ApiMiddleware(this.injector)
 
@@ -103,7 +104,7 @@ export class ServerCommand implements yargs.CommandModule {
         this.close();
       })
       .on('close', () => {
-        this.log.debug('Server closed');
+        this.log.info('Server closed');
         this.close();
       });
 

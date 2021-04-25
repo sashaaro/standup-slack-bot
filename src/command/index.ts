@@ -1,6 +1,6 @@
 import {DatabaseMigrateCommand} from "./DatabaseMigrateCommand";
 import {DatabaseFixtureCommand} from "./DatabaseFixtureCommand";
-import {QueueConsumeCommand} from "./QueueConsumeCommand";
+import {QueueConsumeCommand} from "./queue-consume.command";
 import {StandupNotifyCommand} from "./StandupNotifyCommand";
 import {ServerCommand} from "./server.command";
 import {MigrationGenerateCommand} from "./MigrationGenerateCommand";

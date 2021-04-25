@@ -25,10 +25,10 @@ export class SlackEventListener {
   evensHandlers: {[event:string]: IEventHandler} = {
     message: async (messageResponse: MessageResponse) => { // todo insert db?!
       if (messageResponse.bot_id) {
-        this.logger.debug(messageResponse, 'Bot message received')
+        this.logger.debug('Bot message received. Skipped')
         return;
       } else if (messageResponse.subtype) {
-        this.logger.debug(messageResponse, 'Sub type message received. Skip')
+        this.logger.debug('Sub type message received. Skiped')
         return;
       }
 

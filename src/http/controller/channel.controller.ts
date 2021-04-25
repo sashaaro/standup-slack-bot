@@ -6,6 +6,7 @@ import {Channel} from "../../entity";
 import {serialize} from "class-transformer";
 import {bind} from "../../decorator/bind";
 import {authorized} from "../../decorator/authorized";
+import {reqContext} from "../middlewares";
 
 @Injectable()
 export class ChannelController {
@@ -18,7 +19,7 @@ export class ChannelController {
   @authorized
   async listByWorkspace(req: Request, res: Response) {
     const channels = await em().find(Channel, { // TODO find without relations
-      workspace: req.context.user.workspace,
+      workspace: reqContext().user.workspace,
       isEnabled: true,
       isArchived: false
     });

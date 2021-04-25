@@ -3,10 +3,8 @@ import express from 'express'
 import session from 'express-session'
 import createRedisConnectStore from 'connect-redis';
 import {Injector} from "injection-js";
-import ApiContext from "../services/ApiContext";
 import {CONFIG_TOKEN, LOG_TOKEN, REDIS_TOKEN} from "../services/token";
 import {AuthController} from "./controller/auth.controller";
-import http from "http";
 import {TeamController} from "./controller/team.controller";
 import {UserController} from "./controller/user.controller";
 import {ChannelController} from "./controller/channel.controller";
@@ -17,7 +15,7 @@ import {createMessageAdapter} from "@slack/interactive-messages";
 import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
 import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from "../slack/slack-bot-transport.service";
 import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
-import {emMiddleware} from "./middlewares";
+import {apiContextMiddleware, emMiddleware} from "./middlewares";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import {QueueRegistry} from "../services/queue.registry";
 import {StatController} from "./controller/stat.controller";
@@ -26,24 +24,6 @@ import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {SlackEventListener} from "../slack/slack-event-listener";
 
 const RedisConnectStore = createRedisConnectStore(session);
-
-declare global {
-  namespace Express {
-    interface Request {
-      context: ApiContext
-    }
-  }
-}
-
-const createApiContextMiddleware = () => { // TODO use AsyncLocalStorage
-  return async (req: http.IncomingMessage | express.Request | express.Router | any, res, next) => {
-    const context = new ApiContext(req.session);
-    await context.init();
-    req.context = context;
-
-    next()
-  }
-}
 
 export class AccessDenyError extends Error {
 }
@@ -73,7 +53,7 @@ export class ApiMiddleware {
     }))
 
     router.use(emMiddleware(mikro));
-    router.use(createApiContextMiddleware());
+    router.use(apiContextMiddleware(injector.get(LOG_TOKEN)));
 
     const auto = injector.get(AuthController);
     router.get('/auth/session', auto.session);
@@ -143,9 +123,10 @@ export class ApiMiddleware {
     })
 
     if (config.debug) {
+      // https://github.com/pinojs/pino-http
       router.use(pinoHttp({
         logger: logger,
-        useLevel: 'debug'
+        useLevel: 'trace',
       }))
     }
 
