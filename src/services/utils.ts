@@ -31,11 +31,17 @@ export function formatTime(date: Date, seconds = true): string {
   return parts.join(':');
 }
 
-export class ContextualError extends Error {
+export class HasPreviousError extends Error {
+  public previous: Error;
+}
+
+export class ContextualError extends HasPreviousError {
   constructor(message?: string, public context = {}) {
     super(message);
   }
 }
+
+
 
 export const stringifyError = (error: Error) => Object.assign({
   message: error.message,
@@ -66,10 +72,6 @@ export const groupByData = (data: any[], options: { groupBy: string, groupProps:
   }
 
   return items;
-}
-
-export class HasPreviousError extends Error {
-  public previous: Error;
 }
 
 export const isPlatformError = (e: CodedError): e is WebAPIPlatformError => e.code === 'slack_webapi_platform_error'

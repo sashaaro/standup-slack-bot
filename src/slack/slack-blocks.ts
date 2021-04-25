@@ -1,50 +1,41 @@
-import {Block, KnownBlock} from "@slack/types";
+import {ActionsBlock, Block, KnownBlock, SectionBlock} from "@slack/types";
 import {ACTION_OPEN_DIALOG} from "./slack-bot-transport.service";
 import {Standup} from "../entity";
+import {ChatUpdateArguments} from "@slack/web-api";
 
-export const greetingBlocks = (standup: Standup, submitted = false) => {
+export const generateStandupMsg = (standup: Standup, submitted = false, done = false): Partial<ChatUpdateArguments> => {
   const fallbackText =  `It's time to start your daily standup ${standup.team.originTeam.name}`;
 
-  const blocks: (KnownBlock | Block)[] = [
-    {
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: `Hello, it's time to start your daily standup *${standup.team.originTeam.name}*`,
-      },
+  const sectionBlock: SectionBlock = {
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      text: `it's time for *${standup.team.originTeam.name}* standup${submitted ? ' :white_check_mark:' : ''}`,
     },
-    {
-      type: 'actions',
-      elements: [
-        // hasOptionQuestions
-        /*{
-          type: "button",
-          text: {
-            text: 'Start',
-            type: 'plain_text'
-          },
-          value: ACTION_START,
-          action_id: "1",
-        },*/
-        {
-          type: "button",
-          style: 'primary',
-          text: {
-            type: 'plain_text',
-            text: 'Open dialog',
-          },
-          action_id: ACTION_OPEN_DIALOG,
-          value: standup.id.toString(),
-        }
-      ]
-    }
-  ];
-
-  if (submitted) {
-    // blocks[1].elements.push({
-    //
-    // })
   }
 
-  return {blocks, text: fallbackText};
+  const actionsBlock: ActionsBlock = {
+    type: 'actions',
+    elements: [
+      {
+        type: "button",
+        style: submitted ? undefined : 'primary',
+        text: {
+          type: 'plain_text',
+          text: submitted ? 'Change answers' : 'Let\'s start',
+        },
+        action_id: ACTION_OPEN_DIALOG,
+        value: standup.id.toString(),
+      }
+    ]
+  }
+  const blocks: KnownBlock[] = [
+    sectionBlock,
+    ...(done ? [] : [actionsBlock])
+  ];
+
+  return {
+    text: fallbackText,
+    blocks
+  };
 }

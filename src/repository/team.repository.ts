@@ -212,8 +212,6 @@ export class TeamRepository extends EntityRepository<Team> {
 
     const team = await em.findOneOrFail(Team, teamDTO.id, ['users', 'questions', 'questions.options'])
     const lastSnapshot = await this.findSnapshot(team, em);
-    console.log(lastSnapshot.questions)
-    console.log(lastSnapshot.simplify())
     const newSnapshot = this.createSnapshot(team);
 
     //lastSnapshot?.normalizeSort()

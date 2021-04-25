@@ -39,7 +39,13 @@ let main = yargs
 
 commands.forEach((command: any) => {
   const meta = command.meta as Partial<yargs.CommandModule<any, any>>
-  const handler: (args: Arguments<any>) => void = (args) => injector.get(command).handler(args)
+  const handler: (args: Arguments<any>) => void = async (args) => {
+    try {
+      await injector.get(command).handler(args)
+    } catch (e) {
+      logger.error(e, 'Application error');
+    }
+  }
   main = main.command({...meta, handler});
 })
 

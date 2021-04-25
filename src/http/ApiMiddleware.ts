@@ -145,10 +145,13 @@ export class ApiMiddleware {
     const queueRegistry = this.injector.get(QueueRegistry);
     const slackEvents = this.injector.get(SlackEventAdapter);
     const logger = this.injector.get(LOG_TOKEN);
+    const slackEventListener = this.injector.get(SlackEventListener)
 
-    for (const event of this.injector.get(SlackEventListener).events()) {
+    for (const event of slackEventListener.events()) {
       slackEvents.on(event, async (data) => {
+        console.log(data)
         try {
+          //await slackEventListener.evensHandlers[event](data)
           await queueRegistry.create(QUEUE_NAME_SLACK_EVENTS).add(event, data);
         } catch (error) {
           logger.error(error, 'Add job error')

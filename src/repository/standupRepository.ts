@@ -50,7 +50,7 @@ export class StandupRepository extends EntityRepository<Standup> {
       'standup.team.originTeam.workspace',
       'answers',
       'answers.question',
-    ])
+    ]); // TODO check left join!
     const qb = this.em.getRepository(UserStandup).createQueryBuilder('userStandup')
       .where({user_id: userId, standup_id: standupId}) // TODO add unique index userId standupId
       .leftJoinAndSelect('userStandup.user', 'user')

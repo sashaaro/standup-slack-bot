@@ -29,7 +29,7 @@ export class DevCommand implements yargs.CommandModule {
 
     for (const command of commands) {
       const cmd = this.injector.get(command) as yargs.CommandModule
-      cmd.handler(args)
+      await cmd.handler(args)
     }
 
     //this.deadlock(mikroORM);

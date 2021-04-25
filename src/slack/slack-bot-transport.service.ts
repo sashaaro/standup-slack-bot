@@ -9,7 +9,7 @@ import {Logger} from "pino";
 import {ContextualError, isPlatformError} from "../services/utils";
 import {MessageResult} from "./model/MessageResult";
 import {OpenViewResult} from "./model/OpenViewResult";
-import {greetingBlocks} from "./slack-blocks";
+import {generateStandupMsg} from "./slack-blocks";
 import {LOG_TOKEN} from "../services/token";
 
 const standupFinishedAlreadyMsg = `Standup #{id} has already ended\nI will remind you when your next stand up would came`; // TODO link to report
@@ -232,8 +232,8 @@ export class SlackBotTransport {
 
     const result = await this.postMessage({
       channel: user.id,
-      ...greetingBlocks(standup),
-    }, standup.team.originTeam.workspace.accessToken);
+      ...generateStandupMsg(standup),
+    } as ChatPostMessageArguments, standup.team.originTeam.workspace.accessToken);
 
     if (!result.ok) {
       throw new ContextualError('Send report post message error', result)
@@ -321,6 +321,17 @@ export class SlackBotTransport {
       }
     }
 
+    await Promise.all(standup.users.getItems().map((userStandup) => {
+      // https://api.slack.com/docs/rate-limits ?!
+      return this.updateMessage({
+        token: userStandup.standup.team.originTeam.workspace.accessToken,
+        ts: userStandup.slackMessage.ts,
+        channel: userStandup.slackMessage.channel,
+        ...generateStandupMsg(userStandup.standup, userStandup.answers.length > 0, true),
+      } as ChatUpdateArguments)
+    }))
+
+
     if (!result.ok) {
       throw new ContextualError('Send report post message error', result)
     }
@@ -329,9 +340,17 @@ export class SlackBotTransport {
   }
 
   public async updateMessage(args: ChatUpdateArguments): Promise<MessageResult> {
-    const result: MessageResult = await this.webClient.chat.update({
-      ...args
-    }) as any;
+    this.logger.debug(args, 'Call webClient.chat.updateMessage')
+    let result: MessageResult
+    //try {
+      result = await this.webClient.chat.update({
+        ...args
+      }) as any;
+    // } catch (e) {
+    //   const error = new ContextualError('updateMessage', args)
+    //   error.previous = e;
+    //   throw error;
+    // }
 
     if (!result.ok) {
       throw new ContextualError('updateMessage', args)

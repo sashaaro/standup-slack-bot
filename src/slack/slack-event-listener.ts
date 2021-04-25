@@ -12,9 +12,10 @@ import {SyncSlackService} from "./sync-slack.service";
 import {QueueRegistry} from "../services/queue.registry";
 import {ContextualError} from "../services/utils";
 import QuestionSnapshot from "../entity/question-snapshot";
-import {greetingBlocks} from "./slack-blocks";
+import {generateStandupMsg} from "./slack-blocks";
 import {LOG_TOKEN} from "../services/token";
 import {StandupRepository} from "../repository/standupRepository";
+import {ChatUpdateArguments} from "@slack/web-api";
 
 interface IEventHandler {
   (data: any): Promise<any>|any
@@ -24,10 +25,10 @@ export class SlackEventListener {
   evensHandlers: {[event:string]: IEventHandler} = {
     message: async (messageResponse: MessageResponse) => { // todo insert db?!
       if (messageResponse.bot_id) {
-        this.logger.info(messageResponse, 'Bot message received')
+        this.logger.debug(messageResponse, 'Bot message received')
         return;
       } else if (messageResponse.subtype) {
-        this.logger.info(messageResponse, 'Sub type message received. Skip')
+        this.logger.debug(messageResponse, 'Sub type message received. Skip')
         return;
       }
 
@@ -136,7 +137,6 @@ export class SlackEventListener {
       // TODO already submit
 
       let userStandup = await standupRepo.findUserStandup(userId, standupId);
-      console.log(22222)
       if (!userStandup) {
         throw new ContextualError(`User standup is not found`, {userId, standupId})
       }
@@ -221,10 +221,10 @@ export class SlackEventListener {
 
     await em().persistAndFlush(userStandup.answers.getItems());
     await this.slackBotTransport.updateMessage({
-      token: 'xoxb-646242827008-1873129895365-hoUmeZfd4ZIgStbKKH5Ct7X0',
-      ts: '1616350254.002200',
-      channel: 'D01RSCDLNM9',
-      ...greetingBlocks(userStandup.standup, true),
-    })
+      token: userStandup.standup.team.originTeam.workspace.accessToken,
+      ts: userStandup.slackMessage.ts,
+      channel: userStandup.slackMessage.channel,
+      ...generateStandupMsg(userStandup.standup, true),
+    } as ChatUpdateArguments)
   }
 }
