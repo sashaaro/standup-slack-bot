@@ -16,7 +16,6 @@ export const hasOptionQuestions = (team) => team.questions.filter(q => q.options
 
 export const CALLBACK_STANDUP_SUBMIT = 'standup_submit'
 export const ACTION_OPEN_DIALOG = 'open_dialog'
-export const ACTION_OPEN_REPORT = 'open_report'
 
 
 @Injectable()
@@ -27,51 +26,8 @@ export class SlackBotTransport {
   ) {
   }
 
-  async openReport(userStandup: UserStandup, triggerId: string) {
-    const standup = userStandup.standup
-    if (false) {
-      // check in progress
-    }
-    const view = {
-      type: "modal",
-      title: {
-        "type": "plain_text",
-        "text": `Report ${standup.team.originTeam.name}`.substr(0, 24).trim(),
-        "emoji": true
-      },
-      "close": {
-        "type": "plain_text",
-        "text": "Cancel",
-        "emoji": true
-      },
-      //callback_id: CALLBACK_STANDUP_SUBMIT,
-      //private_metadata: JSON.stringify({standup: standUp.id}),
-      blocks: []
-    };
-
-    view.blocks.push({
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": `*!!!* sdfdsf'`
-      }
-    })
-
-    const args:any = {
-      view: view,
-      trigger_id: triggerId,
-      token: standup.team.originTeam.workspace.accessToken
-    }
-    this.logger.trace(args, 'webClient.views.open')
-
-    const r = await this.webClient.views.open(args)
-    if (!r.ok) {
-      throw new ContextualError('webClient.views.open', r)
-    }
-  }
-
   async openDialog(userStandup: UserStandup, triggerId: string): Promise<OpenViewResult['view']> {
-    const inProgress = !userStandup.standup.isFinished();
+    const isFinished = userStandup.standup.isFinished();
 
     const view: any = {
       type: "modal",
@@ -90,7 +46,7 @@ export class SlackBotTransport {
       blocks: []
     };
 
-    if (inProgress) {
+    if (!isFinished) {
       view.submit = {
         "type": "plain_text",
           "text": userStandup.answers.length > 0 ? "Update" : "Submit",
@@ -109,7 +65,7 @@ export class SlackBotTransport {
         action_id: question.id.toString(),
       }
 
-      if (inProgress) {
+      if (!isFinished) {
         if (hasOptions) {
           element.placeholder = {
             "type": "plain_text",
@@ -170,28 +126,6 @@ export class SlackBotTransport {
           type: "divider"
         })
       }
-    }
-
-    if (!inProgress) {
-      view.blocks.push({
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": "Standup was in end"
-        },
-        "accessory": {
-          "type": "button",
-          "text": {
-            "type": "plain_text",
-            "text": "Open report",
-            "emoji": true
-          },
-          "value": standup.id.toString(),
-          "action_id": ACTION_OPEN_REPORT
-        }
-      })
-    } else {
-      //markdown support todo // https://api.slack.com/reference/surfaces/formatting !
     }
 
     // TODO validate https://github.com/slackapi/slack-api-specs/blob/master/web-api/slack_web_openapi_v2.json ?!

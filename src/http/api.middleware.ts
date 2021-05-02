@@ -13,7 +13,7 @@ import {OptionController} from "./controller/option.controller";
 import pinoHttp from "pino-http";
 import {createMessageAdapter} from "@slack/interactive-messages";
 import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
-import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, CALLBACK_STANDUP_SUBMIT} from "../slack/slack-bot-transport.service";
+import {ACTION_OPEN_DIALOG, CALLBACK_STANDUP_SUBMIT} from "../slack/slack-bot-transport.service";
 import {SlackAction, ViewSubmission} from "../slack/model/ViewSubmission";
 import {apiContextMiddleware, emMiddleware} from "./middlewares";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
@@ -141,7 +141,7 @@ export class ApiMiddleware {
       }
     })
     slackInteractions.action({actionId: new RegExp(
-        [ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT].join('|')
+        [ACTION_OPEN_DIALOG].join('|')
       )},  async (response: SlackAction) => {
       try {
         const job = await queue.add(response);

@@ -6,7 +6,7 @@ import {IMikroFactory, LOG_TOKEN, MIKRO_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE} f
 import {concat, Observable} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./QueueConsumeCommand";
-import {map, mapTo, mergeMap, takeUntil} from "rxjs/operators";
+import {map, mapTo, mergeMap, switchMap, takeUntil} from "rxjs/operators";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {UserStandup} from "../entity";
 import {bind} from "../decorator/bind";
@@ -53,7 +53,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
           user => fromPromise(
             this.slackTransport.sendGreetingMessage(user, standup)
           ).pipe(
-            mergeMap(messageResult => {
+            switchMap(messageResult => {
               const userStandup = new UserStandup()
               userStandup.standup = standup;
               userStandup.user = user;

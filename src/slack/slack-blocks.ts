@@ -1,5 +1,5 @@
-import {ActionsBlock, Block, KnownBlock, SectionBlock} from "@slack/types";
-import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT} from "./slack-bot-transport.service";
+import {ActionsBlock, KnownBlock, SectionBlock} from "@slack/types";
+import {ACTION_OPEN_DIALOG} from "./slack-bot-transport.service";
 import {Standup} from "../entity";
 import {ChatUpdateArguments} from "@slack/web-api";
 
@@ -10,7 +10,10 @@ export const generateStandupMsg = (standup: Standup, submitted = false, done = f
     type: 'section',
     text: {
       type: 'mrkdwn',
-      text: `it's time for *${standup.team.originTeam.name}* standup${submitted ? ' :white_check_mark:' : ''}`,
+      text: `it's time for *${standup.team.originTeam.name}* standup${submitted ? ' :white_check_mark:' : ''}
+       <https://botenza.slack.com/archives/C01M9CE3N4T/p1619394510013300|Open report>
+      `,
+      // done  => add attachment
     },
   }
 
@@ -30,23 +33,9 @@ export const generateStandupMsg = (standup: Standup, submitted = false, done = f
     ]
   }
 
-  const doneBlock: ActionsBlock = {
-    type: 'actions',
-    elements: [
-      {
-        type: 'button',
-        text: {
-          type: 'plain_text',
-          text: 'Open report'
-        },
-        action_id: ACTION_OPEN_REPORT,
-        value: standup.id.toString(),
-      }
-    ]
-  }
   const blocks: KnownBlock[] = [
     sectionBlock,
-    ...(done ? [doneBlock] : [actionsBlock])
+    ...(done ? [] : [actionsBlock])
   ];
 
   return {

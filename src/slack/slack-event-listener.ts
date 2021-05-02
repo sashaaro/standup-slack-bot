@@ -5,7 +5,7 @@ import {ChannelLeft, MemberJoinedChannel} from "./model/SlackChannel";
 import SlackWorkspace from "../entity/slack-workspace";
 import {Logger} from "pino";
 import {Standup, User} from "../entity";
-import {ACTION_OPEN_DIALOG, ACTION_OPEN_REPORT, SlackBotTransport} from "./slack-bot-transport.service";
+import {ACTION_OPEN_DIALOG, SlackBotTransport} from "./slack-bot-transport.service";
 import {SlackAction, ViewSubmission} from "./model/ViewSubmission";
 import AnswerRequest from "../entity/answer-request";
 import {SyncSlackService} from "./sync-slack.service";
@@ -115,24 +115,10 @@ export class SlackEventListener {
     }
 
     const userId = action.user.id
-    const openReportAction = action.actions.find(a => a.action_id === ACTION_OPEN_REPORT);
     const openDialogAction = action.actions.find(a => a.action_id === ACTION_OPEN_DIALOG);
 
     const standupRepo = em().getRepository(Standup) as StandupRepository
-    if (openReportAction) {
-      const standupId = parseInt(openReportAction.value);
-      if (!standupId) {
-        throw new Error(`Standup standpId is not defined ${openReportAction.value}`)
-      }
-
-      const userStandup = await standupRepo.findUserStandup(userId, standupId);
-
-      if (!userStandup) {
-        throw new ContextualError(`User standup is not found`, {userId, standupId: standupId})
-      }
-
-      await this.slackBotTransport.openReport(userStandup, action.trigger_id);
-    } else if (openDialogAction) {
+    if (openDialogAction) {
       const standupId = parseInt(openDialogAction.value);
       // TODO already submit
 
