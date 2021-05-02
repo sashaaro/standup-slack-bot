@@ -1,6 +1,5 @@
 import {Inject, Injectable} from 'injection-js';
-import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "../api.middleware";
-import {IHttpAction} from "./index";
+import {BadRequestError, ResourceNotFoundError} from "../api.middleware";
 import {classToPlain, plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";
 import {em} from "../../services/providers";
@@ -29,8 +28,8 @@ export class TeamController {
   ) {
   }
 
-  list: IHttpAction = async (req, res) => {
-
+  @authorized
+  async list(req, res) {
     let status = parseInt(req.query.status as string);
 
     if (!teamStatuses.includes(status)) {
@@ -69,12 +68,8 @@ export class TeamController {
     return clearFromTarget(errors) as ValidationError[];// TODO
   }
 
-  // TODO @authorized
-  create: IHttpAction = async (req, res) => {
-    if (!reqContext().user) {
-      throw new AccessDenyError();
-    }
-
+  @authorized
+  async create(req, res) {
     const teamDTO = new TeamDTO();
     const errors = this.handleRequest(req.body, teamDTO);
 
@@ -100,11 +95,8 @@ export class TeamController {
     }
   }
 
-  edit: IHttpAction = async (req, res) => {
-    if (!reqContext().user) {
-      throw new AccessDenyError();
-    }
-
+  @authorized
+ async edit(req, res) {
     const teamDTO = new TeamDTO();
     const errors = this.handleRequest(req.body, teamDTO);
 
@@ -136,16 +128,14 @@ export class TeamController {
     }
   }
 
-  timezone: IHttpAction = async (req, res) => {
+  @authorized
+  async timezone(req, res) {
     res.setHeader('Content-Type', 'application/json');
     res.send(await em().find(Timezone, {}, {orderBy: {utc_offset: 'DESC'}}))
   }
 
-  get: IHttpAction = async (req, res) => {
-    if (!reqContext().user) {
-      throw new AccessDenyError();
-    }
-
+  @authorized
+  async get(req, res) {
     const id = parseInt(req.params.id)
     if (!id) {
       throw new BadRequestError();
@@ -164,11 +154,8 @@ export class TeamController {
     res.send(classToPlain(team, {strategy: 'excludeAll', groups: ["edit"]}));
   }
 
-  status: IHttpAction = async (req, res) => {
-    if (!reqContext().user) {
-      throw new AccessDenyError();
-    }
-
+  @authorized
+  async status(req, res) {
     const id = parseInt(req.params.id)
     if (!id) {
       throw new BadRequestError();
@@ -179,7 +166,7 @@ export class TeamController {
       throw new BadRequestError();
     }
 
-    const team = await em().findOne(Team, id);
+    const team = await em().findOne(Team, {id});
     if (!team) {
       throw new BadRequestError();
     }
@@ -191,13 +178,5 @@ export class TeamController {
 
     team.status = status;
     res.status(200).send(team);
-  }
-
-  stats: IHttpAction = async (req, res) => {
-    if (!reqContext().user) {
-      throw new AccessDenyError();
-    }
-
-    res.send({})
   }
 }

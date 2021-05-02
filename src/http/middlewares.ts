@@ -54,7 +54,7 @@ const requestContentStorage = new AsyncLocalStorage<{
 export const reqContext = () => requestContentStorage.getStore()
 
 export const requestContextMiddleware = createAsyncLocalStorageMiddleware(requestContentStorage, async () => await ({
-  hash: new Date().getTime() + '_' + Math.random().toString().substr(-15)
+  hash: new Date().getTime()  + '_' + Math.random().toString().substr(-8)
 }))
 
 

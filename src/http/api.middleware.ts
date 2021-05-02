@@ -67,7 +67,7 @@ export class ApiMiddleware {
     router.put('/team/:id', team.edit);
     router.get('/timezone', team.timezone);
     router.patch('/team/:id/status', team.status);
-    router.get('/team/:id/stats', team.stats);
+    router.get('/team/:id/stats', (req, res) => res.send('dummy!'));
 
     const user = injector.get(UserController);
     router.get('/user', user.listByWorkspace);

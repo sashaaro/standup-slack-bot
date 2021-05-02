@@ -1,43 +1,47 @@
 import { Injectable, Inject } from 'injection-js';
-import {of, timer} from "rxjs";
-import {delay, map, mapTo, mergeMap, share, tap} from "rxjs/operators";
+import {Observable, of} from "rxjs";
+import {map, mergeMap, share, tap} from "rxjs/operators";
 import {Logger} from "pino";
 import {TeamRepository} from "../repository/team.repository";
 import {StandupRepository} from "../repository/standupRepository";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {LOG_TOKEN} from "../services/token";
-import {em, emStorage} from "../services/providers";
-import {Team, Standup, UserStandup} from "../entity";
-import {withinContext} from "../operator/within-context.operator";
+import {Team, Standup} from "../entity";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {formatTime} from "../services/utils";
+import {schedule} from "node-cron";
 
 const standupGreeting = 'Hello, it\'s time to start your daily standup.'; // TODO for my_private team
 const standupGoodBye = 'Have good day. Good bye.';
 const standupWillRemindYouNextTime = `I will remind you when your next standup is up..`;
+
+
+
+function cron(expr) {
+  let counter = 0
+
+  return new Observable((subscriber) => {
+    const task = schedule(expr, () => {
+      subscriber.next(counter++)
+    })
+
+    task.start()
+
+    return () => task.destroy()
+  })
+}
+
 
 @Injectable()
 export default class StandupNotifier {
   constructor(@Inject(LOG_TOKEN) protected logger: Logger){}
 
   create(mikroORM: MikroORM<PostgreSqlDriver>) {
-    const intervalMs = 60 * 1000;  // every minutes
-
-    const now = new Date();
-    const milliseconds = now.getSeconds() * 1000 + now.getMilliseconds();
-    const millisecondsDelay = intervalMs - milliseconds;
-
-    this.logger.info('Wait delay ' + (millisecondsDelay / 1000).toFixed(2) + ' seconds for run loop');
-
-    const interval$ = timer(0, intervalMs)
+    const interval$ = cron('5 * * * * *')
       .pipe(
         map(_ => new Date()),
-        delay(5 * 1000),
-        share(),
-        tap({
-          error: e => this.logger.error(e, 'Interval loop error')
-        })
+        share()
       )
 
     const start$ = interval$.pipe(

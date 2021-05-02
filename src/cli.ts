@@ -5,6 +5,7 @@ import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "./services/providers";
 import {CONFIG_TOKEN, LOG_TOKEN, TERMINATE} from "./services/token";
 import Rollbar from "rollbar";
+import {Logger} from "pino";
 
 let argv = yargs.option('env', {
   default: 'dev',
@@ -17,7 +18,7 @@ const {providers, commands} = createProviders(env);
 const injector = ReflectiveInjector.resolveAndCreate(providers);
 
 const config = injector.get(CONFIG_TOKEN);
-const logger = injector.get(LOG_TOKEN);
+const logger: Logger = injector.get(LOG_TOKEN);
 
 logger.info({env, debug: config.debug}, `Start `)
 
@@ -54,6 +55,6 @@ try {
     .strict()
     .argv
 } catch (e) {
-  logger.error(e, 'Application error');
+  logger.fatal(e, 'Application error');
 }
 

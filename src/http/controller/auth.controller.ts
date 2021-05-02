@@ -1,4 +1,3 @@
-import {IHttpAction} from "./index";
 import { Injectable, Inject } from 'injection-js';
 import {CONFIG_TOKEN, LOG_TOKEN} from "../../services/token";
 import {em, IAppConfig} from "../../services/providers";
@@ -25,7 +24,7 @@ export class AuthController {
   ) {
   }
 
-  session: IHttpAction = async (req, res) => {
+  async session(req, res) {
     res.setHeader('Content-Type', 'application/json');
     res.status(reqContext().user ? 200 : 404);
     res.send(reqContext().user || JSON.stringify({}));

@@ -39,6 +39,7 @@
     "injection-js": "^2.4.0",
     "ioredis": "^4.27.1",
     "lodash.groupby": "^4.6.0",
+    "node-cron": "^3.0.0",
     "pg": "^8.6.0",
     "pino": "^6.11.3",
     "pino-http": "^5.5.0",
