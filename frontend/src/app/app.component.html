@@ -1,4 +1,4 @@
-<div class="content">
+<div class="content" *ngIf="!(serverErr$|async); else error">
   <div class="ui large menu" *ngIf="user$ | async as user">
     <div class="ui container">
       <a class="logo" routerLink="/"></a>
@@ -38,9 +38,12 @@
   <router-outlet #routerOutlet="outlet"></router-outlet>
 </div>
 
-<ng-template #error502>
-  <!--TODO use -->
-  <div>
-    Sorry, something going wrong. Support in <a href='https://t.me/{{ supportTelegram }}'>telegram</a>
+<ng-template #error>
+  <div class="content">
+    <div class="module">
+
+      Sorry, something going wrong.
+      <ng-component *ngIf="supportTelegram">Support in <a href='https://t.me/{{ supportTelegram }}'>telegram</a></ng-component>
+    </div>
   </div>
 </ng-template>

@@ -199,9 +199,13 @@ export class SlackBotTransport {
           }} : {})
       })
 
-      answersBlocks.push({
-        type: "divider"
-      })
+      const isLast = standup.users.getItems().indexOf(userStandup) === standup.users.length - 1
+
+      if (!isLast) {
+        answersBlocks.push({
+          type: "divider"
+        })
+      }
     }
 
 
@@ -230,7 +234,7 @@ export class SlackBotTransport {
         ]
       )
     ]
-    let result;
+    let result: MessageResult;
 
     try {
       result = await this.postMessage({
@@ -258,13 +262,15 @@ export class SlackBotTransport {
       throw new ContextualError('Send report post message error', result)
     }
 
+    this.logger.debug({result}, 'Report message')
+
     await Promise.all(standup.users.getItems().map((userStandup) => {
       // https://api.slack.com/docs/rate-limits ?!
       return this.updateMessage({
         token: userStandup.standup.team.originTeam.workspace.accessToken,
         ts: userStandup.slackMessage.ts,
         channel: userStandup.slackMessage.channel,
-        ...generateStandupMsg(userStandup.standup, userStandup.answers.length > 0, true),
+        ...generateStandupMsg(userStandup.standup, userStandup.answers.length > 0, `https://${userStandup.standup.team.originTeam.workspace.domain}.slack.com/archives/${result.channel}/p${result.message.ts}`),
       } as ChatUpdateArguments)
     }))
 

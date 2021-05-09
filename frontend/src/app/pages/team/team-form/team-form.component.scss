@@ -179,12 +179,6 @@ ng-select {
     box-shadow: unset !important;
   }
 }
-.users {
-  .mat-option-text::ng-deep {
-    display: inline-flex!important;
-    align-items: center!important;
-  }
-}
 
 .mat-standard-chip.edit { // TODO use custom
   &:hover:after::ng-deep {

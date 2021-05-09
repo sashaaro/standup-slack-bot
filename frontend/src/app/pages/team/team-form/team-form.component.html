@@ -138,7 +138,14 @@
           </mat-hint>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="options" *ngIf="questionControl.get('options').length > 0 || openOptionsControls.includes(questionControl)">
+        <!--TODO remove [class.ng-..] -->
+        <mat-form-field appearance="outline" class="options"
+          *ngIf="questionControl.get('options').length > 0 || openOptionsControls.includes(questionControl)"
+          [class.ng-invalid]="questionControl.get('options').invalid"
+          [class.mat-form-field-invalid]="questionControl.get('options').invalid"
+          [class.ng-touched]="questionControl.get('options').touched"
+          [class.ng-dirty]="questionControl.get('options').dirty"
+        >
           <mat-label>Options (Pass enter)</mat-label>
           <mat-chip-list #optionList>
             <div cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="drop(questionControl.get('options'), $event)">
@@ -216,12 +223,12 @@
 
 <ng-template #confirmDialogRef>
   <mat-dialog-content>
-    <div>Confirm window</div>
-    <mat-hint>Would be deleted after submit form!</mat-hint>
+    <div>Confirm delete question</div>
+    <mat-hint>Are you sure delete question? Changes would be apply after submitting form!</mat-hint>
   </mat-dialog-content>
 
   <mat-dialog-actions>
-    <button mat-button color="warn" [mat-dialog-close]="true">Confirm delete</button>
+    <button mat-button color="warn" [mat-dialog-close]="true">Confirm</button>
     <button mat-button [mat-dialog-close]="false">Cancel</button>
     <!-- The mat-dialog-close directive optionally accepts a value as a result for the dialog. -->
   </mat-dialog-actions>

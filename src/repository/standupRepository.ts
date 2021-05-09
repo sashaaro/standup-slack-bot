@@ -29,6 +29,7 @@ export class StandupRepository extends EntityRepository<Standup> {
     qbStandupJoins(qb);
     qb.leftJoinAndSelect('answersQuestion.options', 'answersQuestionOptions')
       .leftJoinAndSelect('userStandup.user', 'user')
+      .leftJoinAndSelect('userStandup.answers', 'answers')
       .leftJoinAndSelect('team.reportChannel', 'reportChannel')
 
     // TODO! database timzone and nodejs process timezone should be same!

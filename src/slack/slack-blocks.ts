@@ -3,16 +3,15 @@ import {ACTION_OPEN_DIALOG} from "./slack-bot-transport.service";
 import {Standup} from "../entity";
 import {ChatUpdateArguments} from "@slack/web-api";
 
-export const generateStandupMsg = (standup: Standup, submitted = false, done = false): Partial<ChatUpdateArguments> => {
+export const generateStandupMsg = (standup: Standup, submitted = false, reportLink = null): Partial<ChatUpdateArguments> => {
   const fallbackText =  `It's time to start your daily standup ${standup.team.originTeam.name}`;
+  const openReportLink = `<${reportLink}|Open report>`;
 
   const sectionBlock: SectionBlock = {
     type: 'section',
     text: {
       type: 'mrkdwn',
-      text: `it's time for *${standup.team.originTeam.name}* standup${submitted ? ' :white_check_mark:' : ''}
-       <https://botenza.slack.com/archives/C01M9CE3N4T/p1619394510013300|Open report>
-      `,
+      text: `it's time for *${standup.team.originTeam.name}* standup.${submitted ? ' :white_check_mark:' : ''}${reportLink ? ' Done' + openReportLink : ''}`, // openReportLink
       // done  => add attachment
     },
   }
@@ -35,7 +34,7 @@ export const generateStandupMsg = (standup: Standup, submitted = false, done = f
 
   const blocks: KnownBlock[] = [
     sectionBlock,
-    ...(done ? [] : [actionsBlock])
+    ...(reportLink ? [] : [actionsBlock])
   ];
 
   return {

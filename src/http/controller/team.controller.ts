@@ -146,10 +146,6 @@ export class TeamController {
     if (!team) {
       throw new ResourceNotFoundError(); // 404
     }
-    // team.questions = team.questions.filter(q => q.isEnabled) // TODO serializer rule or sql?
-    // team.questions.forEach(q => {
-    //   q.options = q.options.filter(o => o.isEnabled)
-    // })
 
     res.send(classToPlain(team, {strategy: 'excludeAll', groups: ["edit"]}));
   }

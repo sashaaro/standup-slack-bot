@@ -71,7 +71,7 @@ export class Team {
   days: number[] = [0, 1, 2, 3, 4];
 
   @Expose({groups: ["edit"]})
-  @Transform(transformCollection, {
+  @Transform((params) => transformCollection(params).filter(e => e.isEnabled), {
     toPlainOnly: true
   })
   @Type(() => Question)

@@ -14,6 +14,7 @@ import {ArrayMinSize, IsArray, IsInt, IsNotEmpty, MaxLength, MinLength} from "cl
 import {Exclude, Expose, Transform, Type} from "class-transformer";
 import {TransformFnParams} from "class-transformer/types/interfaces";
 import QuestionOptionSnapshot from "./question-option-snapshot";
+import {transformCollection} from "../services/utils";
 
 @Entity()
 class Question {
@@ -41,7 +42,7 @@ class Question {
   // TODO ?! isOptional: boolean = false;
 
   @Expose({groups: ["edit"]})
-  @Transform((params: TransformFnParams) => params.value.getItems(), {
+  @Transform((params) => transformCollection(params).filter(e => e.isEnabled), {
     toPlainOnly: true
   })
   @IsArray()

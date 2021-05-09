@@ -16,7 +16,6 @@ import {
   Property
 } from "@mikro-orm/core";
 
-
 @Entity()
 export class TeamSnapshot {
   @PrimaryKey()
@@ -75,14 +74,13 @@ export class TeamSnapshot {
   // reportChannel: Channel
 
   simplify() {
-    //console.log(this.questions.getItems().map(q => console.log(q.options)))
     return {
       users: this.users.getIdentifiers(),
-      questions: this.questions.getItems().map(q => ({
+      questions: [...this.questions.getItems()].sort(sortByIndex).map(q => ({
         index: q.index, // TODO ensure correct order
         text: q.text,
         originQuestionId: q.originQuestion.id,
-        options: q.options.getItems().map(o => ({
+        options: [...q.options.getItems()].sort(sortByIndex).map(o => ({
           originOptionId: o.originOption.id,
           index: o.index,
           text: o.text
@@ -92,8 +90,6 @@ export class TeamSnapshot {
   }
 
   equals(team: TeamSnapshot) {
-    //console.log(this.simplify())
-    //console.log(team.simplify())
     return JSON.stringify(this.simplify()) === JSON.stringify(team.simplify())
   }
 }

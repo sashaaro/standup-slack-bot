@@ -32,9 +32,9 @@
       </div>
 
       <div class="team__actions">
-        <button mat-flat-button color="accent" title="charts"  [routerLink]="'/team/' + team.id + '/stat'">
-          <mat-icon>insights</mat-icon>
-        </button>
+<!--        <button mat-flat-button color="accent" title="charts"  [routerLink]="'/team/' + team.id + '/stat'">-->
+<!--          <mat-icon>insights</mat-icon>-->
+<!--        </button>-->
         <button mat-flat-button color="primary" title="settings"  [routerLink]="'/team/' + team.id + '/edit'">
           <mat-icon>settings</mat-icon>
         </button>
@@ -56,11 +56,11 @@
 <ng-template #confirmDialogRef>
   <mat-dialog-content>
     <div>Confirmation</div>
-    <mat-hint>Would be deleted after submit form!</mat-hint>
+    <mat-hint>Are you sure delete team!</mat-hint>
   </mat-dialog-content>
 
   <mat-dialog-actions>
-    <button mat-button color="warn" [mat-dialog-close]="true">Confirm delete</button>
+    <button mat-button color="warn" [mat-dialog-close]="true">Confirm</button>
     <button mat-button [mat-dialog-close]="false">Cancel</button>
     <!-- The mat-dialog-close directive optionally accepts a value as a result for the dialog. -->
   </mat-dialog-actions>

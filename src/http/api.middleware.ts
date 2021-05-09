@@ -61,10 +61,10 @@ export class ApiMiddleware {
     router.get('/auth', auto.auth);
 
     const team = injector.get(TeamController);
-    router.post('/team', team.create);
+    router.post('/team', team.create.bind(team));
     router.get('/team', team.list);
     router.get('/team/:id', team.get);
-    router.put('/team/:id', team.edit);
+    router.put('/team/:id', team.edit.bind(team));
     router.get('/timezone', team.timezone);
     router.patch('/team/:id/status', team.status);
     router.get('/team/:id/stats', (req, res) => res.send('dummy!'));
