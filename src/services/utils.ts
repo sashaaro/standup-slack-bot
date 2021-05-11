@@ -4,7 +4,7 @@ import {AsyncLocalStorage} from "async_hooks";
 import {Observable} from "rxjs";
 import {TransformFnParams} from "class-transformer/types/interfaces";
 
-export const transformCollection: (params: TransformFnParams) => any = (params) => params.value.getItems()
+export const transformCollection: (params: TransformFnParams) => any = (params) => [...params.value.getItems()]
 
 export function groupBy<T>(list: T[], by: (item: T) => string|number): {[key: string]: T[]} {
   new Map()

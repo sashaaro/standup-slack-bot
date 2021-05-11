@@ -175,9 +175,9 @@
               (matChipInputTokenEnd)="addOption(questionControl.get('options'), $event)"
             />
 
-            <button *ngIf="questionControl.get('id').value" type="button" mat-button matSuffix mat-icon-button aria-label="Stats" (click)="openStats(questionControl.get('id').value)">
-              <mat-icon>insights</mat-icon>
-            </button>
+<!--            <button *ngIf="questionControl.get('id').value" type="button" mat-button matSuffix mat-icon-button aria-label="Stats" (click)="openStats(questionControl.get('id').value)">-->
+<!--              <mat-icon>insights</mat-icon>-->
+<!--            </button>-->
             <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear" (click)="questionControl.get('options').clear(); openOptionsControls.splice(openOptionsControls.indexOf(questionControl), 1)">
               <mat-icon>delete</mat-icon>
             </button>

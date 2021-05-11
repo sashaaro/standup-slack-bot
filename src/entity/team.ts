@@ -15,7 +15,7 @@ import Timezone from "./timezone";
 import {User} from "./user";
 import SlackWorkspace from "./slack-workspace";
 import Question from "./question";
-import {IntArrayType, transformCollection} from "../services/utils";
+import {IntArrayType, sortByIndex, transformCollection} from "../services/utils";
 import {TeamRepository} from "../repository/team.repository";
 import {Channel} from "./channel";
 
@@ -71,7 +71,7 @@ export class Team {
   days: number[] = [0, 1, 2, 3, 4];
 
   @Expose({groups: ["edit"]})
-  @Transform((params) => transformCollection(params).filter(e => e.isEnabled), {
+  @Transform((params) => transformCollection(params).filter(e => e.isEnabled).sort(sortByIndex), {
     toPlainOnly: true
   })
   @Type(() => Question)

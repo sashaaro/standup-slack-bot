@@ -6,7 +6,7 @@ import {
   WebClient
 } from '@slack/web-api'
 import {Logger} from "pino";
-import {ContextualError, isPlatformError} from "../services/utils";
+import {ContextualError, isPlatformError, sortByIndex} from "../services/utils";
 import {MessageResult} from "./model/MessageResult";
 import {OpenViewResult} from "./model/OpenViewResult";
 import {generateStandupMsg} from "./slack-blocks";
@@ -56,7 +56,7 @@ export class SlackBotTransport {
 
     const standup = userStandup.standup
 
-    for (const question of standup.team.questions.getItems()) {
+    for (const question of [...standup.team.questions.getItems()].sort(sortByIndex)) {
       const answer = userStandup.answers.getItems().find(answer => answer.question.id === question.id);
 
       const hasOptions = question.options.length > 1;
@@ -73,7 +73,7 @@ export class SlackBotTransport {
             "emoji": true
           }
 
-          element.options = question.options.getItems().map(pa => ({
+          element.options = [...question.options.getItems()].sort(sortByIndex).map(pa => ({
             text: {
               "type": "plain_text",
               "text": pa.text,
@@ -194,7 +194,7 @@ export class SlackBotTransport {
         },
         ...(user.profile?.image_192 ? {"accessory": {
             "type": "image",
-            "image_url": user.profile.image_192,
+            "image_url": user.profile.image_72,
             "alt_text": "alt text for image"
           }} : {})
       })

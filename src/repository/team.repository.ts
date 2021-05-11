@@ -51,7 +51,7 @@ export class TeamRepository extends EntityRepository<Team> {
         'questions.options',
         'timezone'
       ],
-      strategy: LoadStrategy.SELECT_IN
+      strategy: LoadStrategy.SELECT_IN,
     }))[0];
     return await this.em
       .createQueryBuilder(Team, 't')

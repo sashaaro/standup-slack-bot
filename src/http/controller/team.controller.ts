@@ -101,7 +101,7 @@ export class TeamController {
     const errors = this.handleRequest(req.body, teamDTO);
 
     const tem = await em();
-    const id = req.params.id as number|any
+    const id = req.params.id as number|any;
 
     const teamRepo = tem.getRepository(Team) as TeamRepository
     const team = await teamRepo.findActiveById(id);

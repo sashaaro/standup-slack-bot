@@ -54,6 +54,7 @@ export class User {
   @PrimaryKey()
   id: string;
 
+  // TODO remove?!
   @Expose({groups: ['view_standups', 'edit']})
   @Property({
     length: 500
@@ -95,6 +96,10 @@ export class User {
 
   // TODO @Column()
   updatedAt: Date;
+
+  // @Expose({groups: ['edit', 'view_standups']})
+  // @Transform(value => value.obj.profile?.display_name_normalized, { toPlainOnly: true })
+  // public displayName: string;
 
   onBeforeInsert() {
     this.createdAt = new Date();

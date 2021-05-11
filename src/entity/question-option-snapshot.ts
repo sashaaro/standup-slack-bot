@@ -7,17 +7,17 @@ import QuestionOption from "./question-option";
 
 @Entity()
 export default class QuestionOptionSnapshot {
-  @Expose()
+  @Expose({groups: ["view_standups"]})
   @PrimaryKey()
   id: number;
 
-  @Expose()
+  @Expose({groups: ["view_standups"]})
   @IsNotEmpty()
   @IsInt()
   @Property({nullable: false})
   index: number;
 
-  @Expose()
+  @Expose({groups: ["view_standups"]})
   @Transform((params: TransformFnParams) => params.value?.trim()) // TODO not working?
   @Property({nullable: false})
   text: string

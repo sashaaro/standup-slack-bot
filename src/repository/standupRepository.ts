@@ -40,6 +40,7 @@ export class StandupRepository extends EntityRepository<Standup> {
 
   findUserStandup(userId: string, standupId: number): Promise<UserStandup> {
     return this.em.findOne(UserStandup, {
+      // TODO isEnabled filter
       user: this.em.getReference(User, userId),
       standup: this.em.getReference(Standup, standupId)
     }, [

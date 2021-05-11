@@ -1,19 +1,19 @@
 <div class="stand-up-list" *appAsync="response$; placeholder: true; let response">
   <div *ngFor="let standup of response.standups | paginate: {itemsPerPage: itemsPerPage, currentPage: page, totalItems: response.total}" class="stand-up">
     <div class="stand-up__header">
-      {{ standup.startAt|date:'MMMM d, h:mm a': response.team.timezone.offset }}
+      {{ standup.startAt|date:'MMMM d, h:mm a': response.team.timezone.offset }} {{ standup.startAt|date:'EEEE': response.team.timezone.offset }}
 <!--      if !standUp.isFinished()-->
 <!--      a.ui.teal.label= 'In progress'-->
     </div>
     <div class="stand-up__content">
-      <div *ngFor="let userStandup of standup.users" class="stand-up-item">
-        <div *ngIf="userStandup.answers.length === 0">No answers 🐥</div>
+      <div *ngFor="let userStandup of standup.users" class="stand-up-item" [class.stand-up-item--no-answers]="userStandup.answers.length === 0">
+        <div *ngIf="userStandup.answers.length === 0" class="stand-up-item__no-answers">No answers 🐥</div>
 
-        <div class="stand-up-item__results">
-          <div *ngFor="let answer of userStandup.answers; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index">
+        <div class="stand-up-item__results" [style.--question-rows]="ceil(userStandup.answers.length / 2)">
+          <div *ngFor="let answer of userStandup.answers; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index % 5">
             <div class="stand-up-item__question">{{ answer.question.text }}</div>
             <div class="stand-up-item__answer" *ngIf="answer.option">
-              <div *ngFor="let option of standup.team.questions[index].options" [class.active]="option.id === answer.option.id">{{ option.text }}</div>
+              <div *ngFor="let option of answer.question.options" [class.active]="option.id === answer.option.id">{{ option.text }}</div>
             </div>
             <div class="stand-up-item__answer">
               <div class="active">{{ answer.answerMessage }}</div>
@@ -22,8 +22,8 @@
         </div>
 
         <div class="stand-up-item__content">
-          <img [src]="userStandup.user.profile?.image_48"/>
-          <div class="stand-up-item__name"> {{ userStandup.user.name }}</div>
+          <img [src]="userStandup.user.profile?.image_192"/>
+          <div class="stand-up-item__name"> {{ userStandup.user.profile?.first_name ? userStandup.user.profile?.first_name + (userStandup.user.profile.last_name ? ' ' + userStandup.user.profile.last_name : '') : userStandup.user.name }}</div>
         </div>
       </div>
     </div>

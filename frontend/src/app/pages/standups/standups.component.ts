@@ -40,6 +40,8 @@ export class StandupsComponent implements OnInit {
   page: number;
   itemsPerPage = 5;
 
+  ceil = Math.ceil;
+
   constructor(
     private router: Router,
     private activatedRoute: ActivatedRoute,

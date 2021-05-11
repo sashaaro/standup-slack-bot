@@ -7,7 +7,7 @@ import {
   SimpleChanges, TemplateRef, ViewChild,
   ViewChildren
 } from '@angular/core';
-import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
+import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
 import {
   ChannelService, Question, StatService,
   Team,
@@ -16,11 +16,11 @@ import {
   User,
   UserService,
   ValidationError
-} from "../../../../api/auto";
-import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
-import {HttpErrorResponse} from "@angular/common/http";
-import {Router} from "@angular/router";
-import {BehaviorSubject, combineLatest, forkJoin, from, NEVER, of, ReplaySubject, Subject} from "rxjs";
+} from '../../../../api/auto';
+import {UntilDestroy, untilDestroyed} from '@ngneat/until-destroy';
+import {HttpErrorResponse} from '@angular/common/http';
+import {Router} from '@angular/router';
+import {BehaviorSubject, combineLatest, forkJoin, from, NEVER, of, ReplaySubject, Subject} from 'rxjs';
 import {
   distinct,
   distinctUntilChanged,
@@ -31,15 +31,15 @@ import {
   startWith,
   switchMap,
   tap
-} from "rxjs/operators";
-import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
-import {MatChip, MatChipInputEvent} from "@angular/material/chips";
-import {BACKSPACE, SPACE} from "@angular/cdk/keycodes";
-import {FocusMonitor} from "@angular/cdk/a11y";
-import {MatDialog} from "@angular/material/dialog";
-import {MatSnackBar} from "@angular/material/snack-bar";
-import {chartColors} from "../../../service/utils";
-import {CONTAINER_LOADING} from "../../../component/async.directive";
+} from 'rxjs/operators';
+import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
+import {MatChip, MatChipInputEvent} from '@angular/material/chips';
+import {BACKSPACE, SPACE} from '@angular/cdk/keycodes';
+import {FocusMonitor} from '@angular/cdk/a11y';
+import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {chartColors} from '../../../service/utils';
+import {CONTAINER_LOADING} from '../../../component/async.directive';
 
 export const weekDays = [
   'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
@@ -49,8 +49,8 @@ const valueChanges = (control: AbstractControl) => {
   return control.valueChanges.pipe(
     startWith(null),
     map(_ => control.value)
-  )
-}
+  );
+};
 
 @UntilDestroy()
 @Component({
@@ -59,11 +59,11 @@ const valueChanges = (control: AbstractControl) => {
   styleUrls: ['./team-form.component.scss']
 })
 export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
-  @Input() team?: Team
+  @Input() team?: Team;
 
   questionsControl: FormArray = new FormArray([
     this.createQuestionControl()
-  ])
+  ]);
   usersControl = new FormControl([], [Validators.required, Validators.minLength(1)]);
   form = this.fb.group({
     name: [null, Validators.required],
@@ -80,14 +80,14 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     users: this.usersControl,
     reportChannel: [null, Validators.required],
     questions: this.questionsControl,
-  })
+  });
 
   @ViewChildren(MatChip) chips: QueryList<MatChip>;
   @ViewChild('confirmDialogRef', {static: true}) confirmDialog: TemplateRef<any>;
   @ViewChild('statsDialogRef', {static: true}) statsDialog: TemplateRef<any>;
 
   submitting = false;
-  users$ = this.userService.getUsers()
+  users$ = this.userService.getUsers();
 
   autocompleteUsers$ =
     combineLatest([
@@ -97,17 +97,17 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       ),
     ]).pipe(
       map(([users, selected]) => users.filter(u => !selected.includes(u.id)))
-    )
+    );
 
-  weekDays = weekDays
+  weekDays = weekDays;
 
-  timezones$ = this.timezoneService.getTimezones()
-  channels$ = this.channelService.getChannels()
+  timezones$ = this.timezoneService.getTimezones();
+  channels$ = this.channelService.getChannels();
 
   focusQuestion$ = new Subject<number>();
    autocompleteOptions$ = this.focusQuestion$.pipe(
      switchMap(questionId => NEVER)
-   )
+   );
 
   openOptionsControls = [];
   focusOption;
@@ -121,11 +121,11 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     filter(q => !q.id),
     distinctUntilChanged((a, b) => a.id === b.id),
     switchMap(question => of([ // TODO ajax question.text
-      //{id: 3, text: "He he"},
-      //{id: 5, text: "bitch"},
-      //question
+      // {id: 3, text: "He he"},
+      // {id: 5, text: "bitch"},
+      // question
     ]))
-  )
+  );
 
   constructor(
     private router: Router,
@@ -148,20 +148,21 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   ngOnInit(): void {
   }
 
+  // tslint:disable-next-line:typedef
   ngOnChanges(changes: SimpleChanges) {
     if ('team' in changes) {
       this.questionsControl.clear();
 
       if (this.team) {
         this.team.questions.forEach(q => {
-          const questionControl = this.createQuestionControl()
-          const optionsControl = questionControl.get('options') as FormArray
+          const questionControl = this.createQuestionControl();
+          const optionsControl = questionControl.get('options') as FormArray;
           q.options.forEach(o => optionsControl.push(this.createOptionControl()));
-          this.questionsControl.push(questionControl)
+          this.questionsControl.push(questionControl);
         });
 
-        const value = this.team as Team|any
-        value.days = weekDays.map((v, i) => value.days.includes(i))
+        const value = this.team as Team|any;
+        value.days = weekDays.map((v, i) => value.days.includes(i));
         this.form.reset(value);
         this.form.markAsPristine();
       } else {
@@ -171,6 +172,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     }
   }
 
+  // tslint:disable-next-line:typedef
   ngAfterViewInit() {
     this.chips.changes
       .pipe(
@@ -179,44 +181,44 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
         untilDestroyed(this)
       )
       .subscribe((chip: MatChip) => {
-        this._focusMonitor.stopMonitoring(chip._elementRef)
-        this.patchChip(chip)
-      })
+        this._focusMonitor.stopMonitoring(chip._elementRef);
+        this.patchChip(chip);
+      });
   }
 
 
   focusQuestion(questionId) {
-    this.focusQuestion$.next(questionId)
+    this.focusQuestion$.next(questionId);
   }
 
   private patchChip(chip: MatChip) {
-    const origin = chip._handleKeydown
-    chip._handleKeydown = function (...args) {
+    const origin = chip._handleKeydown;
+    chip._handleKeydown = function(...args) {
       if (SPACE === args[0].keyCode) {
-        return
+        return;
       }
       if (BACKSPACE === args[0].keyCode) {
         // TODO avoid prevent default behavior for contenteditable
-        //args[0].preventDefault();
-        //chip._blur()
+        // args[0].preventDefault();
+        // chip._blur()
         return;
       }
-      origin.call(this, ...args)
-    }
+      origin.call(this, ...args);
+    };
     chip._handleKeydown.bind(chip);
   }
 
   remove(control: AbstractControl, value) {
     // TODO add hint would not be remove until you submit form
     const list = [...control.value];
-    list.splice(this.usersControl.value.indexOf(this.usersControl.value), 1)
+    list.splice(this.usersControl.value.indexOf(this.usersControl.value), 1);
     control.setValue(list);
   }
 
   removeQuestion(qIndex: number) {
-    if(!this.questionsControl.at(qIndex).value.id) {
-      this.questionsControl.removeAt(qIndex)
-      return
+    if (!this.questionsControl.at(qIndex).value.id) {
+      this.questionsControl.removeAt(qIndex);
+      return;
     }
     const dialogRef = this.dialog.open(this.confirmDialog, {
       width: '250px'
@@ -224,20 +226,20 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     // confirm
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.questionsControl.removeAt(qIndex)
+        this.questionsControl.removeAt(qIndex);
       }
-    })
+    });
   }
 
   focus(element: HTMLInputElement) {
     if (window.getSelection) {
       const s = window.getSelection();
-      const r = document.createRange()
-      const position = element.textContent.length
+      const r = document.createRange();
+      const position = element.textContent.length;
       r.setStart(element.childNodes[0], position);
-      r.collapse(true)
+      r.collapse(true);
 
-      //r.setEnd(element, position);
+      // r.setEnd(element, position);
       s.removeAllRanges();
       s.addRange(r);
     } else {
@@ -246,17 +248,17 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   add() {
-    const control = this.createQuestionControl()
+    const control = this.createQuestionControl();
     this.questionsControl.push(control);
     control.markAsUntouched();
   }
 
   drop(control: FormArray, event: CdkDragDrop<User>) {
-    moveItemInArray(control.controls, event.previousIndex, event.currentIndex)
+    moveItemInArray(control.controls, event.previousIndex, event.currentIndex);
   }
 
   addOption(optionsControl: FormArray|any, event: MatChipInputEvent) {
-    const value = event.value.trim()
+    const value = event.value.trim();
     if (!value) {
       return;
     }
@@ -266,7 +268,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     event.input.value = '';
     const index = this.openOptionsControls.indexOf(
       optionsControl.parent.get('id').value
-    )
+    );
     if (index !== -1) {
       this.openOptionsControls.splice(index, 1);
     }
@@ -280,22 +282,24 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     }
     const teamDTO: any = {};
     const value = this.form.value;
-    teamDTO.name = value.name
+    teamDTO.name = value.name;
     teamDTO.days = value.days.map((v, i) => v ? i : null).filter(v => v !== null);
-    teamDTO.start = value.start
+    teamDTO.start = value.start;
     teamDTO.timezoneId = value.timezone.id;
     teamDTO.duration = Number.parseInt(value.duration, 10);
     teamDTO.userIds = value.users.map(u => u.id);
-    teamDTO.reportChannelId = value.reportChannel.id
+    teamDTO.reportChannelId = value.reportChannel.id;
     teamDTO.questions = this.questionsControl.controls.map((control, index) => ({
       ...control.value,
       index,
       options: (control.get('options') as FormArray).controls.map((oc, index) => ({...oc.value, index}))
-    })) //value.questions.map((q, index) => ({...q, index}));
+    })); // value.questions.map((q, index) => ({...q, index}));
     teamDTO.questions.forEach((q) => q.text = q.text?.trim());
 
-    this.submit$.next(true)
+    this.submit$.next(true);
     this.loading.next(true);
+
+    console.log(teamDTO);
 
     (this.team ?
       this.teamService.updateTeam(this.team.id, teamDTO) :
@@ -304,100 +308,100 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       // untilDestroyed(this)
     ).subscribe(team => {
       // todo notification
-      this.snackBar.open(this.team ?'Successfully updated' : 'Successfully created', 'Ok', {
+      this.snackBar.open(this.team ? 'Successfully updated' : 'Successfully created', 'Ok', {
         verticalPosition: 'top',
         duration: 3000,
       });
       // ..this.team = team;
-      this.router.navigateByUrl('/')
+      this.router.navigateByUrl('/');
     }, (e: HttpErrorResponse) => {
       if (400 === e.status) {
         const errors = e.error as ValidationError[];
         this.applyFormErrors(errors, this.form);
       }
-      this.submit$.next(false)
-      this.loading.next(false)
+      this.submit$.next(false);
+      this.loading.next(false);
     }, () => {
-      this.submit$.next(false)
-      this.loading.next(false)
-    })
-  }
-
-
-  openStats(questionId) {
-    const dialogRef = this.dialog.open(this.statsDialog, {
-      width: '550px'
+      this.submit$.next(false);
+      this.loading.next(false);
     });
-
-    forkJoin([
-      this.statService.getOptionsStat(questionId),
-      from(import ('chart.js')),
-      dialogRef.afterOpened()
-    ]).subscribe(([stat, {Chart}]: any) => {
-      const ids = [ ...new Set(stat.map(s => s.id)) ]
-      const datasets = ids.map(id => {
-        const l = stat.filter(s => s.id === id)
-        return {
-          labels: stat.map(s => s.startAt),
-          datasets: [{
-            label: l[0].text,
-            fill: false,
-            backgroundColor: chartColors.red,
-            borderColor: chartColors.red,
-            data: l.map(s => parseInt(s.count)),
-          }]
-        }
-      })
-      const labels = [1,2,3,4]
-      console.log(datasets);
-      console.log(datasets);
-      new Chart(
-        (dialogRef._containerInstance['_elementRef'].nativeElement.querySelector('.canvas') as HTMLCanvasElement).getContext('2d'),
-        {
-          type: 'line',
-          data: {
-            labels,
-            datasets
-          },
-          options: {
-            responsive: true,
-            title: {
-              display: true,
-              text: 'Are you in office today?'
-            },
-            tooltips: {
-              mode: 'index',
-              intersect: false,
-            },
-            hover: {
-              mode: 'nearest',
-              intersect: true
-            },
-            scales: {
-              xAxes: [{
-                display: true,
-                scaleLabel: {
-                  display: false,
-                  // labelString: 'Month'
-                }
-              }],
-              yAxes: [{
-                display: true,
-                scaleLabel: {
-                  display: true,
-                  labelString: 'Answers'
-                }
-              }]
-            }
-          }
-        })
-    })
-
-
-    dialogRef.afterClosed().subscribe(confirmed => {
-
-    })
   }
+
+
+  // openStats(questionId) {
+  //   const dialogRef = this.dialog.open(this.statsDialog, {
+  //     width: '550px'
+  //   });
+  //
+  //   forkJoin([
+  //     this.statService.getOptionsStat(questionId),
+  //     from(import ('chart.js')),
+  //     dialogRef.afterOpened()
+  //   ]).subscribe(([stat, {Chart}]: any) => {
+  //     const ids = [ ...new Set(stat.map(s => s.id)) ];
+  //     const datasets = ids.map(id => {
+  //       const l = stat.filter(s => s.id === id);
+  //       return {
+  //         labels: stat.map(s => s.startAt),
+  //         datasets: [{
+  //           label: l[0].text,
+  //           fill: false,
+  //           backgroundColor: chartColors.red,
+  //           borderColor: chartColors.red,
+  //           data: l.map(s => parseInt(s.count)),
+  //         }]
+  //       };
+  //     });
+  //     const labels = [1, 2, 3, 4];
+  //     console.log(datasets);
+  //     console.log(datasets);
+  //     new Chart(
+  //       (dialogRef._containerInstance._elementRef.nativeElement.querySelector('.canvas') as HTMLCanvasElement).getContext('2d'),
+  //       {
+  //         type: 'line',
+  //         data: {
+  //           labels,
+  //           datasets
+  //         },
+  //         options: {
+  //           responsive: true,
+  //           title: {
+  //             display: true,
+  //             text: 'Are you in office today?'
+  //           },
+  //           tooltips: {
+  //             mode: 'index',
+  //             intersect: false,
+  //           },
+  //           hover: {
+  //             mode: 'nearest',
+  //             intersect: true
+  //           },
+  //           scales: {
+  //             xAxes: [{
+  //               display: true,
+  //               scaleLabel: {
+  //                 display: false,
+  //                 // labelString: 'Month'
+  //               }
+  //             }],
+  //             yAxes: [{
+  //               display: true,
+  //               scaleLabel: {
+  //                 display: true,
+  //                 labelString: 'Answers'
+  //               }
+  //             }]
+  //           }
+  //         }
+  //       });
+  //   });
+  //
+  //
+  //   dialogRef.afterClosed().subscribe(confirmed => {
+  //
+  //   });
+  // }
 
   private createQuestionControl() {
     return this.fb.group({
@@ -416,8 +420,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
 
   private applyFormErrors(errors: ValidationError[], form: FormGroup|FormArray) {
     errors.forEach(error => {
-      const prop: any = parseInt(error.property) || error.property
-      const control = form instanceof FormArray ? form.at(prop) : form.get(prop) as AbstractControl
+      const prop: any = parseInt(error.property) || error.property;
+      const control = form instanceof FormArray ? form.at(prop) : form.get(prop) as AbstractControl;
       if (!control) {
         console.warn('Errors are not assigned to undefined control');
         return;
@@ -425,7 +429,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
 
       const customError = error.constraints ? Array.from(Object.values(error.constraints)).shift() : null;
       if (customError) {
-        control.setErrors({...control.errors, custom: customError})
+        control.setErrors({...control.errors, custom: customError});
       }
 
       if (error.children.length > 0) {
@@ -435,7 +439,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
           console.warn('Children errors are not assigned to control');
         }
       }
-    })
+    });
   }
 
   compareWithById(a, b) {

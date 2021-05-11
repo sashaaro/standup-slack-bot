@@ -15,7 +15,8 @@ import QuestionSnapshot from "../entity/question-snapshot";
 import {generateStandupMsg} from "./slack-blocks";
 import {LOG_TOKEN} from "../services/token";
 import {StandupRepository} from "../repository/standupRepository";
-import {ChatUpdateArguments} from "@slack/web-api";
+import {ChatUpdateArguments, WebClient} from "@slack/web-api";
+import {response} from "express";
 
 interface IEventHandler {
   (data: any): Promise<any>|any
@@ -78,6 +79,15 @@ export class SlackEventListener {
         workspace: workspace
       });
     },
+    app_home_opened: async (response) => {
+      console.log(response)
+      const {type, user, channel, tab, text, subtype} = response;
+
+      // this.webClient.views.publish({
+      //   user_id: user
+      //   token:
+      // })
+    },
     channel_joined: (data) => this.syncSlack.channelJoined(data),
     group_joined: (data) => this.syncSlack.channelJoined(data),
     channel_left: (data: ChannelLeft) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isEnabled: false}),
@@ -85,7 +95,7 @@ export class SlackEventListener {
     channel_archive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: true}),
     group_archive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: true}),
     channel_unarchive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: false}),
-    group_unarchive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: false})
+    group_unarchive: (data: {channel: string}) => this.syncSlack.findOrCreateAndUpdate(data.channel, {isArchived: false}),
   }
 
   constructor(
@@ -93,6 +103,7 @@ export class SlackEventListener {
     private syncSlack: SyncSlackService,
     private queueRegistry: QueueRegistry,
     @Inject(LOG_TOKEN) private logger: Logger,
+    private webClient: WebClient
   ) {
     for (const event in this.evensHandlers) {
       const handler = this.evensHandlers[event]
