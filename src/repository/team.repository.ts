@@ -34,17 +34,21 @@ export class TeamRepository extends EntityRepository<Team> {
     return qb.getResultList()
   }
 
-  async findActiveById(id): Promise<Team> {
-    return (await this.em.find(Team, {
+  async findActiveById(id, onlyActive = true): Promise<Team> {
+    const where: any = {
       id,
-      status: TEAM_STATUS_ACTIVATED,
       questions: {
         isEnabled: true,
         // options: {
         //   isEnabled: {$in: [true, null]},
         // }
-      } as any
-    }, {
+      }
+    }
+    if (onlyActive) {
+      where.status = TEAM_STATUS_ACTIVATED
+    }
+
+    return (await this.em.find(Team, where, {
       populate: [
         'users',
         'questions',

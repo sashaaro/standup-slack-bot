@@ -1,4 +1,6 @@
 <div class="stand-up-list" *appAsync="response$; placeholder: true; let response">
+  <app-team [team]="response.team"></app-team>
+
   <div *ngFor="let standup of response.standups | paginate: {itemsPerPage: itemsPerPage, currentPage: page, totalItems: response.total}" class="stand-up">
     <div class="stand-up__header">
       {{ standup.startAt|date:'MMMM d, h:mm a': response.team.timezone.offset }} {{ standup.startAt|date:'EEEE': response.team.timezone.offset }}

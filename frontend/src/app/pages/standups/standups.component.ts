@@ -17,7 +17,7 @@ export class StandupsComponent implements OnInit {
       this.activatedRoute.queryParams.pipe(map(params => params.page || 1)),
     ]).pipe(
     switchMap(([teamId, page]) => combineLatest([
-      this.standupService.getStandups(teamId, page, 'response'),
+      this.standupService.getStandups(teamId, page, this.itemsPerPage,'response'),
       this.teamService.getTeam(teamId).pipe(
         map(team => ({
           ...team,
@@ -35,7 +35,7 @@ export class StandupsComponent implements OnInit {
     })),
     publishReplay(1),
     refCount()
-  )
+  );
 
   page: number;
   itemsPerPage = 5;

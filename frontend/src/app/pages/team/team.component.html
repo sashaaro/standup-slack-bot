@@ -1,1 +1,58 @@
-<p>team works!</p>
+<div class="team__header">
+  <a class="team__title">{{ team.name }}</a>
+  <div class="ui toggle checkbox" *ngIf="team.status !== 3">
+    <mat-slide-toggle [checked]="team.status === 1" (change)="toggle($event, team);" (click)="$event.stopPropagation()" [title]="team.status === 1 ? 'Deactivate' : 'Activate'"></mat-slide-toggle>
+  </div>
+</div>
+<div class="team__content">
+  <div class="team__desc desc">
+    <div class="desc__time" title="duration {{ team.duration }} minutes">
+      <mat-icon>schedule</mat-icon>{{ team.start }} - {{ untilTime(team) }}
+    </div>
+    <div>({{ team.timezone.name }} timezone)</div>
+    <div>next standup in 7 hours 39 minutes</div>
+    <!-- TODO weeks -->
+    <!--        <img [src]="team.createdBy.profile.image_24"/>-->
+    <!--        <div>{{ team.createdBy.name }}</div>-->
+    <!--          {{ team.questions.length }} questions-->
+    <!--        ="Created by " + team.createdBy.name + " at " + intl.format(team.createdAt)-->
+  </div>
+  <div class="team__users users">
+    <div class="users__count">{{ team.users?.length }} respondents</div>
+
+    <div class="users__list" title="{{ team.users?.length }} respondents">
+      <img *ngFor="let user of team.users" class="users__item" [src]="user.profile.image_24"/>
+    </div>
+
+  </div>
+
+  <div class="team__actions">
+    <!--        <button mat-flat-button color="accent" title="charts"  [routerLink]="'/team/' + team.id + '/stat'">-->
+    <!--          <mat-icon>insights</mat-icon>-->
+    <!--        </button>-->
+    <button mat-flat-button color="primary" title="settings"  [routerLink]="'/team/' + team.id + '/edit'">
+      <mat-icon>settings</mat-icon>
+    </button>
+    <button mat-flat-button title="achieve" color="warn" *ngIf="team.status !== 3; else restore" (click)="$event.stopPropagation(); achieve(team)">
+      <mat-icon>restore_from_trash</mat-icon>
+    </button>
+    <ng-template #restore>
+      <button mat-flat-button title="achieve" color="warn" (click)="$event.stopPropagation(); restoreTeam(team)">
+        <mat-icon>autorenew</mat-icon>
+      </button>
+    </ng-template>
+  </div>
+</div>
+
+<ng-template #confirmDialogRef>
+  <mat-dialog-content>
+    <div>Confirmation</div>
+    <mat-hint>Are you sure delete team!</mat-hint>
+  </mat-dialog-content>
+
+  <mat-dialog-actions>
+    <button mat-button color="warn" [mat-dialog-close]="true">Confirm</button>
+    <button mat-button [mat-dialog-close]="false">Cancel</button>
+    <!-- The mat-dialog-close directive optionally accepts a value as a result for the dialog. -->
+  </mat-dialog-actions>
+</ng-template>

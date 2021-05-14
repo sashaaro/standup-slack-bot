@@ -23,7 +23,7 @@ export class StandupController {
 
     const offset = (page - 1) * limit
 
-    const standups = await em().find(Standup, {
+    const [standups, total] = await em().findAndCount(Standup, {
       team: {originTeam: teamID}
     }, {
       limit,
@@ -41,6 +41,10 @@ export class StandupController {
       //fields: ['team'],
       flags: [QueryFlag.PAGINATE]
     })
+
+    res.setHeader( 'X-Total', total)
+    res.setHeader('Access-Control-Allow-Headers', 'x-total')
+    res.setHeader('Content-Type', 'application/json');
 
     res.send(serialize(standups, {
       strategy: 'excludeAll',

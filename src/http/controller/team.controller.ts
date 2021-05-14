@@ -142,7 +142,7 @@ export class TeamController {
     }
 
     const teamRepo = em().getRepository(Team) as TeamRepository
-    const team = await teamRepo.findActiveById(id);
+    const team = await teamRepo.findActiveById(id, false);
     if (!team) {
       throw new ResourceNotFoundError(); // 404
     }

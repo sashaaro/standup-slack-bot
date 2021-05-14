@@ -66,7 +66,8 @@ export class ServerCommand implements yargs.CommandModule {
 
     await redisReady(this.redis);
 
-    const expressApp = express()
+    const expressApp = express();
+    expressApp.disable('x-powered-by');
     expressApp.use(requestContextMiddleware);
 
     const apiMiddleware = new ApiMiddleware(this.injector)

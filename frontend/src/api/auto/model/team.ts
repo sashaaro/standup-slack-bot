@@ -10,13 +10,14 @@
  * Do not edit the class manually.
  */
 import { Timezone } from './timezone';
+import { User } from './user';
 import { Channel } from './channel';
 import { Question } from './question';
 
 
 export interface Team { 
     id?: number;
-    title?: string;
+    name?: string;
     status?: number;
     days?: Array<number>;
     start?: string;
@@ -24,5 +25,6 @@ export interface Team {
     timezone?: Timezone;
     reportChannel?: Channel;
     questions?: Array<Question>;
+    users?: Array<User>;
 }
 

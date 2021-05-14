@@ -224,6 +224,13 @@ paths:
           schema:
             type: integer
             minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
             default: 5
       responses:
         200:
@@ -268,13 +275,15 @@ components:
         name:
           type: integer
           format: int64
+        profile:
+          type: object
     Team:
       type: object
       properties:
         id:
           type: integer
           format: int64
-        title:
+        name:
           type: string
         status:
           type: integer
@@ -294,6 +303,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Question'
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
     Question:
       type: object
       properties:
