@@ -57,7 +57,7 @@ export class ApiMiddleware {
 
     const auto = injector.get(AuthController);
     router.get('/auth/session', auto.session);
-    router.get('/auth/logout', auto.logout); // TODO DELETE /auth/session?!
+    router.get('/auth/logout', auto.logout);
     router.get('/auth', auto.auth);
 
     const team = injector.get(TeamController);
@@ -78,8 +78,8 @@ export class ApiMiddleware {
     const standup = injector.get(StandupController);
     router.get('/team/:id/standup', standup.list);
 
-    const option = injector.get(OptionController);
-    router.get('/option/history/:questionId', option.history);
+    // TODO const option = injector.get(OptionController);
+    // router.get('/option/history/:questionId', option.history);
 
     const stat = injector.get(StatController);
     router.get('/stat/options/:questionId', stat.options);

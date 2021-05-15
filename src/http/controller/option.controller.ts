@@ -9,7 +9,7 @@ export class OptionController {
   @authorized
   async history(req: Request, res: Response) {
     const question = req.query.questionId
-    const options = {} // TODO mikroorm
+    const options = {}
     //   await this.connection.getRepository(QuestionOption).find({
     //   question: {id: question},
     // });

@@ -29,7 +29,7 @@ class QuestionSnapshot {
 
   @ManyToOne(type => Question, {
     //eager: true
-  }) // TODO nullable true
+  })
   originQuestion: Question;
 
   @ManyToOne(type => TeamSnapshot, {

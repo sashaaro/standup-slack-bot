@@ -49,7 +49,7 @@ export class AuthController {
     }
 
     if (req.query.error === 'access_denied') {
-      throw new AccessDenyError() // TODO template
+      throw new AccessDenyError()
     }
     if (!req.query.code) {
       throw new ResourceNotFoundError()
@@ -66,9 +66,8 @@ export class AuthController {
       }) as any
     } catch (e) {
       if (isPlatformError(e) && e.data.error === 'invalid_code') {
-        // TODO message invalid code
-        this.logger.warn(e, 'Invalid code 0Auth2')
-        res.status(400).send('400'); // TODO redirect notify?
+        this.logger.info(e, 'Invalid code 0Auth2')
+        res.status(400).send('Invalid code'); // TODO redirect notify?
         return;
       } else {
         throw e;
@@ -115,9 +114,12 @@ export class AuthController {
       user = new User();
       user.id = response.authed_user.id;
     }
-    // TODO if (response.authed_user.access_token) {
+
+    if (response.token_type !== 'bot') {
       user.accessToken = response.authed_user.access_token;
-    // }
+    } else {
+      // TODO special role?
+    }
 
     if (!user.name) { // || new Date() - user.updatedAt > 3 days
       const userInfo: SlackUserInfo = await this.webClient.users.info({
@@ -131,7 +133,7 @@ export class AuthController {
     user.workspace = workspace;
     await userRepository.persistAndFlush(user);
 
-    authenticate(user, req, response.authed_user);
+    authenticate(user, req);
 
     if (newWorkspace) {
       await this.syncSlackService.syncForWorkspace(workspace);

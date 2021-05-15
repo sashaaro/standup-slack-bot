@@ -57,36 +57,24 @@ export const requestContextMiddleware = createAsyncLocalStorageMiddleware(reques
   hash: new Date().getTime()  + '_' + Math.random().toString().substr(-8)
 }))
 
-
-export interface IAuthUser {
-  id: string,
-  scope?: string,
-  access_token?: string,
-  token_type?: string
-}
-
-export const authenticate = (user: User, req?, authedUser?: IAuthUser) => {
+export const authenticate = (user: User, req?) => {
   requestContentStorage.enterWith({
     ...requestContentStorage.getStore(),
     user: user
   });
   if (req) {
-    req.session.user = authedUser; // TODO save id only?
+    req.session['user_id'] = user.id;
   }
 }
 
 export const apiContextMiddleware = (log: Logger): Handler => async (req, res, next) => {
-  const authedUser: IAuthUser = req.session['user'];
+  const userID = req.session['user_id'];
   let user: User;
-  if (authedUser) {
-    if (typeof authedUser.id !== "string") {
-      log.warn(authedUser, 'Invalid authed user')
-      return null
-    }
+  if (userID && typeof userID === "string") {
     user = await em()
       .createQueryBuilder(User, 'u')
       .select('*')
-      .where({id: authedUser.id})
+      .where({id: userID})
       .leftJoinAndSelect('u.workspace', 'w')
       .getSingleResult()
 

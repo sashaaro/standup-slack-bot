@@ -92,7 +92,7 @@ export class SlackBotTransport {
             //element.value = answer.option.id
             element.initial_option = element.options.find(option => option.value === answer.option.id.toString());
             if (!element.initial_option) {
-              // TODO warming
+              this.logger.warn(element, 'Selected option is not found')
             }
           } else {
             element.initial_value = answer.answerMessage;
@@ -129,7 +129,7 @@ export class SlackBotTransport {
     }
 
     // TODO validate https://github.com/slackapi/slack-api-specs/blob/master/web-api/slack_web_openapi_v2.json ?!
-    const args:any = {
+    const args: any = {
       view: view,
       trigger_id: triggerId,
       token: standup.team.originTeam.workspace.accessToken

@@ -16,6 +16,8 @@ import * as fs from "fs";
 import {bind} from "../decorator/bind";
 import {errorHandler, requestContextMiddleware} from "../http/middlewares";
 import {Logger} from "pino";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
 export class ServerCommand implements yargs.CommandModule {
   static meta: Partial<yargs.CommandModule<any, any>> = {
@@ -23,6 +25,8 @@ export class ServerCommand implements yargs.CommandModule {
     describe: 'Run server',
     builder: ServerCommand.builder
   };
+
+  private mikroORM: MikroORM<PostgreSqlDriver>
 
   constructor(
     private injector: Injector,
@@ -53,8 +57,8 @@ export class ServerCommand implements yargs.CommandModule {
 
   private async startServer(port?: string|number)
   {
-    const mikroORM = await this.mikroFactory('Standup Bot Server')
-    await mikroORM.connect()
+    this.mikroORM = await this.mikroFactory('Standup Bot Server')
+    await this.mikroORM.connect()
 
     try {
       await this.redis.connect();
@@ -72,20 +76,20 @@ export class ServerCommand implements yargs.CommandModule {
 
     const apiMiddleware = new ApiMiddleware(this.injector)
 
-    expressApp.use('/api/slack', apiMiddleware.useSlackApi(mikroORM));
+    expressApp.use('/api/slack', apiMiddleware.useSlackApi(this.mikroORM));
     expressApp.use('/api/doc', express.static('./resources/public'));
-    expressApp.use('/api', apiMiddleware.use(mikroORM));
+    expressApp.use('/api', apiMiddleware.use(this.mikroORM));
 
     expressApp.get('/health-check', async (request, response) => {
       const redis = this.redis.status === 'connected';
-      const postgres = await mikroORM.isConnected()
+      const postgres = await this.mikroORM.isConnected()
 
       response.status(redis && postgres ? 200 : 500);
       response.setHeader('Content-type', 'application/json')
       response.send({redis, postgres});
     });
 
-    // todo fallback expressApp.use('/', () => {});
+    expressApp.use('/', (req, res) => res.redirect(301, '/api'));
 
     expressApp.use(errorHandler(this.injector.get(CONFIG_TOKEN).env !== 'prod', this.log))
 
@@ -119,7 +123,9 @@ export class ServerCommand implements yargs.CommandModule {
   }
 
   private close() {
-    // TODO mikroorm.close();
+    this.mikroORM.close().catch(e => {
+      this.log.error(e, 'Close mikroORM error')
+    });
     try {
       this.redis.disconnect()
     } catch (e) {

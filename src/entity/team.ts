@@ -43,6 +43,7 @@ export class Team {
   @Property()
   name: string;
 
+  @Expose({groups: ['view_standups', 'edit']})
   @Property({type: 'smallint'})
   status: number = TEAM_STATUS_ACTIVATED;
 
@@ -69,8 +70,8 @@ export class Team {
   @Property({default: '11:00', nullable: false})
   start: string
 
-  @Max(2 ** weekDayBits.length - 1)
   @Min(1)
+  @Max(2 ** weekDayBits.length - 1)
   @Expose()
   @Property({type: scheduleBitmaskType, defaultRaw: scheduleBitmaskType.convertToDatabaseValueSQL(scheduleBitmaskDefault.toString(10))})
   scheduleBitmask: number = scheduleBitmaskDefault;

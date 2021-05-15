@@ -34,7 +34,9 @@ export class TeamDTO {
   name: string;
 
   @Expose()
-  // TODO @Min(1)
+  @IsNotEmpty()
+  @IsArray()
+  @ArrayMinSize(1)
   @IsNotEmpty()
   userIds = []
 
@@ -44,9 +46,9 @@ export class TeamDTO {
   @Expose()
   start: string
 
-  @Max(2 ** 7 - 1)
   @Min(1)
-  @Expose() // TODO validate
+  @Max(2 ** 7 - 1)
+  @Expose()
   scheduleBitmask: number;
 
   @Expose()

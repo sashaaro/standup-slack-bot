@@ -68,12 +68,14 @@ export class SyncSlackService {
       this.logger.debug({users: response.members}, 'webClient.users.list')
 
       const list = []
+
+      let users = members.length > 0 ? await userRepository.find({id: {$in: members.map(m => m.id)}}) : [];
+
       for (const member of members) {
         if (member.team_id !== workspace.id) {
           throw new Error(`Workspace #${workspace.id} is not equal to member.team_id as ${member.team_id}`)
         }
-
-        let user = await userRepository.findOne(member.id); // TODO "in" => [ids..]
+        let user = users.find((u) => u.id === member.id)
         if (!user) {
           user = new User();
           user.id = member.id
@@ -180,12 +182,12 @@ export class SyncSlackService {
         }
 
         // TODO
-        console.log(em()
-          .createQueryBuilder(Channel, 'ch')
-          .insert({...d, id: channel.id})
-          .onConflict('id')
-          .merge(d)
-          .getQuery())
+        // console.log(em()
+        //   .createQueryBuilder(Channel, 'ch')
+        //   .insert({...d, id: channel.id})
+        //   .onConflict('id')
+        //   .merge(d)
+        //   .getQuery())
         await em()
           .createQueryBuilder(Channel, 'ch')
           .insert({...d, id: channel.id})

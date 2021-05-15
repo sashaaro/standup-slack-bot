@@ -12,7 +12,7 @@ export class ChannelController {
   @bind
   @authorized
   async listByWorkspace(req: Request, res: Response) {
-    const channels = await em().find(Channel, { // TODO find without relations
+    const channels = await em().find(Channel, {
       workspace: reqContext().user.workspace,
       isEnabled: true,
       isArchived: false
