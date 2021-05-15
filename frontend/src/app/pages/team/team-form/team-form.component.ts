@@ -20,17 +20,15 @@ import {
 import {UntilDestroy, untilDestroyed} from '@ngneat/until-destroy';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Router} from '@angular/router';
-import {BehaviorSubject, combineLatest, forkJoin, from, NEVER, of, ReplaySubject, Subject} from 'rxjs';
+import {BehaviorSubject, combineLatest, NEVER, of, Subject} from 'rxjs';
 import {
   distinct,
   distinctUntilChanged,
   filter,
   map,
   mergeMap,
-  pairwise,
   startWith,
   switchMap,
-  tap
 } from 'rxjs/operators';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {MatChip, MatChipInputEvent} from '@angular/material/chips';
@@ -38,12 +36,9 @@ import {BACKSPACE, SPACE} from '@angular/cdk/keycodes';
 import {FocusMonitor} from '@angular/cdk/a11y';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {chartColors} from '../../../service/utils';
 import {CONTAINER_LOADING} from '../../../component/async.directive';
+import {weekDayBits, weekDays} from '../../../service/utils';
 
-export const weekDays = [
-  'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
-];
 
 const valueChanges = (control: AbstractControl) => {
   return control.valueChanges.pipe(
@@ -61,14 +56,17 @@ const valueChanges = (control: AbstractControl) => {
 export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() team?: Team;
 
-  questionsControl: FormArray = new FormArray([
+  public weekDays = weekDays;
+  public weekDayBits = weekDayBits;
+
+  public questionsControl: FormArray = new FormArray([
     this.createQuestionControl()
   ]);
-  usersControl = new FormControl([], [Validators.required, Validators.minLength(1)]);
-  form = this.fb.group({
+  public usersControl = new FormControl([], [Validators.required, Validators.minLength(1)]);
+  public form = this.fb.group({
     name: [null, Validators.required],
     days: new FormArray(
-      weekDays.map((d, index) => new FormControl(index < 5)),
+      weekDayBits.map((d, index) => new FormControl(index < 5)),
       [
         Validators.required,
         (control) => control.value.filter(v => v).length === 0 ? {required: true} : null
@@ -82,12 +80,17 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     questions: this.questionsControl,
   });
 
-  @ViewChildren(MatChip) chips: QueryList<MatChip>;
-  @ViewChild('confirmDialogRef', {static: true}) confirmDialog: TemplateRef<any>;
-  @ViewChild('statsDialogRef', {static: true}) statsDialog: TemplateRef<any>;
+  @ViewChildren(MatChip)
+  chips: QueryList<MatChip>;
 
-  submitting = false;
-  users$ = this.userService.getUsers();
+  @ViewChild('confirmDialogRef', {static: true})
+  public confirmDialog: TemplateRef<any>;
+
+  @ViewChild('statsDialogRef', {static: true})
+  public statsDialog: TemplateRef<any>;
+
+  public submitting = false;
+  public users$ = this.userService.getUsers();
 
   autocompleteUsers$ =
     combineLatest([
@@ -99,15 +102,13 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       map(([users, selected]) => users.filter(u => !selected.includes(u.id)))
     );
 
-  weekDays = weekDays;
-
   timezones$ = this.timezoneService.getTimezones();
   channels$ = this.channelService.getChannels();
 
   focusQuestion$ = new Subject<number>();
-   autocompleteOptions$ = this.focusQuestion$.pipe(
-     switchMap(questionId => NEVER)
-   );
+  // autocompleteOptions$ = this.focusQuestion$.pipe(
+  //   switchMap(questionId => NEVER)
+  // );
 
   openOptionsControls = [];
   focusOption;
@@ -161,9 +162,9 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
           this.questionsControl.push(questionControl);
         });
 
-        const value = this.team as Team|any;
-        value.days = weekDays.map((v, i) => value.days.includes(i));
-        this.form.reset(value);
+        this.form.reset(this.team);
+        // tslint:disable-next-line:no-bitwise
+        this.form.get('days').setValue(weekDayBits.map((weekDayBit, index) => this.team.scheduleBitmask & weekDayBit));
         this.form.markAsPristine();
       } else {
         this.form.reset();
@@ -257,7 +258,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     moveItemInArray(control.controls, event.previousIndex, event.currentIndex);
   }
 
-  addOption(optionsControl: FormArray|any, event: MatChipInputEvent) {
+  addOption(optionsControl: FormArray | any, event: MatChipInputEvent) {
     const value = event.value.trim();
     if (!value) {
       return;
@@ -283,7 +284,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     const teamDTO: any = {};
     const value = this.form.value;
     teamDTO.name = value.name;
-    teamDTO.days = value.days.map((v, i) => v ? i : null).filter(v => v !== null);
+    // tslint:disable-next-line:no-bitwise
+    teamDTO.scheduleBitmask = (value.days as boolean[]).reduce((acc, v, index) => acc | (v ? weekDayBits[index] : 0), 0);
     teamDTO.start = value.start;
     teamDTO.timezoneId = value.timezone.id;
     teamDTO.duration = Number.parseInt(value.duration, 10);
@@ -302,8 +304,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     console.log(teamDTO);
 
     (this.team ?
-      this.teamService.updateTeam(this.team.id, teamDTO) :
-      this.teamService.createTeam(teamDTO)
+        this.teamService.updateTeam(this.team.id, teamDTO) :
+        this.teamService.createTeam(teamDTO)
     ).pipe(
       // untilDestroyed(this)
     ).subscribe(team => {
@@ -418,7 +420,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     });
   }
 
-  private applyFormErrors(errors: ValidationError[], form: FormGroup|FormArray) {
+  private applyFormErrors(errors: ValidationError[], form: FormGroup | FormArray) {
     errors.forEach(error => {
       const prop: any = parseInt(error.property) || error.property;
       const control = form instanceof FormArray ? form.at(prop) : form.get(prop) as AbstractControl;

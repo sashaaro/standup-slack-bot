@@ -1,7 +1,6 @@
-import {Expose, Transform, TransformFnParams, Type} from "class-transformer";
-import {ArrayMinSize, IsArray, IsNotEmpty, MaxLength, Min, MinLength, ValidateNested} from "class-validator";
-import {em} from "../services/providers";
-import {User} from "../entity";
+import {Expose, Type} from "class-transformer";
+import {ArrayMinSize, IsArray, IsNotEmpty, Max, MaxLength, Min, MinLength, ValidateNested} from "class-validator";
+import {weekDayBits} from "../entity/team";
 
 export class QuestionOptionDTO {
   @Expose()
@@ -45,10 +44,10 @@ export class TeamDTO {
   @Expose()
   start: string
 
+  @Max(2 ** 7 - 1)
+  @Min(1)
   @Expose() // TODO validate
-  @IsArray()
-  @ArrayMinSize(1)
-  days: number[];
+  scheduleBitmask: number;
 
   @Expose()
   @Type(_ => QuestionDTO)

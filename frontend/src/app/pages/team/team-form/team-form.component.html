@@ -13,7 +13,7 @@
       <div class="days">
         <div class="checkbox-list" formArrayName="days">
           <mat-label>Days</mat-label>
-          <mat-checkbox *ngFor="let day of weekDays; let index = index" [formControlName]="index" [value]="day">{{ day }}</mat-checkbox>
+          <mat-checkbox *ngFor="let dayBit of weekDayBits; let index = index" [formControlName]="index" [value]="dayBit">{{ weekDays[index] }}</mat-checkbox>
         </div>
         <mat-error>
           <ng-container *ngIf="form.get('days').hasError('required')">Required</ng-container>
@@ -211,15 +211,15 @@
   </mat-option>
 </mat-autocomplete>
 
-<ng-template>
-  <input [matAutocomplete]="optionsAutocomplete"/>
-  <mat-autocomplete #optionsAutocomplete="matAutocomplete" (optionSelected)="usersControl.value.push($event.option.value);">
-    <mat-option *ngFor="let user of (autocompleteOptions$ | async)" [value]="user">
-      <img *ngIf="user.profile.image_24" [src]="user.profile.image_24"/>
-      {{ user.name }}
-    </mat-option>
-  </mat-autocomplete>
-</ng-template>
+<!--<ng-template>-->
+<!--  <input [matAutocomplete]="optionsAutocomplete"/>-->
+<!--  <mat-autocomplete #optionsAutocomplete="matAutocomplete" (optionSelected)="usersControl.value.push($event.option.value);">-->
+<!--    <mat-option *ngFor="let user of (autocompleteOptions$ | async)" [value]="user">-->
+<!--      <img *ngIf="user.profile.image_24" [src]="user.profile.image_24"/>-->
+<!--      {{ user.name }}-->
+<!--    </mat-option>-->
+<!--  </mat-autocomplete>-->
+<!--</ng-template>-->
 
 <ng-template #confirmDialogRef>
   <mat-dialog-content>

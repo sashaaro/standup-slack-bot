@@ -76,7 +76,7 @@ export class TeamController {
     if (errors.length === 0) {
       const team = new Team()
       team.name = teamDTO.name;
-      team.days = teamDTO.days;
+      team.scheduleBitmask = teamDTO.scheduleBitmask;
       team.start = teamDTO.start;
       team.timezone = em().getReference(Timezone, teamDTO.timezoneId);
       teamDTO.userIds.forEach(u => team.users.add(em().getReference(User, u)))

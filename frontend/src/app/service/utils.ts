@@ -7,3 +7,8 @@ export const chartColors = {
   purple: 'rgb(153, 102, 255)',
   grey: 'rgb(201, 203, 207)'
 };
+
+export const weekDays = [
+  'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
+];
+export const weekDayBits = [1, 2, 4, 8, 16, 32, 64]; // start from monday

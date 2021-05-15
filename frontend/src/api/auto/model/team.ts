@@ -19,7 +19,7 @@ export interface Team {
     id?: number;
     name?: string;
     status?: number;
-    days?: Array<number>;
+    scheduleBitmask?: number;
     start?: string;
     duration?: number;
     timezone?: Timezone;

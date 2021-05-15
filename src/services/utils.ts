@@ -98,4 +98,35 @@ export class IntArrayType extends Type {
 }
 
 
+export class BitmaskType extends Type<number, string> {
+  constructor(private size: number = 2) {
+    super()
+  }
+
+  convertToDatabaseValueSQL(key: string, platform: Platform = null): string {
+    return `${key}::bit(${this.size})`;
+  }
+
+  convertToJSValue(value: string): number {
+    const v = parseInt(value, 2)
+    if (v === NaN) {
+      throw new Error(`Invalid database value ${value} from column ${this.getColumnType()}`);
+    }
+    return v;
+  }
+
+  toJSON(value: any) {
+    return this.convertToJSValue(value);
+  }
+
+  compareAsType(): string {
+    return `bit(${this.size})`;
+  }
+
+  getColumnType() {
+    return `bit(${this.size})`;
+  }
+}
+
+
 export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));

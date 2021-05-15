@@ -1,5 +1,5 @@
 import {Expose, Transform, TransformFnParams, Type} from "class-transformer";
-import {ArrayMinSize, IsArray, IsNotEmpty, MaxLength, MinLength, ValidateNested} from "class-validator";
+import {ArrayMinSize, IsArray, IsNotEmpty, Max, MaxLength, Min, MinLength, ValidateNested} from "class-validator";
 import {
   Cascade,
   Collection,
@@ -15,7 +15,7 @@ import Timezone from "./timezone";
 import {User} from "./user";
 import SlackWorkspace from "./slack-workspace";
 import Question from "./question";
-import {IntArrayType, sortByIndex, transformCollection} from "../services/utils";
+import {BitmaskType, IntArrayType, sortByIndex, transformCollection} from "../services/utils";
 import {TeamRepository} from "../repository/team.repository";
 import {Channel} from "./channel";
 
@@ -24,7 +24,10 @@ export const TEAM_STATUS_DEACTIVATED = 2;
 export const TEAM_STATUS_ACHIEVED = 3;
 
 export const teamStatuses = [TEAM_STATUS_ACTIVATED, TEAM_STATUS_DEACTIVATED, TEAM_STATUS_ACHIEVED]
+export const weekDayBits = [1, 2, 4, 8, 16, 32, 64]; // start from monday
+const scheduleBitmaskDefault = 1 | 2 | 4 | 8 | 16
 
+const scheduleBitmaskType = new BitmaskType(weekDayBits.length);
 
 @Entity({customRepository: () => TeamRepository})
 export class Team {
@@ -66,9 +69,11 @@ export class Team {
   @Property({default: '11:00', nullable: false})
   start: string
 
+  @Max(2 ** weekDayBits.length - 1)
+  @Min(1)
   @Expose()
-  @Property({type: IntArrayType, defaultRaw: "'{0,1,2,3,4}'"}) // TODO bitmask
-  days: number[] = [0, 1, 2, 3, 4];
+  @Property({type: scheduleBitmaskType, defaultRaw: scheduleBitmaskType.convertToDatabaseValueSQL(scheduleBitmaskDefault.toString(10))})
+  scheduleBitmask: number = scheduleBitmaskDefault;
 
   @Expose({groups: ["edit"]})
   @Transform((params) => transformCollection(params).filter(e => e.isEnabled).sort(sortByIndex), {

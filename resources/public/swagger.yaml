@@ -287,10 +287,8 @@ components:
           type: string
         status:
           type: integer
-        days:
-          type: array
-          items:
-            type: integer
+        scheduleBitmask:
+          type: integer
         start:
           type: string
         duration:

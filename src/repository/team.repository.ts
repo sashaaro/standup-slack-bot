@@ -12,7 +12,7 @@ import {
   Timezone
 } from "../entity";
 import {TeamDTO} from "../dto/team-dto";
-import {TEAM_STATUS_ACTIVATED} from "../entity/team";
+import {TEAM_STATUS_ACTIVATED, weekDayBits} from "../entity/team";
 import {retriedTx} from "../decorator/retried-tx";
 import {LoadStrategy, QueryFlag} from "@mikro-orm/core";
 
@@ -22,13 +22,14 @@ export class TeamRepository extends EntityRepository<Team> {
     qb.select('*')
     scopeTeamJoins(qb);
 
+    const convertWeekDayToBitSql = (weekDaySql) => `('{${weekDayBits.join(',')}}'::integer[${weekDayBits.length}])[${weekDaySql}]::bit(7)`; // use postgres function?!
     qb
       .joinAndSelect('team.timezone', 'timezone')
       .joinAndSelect('team.workspace', 'workspace')
       .andWhere(`(team.start::time - timezone.utc_offset) = ?::time`, [formatTime(startedAt, false)])
       .andWhere({'team.status': TEAM_STATUS_ACTIVATED})
       .andWhere(
-          '((extract("dow" from ? at time zone timezone.name)::int + 6) % 7) = ANY(team.days)',
+          `team.schedule_bitmask & ${convertWeekDayToBitSql('(extract("dow" from ? at time zone timezone.name)::int + 7) % 7')} <> 0::bit(7)`,
           [startedAt])
 
     return qb.getResultList()
@@ -158,7 +159,7 @@ export class TeamRepository extends EntityRepository<Team> {
       .createQueryBuilder(Team)
       .update({
         name: teamDTO.name,
-        days: teamDTO.days,
+        scheduleBitmask: teamDTO.scheduleBitmask,
         start: teamDTO.start,
         timezone: em.getReference(Timezone, teamDTO.timezoneId),
         duration: teamDTO.duration,
