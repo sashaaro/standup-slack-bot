@@ -12,7 +12,7 @@
 
       <div class="days">
         <div class="checkbox-list" formArrayName="days">
-          <mat-label>Days</mat-label>
+          <mat-label>Schedule</mat-label>
           <mat-checkbox *ngFor="let dayBit of weekDayBits; let index = index" [formControlName]="index" [value]="dayBit">{{ weekDays[index] }}</mat-checkbox>
         </div>
         <mat-error>

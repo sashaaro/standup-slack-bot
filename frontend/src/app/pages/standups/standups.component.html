@@ -5,7 +5,9 @@
     <div class="stand-up__header">
       {{ standup.startAt|date:'MMMM d, h:mm a': response.team.timezone.offset }} {{ standup.startAt|date:'EEEE': response.team.timezone.offset }}
 <!--      if !standUp.isFinished()-->
-<!--      a.ui.teal.label= 'In progress'-->
+<!-- TODO      a.ui.teal.label= 'In progress'-->
+
+<!-- TODO delete btn -->
     </div>
     <div class="stand-up__content">
       <div *ngFor="let userStandup of standup.users" class="stand-up-item" [class.stand-up-item--no-answers]="userStandup.answers.length === 0">
