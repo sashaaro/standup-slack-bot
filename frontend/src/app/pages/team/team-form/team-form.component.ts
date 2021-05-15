@@ -309,7 +309,6 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     ).pipe(
       // untilDestroyed(this)
     ).subscribe(team => {
-      // todo notification
       this.snackBar.open(this.team ? 'Successfully updated' : 'Successfully created', 'Ok', {
         verticalPosition: 'top',
         duration: 3000,

@@ -20,7 +20,7 @@ spec:
         fsGroup: 1000
       initContainers:
         - name: create-db
-          image: postgres:13.1-alpine
+          image: postgres:13.3-alpine
           env:
             - name: PGHOST
               valueFrom:

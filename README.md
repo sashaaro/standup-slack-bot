@@ -85,12 +85,15 @@ dc -f docker-compose.staging.yml run --rm ui database:migrate --env=prod
 Build base image
 https://www.digitalocean.com/docs/container-registry/quickstart/
 
+https://minikube.sigs.k8s.io/docs/handbook/pushing/#1-pushing-directly-to-the-in-cluster-docker-daemon-docker-env
+
 ```bash
 eval $(minikube -p minikube docker-env)
 docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
 docker build frontend -f frontend/deploy/Dockerfile -t standup-slack-bot-ui:latest
 #docker build . -f deploy/Dockerfile -t standup-slack-bot-ui:latest
 docker tag standup-slack-bot:latest registry.digitalocean.com/simple/standup-slack-bot:latest
+docker tag standup-slack-bot-ui:latest registry.digitalocean.com/simple/standup-slack-bot-ui:latest
 docker push registry.digitalocean.com/simple/standup-slack-bot:latest
 ```
 
@@ -109,6 +112,7 @@ kubectl apply -f deploy/k8s/standup-bot-ingress.yaml
 
 ```shell
 minikube tunnel
+minikube kubectl -- get service --namespace kubernetes-dashboard # see kubernetes-dashboard service ip
 echo "192.168.49.2    standup.botenza.com" >> /etc/host
 ```
 

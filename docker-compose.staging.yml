@@ -26,7 +26,7 @@ services:
   ui:
     image: standup-slack-bot-ui:latest
     build:
-      dockerfile: frontend/deploy/Dockerfile
+      dockerfile: deploy/Dockerfile
       context: frontend
     #volumes:
     #  - sock:/tmp ?! nginx logs?
@@ -46,8 +46,8 @@ services:
     <<: *base-image
     command: ["standup:notify", "--env=prod"]
     user: 1000:1000
-    environment:
-      #- DEBUG=true
+    #environment:
+    #  - DEBUG=true
     depends_on:
       - postgres
       - redis
@@ -58,8 +58,8 @@ services:
     <<: *base-image
     command: ["queue:consume", "--env=prod"]
     user: 1000:1000
-    environment:
-      #- DEBUG=true
+    #environment:
+    #  - DEBUG=true
     depends_on:
       - postgres
       - redis
@@ -67,7 +67,7 @@ services:
       - ./var:/opt/app/var
 
   postgres:
-    image: postgres:13.1-alpine
+    image: postgres:13.3-alpine
     environment:
       POSTGRES_PASSWORD: postgres
     volumes:
