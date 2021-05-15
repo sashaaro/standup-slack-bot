@@ -97,6 +97,13 @@ docker tag standup-slack-bot-ui:latest registry.digitalocean.com/simple/standup-
 docker push registry.digitalocean.com/simple/standup-slack-bot:latest
 ```
 
+
+https://cert-manager.io/docs/installation/kubernetes/
+
+```bash
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.yaml
+```
+
 ```bash
 kubectl apply -f deploy/k8s/deployment/redis.yaml
 kubectl apply -f deploy/k8s/secret/postgres-secret.yaml
@@ -107,13 +114,15 @@ kubectl apply -f deploy/k8s/deployment/api.yaml
 kubectl apply -f deploy/k8s/deployment/queue-consumer.yaml
 kubectl apply -f deploy/k8s/deployment/notifier.yaml
 # kubectl create secret tls app-secret-tls --cert=path/to/cert/file --key=path/to/key/file
+minikube addons enable ingress
+kubectl apply -f deploy/k8s/deployment/certificate.yaml
 kubectl apply -f deploy/k8s/standup-bot-ingress.yaml
 ```
 
 ```shell
 minikube tunnel
 minikube kubectl -- get service --namespace kubernetes-dashboard # see kubernetes-dashboard service ip
-echo "192.168.49.2    standup.botenza.com" >> /etc/host
+echo "192.168.49.2    standup.botenza.com" >> /etc/hosts
 ```
 
 Saas pkg using https://github.com/vercel/pkg

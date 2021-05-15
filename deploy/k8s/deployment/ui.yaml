@@ -25,7 +25,7 @@ spec:
       containers:
         - name: standup-ui
           image: registry.digitalocean.com/simple/standup-slack-bot-ui:latest
-          #imagePullPolicy: Never
+          imagePullPolicy: Never
           # TODO nginx log volumeMounts:
           #  - name: standup-ui-log
           #    mountPath: /var/log

@@ -21,7 +21,7 @@ spec:
       containers:
         - name: queue-consumer
           image: registry.digitalocean.com/simple/standup-slack-bot:latest
-          #imagePullPolicy: Never
+          imagePullPolicy: Never
           args: ["queue:consume", "--env=prod"]
           ports:
             - containerPort: 3000
