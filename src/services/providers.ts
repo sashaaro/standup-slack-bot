@@ -57,34 +57,37 @@ export const QUEUE_NAME_SLACK_INTERACTIVE = 'slack_interactive';
 export const emStorage = new AsyncLocalStorage<EntityManager<PostgreSqlDriver>>();
 export const em = () => emStorage.getStore()
 
+const createConfFromEnv = (env) => ({
+  env,
+  slackClientID: process.env.SLACK_CLIENT_ID,
+  slackSecret: process.env.SLACK_SECRET,
+  slackSigningSecret: process.env.SLACK_SIGNING_SECRET,
+  host: process.env.HOST,
+  redisHost: process.env.REDIS_HOST || 'redis',
+  db: {
+    host: process.env.DB_HOST,
+    database: process.env.DB_DATABASE,
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+  },
+  logDir: process.env.LOG_DIR,
+  debug: process.env.DEBUG !== "false" && !!process.env.DEBUG,
+  yandexMetrikaID: process.env.YANDEX_METRIKA_ID,
+  rollBarAccessToken: process.env.ROLLBAR_ACCESS_TOKEN,
+  supportTelegram: process.env.SUPPORT_TELEGRAM,
+} as IAppConfig)
+
 // TODO https://github.com/microsoft/tsyringe ?!
 export const createProviders = (env = 'dev'): {providers: Provider[], commands: Provider[]} => {
   if (fs.existsSync(`.env.${env}`)) {
     dotenv.config({path: `.env.${env}`})
   }
+  const config = createConfFromEnv(env);
 
   let providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,
-      useValue: {
-        env: env,
-        slackClientID: process.env.SLACK_CLIENT_ID,
-        slackSecret: process.env.SLACK_SECRET,
-        slackSigningSecret: process.env.SLACK_SIGNING_SECRET,
-        host: process.env.HOST,
-        redisHost: process.env.REDIS_HOST || 'redis',
-        db: {
-          host: process.env.DB_HOST,
-          database: process.env.DB_DATABASE,
-          username: process.env.DB_USERNAME,
-          password: process.env.DB_PASSWORD,
-        },
-        logDir: process.env.LOG_DIR,
-        debug: process.env.DEBUG !== "false" && !!process.env.DEBUG,
-        yandexMetrikaID: process.env.YANDEX_METRIKA_ID,
-        rollBarAccessToken: process.env.ROLLBAR_ACCESS_TOKEN,
-        supportTelegram: process.env.SUPPORT_TELEGRAM,
-      } as IAppConfig
+      useValue: config
     },
     {
       provide: REDIS_TOKEN,
@@ -98,12 +101,13 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     {
       provide: LOG_TOKEN,
       useFactory: (config: IAppConfig) => {
-        return pino({
-          prettyPrint: config.debug,
-          level: config.debug ?
+        const level = config.debug ?
             //'trace' :
             'debug' :
-            'warn',
+            'warn'
+        return pino({
+          prettyPrint: config.debug,
+          level,
           mixin: () => {
             const obj: any = {};
             const reqCx = reqContext();
@@ -131,10 +135,6 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
           debug: config.debug,
           type: 'postgresql',
           loadStrategy: LoadStrategy.JOINED,
-          // user: config.db.username,
-          // password: config.db.password,
-          // host: config.db.host,
-          // dbName: config.db.database,
           clientUrl,
           context: () => emStorage.getStore(),
           migrations: {
