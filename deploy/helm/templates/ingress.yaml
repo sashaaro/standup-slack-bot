@@ -2,16 +2,17 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: standup-bot-ingress
-  #annotations:
-    #cert-manager.io/cluster-issuer: letsencrypt-issuer
-    #cert-manager.io/cluster-issuer: selfsigned-issuer
+#  {{ if .Values.certIssuer }}
+#  annotations:
+#    cert-manager.io/cluster-issuer: {{ .Values.certIssuer }}-issuer
+#  {{ end }}
 spec:
   tls:
     - hosts:
-        - standup.botenza.com
+        - {{ .Values.domain }}
       secretName: standup-bot-cert-secret
   rules:
-    - host: standup.botenza.com
+    - host: {{ .Values.domain }}
       http:
         paths:
           - path: /api

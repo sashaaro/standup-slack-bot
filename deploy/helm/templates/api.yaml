@@ -38,7 +38,7 @@ spec:
             - |
               psql -U postgres -c "CREATE DATABASE standup" || echo "Already exists"
         - name: create-schema
-          image: standup-slack-bot:latest
+          image: {{ .Values.apiImage }}
           imagePullPolicy: Never #uncommend if use minikube
           #securityContext:
           #  runAsUser: node
@@ -60,11 +60,11 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: slack-api-secret
-                  key: signing-secrent
+                  key: signing-secret
             - name: DEBUG
               value: "true"
             - name: HOST
-              value: "https://standup.botenza.com"
+              value: "https://{{ .Values.domain }}"
             - name: REDIS_HOST
               valueFrom:
                 configMapKeyRef:
@@ -87,13 +87,13 @@ spec:
             - name: LOG_DIR
               value: "/var/log"
         - name: fixture-db
-          image: standup-slack-bot:latest
+          image: {{ .Values.apiImage }}
           imagePullPolicy: Never
           args: [ "database:fixture" ]
           env: *appEnv
       containers:
         - name: standup-api
-          image: standup-slack-bot:latest
+          image: {{ .Values.apiImage }}
           imagePullPolicy: Never
           args: ["server:run", "--port=3000", "--env=prod"]
           ports:

@@ -24,7 +24,7 @@ spec:
             path: "/var/log/standup-notifier"
       containers:
         - name: standup-notifier
-          image: standup-slack-bot:latest
+          image: {{ .Values.apiImage }}
           imagePullPolicy: Never
           args: ["standup:notify", "--env=prod"]
           volumeMounts:
@@ -46,7 +46,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: slack-api-secret
-                  key: signing-secrent
+                  key: signing-secret
             - name: DEBUG
               value: "true"
             - name: REDIS_HOST

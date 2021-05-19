@@ -1,8 +1,9 @@
+{{ if eq .Values.certIssuer "selfsigned" }}
 apiVersion: v1
 kind: Namespace
 metadata:
   name: cert-manager-standup-bot
----
+  ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -10,6 +11,8 @@ metadata:
 spec:
   selfSigned: { }
 ---
+{{ end }}
+{{ if eq .Values.certIssuer "letsencrypt" }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -24,6 +27,7 @@ spec:
           ingress:
             class: nginx
 ---
+{{ end }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -32,8 +36,7 @@ spec:
   secretName: standup-bot-cert-secret
   issuerRef:
     kind: Issuer
-    #name: letsencrypt-issuer
-    name: selfsigned-issuer
-  commonName: standup.botenza.com
+    name: {{ .Values.certIssuer }}-issuer
+  commonName: {{ .Values.domain }}
   dnsNames:
-    - standup.botenza.com
+    - {{ .Values.domain }}
