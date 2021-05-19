@@ -21,7 +21,7 @@ export const errorHandler = (dumpError: boolean, logger: Logger): ErrorRequestHa
     //  // try reconnect multi retry with delay
   } else {
     logger.error(err, "Catch express middleware error")
-    if (err.statusCode !== 'ERR_HTTP_HEADERS_SENT') {
+    if (err.statusCode !== 'ERR_HTTP_HEADERS_SENT' && !res.headersSent) {
       res.status(502).send(dumpError ? stringifyError(err) : '');
     }
   }

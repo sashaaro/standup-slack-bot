@@ -105,6 +105,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
             //'trace' :
             'debug' :
             'warn'
+
         return pino({
           prettyPrint: config.debug,
           level,
@@ -119,8 +120,22 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
             }
 
             return obj;
-          }
-        })
+          },
+          // hooks: {
+          //   logMethod: (inputArgs, method, level) => {
+          //
+          //   }
+          // },
+          // formatters: {
+          //   log: (obj) => {
+          //     console.log(obj)
+          //     if (obj['context'] instanceof ContextualError) {}
+          //     return obj
+          //   }
+          // },
+        },
+            config.debug ? undefined : pino.destination(`var/${process.env.APP_CONTEXT || 'app'}.log`)
+        )
       },
       deps: [CONFIG_TOKEN]
     },

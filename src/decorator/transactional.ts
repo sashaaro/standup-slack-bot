@@ -2,14 +2,14 @@ import {ConnectionException, ServerException} from "@mikro-orm/core";
 import {sleep} from "../services/utils";
 import {EntityManager} from "@mikro-orm/postgresql";
 
-export function retriedTx(
+export function transactional(
   target: object,
   propertyKey: string,
   descriptor: PropertyDescriptor
 ) {
   const originalMethod = descriptor.value;
   descriptor.value = async function (...args) {
-    const em: EntityManager = this.em
+    const em: EntityManager = this.emretriedTx
     await em.begin()
     await em.execute('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
 

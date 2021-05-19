@@ -13,7 +13,7 @@ import {
 } from "../entity";
 import {TeamDTO} from "../dto/team-dto";
 import {TEAM_STATUS_ACTIVATED, weekDayBits} from "../entity/team";
-import {retriedTx} from "../decorator/retried-tx";
+import {transactional} from "../decorator/transactional";
 import {LoadStrategy, QueryFlag} from "@mikro-orm/core";
 
 export class TeamRepository extends EntityRepository<Team> {
@@ -152,7 +152,7 @@ export class TeamRepository extends EntityRepository<Team> {
     await this.em.execute(sql)
   }
 
-  @retriedTx
+  @transactional
   async submit(teamDTO: TeamDTO): Promise<Team> {
     const em = this.em;
     await em

@@ -77,7 +77,7 @@ export class TeamSnapshot {
     return {
       users: this.users.getIdentifiers(),
       questions: [...this.questions.getItems()].sort(sortByIndex).map(q => ({
-        index: q.index, // TODO ensure correct order
+        index: q.index,
         text: q.text,
         originQuestionId: q.originQuestion.id,
         options: [...q.options.getItems()].sort(sortByIndex).map(o => ({
