@@ -46,9 +46,11 @@ export class ApiMiddleware {
     router.use(bodyParser.json());
     router.use(session({
       secret: 'e7d3kd9-standup-slack-bot-session',
-      resave: true,
-      saveUninitialized: true,
+      resave: false,
+      saveUninitialized: false,
       store: new RedisConnectStore({client: injector.get(REDIS_TOKEN)}),
+      name: 'session_id',
+      unset: 'destroy'
       // TODO ?! cookie: { secure: true }
     }))
 

@@ -7,7 +7,8 @@ import {stringifyError} from "../services/utils";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "./api.middleware";
 import {AsyncLocalStorage} from "async_hooks";
 import {User} from "../entity";
-import {Handler, ErrorRequestHandler} from "express";
+import {Handler, ErrorRequestHandler, Request, Response} from "express";
+import {v4 as uuidv4} from "uuid";
 
 export const errorHandler = (dumpError: boolean, logger: Logger): ErrorRequestHandler => (err, req, res, next) => {
   if (err instanceof AccessDenyError) {
@@ -37,7 +38,7 @@ export const emMiddleware = (mikro: MikroORM<PostgreSqlDriver>): Handler => (req
 }
 
 
-export function createAsyncLocalStorageMiddleware<T>(storage: AsyncLocalStorage<T>, valueFactory: (req, res) => Promise<T>): Handler {
+export function createAsyncLocalStorageMiddleware<T>(storage: AsyncLocalStorage<T>, valueFactory: (req: Request, res: Response) => Promise<T>): Handler {
   return (req, res, next) => {
     valueFactory(req, res).then(value => {
       storage.run(value, next)
@@ -48,14 +49,19 @@ export function createAsyncLocalStorageMiddleware<T>(storage: AsyncLocalStorage<
 }
 
 const requestContentStorage = new AsyncLocalStorage<{
-  hash: string,
+  requestId: string,
   user?: User
 }>();
 export const reqContext = () => requestContentStorage.getStore()
 
-export const requestContextMiddleware = createAsyncLocalStorageMiddleware(requestContentStorage, async () => await ({
-  hash: new Date().getTime()  + '_' + Math.random().toString().substr(-8)
-}))
+const requestIdHeader = 'X-Request-ID';
+export const requestContextMiddleware = createAsyncLocalStorageMiddleware(requestContentStorage, async (req, res) => {
+  const requestId = req.headers[requestIdHeader] || uuidv4();
+  res.setHeader(requestIdHeader, requestId);
+  return {
+    requestId
+  }
+})
 
 export const authenticate = (user: User, req?) => {
   requestContentStorage.enterWith({

@@ -24,7 +24,7 @@ spec:
       #      path: "/var/log/standup-ui"
       containers:
         - name: standup-ui
-          image: registry.digitalocean.com/simple/standup-slack-bot-ui:latest
+          image: standup-slack-bot-ui:latest
           imagePullPolicy: Never
           # TODO nginx log volumeMounts:
           #  - name: standup-ui-log

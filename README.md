@@ -87,6 +87,12 @@ https://www.digitalocean.com/docs/container-registry/quickstart/
 
 https://minikube.sigs.k8s.io/docs/handbook/pushing/#1-pushing-directly-to-the-in-cluster-docker-daemon-docker-env
 
+https://minikube.sigs.k8s.io/docs/handbook/registry/#enabling-insecure-registries
+```bash
+minikube start --insecure-registry "10.0.0.0/24"
+minikube addons enable registry
+```
+
 ```bash
 eval $(minikube -p minikube docker-env)
 docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
@@ -94,6 +100,14 @@ docker build frontend -f frontend/deploy/Dockerfile -t standup-slack-bot-ui:late
 #docker build . -f deploy/Dockerfile -t standup-slack-bot-ui:latest
 docker tag standup-slack-bot:latest registry.digitalocean.com/simple/standup-slack-bot:latest
 docker tag standup-slack-bot-ui:latest registry.digitalocean.com/simple/standup-slack-bot-ui:latest
+
+minikube image load standup-slack-bot:latest
+minikube image load standup-slack-bot-ui:latest
+#docker tag standup-slack-bot:latest $(minikube ip):5000/standup-slack-bot:latest
+#docker tag standup-slack-bot-ui:latest $(minikube ip):5000/standup-slack-bot-ui:latest
+#docker push $(minikube ip):5000/standup-slack-bot:latest
+#docker push $(minikube ip):5000/standup-slack-bot-ui:latest
+
 docker push registry.digitalocean.com/simple/standup-slack-bot:latest
 ```
 

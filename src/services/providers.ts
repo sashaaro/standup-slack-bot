@@ -25,6 +25,7 @@ import {EntityManager, PostgreSqlDriver} from "@mikro-orm/postgresql";
 import { AsyncLocalStorage } from "async_hooks";
 import * as entities from "../entity";
 import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
+import {reqContext} from "../http/middlewares";
 
 export interface IAppConfig {
   env: string,
@@ -103,7 +104,18 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
             //'trace' :
             'debug' :
             'warn',
-          // add request hash
+          mixin: () => {
+            const obj: any = {};
+            const reqCx = reqContext();
+            if (reqCx?.requestId) {
+              obj.requestId = reqCx.requestId
+            }
+            if (reqCx?.user?.id) {
+              obj.userId = reqCx.user.id
+            }
+
+            return obj;
+          }
         })
       },
       deps: [CONFIG_TOKEN]

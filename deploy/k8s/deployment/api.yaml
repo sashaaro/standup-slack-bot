@@ -38,7 +38,7 @@ spec:
             - |
               psql -U postgres -c "CREATE DATABASE standup" || echo "Already exists"
         - name: create-schema
-          image: registry.digitalocean.com/simple/standup-slack-bot:latest
+          image: standup-slack-bot:latest
           imagePullPolicy: Never #uncommend if use minikube
           #securityContext:
           #  runAsUser: node
@@ -87,13 +87,13 @@ spec:
             - name: LOG_DIR
               value: "/var/log"
         - name: fixture-db
-          image: registry.digitalocean.com/simple/standup-slack-bot:latest
+          image: standup-slack-bot:latest
           imagePullPolicy: Never
           args: [ "database:fixture" ]
           env: *appEnv
       containers:
         - name: standup-api
-          image: registry.digitalocean.com/simple/standup-slack-bot:latest
+          image: standup-slack-bot:latest
           imagePullPolicy: Never
           args: ["server:run", "--port=3000", "--env=prod"]
           ports:

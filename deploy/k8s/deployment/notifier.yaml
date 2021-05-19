@@ -24,7 +24,7 @@ spec:
             path: "/var/log/standup-notifier"
       containers:
         - name: standup-notifier
-          image: registry.digitalocean.com/simple/standup-slack-bot:latest
+          image: standup-slack-bot:latest
           imagePullPolicy: Never
           args: ["standup:notify", "--env=prod"]
           volumeMounts:
