@@ -71,7 +71,7 @@ const createConfFromEnv = (env) => ({
     password: process.env.DB_PASSWORD,
   },
   logDir: process.env.LOG_DIR,
-  debug: process.env.DEBUG !== "false" && !!process.env.DEBUG,
+  debug: !!process.env.DEBUG && !["false", "0"].includes(process.env.DEBUG),
   yandexMetrikaID: process.env.YANDEX_METRIKA_ID,
   rollBarAccessToken: process.env.ROLLBAR_ACCESS_TOKEN,
   supportTelegram: process.env.SUPPORT_TELEGRAM,

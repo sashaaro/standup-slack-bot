@@ -1,8 +1,0 @@
-clientID: "123"
-secret: "123"
-signingSecret: "123"
-domain: standup.botenza.com
-certIssuer: selfsigned
-apiImage: standup-slack-bot:latest
-uiImage: standup-slack-bot-ui:latest
-#certIssuer: letsencrypt

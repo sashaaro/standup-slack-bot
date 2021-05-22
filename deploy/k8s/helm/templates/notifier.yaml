@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: standup-notifier
+  labels:
+    app: standup-notifier
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: standup-notifier
+  template:
+    metadata:
+      labels:
+        app: standup-notifier
+    spec:
+      #securityContext:
+      #  runAsUser: 1000
+      #  runAsGroup: 1000
+      #  fsGroup: 1000
+      volumes:
+        - name: standup-notifier-log
+          hostPath:
+            path: "/var/log/standup-notifier"
+      containers:
+        - name: standup-notifier
+          image: {{ .Values.apiImage }}
+          {{- if .Values.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- end }}
+          args: ["standup:notify", "--env=prod"]
+          volumeMounts:
+            - name: standup-notifier-log
+              mountPath: /var/log
+              readOnly: false
+          env:
+            {{- include "env.main" . | indent 12 }}
+            {{- include "env.slack" . | indent 12 }}
+            {{- include "env.db" . | indent 12 }}

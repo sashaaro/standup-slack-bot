@@ -118,25 +118,32 @@ https://cert-manager.io/docs/installation/kubernetes/
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.yaml
 ```
 
-```bash
-kubectl apply -f deploy/k8s/deployment/redis.yaml
-kubectl apply -f deploy/k8s/secret/postgres-secret.yaml
-kubectl apply -f deploy/k8s/deployment/postgres.yaml
-kubectl apply -f deploy/k8s/secret/slack-api-secret.yaml
-kubectl apply -f deploy/k8s/deployment/ui.yaml
-kubectl apply -f deploy/k8s/deployment/api.yaml
-kubectl apply -f deploy/k8s/deployment/queue-consumer.yaml
-kubectl apply -f deploy/k8s/deployment/notifier.yaml
-# kubectl create secret tls app-secret-tls --cert=path/to/cert/file --key=path/to/key/file
-minikube addons enable ingress
-kubectl apply -f deploy/k8s/deployment/certificate.yaml
-kubectl apply -f deploy/k8s/standup-bot-ingress.yaml
-```
-
 ```shell
 minikube tunnel
 minikube kubectl -- get service --namespace kubernetes-dashboard # see kubernetes-dashboard service ip
 echo "192.168.49.2    standup.botenza.com" >> /etc/hosts
+
+minikube kubectl -- create namespace cattle-system
+helm install rancher rancher-stable/rancher --namespace cattle-system --set hostname=rancher.minikube,ingress.tls.source=secret
+```
+
+```bash
+cd deploy/k8s
+
+echo "password" | base64 # set to postgres-secret standup-password
+kubectl apply -f secret/postgres-secret.yaml
+kubectl apply -f deployment/postgres.yaml
+
+kubectl exec -it postgres-0 -- bash
+psql -Upostgres -W
+# execute script init-postgres.sh
+
+kubectl apply -f deployment/redis.yaml
+minikube addons enable ingress
+
+# see helm/README.md
+
+# kubectl create secret tls app-secret-tls --cert=path/to/cert/file --key=path/to/key/file
 ```
 
 Saas pkg using https://github.com/vercel/pkg

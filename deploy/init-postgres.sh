@@ -5,4 +5,5 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE USER standup;
     CREATE DATABASE standup;
     GRANT ALL PRIVILEGES ON DATABASE standup TO standup;
+    ALTER USER standup WITH ENCRYPTED PASSWORD '2druWB5DKc';
 EOSQL

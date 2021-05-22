@@ -25,7 +25,9 @@ spec:
       containers:
         - name: standup-ui
           image: {{ .Values.uiImage }}
-          imagePullPolicy: Never
+          {{- if .Values.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- end }}
           # TODO nginx log volumeMounts:
           #  - name: standup-ui-log
           #    mountPath: /var/log

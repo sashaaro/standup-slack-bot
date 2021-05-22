@@ -1,9 +1,4 @@
 {{ if eq .Values.certIssuer "selfsigned" }}
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: cert-manager-standup-bot
-  ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:

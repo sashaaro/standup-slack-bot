@@ -23,7 +23,7 @@ services:
       POSTGRES_PASSWORD: postgres
 
   redis:
-    image: redis:6.0.9-alpine
+    image: redis:6.2.3-alpine
 
   openapi-generator:
     image: openapitools/openapi-generator-cli:v5.0.1

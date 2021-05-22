@@ -74,4 +74,4 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:6.0.9-alpine
+    image: redis:6.2.3-alpine

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: standup-api
+  labels:
+    app: standup-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: standup-api
+  template:
+    metadata:
+      labels:
+        app: standup-api
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        - name: init-db-schema
+          image: {{ .Values.apiImage }}
+          {{- if .Values.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- end }}
+          args: ["database:migrate", "--env=prod"]
+      containers:
+        - name: standup-api
+          image: {{ .Values.apiImage }}
+          {{- if .Values.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- end }}
+          args: ["server:run", "--port=3000", "--env=prod"]
+          ports:
+            - containerPort: 3000
+          env:
+            {{- include "env.main" . | indent 12 }}
+            {{- include "env.slack" . | indent 12 }}
+            {{- include "env.db" . | indent 12 }}
+            - name: LOG_DIR
+              value: "/var/log"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: standup-api-service
+spec:
+  selector:
+    app: standup-api
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
