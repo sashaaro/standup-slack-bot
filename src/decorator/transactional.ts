@@ -9,7 +9,7 @@ export function transactional(
 ) {
   const originalMethod = descriptor.value;
   descriptor.value = async function (...args) {
-    const em: EntityManager = this.emretriedTx
+    const em: EntityManager = this.em
     await em.begin()
     await em.execute('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
 
