@@ -1,0 +1,4 @@
+CREATE USER standup WITH PASSWORD 'standup_123';
+CREATE DATABASE standup;
+GRANT ALL PRIVILEGES ON DATABASE standup TO standup;
+-- ALTER USER standup WITH PASSWORD 'standup_123';

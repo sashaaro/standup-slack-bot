@@ -7,12 +7,13 @@ import {CONFIG_TOKEN, LOG_TOKEN, TERMINATE} from "./services/token";
 import Rollbar from "rollbar";
 import {Logger} from "pino";
 
-let argv = yargs.option('env', {
+const argv = yargs.option('env', {
   default: 'dev',
   describe: 'Environment'
 })
 
-const env = argv.argv.env;
+const env = (argv.argv as any).env;
+
 const {providers, commands} = createProviders(env);
 // consider https://github.com/TypedProject/tsed/tree/production/packages/di
 const injector = ReflectiveInjector.resolveAndCreate(providers);

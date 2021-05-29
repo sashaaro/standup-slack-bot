@@ -32,7 +32,6 @@ export interface IAppConfig {
   slackClientID: string,
   slackSecret: string,
   slackSigningSecret: string,
-  host: string,
   debug: false,
   yandexMetrikaID?: string,
   rollBarAccessToken?: string,
@@ -62,7 +61,6 @@ const createConfFromEnv = (env) => ({
   slackClientID: process.env.SLACK_CLIENT_ID,
   slackSecret: process.env.SLACK_SECRET,
   slackSigningSecret: process.env.SLACK_SIGNING_SECRET,
-  host: process.env.HOST,
   redisHost: process.env.REDIS_HOST || 'redis',
   db: {
     host: process.env.DB_HOST,
@@ -134,7 +132,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
           //   }
           // },
         },
-            config.debug ? undefined : pino.destination(`var/${process.env.APP_CONTEXT || 'app'}.log`)
+            config.debug ? undefined : pino.destination(`var/log/${process.env.APP_CONTEXT || 'app'}.log`)
         )
       },
       deps: [CONFIG_TOKEN]

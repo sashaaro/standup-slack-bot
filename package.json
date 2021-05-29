@@ -43,7 +43,7 @@
     "pg": "^8.6.0",
     "pino": "^6.11.3",
     "pino-http": "^5.5.0",
-    "pino-pretty": "^5.0.0",
+    "pino-pretty": "^5.0.1",
     "raw-body": "^2.4.1",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",

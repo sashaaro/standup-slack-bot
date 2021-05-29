@@ -28,7 +28,7 @@ function cron(expr) {
 
     task.start()
 
-    return () => task.destroy()
+    return () => task.destroy(); // TODO undefnied?!
   })
 }
 

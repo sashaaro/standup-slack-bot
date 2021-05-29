@@ -1,9 +1,11 @@
+# docker-compose -f docker-compose.staging.yml up -d
+# docker-compose -f docker-compose.staging.yml exec postgres psql -U postgres
+# docker-compose -f docker-compose.staging.yml exec api sh
 version: "3.7"
 
 volumes:
   postgres_data: ~
-  ui_sock: ~
-  slack-api_sock: ~
+  api_sock: ~
 
 x-base-image: &base-image
   image: standup-slack-bot:latest
@@ -20,26 +22,23 @@ services:
       - "3000:3000"
     volumes:
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf
-      - ui_sock:/tmp/ui
-      - slack-api_sock:/tmp/slack-api
+      - api_sock:/tmp/api
 
   ui:
     image: standup-slack-bot-ui:latest
     build:
       dockerfile: deploy/Dockerfile
       context: frontend
-    #volumes:
-    #  - sock:/tmp ?! nginx logs?
 
   api:
     <<: *base-image
-    command: ["server:run", "--listen=/tmp/node.sock", "--env=prod"]
+    command: ["server:run", "--port=/tmp/node.sock", "--env=prod"]
     user: 1000:1000
     depends_on:
       - postgres
       - redis
     volumes:
-      - slack-api_sock:/tmp
+      - api_sock:/tmp
       - ./var:/opt/app/var
 
   standup-notifier:

@@ -8,9 +8,8 @@ cp .env.dist .env.dev
 docker-compose run --rm -u $(id -u) serve install
 docker-compose run --workdir=/opt/app/frontend --rm -u $(id -u) serve install
 
-docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREATE DATABASE standup"
-docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "CREATE USER standup WITH PASSWORD 'standup_123'"
-docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres -c "GRANT ALL PRIVILEGES ON DATABASE standup TO standup"
+docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres
+# see init-postgres.sql
 
 echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 sudo sysctl -w fs.inotify.max_user_watches=524288
@@ -120,7 +119,7 @@ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3
 
 ```shell
 minikube tunnel
-minikube kubectl -- get service --namespace kubernetes-dashboard # see kubernetes-dashboard service ip
+minikube kubectl -- -n kubernetes-dashboard get services # see kubernetes-dashboard service ip
 echo "192.168.49.2    standup.botenza.com" >> /etc/hosts
 
 minikube kubectl -- create namespace cattle-system

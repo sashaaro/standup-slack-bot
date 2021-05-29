@@ -62,7 +62,7 @@ export class AuthController {
         client_id: this.config.slackClientID,
         client_secret: this.config.slackSecret,
         code: req.query.code as string,
-        redirect_uri: `${this.config.host || `https://${req.hostname}`}/api/auth`,
+        redirect_uri: `${`https://${req.hostname}`}/api/auth`,
       }) as any
     } catch (e) {
       if (isPlatformError(e) && e.data.error === 'invalid_code') {

@@ -1,8 +1,6 @@
 {{- define "env.main" }}
 - name: DEBUG
   value: "{{ .Values.debug }}"
-- name: HOST
-  value: https://{{ .Values.domain }}
 - name: REDIS_HOST
   value: {{ .Values.redis.host }}
 {{- end }}
