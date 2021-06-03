@@ -3,7 +3,7 @@ import {Logger} from "pino";
 import {em, emStorage} from "../services/providers";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
-import {stringifyError} from "../services/utils";
+import {ContextualError, stringifyError} from "../services/utils";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "./api.middleware";
 import {AsyncLocalStorage} from "async_hooks";
 import {User} from "../entity";

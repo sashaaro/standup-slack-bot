@@ -13,7 +13,7 @@ import {GuestGuard} from './guard/guest.guard';
 
 const routes: Routes = [
   {
-    path: 'welcome',
+    path: 'about',
     component: WelcomeComponent,
     canActivate: [GuestGuard]
   },

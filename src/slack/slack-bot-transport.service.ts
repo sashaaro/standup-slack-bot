@@ -6,7 +6,7 @@ import {
   WebClient
 } from '@slack/web-api'
 import {Logger} from "pino";
-import {ContextualError, isPlatformError, sortByIndex} from "../services/utils";
+import {ContextualError, HasPreviousError, isPlatformError, sortByIndex} from "../services/utils";
 import {MessageResult} from "./model/MessageResult";
 import {OpenViewResult} from "./model/OpenViewResult";
 import {generateStandupMsg} from "./slack-blocks";
@@ -17,6 +17,16 @@ export const hasOptionQuestions = (team) => team.questions.filter(q => q.options
 export const CALLBACK_STANDUP_SUBMIT = 'standup_submit'
 export const ACTION_OPEN_DIALOG = 'open_dialog'
 
+
+class SlackMethodError extends HasPreviousError {
+  constructor(
+      message?: string,
+      public result?: any|OpenViewResult|MessageResult, // TODO remove see slack client logs by requestId?!
+      public args?: ChatPostMessageArguments
+  ) {
+    super(message);
+  }
+}
 
 @Injectable()
 export class SlackBotTransport {
@@ -138,7 +148,7 @@ export class SlackBotTransport {
     const result: OpenViewResult|any = await this.webClient.views.open(args)
 
     if (!result.ok) {
-      throw new ContextualError('openDialog', result)
+      throw new SlackMethodError('openDialog', result, args)
     }
 
     return result.view
@@ -161,13 +171,15 @@ export class SlackBotTransport {
       }
     })*/
 
-    const result = await this.postMessage({
+    const args = {
       channel: user.id,
       ...generateStandupMsg(standup),
-    } as ChatPostMessageArguments, standup.team.originTeam.workspace.accessToken);
+    } as ChatPostMessageArguments
+
+    const result = await this.postMessage(args, standup.team.originTeam.workspace.accessToken);
 
     if (!result.ok) {
-      throw new ContextualError('Send report post message error', result)
+      throw new SlackMethodError('Send report post message error', result, args)
     }
 
     return result;
@@ -236,30 +248,30 @@ export class SlackBotTransport {
     ]
     let result: MessageResult;
 
-    try {
-      result = await this.postMessage({
-        channel: standup.team.originTeam.reportChannel.id, // TODO use from snapshot?!
-        text,
-        blocks,
-      }, standup.team.originTeam.workspace.accessToken)
-    } catch (error) {
-      if (isPlatformError(error) && error.data.error === 'invalid_blocks') {
-        throw error // TODO
-      } else if (isPlatformError(error) && error.data.error === 'not_in_channel') {
+    const args = {
+      channel: standup.team.originTeam.reportChannel.id, // TODO use from snapshot?!
+      text,
+      blocks,
+    }
+    try { // todo remove try catch?!
+      result = await this.postMessage(args, standup.team.originTeam.workspace.accessToken)
+    } catch (error) {if (isPlatformError(error) && error.data.error === 'not_in_channel') {
         // TODO notify
-        this.logger.info({
+        this.logger.warn({
           channel: standup.team.originTeam.reportChannel.id,
           standup: standup.id,
         }, 'bot are not joined in report channel')
-      } else {
-        throw error
+      } else { // data.error === 'invalid_blocks'
+        const e = new SlackMethodError('Send report post message error', result, args)
+        e.previous = error
+        throw e;
       }
     }
 
     // TODO persist standup.reportMessage = result;
 
     if (!result.ok) {
-      throw new ContextualError('Send report post message error', result)
+      throw new SlackMethodError('Send report post message error', result, args)
     }
 
     this.logger.debug({result}, 'Report message')
@@ -280,18 +292,12 @@ export class SlackBotTransport {
   public async updateMessage(args: ChatUpdateArguments): Promise<MessageResult> {
     this.logger.trace(args, 'Call webClient.chat.update')
     let result: MessageResult
-    //try {
-      result = await this.webClient.chat.update({
-        ...args
-      }) as any;
-    // } catch (e) {
-    //   const error = new ContextualError('updateMessage', args)
-    //   error.previous = e;
-    //   throw error;
-    // }
+    result = await this.webClient.chat.update({
+      ...args
+    }) as any;
 
     if (!result.ok) {
-      throw new ContextualError('updateMessage', args)
+      throw new SlackMethodError('updateMessage', result)
     }
 
     return result
@@ -306,7 +312,7 @@ export class SlackBotTransport {
     const result = await this.webClient.chat.postMessage(args) as MessageResult;
 
     if (!result.ok) {
-      throw new ContextualError('webClient.chat.postMessage', args)
+      throw new SlackMethodError('webClient.chat.postMessage', result, args)
     }
 
     return result;

@@ -27,9 +27,9 @@ export class ApiStatusInterceptor implements HttpInterceptor {
           if (error.status === 403) {
             this.snackBar.open('Access denied', 'ok');
             timer(4000).subscribe(async () => {
-              const result = await this.router.navigateByUrl('/welcome');
+              const result = await this.router.navigateByUrl('/about');
               if (!result) {
-                console.warn('Access denied. Redirect to welcome error', result);
+                console.warn('Access denied. Redirect to about error', result);
               }
             });
           } else if (error.status.toString().startsWith('5')) {

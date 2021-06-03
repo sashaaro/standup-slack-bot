@@ -10,7 +10,7 @@ import {SlackAction, ViewSubmission} from "./model/ViewSubmission";
 import AnswerRequest from "../entity/answer-request";
 import {SyncSlackService} from "./sync-slack.service";
 import {QueueRegistry} from "../services/queue.registry";
-import {ContextualError} from "../services/utils";
+import {ContextualError, HasPreviousError} from "../services/utils";
 import QuestionSnapshot from "../entity/question-snapshot";
 import {generateStandupMsg} from "./slack-blocks";
 import {LOG_TOKEN} from "../services/token";
@@ -20,6 +20,12 @@ import {response} from "express";
 
 interface IEventHandler {
   (data: any): Promise<any>|any
+}
+
+export class MessageUserNotFoundError extends HasPreviousError {
+  constructor(message?: string, public messageResponse?: MessageResponse) {
+    super(message);
+  }
 }
 
 export class SlackEventListener {
@@ -36,7 +42,7 @@ export class SlackEventListener {
       const user = await em().getRepository(User).findOne({id: messageResponse.user})
 
       if (!user) { // TODO skip bot message
-        throw new ContextualError('Message author is not found', messageResponse)
+        throw new MessageUserNotFoundError('Message author is not found', messageResponse)
       }
 
       // try {

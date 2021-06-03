@@ -35,6 +35,9 @@
 }
 
 .ui.menu .item.menu-title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 5px 10px;
 }
 

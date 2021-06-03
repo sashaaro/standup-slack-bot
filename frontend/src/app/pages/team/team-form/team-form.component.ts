@@ -20,7 +20,7 @@ import {
 import {UntilDestroy, untilDestroyed} from '@ngneat/until-destroy';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Router} from '@angular/router';
-import {BehaviorSubject, combineLatest, NEVER, of, Subject} from 'rxjs';
+import {BehaviorSubject, combineLatest, fromEvent, NEVER, of, Subject} from 'rxjs';
 import {
   distinct,
   distinctUntilChanged,
@@ -89,6 +89,8 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   @ViewChild('statsDialogRef', {static: true})
   public statsDialog: TemplateRef<any>;
 
+  public searchUserControl = new FormControl();
+
   public submitting = false;
   public users$ = this.userService.getUsers();
 
@@ -98,8 +100,23 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       valueChanges(this.usersControl).pipe(
         map(selected => (selected || []).map(s => s.id))
       ),
+      valueChanges(this.searchUserControl),
     ]).pipe(
-      map(([users, selected]) => users.filter(u => !selected.includes(u.id)))
+      map(([users, selected, filterValue]) => {
+        filterValue = filterValue ? filterValue.toLowerCase() : filterValue;
+
+        users = [...users];
+        if (filterValue) {
+          users = users.filter(
+            (u: any) => (u.name + ' ' + u.profile?.first_name + ' ' + u.profile?.last_name)
+              .toLowerCase()
+              .indexOf(filterValue) === 0
+          );
+        }
+        users.filter(u => !selected.includes(u.id));
+
+        return users;
+      })
     );
 
   timezones$ = this.timezoneService.getTimezones();

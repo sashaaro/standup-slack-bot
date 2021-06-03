@@ -19,13 +19,14 @@ import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
 import {SlackEventListener} from "../slack/slack-event-listener";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {QueueRegistry} from "./queue.registry";
-import pino, {Logger} from "pino";
+import pino, {DestinationStream, Logger, LoggerOptions} from "pino";
 import {LoadStrategy, MikroORM} from "@mikro-orm/core";
 import {EntityManager, PostgreSqlDriver} from "@mikro-orm/postgresql";
 import { AsyncLocalStorage } from "async_hooks";
 import * as entities from "../entity";
 import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 import {reqContext} from "../http/middlewares";
+import pinoPretty from 'pino-pretty';
 
 export interface IAppConfig {
   env: string,
@@ -99,14 +100,9 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     {
       provide: LOG_TOKEN,
       useFactory: (config: IAppConfig) => {
-        const level = config.debug ?
-            //'trace' :
-            'debug' :
-            'warn'
-
-        return pino({
-          prettyPrint: config.debug,
-          level,
+        const pinoOptions: LoggerOptions = {
+          level: 'warn',
+          base: null, // https://github.com/pinojs/pino/blob/master/docs/api.md#base-object
           mixin: () => {
             const obj: any = {};
             const reqCx = reqContext();
@@ -119,21 +115,20 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
 
             return obj;
           },
-          // hooks: {
-          //   logMethod: (inputArgs, method, level) => {
-          //
-          //   }
-          // },
-          // formatters: {
-          //   log: (obj) => {
-          //     console.log(obj)
-          //     if (obj['context'] instanceof ContextualError) {}
-          //     return obj
-          //   }
-          // },
-        },
-            config.debug ? undefined : pino.destination(`var/log/${process.env.APP_CONTEXT || 'app'}.log`)
-        )
+          formatters: {
+            level: (label, number) => ({level: label}),
+          },
+        }
+
+        let steam: DestinationStream = pino.destination(`var/log/${process.env.APP_CONTEXT || 'app'}.log`);
+        if (config.debug) {
+          //pinoOptions.level = 'debug';
+          //pinoOptions.prettifier = pinoPretty;
+          //pinoOptions.prettyPrint = {};
+          //steam = process.stdout
+        }
+
+        return pino(pinoOptions, steam)
       },
       deps: [CONFIG_TOKEN]
     },

@@ -5,7 +5,7 @@ import {ReflectiveInjector} from "injection-js";
 import {createProviders} from "./services/providers";
 import {CONFIG_TOKEN, LOG_TOKEN, TERMINATE} from "./services/token";
 import Rollbar from "rollbar";
-import {Logger} from "pino";
+import pino, {Logger} from "pino";
 
 const argv = yargs.option('env', {
   default: 'dev',
@@ -20,6 +20,17 @@ const injector = ReflectiveInjector.resolveAndCreate(providers);
 
 const config = injector.get(CONFIG_TOKEN);
 const logger: Logger = injector.get(LOG_TOKEN);
+
+// https://getpino.io/#/docs/help?id=exit-logging
+process.on('uncaughtException', pino.final(logger, (err, finalLogger) => {
+  finalLogger.error(err, 'uncaughtException')
+  process.exit(1)
+}))
+
+process.on('unhandledRejection', pino.final(logger, (err, finalLogger) => {
+  finalLogger.error(err, 'unhandledRejection')
+  process.exit(1)
+}))
 
 logger.info({env, debug: config.debug}, `Start `)
 

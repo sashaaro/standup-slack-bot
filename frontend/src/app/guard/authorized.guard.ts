@@ -33,7 +33,7 @@ export class AuthorizedGuard implements CanActivate, CanActivateChild {
           return true
         }
 
-        return this.router.createUrlTree(['welcome'])
+        return this.router.createUrlTree(['about']);
       })
     );
   }

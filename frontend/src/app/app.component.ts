@@ -1,7 +1,7 @@
 import {Component, Inject, OnInit} from '@angular/core';
 import {SessionService} from './service/session.service';
 import {NavigationEnd, Router} from '@angular/router';
-import {SERVER_ERR_TOKEN} from './tokens';
+import {AUTH_LINK_TOKEN, SERVER_ERR_TOKEN} from './tokens';
 import {ReplaySubject, Subject} from 'rxjs';
 import {UntilDestroy, untilDestroyed} from '@ngneat/until-destroy';
 import {filter} from "rxjs/operators";
@@ -19,7 +19,8 @@ export class AppComponent implements OnInit {
   constructor(
     private sessionService: SessionService,
     private router: Router,
-    @Inject(SERVER_ERR_TOKEN) public serverErr$: ReplaySubject<any>
+    @Inject(SERVER_ERR_TOKEN) public serverErr$: ReplaySubject<any>,
+    @Inject(AUTH_LINK_TOKEN) public authLink: string
   ) {
   }
 
@@ -36,7 +37,7 @@ export class AppComponent implements OnInit {
   // tslint:disable-next-line:typedef
   logout() {
     this.sessionService.logout().subscribe(_ => {
-      this.router.navigateByUrl('/welcome');
+      this.router.navigateByUrl('/about');
     });
   }
 }

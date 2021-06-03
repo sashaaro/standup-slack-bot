@@ -1,17 +1,22 @@
 .welcome {
-  margin-top: 50px;
   text-align: center;
   padding: 20px 15px;
-}
 
-.welcome__title {
-  font-size: 35px;
-  font-weight: 600;
-  margin-top: 30px;
-  margin-bottom: 50px;
-}
+  &__title {
+    font-size: 30px;
+    font-weight: 500;
+    margin-top: 20px;
+    margin-bottom: 30px;
+  }
 
-.welcome .logo {
-  height: 50px;
-  margin: 0 auto 10px auto;
+  &__desc {
+    font-size: 24px;
+    margin-bottom: 30px;
+  }
+
+  .logo {
+    height: 120px;
+    width: 120px;
+    margin: 0 auto 10px auto;
+  }
 }

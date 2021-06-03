@@ -7,11 +7,10 @@ body {
   background-color: #f2f2f2;
   background-image: url("https://html5book.ru/wp-content/uploads/2015/06/background28.jpg");
   background-size: 270px ;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
-* {
-  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+body, * {
+  font-family: 'Roboto', 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
 }
 
 
@@ -40,8 +39,15 @@ body {
   }
 }
 
+.add-to-slack {
+  font-size: 18px;
+}
 
 .icon.color-slack {
+  display: inline-block;
+  margin-right: 5px;
+  min-height: 1em;
+  min-width: 1em;
   background-image: url("/assets/slack.svg");
   background-position: center center;
   background-repeat: no-repeat no-repeat;
@@ -149,6 +155,7 @@ body {
   .mat-option-text {
     display: flex!important;
     align-items: center!important;
+    font-weight: 500;
   }
 }
 

@@ -11,7 +11,6 @@ import {Logger} from "pino";
 import {TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, teamStatuses} from "../../entity/team";
 import {reqContext} from "../middlewares";
 import {authorized} from "../../decorator/authorized";
-import {ContextualError} from "../../services/utils";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -149,8 +148,6 @@ export class TeamController {
     }
 
     res.send(classToPlain(team, {strategy: 'excludeAll', groups: ["edit"]}));
-
-    //throw new ContextualError('Req error', {specialKey:11, ddd: '23423'})
   }
 
   @authorized

@@ -39,8 +39,23 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {ApiStatusInterceptor} from './interceptor/api-status.interceptor';
-import {SERVER_ERR_TOKEN} from './tokens';
+import {AUTH_LINK_TOKEN, SERVER_ERR_TOKEN} from './tokens';
 import {ReplaySubject, Subject} from 'rxjs';
+import {environment} from "../environments/environment";
+
+
+const scopes = [
+  'team:read',
+  'channels:read',
+  'chat:write',
+  'users:read',
+  'users:write',
+  'groups:read',
+  'im:read',
+  'im:write',
+  'im:history',
+];
+
 
 @NgModule({
   declarations: [
@@ -101,6 +116,10 @@ import {ReplaySubject, Subject} from 'rxjs';
     {
       provide: SERVER_ERR_TOKEN,
       useValue: new ReplaySubject(1)
+    },
+    {
+      provide: AUTH_LINK_TOKEN,
+      useFactory: () => `https://slack.com/oauth/v2/authorize?client_id=${environment.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${location.origin}/api/auth`
     }
   ],
   bootstrap: [AppComponent]

@@ -1,18 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import {environment} from "../../../environments/environment";
-
-const scopes = [
-  'team:read',
-  'channels:read',
-  'chat:write',
-  'users:read',
-  'users:write',
-  'groups:read',
-  'im:read',
-  'im:write',
-  'im:history',
-];
-
+import {Component, Inject, OnInit} from '@angular/core';
+import {AUTH_LINK_TOKEN} from "../../tokens";
 
 @Component({
   selector: 'app-welcome',
@@ -21,9 +8,8 @@ const scopes = [
 })
 export class WelcomeComponent implements OnInit {
   // https://api.slack.com/authentication/basics#installing
-  authLink = `https://slack.com/oauth/v2/authorize?client_id=${environment.slackClientID}&scope=${scopes.join(',')}&redirect_uri=${location.origin}/api/auth`
 
-  constructor() { }
+  constructor(@Inject(AUTH_LINK_TOKEN) public authLink: string) { }
 
   ngOnInit(): void {
   }

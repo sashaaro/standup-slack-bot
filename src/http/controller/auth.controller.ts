@@ -8,11 +8,17 @@ import {AccessDenyError, ResourceNotFoundError} from "../api.middleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
 import {Logger} from "pino";
 import {SyncSlackService} from "../../slack/sync-slack.service";
-import {ContextualError, isPlatformError} from "../../services/utils";
+import {HasPreviousError, isPlatformError} from "../../services/utils";
 import SlackWorkspace from "../../entity/slack-workspace";
 import {User} from "../../entity";
 import {bind} from "../../decorator/bind";
 import {authenticate, reqContext} from "../middlewares";
+
+class OAuthError extends HasPreviousError {
+  constructor(message?: string, public response?: OauthAccessResponse) {
+    super(message);
+  }
+}
 
 @Injectable()
 export class AuthController {
@@ -78,7 +84,7 @@ export class AuthController {
 
     if (!response.ok) {
       // LOG ?
-      throw new ContextualError('Oauth is not ok', response)
+      throw new OAuthError('Oauth is not ok', response)
     }
 
     const workspaceRepository = em().getRepository(SlackWorkspace);
