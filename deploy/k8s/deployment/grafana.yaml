@@ -50,7 +50,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: postgres-secret
-                  key: postgres-password
+                  key: password
             - name: DB_DATABASE
               value: grafana
           ports:

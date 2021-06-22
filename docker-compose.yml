@@ -26,7 +26,7 @@ services:
     image: redis:6.2.3-alpine
 
   openapi-generator:
-    image: openapitools/openapi-generator-cli:v5.0.1
+    image: openapitools/openapi-generator-cli:v5.1.1
     user: "1000"
     volumes:
       - .:/opt/app
@@ -39,4 +39,4 @@ services:
   tunnel:
     image: jpillora/chisel:latest
     network_mode: host
-    command: "client botenza.com:8080 R:3000:3000"
+    command: "client botenza.net:8080 R:3000:3000"

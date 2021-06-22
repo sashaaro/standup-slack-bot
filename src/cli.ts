@@ -2,10 +2,12 @@
 import "reflect-metadata";
 import yargs, {Arguments} from "yargs";
 import {ReflectiveInjector} from "injection-js";
-import {createProviders} from "./services/providers";
-import {CONFIG_TOKEN, LOG_TOKEN, TERMINATE} from "./services/token";
+import {createConfFromEnv, createLogger, createProviders} from "./services/providers";
+import {TERMINATE} from "./services/token";
 import Rollbar from "rollbar";
 import pino, {Logger} from "pino";
+import fs from "fs";
+import dotenv from "dotenv";
 
 const argv = yargs.option('env', {
   default: 'dev',
@@ -14,12 +16,11 @@ const argv = yargs.option('env', {
 
 const env = (argv.argv as any).env;
 
-const {providers, commands} = createProviders(env);
-// consider https://github.com/TypedProject/tsed/tree/production/packages/di
-const injector = ReflectiveInjector.resolveAndCreate(providers);
-
-const config = injector.get(CONFIG_TOKEN);
-const logger: Logger = injector.get(LOG_TOKEN);
+if (fs.existsSync(`.env.${env}`)) {
+  dotenv.config({path: `.env.${env}`})
+}
+const config = createConfFromEnv(env);
+const logger: Logger = createLogger(config);
 
 // https://getpino.io/#/docs/help?id=exit-logging
 process.on('uncaughtException', pino.final(logger, (err, finalLogger) => {
@@ -32,7 +33,11 @@ process.on('unhandledRejection', pino.final(logger, (err, finalLogger) => {
   process.exit(1)
 }))
 
-logger.info({env, debug: config.debug}, `Start `)
+const {providers, commands} = createProviders(config, logger);
+// consider https://github.com/TypedProject/tsed/tree/production/packages/di
+const injector = ReflectiveInjector.resolveAndCreate(providers);
+
+logger.info({env, debug: config.debug}, `Start`)
 
 injector.get(TERMINATE).subscribe(() => {
   logger.info('Terminate...')

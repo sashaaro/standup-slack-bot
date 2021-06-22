@@ -1,13 +1,9 @@
 apiVersion: cert-manager.io/v1
 kind: Issuer
-{{ if eq .Values.certIssuer "selfsigned" }}
-metadata:
-  name: selfsigned-issuer
-spec:
-  selfSigned: { }
----
-{{ end }}
-{{ if eq .Values.certIssuer "letsencrypt" }}
+#metadata:
+#  name: selfsigned-issuer
+#spec:
+#  selfSigned: { }
 metadata:
   name: letsencrypt-issuer
 spec:
@@ -20,16 +16,15 @@ spec:
           ingress:
             class: nginx
 ---
-{{ end }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: standup-bot-cert
+  name: grafana-cert-secret
 spec:
-  secretName: standup-bot-cert-secret
+  secretName: grafana-cert-secret
   issuerRef:
     kind: Issuer
-    name: {{ .Values.certIssuer }}-issuer
-  commonName: {{ .Values.domain }}
+    name: letsencrypt-issuer
+  commonName: grafana.botenza.com
   dnsNames:
-    - {{ .Values.domain }}
+    - grafana.botenza.com

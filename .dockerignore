@@ -1,6 +1,6 @@
 node_modules
 dist
 deploy
-var
+var/log/*.log
 resources/public/*.css
 frontend

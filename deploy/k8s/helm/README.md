@@ -7,6 +7,7 @@ kubectl apply -f secret/postgres-secret.yaml --namespace standup-bot-ns
 
 #for minikube
 helm install standup-bot -n standup-bot-ns . --set domain=standup.minikube --set certIssuer=selfsigned --set imagePullPolicy=Never --set debug=1
+helm upgrade standup-bot -n standup-bot-ns . --set domain=standup.botenza.com --set certIssuer=letsencrypt --set debug=0 --set apiImage=registry.digitalocean.com/simple/standup-slack-bot:latest --set uiImage=registry.digitalocean.com/simple/standup-slack-bot-ui:latest
 helm upgrade standup-bot -n standup-bot-ns . .....
 
 echo $(standup.minikube) standup.minikube >> /etc/hosts 
@@ -23,7 +24,9 @@ helm install standup-bot -n standup-bot-ns . --set domain=standup.botenza.com --
 
 https://cert-manager.io/docs/installation/kubernetes/
 
+```shell
 kubectl apply -f deploy/k8s/deployment/certificate.yaml
+```
 
 helm install prometheus prometheus-community/prometheus
 

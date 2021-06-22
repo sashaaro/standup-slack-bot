@@ -26,7 +26,6 @@ import { AsyncLocalStorage } from "async_hooks";
 import * as entities from "../entity";
 import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 import {reqContext} from "../http/middlewares";
-import pinoPretty from 'pino-pretty';
 
 export interface IAppConfig {
   env: string,
@@ -57,7 +56,7 @@ export const QUEUE_NAME_SLACK_INTERACTIVE = 'slack_interactive';
 export const emStorage = new AsyncLocalStorage<EntityManager<PostgreSqlDriver>>();
 export const em = () => emStorage.getStore()
 
-const createConfFromEnv = (env) => ({
+export const createConfFromEnv = (env) => ({
   env,
   slackClientID: process.env.SLACK_CLIENT_ID,
   slackSecret: process.env.SLACK_SECRET,
@@ -69,20 +68,48 @@ const createConfFromEnv = (env) => ({
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
   },
-  logDir: process.env.LOG_DIR,
+  logDir: process.env.LOG_DIR, // TODO remove?
   debug: !!process.env.DEBUG && !["false", "0"].includes(process.env.DEBUG),
   yandexMetrikaID: process.env.YANDEX_METRIKA_ID,
   rollBarAccessToken: process.env.ROLLBAR_ACCESS_TOKEN,
   supportTelegram: process.env.SUPPORT_TELEGRAM,
 } as IAppConfig)
 
-// TODO https://github.com/microsoft/tsyringe ?!
-export const createProviders = (env = 'dev'): {providers: Provider[], commands: Provider[]} => {
-  if (fs.existsSync(`.env.${env}`)) {
-    dotenv.config({path: `.env.${env}`})
-  }
-  const config = createConfFromEnv(env);
 
+export const createLogger = (config: IAppConfig): Logger => {
+  const pinoOptions: LoggerOptions = {
+    level: 'warn',
+    base: null, // https://github.com/pinojs/pino/blob/master/docs/api.md#base-object
+    mixin: () => {
+      const obj: any = {};
+      const reqCx = reqContext();
+      if (reqCx?.requestId) {
+        obj.requestId = reqCx.requestId
+      }
+      if (reqCx?.user?.id) {
+        obj.userId = reqCx.user.id
+      }
+
+      return obj;
+    },
+    formatters: {
+      level: (label, number) => ({level: label}),
+    },
+  }
+
+  let steam: DestinationStream = pino.destination(`var/log/${process.env.APP_CONTEXT || 'app'}.log`);
+  if (config.debug) {
+    //pinoOptions.level = 'debug';
+    //pinoOptions.prettifier = pinoPretty;
+    //pinoOptions.prettyPrint = {};
+    //steam = process.stdout
+  }
+
+  return pino(pinoOptions, steam)
+}
+
+// TODO https://github.com/microsoft/tsyringe ?!
+export const createProviders = (config: IAppConfig, logger: Logger): {providers: Provider[], commands: Provider[]} => {
   let providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,
@@ -99,37 +126,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
     },
     {
       provide: LOG_TOKEN,
-      useFactory: (config: IAppConfig) => {
-        const pinoOptions: LoggerOptions = {
-          level: 'warn',
-          base: null, // https://github.com/pinojs/pino/blob/master/docs/api.md#base-object
-          mixin: () => {
-            const obj: any = {};
-            const reqCx = reqContext();
-            if (reqCx?.requestId) {
-              obj.requestId = reqCx.requestId
-            }
-            if (reqCx?.user?.id) {
-              obj.userId = reqCx.user.id
-            }
-
-            return obj;
-          },
-          formatters: {
-            level: (label, number) => ({level: label}),
-          },
-        }
-
-        let steam: DestinationStream = pino.destination(`var/log/${process.env.APP_CONTEXT || 'app'}.log`);
-        if (config.debug) {
-          //pinoOptions.level = 'debug';
-          //pinoOptions.prettifier = pinoPretty;
-          //pinoOptions.prettyPrint = {};
-          //steam = process.stdout
-        }
-
-        return pino(pinoOptions, steam)
-      },
+      useValue: logger,
       deps: [CONFIG_TOKEN]
     },
     {
@@ -202,7 +199,7 @@ export const createProviders = (env = 'dev'): {providers: Provider[], commands: 
   ]
 
   let commandProviders = [...commands]
-  if (env !== "prod") {
+  if (config.env !== "prod") {
     commandProviders = [...commandProviders, ...devCommands]
   }
 

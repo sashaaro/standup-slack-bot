@@ -96,18 +96,15 @@ minikube addons enable registry
 eval $(minikube -p minikube docker-env)
 docker build . -f deploy/Dockerfile -t standup-slack-bot:latest
 docker build frontend -f frontend/deploy/Dockerfile -t standup-slack-bot-ui:latest
-#docker build . -f deploy/Dockerfile -t standup-slack-bot-ui:latest
 docker tag standup-slack-bot:latest registry.digitalocean.com/simple/standup-slack-bot:latest
 docker tag standup-slack-bot-ui:latest registry.digitalocean.com/simple/standup-slack-bot-ui:latest
 
 minikube image load standup-slack-bot:latest
 minikube image load standup-slack-bot-ui:latest
-#docker tag standup-slack-bot:latest $(minikube ip):5000/standup-slack-bot:latest
-#docker tag standup-slack-bot-ui:latest $(minikube ip):5000/standup-slack-bot-ui:latest
-#docker push $(minikube ip):5000/standup-slack-bot:latest
-#docker push $(minikube ip):5000/standup-slack-bot-ui:latest
 
+doctl registry login
 docker push registry.digitalocean.com/simple/standup-slack-bot:latest
+docker push registry.digitalocean.com/simple/standup-slack-bot-ui:latest
 ```
 
 
@@ -131,7 +128,7 @@ cd deploy/k8s
 
 echo "password" | base64 # set to postgres-secret standup-password
 kubectl apply -f secret/postgres-secret.yaml
-kubectl apply -f deployment/postgres.yaml
+kubectl apply -f deployment/postgres.yaml # grafana loki  promtail
 
 kubectl exec -it postgres-0 -- bash
 psql -Upostgres -W

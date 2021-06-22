@@ -34,6 +34,10 @@ spec:
           args: ["server:run", "--port=3000", "--env=prod"]
           ports:
             - containerPort: 3000
+          volumeMounts:
+            - name: standup-api-log
+              mountPath: /var/log
+              readOnly: false
           env:
             {{- include "env.main" . | indent 12 }}
             {{- include "env.slack" . | indent 12 }}

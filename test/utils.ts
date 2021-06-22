@@ -5,7 +5,7 @@ import {Channel, Question, SlackWorkspace, Team, Timezone, User} from "../src/en
 import {TEAM_STATUS_ACTIVATED} from "../src/entity/team";
 import {EntityManager} from "@mikro-orm/postgresql";
 
-const {providers} = createProviders( 'test');
+const {providers} = createProviders({} as any, {} as any); // TODO
 
 /*loggerProvider.useFactory = () => {
   const logger = createLogger()
