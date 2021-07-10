@@ -39,7 +39,7 @@ export class SlackEventListener {
         return;
       }
 
-      const user = await em().getRepository(User).findOne({id: messageResponse.user})
+      const user = await em().getRepository(User).findOne({id: messageResponse.user}, ['workspace'])
 
       if (!user) { // TODO skip bot message
         throw new MessageUserNotFoundError('Message author is not found', messageResponse)
@@ -63,8 +63,8 @@ export class SlackEventListener {
       //     return;
       //   }
       // }
-
-      return await this.slackBotTransport.sendMessage(user, "Click \"Open dialog\" above")
+      
+      return await this.slackBotTransport.sendMessage(user, `I will remind you next time for standup`); // TODO more info
     },
     error: (data) => this.logger.error(data, 'Receive slack events error'),
     member_left_channel: async (response: MemberJoinedChannel) => { // TODO left interface
@@ -86,7 +86,8 @@ export class SlackEventListener {
       });
     },
     app_home_opened: async (response) => {
-      console.log(response)
+      // TODO
+      //console.log(response)
       const {type, user, channel, tab, text, subtype} = response;
 
       // this.webClient.views.publish({

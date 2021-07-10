@@ -130,7 +130,7 @@ export class SlackBotTransport {
         })
       }
 
-      const isLast = question === standup.team.questions[standup.team.questions.length]
+      const isLast = question === standup.team.questions[standup.team.questions.length - 1]
       if (!isLast) {
         view.blocks.push({
           type: "divider"

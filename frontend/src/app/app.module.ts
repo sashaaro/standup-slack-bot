@@ -39,9 +39,9 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {ApiStatusInterceptor} from './interceptor/api-status.interceptor';
-import {AUTH_LINK_TOKEN, SERVER_ERR_TOKEN} from './tokens';
+import {AUTH_LINK_TOKEN, NOT_FOUND_TOKEN, SERVER_ERR_TOKEN} from './tokens';
 import {ReplaySubject, Subject} from 'rxjs';
-import {environment} from "../environments/environment";
+import {environment} from '../environments/environment';
 
 
 const scopes = [
@@ -115,6 +115,10 @@ const scopes = [
     },
     {
       provide: SERVER_ERR_TOKEN,
+      useValue: new ReplaySubject(1)
+    },
+    {
+      provide: NOT_FOUND_TOKEN,
       useValue: new ReplaySubject(1)
     },
     {

@@ -9,7 +9,7 @@ import {Observable, ReplaySubject, Subject, timer} from 'rxjs';
 import {tap} from 'rxjs/operators';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
-import {SERVER_ERR_TOKEN} from '../tokens';
+import {NOT_FOUND_TOKEN, SERVER_ERR_TOKEN} from '../tokens';
 
 @Injectable()
 export class ApiStatusInterceptor implements HttpInterceptor {
@@ -17,14 +17,17 @@ export class ApiStatusInterceptor implements HttpInterceptor {
   constructor(
     public snackBar: MatSnackBar,
     public router: Router,
-    @Inject(SERVER_ERR_TOKEN) private serverErr: ReplaySubject<any>
+    @Inject(SERVER_ERR_TOKEN) private serverErr: ReplaySubject<any>,
+    @Inject(NOT_FOUND_TOKEN) private notFound: ReplaySubject<any>
   ) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     return next.handle(request).pipe(tap({
       error: (error: HttpErrorResponse) => {
         if (request.url.search(window.location.origin + '/api') === 0) {
-          if (error.status === 403) {
+          if (error.status === 404) {
+            this.notFound.next(true);
+          } else if (error.status === 403) {
             this.snackBar.open('Access denied', 'ok');
             timer(4000).subscribe(async () => {
               const result = await this.router.navigateByUrl('/about');

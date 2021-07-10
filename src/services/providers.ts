@@ -9,9 +9,7 @@ import actions from "../http/controller";
 import {LogLevel, WebClient} from '@slack/web-api'
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import {createEventAdapter} from "@slack/events-api";
-import * as fs from "fs";
 import IOredis from 'ioredis';
-import dotenv from "dotenv";
 import {commands, devCommands} from "../command";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
@@ -99,10 +97,10 @@ export const createLogger = (config: IAppConfig): Logger => {
 
   let steam: DestinationStream = pino.destination(`var/log/${process.env.APP_CONTEXT || 'app'}.log`);
   if (config.debug) {
-    //pinoOptions.level = 'debug';
-    //pinoOptions.prettifier = pinoPretty;
-    //pinoOptions.prettyPrint = {};
-    //steam = process.stdout
+    pinoOptions.level = 'debug';
+    pinoOptions.prettifier = true;
+    pinoOptions.prettyPrint = {};
+    steam = process.stdout
   }
 
   return pino(pinoOptions, steam)

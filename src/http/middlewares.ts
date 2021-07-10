@@ -17,6 +17,7 @@ export const errorHandler = (dumpError: boolean, logger: Logger): ErrorRequestHa
     res.status(400).send();
   } else if (err instanceof ResourceNotFoundError) {
     res.status(404).send();
+    logger.debug(err, "404")
     // } else if (err instanceof ConnectionException) { // mysql disconnect..
     //  // try reconnect multi retry with delay
   } else {
@@ -76,6 +77,12 @@ export const authenticate = (user: User, req?) => {
 export const apiContextMiddleware = (log: Logger): Handler => async (req, res, next) => {
   const userID = req.session['user_id'];
   let user: User;
+
+  // const err = new ContextualError('shit happends 2', {deep: 2})
+  // err.previous = new ContextualError('shit happens 1', {deep: 1})
+  // log.error({err, dd: 1}, 'shit msg')
+  // log.error(err, 'shit msg')
+
   if (userID && typeof userID === "string") {
     user = await em()
       .createQueryBuilder(User, 'u')

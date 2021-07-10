@@ -25,6 +25,10 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- end }}
           args: ["database:migrate", "--env=prod"]
+      volumes:
+        - name: standup-api-log
+          hostPath:
+            path: "/var/log/standup-api"
       containers:
         - name: standup-api
           image: {{ .Values.apiImage }}

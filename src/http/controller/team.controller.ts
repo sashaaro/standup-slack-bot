@@ -11,6 +11,7 @@ import {Logger} from "pino";
 import {TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, teamStatuses} from "../../entity/team";
 import {reqContext} from "../middlewares";
 import {authorized} from "../../decorator/authorized";
+import {NotFoundError} from "@mikro-orm/core";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -96,14 +97,14 @@ export class TeamController {
   }
 
   @authorized
- async edit(req, res) {
+  async edit(req, res) {
     const teamDTO = new TeamDTO();
     const errors = this.handleRequest(req.body, teamDTO);
 
     const tem = await em();
     const id = req.params.id as number|any;
 
-    const teamRepo = tem.getRepository(Team) as TeamRepository
+    const teamRepo = tem.getRepository(Team) as TeamRepository;
     const team = await teamRepo.findActiveById(id);
 
     if (!team) {
@@ -120,12 +121,32 @@ export class TeamController {
 
     res.setHeader('Content-Type', 'application/json');
     if (errors.length === 0) {
-      teamDTO.id = team.id
-      const updatedTeam = await teamRepo.submit(teamDTO);
+      teamDTO.id = team.id;
+      let updatedTeam: Team;
+      try {
+          updatedTeam = await teamRepo.submit(teamDTO);
+      } catch (e) {
+        if (e instanceof NotFoundError) {
+            const er = new ResourceNotFoundError('Team is not found');
+            er.previous = e;
+            throw er;
+        } else {
+            throw e;
+        }
+      }
+      this.clearTeam(updatedTeam);
       res.send(classToPlain(updatedTeam, {strategy: 'excludeAll', groups: ["edit"]}));
     } else {
       res.status(400).send(errors);
     }
+  }
+
+  private clearTeam(team: Team)
+  {
+    team.questions.set(team.questions.getItems().filter(v => v.isEnabled))
+    team.questions.getItems().forEach(q => {
+      q.options.set(q.options.getItems().filter(v => v.isEnabled))
+    });
   }
 
   @authorized

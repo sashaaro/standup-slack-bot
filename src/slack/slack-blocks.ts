@@ -11,7 +11,7 @@ export const generateStandupMsg = (standup: Standup, submitted = false, reportLi
     type: 'section',
     text: {
       type: 'mrkdwn',
-      text: `it's time for *${standup.team.originTeam.name}* standup.${submitted ? ' :white_check_mark:' : ''}${reportLink ? ' Done. ' + openReportLink : ''}`, // openReportLink
+      text: `it's time for *${standup.team.originTeam.name}* standup.${submitted ? ' :white_check_mark:' : ''}${reportLink ?  ':page_facing_up: ' + openReportLink : ''}`, // openReportLink
       // done  => add attachment
     },
   }

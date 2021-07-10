@@ -238,17 +238,20 @@ export class TeamRepository extends EntityRepository<Team> {
 
     const team = await em.findOneOrFail(Team, {
       id: teamDTO.id,
-      questions: {
+      /*questions: {
         isEnabled: true,
         options: {
           isEnabled: true
         }
-      } as any
+      } as any*/
     }, {
       populate: ['users', 'questions', 'questions.options'],
       refresh: true,
       strategy: LoadStrategy.JOINED
     })
+
+
+
     const lastSnapshot = await this.findSnapshot(team, em);
     const newSnapshot = this.createSnapshot(team);
     if (!lastSnapshot || !lastSnapshot.equals(newSnapshot)) {

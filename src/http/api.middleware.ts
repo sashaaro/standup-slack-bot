@@ -22,13 +22,14 @@ import {StatController} from "./controller/stat.controller";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {SlackEventListener} from "../slack/slack-event-listener";
+import {HasPreviousError} from "../services/utils";
 
 const RedisConnectStore = createRedisConnectStore(session);
 
 export class AccessDenyError extends Error {
 }
 
-export class ResourceNotFoundError extends Error {
+export class ResourceNotFoundError extends HasPreviousError {
 }
 
 export class BadRequestError extends Error {
