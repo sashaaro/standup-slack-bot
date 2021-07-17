@@ -95,7 +95,7 @@ export const createLogger = (config: IAppConfig): Logger => {
     },
   }
 
-  let steam: DestinationStream = pino.destination(`var/log/${process.env.APP_CONTEXT || 'app'}.log`);
+  let steam: DestinationStream = pino.destination(`${config.logDir || 'var/log'}/${process.env.APP_CONTEXT || 'app'}.log`);
   if (config.debug) {
     pinoOptions.level = 'debug';
     pinoOptions.prettifier = true;

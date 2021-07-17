@@ -18,6 +18,10 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+      volumes:
+        - name: standup-queue-consumer-log
+          hostPath:
+            path: "/var/log/standup-queue-consumer"
       containers:
         - name: queue-consumer
           image: {{ .Values.apiImage }}

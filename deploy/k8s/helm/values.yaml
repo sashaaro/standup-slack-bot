@@ -1,12 +1,12 @@
 clientID: NjQ2MjQyODI3MDA4Ljk4ODQwNTc3MDQ4Mg== #646242827008.988405770482
 secret: ZjI4MmE4NTA2ZjMwZWI2OGVjYmU3NjYzNzM2Mzc3OWY= #f282a8506f30eb68ecbe76637363779f
 signingSecret: NmM4MzQ5ODQxNGQ4ODMwYjkxYTY0OTE3YjBlN2NiMDA= #6c83498414d8830b91a64917b0e7cb00
-domain: standup.botenza.com
+domain: standup.botenza.minikube
 certIssuer: selfsigned # letsencrypt / none
 apiImage: standup-slack-bot:latest
 uiImage: standup-slack-bot-ui:latest
-imagePullPolicy: ~ # 'Never' # for minikube
-debug: 0
+imagePullPolicy: Never # Never for minikube
+debug: 1
 pg:
   host: postgres.default
   database: standup
