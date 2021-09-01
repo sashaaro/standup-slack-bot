@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   serve:
-    image: node:14.16.1-alpine
+    image: node:14.17.6-alpine
     entrypoint: npm
     command: ["run", "watch"]
     user: 1000:1000
@@ -16,17 +16,17 @@ services:
       - postgres
 
   postgres:
-    image: postgres:13.3-alpine
+    image: postgres:13.4-alpine
     ports:
       - "5432:5432"
     environment:
       POSTGRES_PASSWORD: postgres
 
   redis:
-    image: redis:6.2.3-alpine
+    image: redis:6.2.5-alpine
 
   openapi-generator:
-    image: openapitools/openapi-generator-cli:v5.1.1
+    image: openapitools/openapi-generator-cli:v5.2.1
     user: "1000"
     volumes:
       - .:/opt/app
