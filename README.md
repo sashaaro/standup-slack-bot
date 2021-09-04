@@ -89,6 +89,7 @@ https://minikube.sigs.k8s.io/docs/handbook/pushing/#1-pushing-directly-to-the-in
 https://minikube.sigs.k8s.io/docs/handbook/registry/#enabling-insecure-registries
 ```bash
 minikube start --insecure-registry "10.0.0.0/24"
+minikube addons enable ingress
 minikube addons enable registry
 ```
 
@@ -135,7 +136,6 @@ psql -Upostgres -W
 # execute script init-postgres.sh
 
 kubectl apply -f deployment/redis.yaml
-minikube addons enable ingress
 
 # see helm/README.md
 

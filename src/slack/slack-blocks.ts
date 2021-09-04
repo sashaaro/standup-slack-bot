@@ -5,13 +5,14 @@ import {ChatUpdateArguments} from "@slack/web-api";
 
 export const generateStandupMsg = (standup: Standup, submitted = false, reportLink = null): Partial<ChatUpdateArguments> => {
   const fallbackText =  `It's time to start your daily standup ${standup.team.originTeam.name}`;
-  const openReportLink = `<${reportLink}|Open report>`;
 
+  const headerText =
+      `it's time for *${standup.team.originTeam.name}* standup.${submitted ? ' :white_check_mark:' : ''}${reportLink ?  ' :page_facing_up: ' + ` <${reportLink}|Report>` : ''}`;
   const sectionBlock: SectionBlock = {
     type: 'section',
     text: {
       type: 'mrkdwn',
-      text: `it's time for *${standup.team.originTeam.name}* standup.${submitted ? ' :white_check_mark:' : ''}${reportLink ?  ':page_facing_up: ' + openReportLink : ''}`, // openReportLink
+      text: headerText,
       // done  => add attachment
     },
   }

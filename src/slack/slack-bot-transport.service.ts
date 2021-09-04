@@ -187,7 +187,7 @@ export class SlackBotTransport {
 
   async sendReport(standup: Standup): Promise<MessageResult['message']> {
     const answersBlocks = []
-    for (const userStandup of standup.users) {
+    for (const userStandup of standup.users.getItems()) {
       const user = userStandup.user;
 
       let body = '';

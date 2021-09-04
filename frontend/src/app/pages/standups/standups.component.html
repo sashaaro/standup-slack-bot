@@ -16,11 +16,11 @@
         <div class="stand-up-item__results" [style.--question-rows]="ceil(userStandup.answers.length / 2)">
           <div *ngFor="let answer of userStandup.answers; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index % 5">
             <div class="stand-up-item__question">{{ answer.question.text }}</div>
-            <div class="stand-up-item__answer" *ngIf="answer.option">
-              <div *ngFor="let option of answer.question.options" [class.active]="option.id === answer.option.id">{{ option.text }}</div>
-            </div>
-            <div class="stand-up-item__answer">
-              <div class="active">{{ answer.answerMessage }}</div>
+            <div class="stand-up-item__answer" [class.stand-up-item__answer--options]="answer.option">
+              <ng-container *ngIf="answer.option">
+                <div *ngFor="let option of answer.question.options" [class.active]="option.id === answer.option.id">{{ option.text }}</div>
+              </ng-container>
+              <div *ngIf="!answer.option">{{ answer.answerMessage }}</div>
             </div>
           </div>
         </div>

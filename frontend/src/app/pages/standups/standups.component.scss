@@ -130,12 +130,21 @@ app-team {
   &__answer {
     font-size: 16px;
     //font-style: italic;
-    > div {
-      opacity: 0.18;
-      &.active {
-        opacity: 1;
-      }
 
+    &--options {
+      > div {
+        opacity: 0.18;
+        &.active {
+          opacity: 1;
+          background-color: #e6ffe5;
+          border-radius: 8px;
+          box-shadow: 0px 0px 6px 5px #e6ffe5;
+        }
+      }
+    }
+
+    > div {
+      padding-left: 10px;
       margin-bottom: 10px;
       &:last-child {
         margin-bottom: 0;
