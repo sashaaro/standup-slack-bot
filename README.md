@@ -112,7 +112,7 @@ docker push registry.digitalocean.com/simple/standup-slack-bot-ui:latest
 https://cert-manager.io/docs/installation/kubernetes/
 
 ```bash
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.yaml
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.3/cert-manager.yaml
 ```
 
 ```shell
@@ -131,6 +131,7 @@ echo "password" | base64 # set to postgres-secret standup-password
 kubectl apply -f secret/postgres-secret.yaml
 kubectl apply -f deployment/postgres.yaml # grafana loki  promtail
 
+kubectl apply -f deployment/postgres.yaml
 kubectl exec -it postgres-0 -- bash
 psql -Upostgres -W
 # execute script init-postgres.sh

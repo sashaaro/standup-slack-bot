@@ -37,7 +37,7 @@ export class StandupController {
         'users.user',
         'users.answers',
       ],
-      orderBy: {startAt: -1},
+      orderBy: {startAt: -1},// TODO , 'users.answers.createdAt': 1},
       //fields: ['team'],
       flags: [QueryFlag.PAGINATE]
     })

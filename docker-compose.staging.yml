@@ -66,7 +66,7 @@ services:
       - ./var:/opt/app/var
 
   postgres:
-    image: postgres:13.3-alpine
+    image: postgres:13.4-alpine
     environment:
       POSTGRES_PASSWORD: postgres
     volumes:
