@@ -13,7 +13,7 @@ export function scopeUserAnswerQuestion(qb: QueryBuilder<any>): QueryBuilder<any
 }
 export function scopeTeamJoins(qb: QueryBuilder<Team>): QueryBuilder<Team> {
   return qb
-    .joinAndSelect('team.users', 'users') // TODO remove
+    .joinAndSelect('team.users', 'users')
     .joinAndSelect('team.questions', 'questions')
     .leftJoinAndSelect('questions.options', 'options')
 }

@@ -55,7 +55,8 @@ export class TeamComponent implements OnInit {
 
   achieve(team: Team) {
     const dialogRef = this.dialog.open(this.confirmDialog, {
-      width: '250px'
+      width: '250px',
+      data: team
     });
 
     dialogRef.afterClosed().subscribe(confirmed => {

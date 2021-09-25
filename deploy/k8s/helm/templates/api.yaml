@@ -18,6 +18,10 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+      volumes:
+        - name: standup-api-log
+          hostPath:
+            path: "/var/log/standup-api"
       initContainers:
         - name: init-db-schema
           image: {{ .Values.apiImage }}
@@ -25,10 +29,16 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- end }}
           args: ["database:migrate", "--env=prod"]
-      volumes:
-        - name: standup-api-log
-          hostPath:
-            path: "/var/log/standup-api"
+          env:
+            {{- include "env.main" . | indent 12 }}
+            {{- include "env.slack" . | indent 12 }}
+            {{- include "env.db" . | indent 12 }}
+            - name: LOG_DIR
+              value: "/var/log"
+          volumeMounts:
+            - name: standup-api-log
+              mountPath: /var/log
+              readOnly: false
       containers:
         - name: standup-api
           image: {{ .Values.apiImage }}

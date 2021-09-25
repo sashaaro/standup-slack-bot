@@ -120,12 +120,7 @@ export class QueueConsumeCommand implements yargs.CommandModule {
 
       handler.bind(this)
       queue.process('*',  (job) => {
-        // TODO check!! try {
-          handler(job);
-        //} catch (error) {
-        //  this.logger.error('Job handle error', {error, job})
-        //  job.discard()
-        //}
+        handler(job);
       });
 
       queue.on('process', (job) => {

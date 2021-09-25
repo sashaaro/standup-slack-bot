@@ -91,6 +91,7 @@ https://minikube.sigs.k8s.io/docs/handbook/registry/#enabling-insecure-registrie
 minikube start --insecure-registry "10.0.0.0/24"
 minikube addons enable ingress
 minikube addons enable registry
+minikube addons enable dashboard
 ```
 
 ```bash
@@ -129,9 +130,8 @@ cd deploy/k8s
 
 echo "password" | base64 # set to postgres-secret standup-password
 kubectl apply -f secret/postgres-secret.yaml
-kubectl apply -f deployment/postgres.yaml # grafana loki  promtail
+kubectl apply -f deployment/postgres.yaml # grafana loki promtail
 
-kubectl apply -f deployment/postgres.yaml
 kubectl exec -it postgres-0 -- bash
 psql -Upostgres -W
 # execute script init-postgres.sh

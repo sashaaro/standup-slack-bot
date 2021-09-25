@@ -44,10 +44,10 @@
   </div>
 </div>
 
-<ng-template #confirmDialogRef>
+<ng-template #confirmDialogRef let-team>
   <mat-dialog-content>
     <div>Confirmation</div>
-    <mat-hint>Are you sure delete team!</mat-hint>
+    <mat-hint>Are you sure delete team {{ team.name }}!</mat-hint>
   </mat-dialog-content>
 
   <mat-dialog-actions>
