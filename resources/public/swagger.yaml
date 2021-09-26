@@ -9,7 +9,7 @@ tags:
   - name: auth
     description: Everything about auth
 servers:
-  - url: https://standup.botenza.com/api
+  - url: https://standup.botenza.net/api
 paths:
   /auth/session:
     get:

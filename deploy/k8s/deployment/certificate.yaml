@@ -25,6 +25,6 @@ spec:
   issuerRef:
     kind: Issuer
     name: letsencrypt-issuer
-  commonName: grafana.botenza.com
+  commonName: grafana.botenza.net
   dnsNames:
-    - grafana.botenza.com
+    - grafana.botenza.net

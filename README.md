@@ -120,7 +120,7 @@ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5
 ```shell
 minikube tunnel
 minikube kubectl -- -n kubernetes-dashboard get services # see kubernetes-dashboard service ip
-echo "192.168.49.2    standup.botenza.com" >> /etc/hosts
+echo "192.168.49.2    standup.botenza.net" >> /etc/hosts
 ```
 
 https://artifacthub.io/packages/helm/rancher-stable/rancher

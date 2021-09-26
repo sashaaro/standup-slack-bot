@@ -9,14 +9,14 @@ kubectl apply -f secret/postgres-secret.yaml --namespace standup-bot-ns
 helm upgrade standup-bot -n standup-bot-ns -f values.prod.yaml . 
 helm upgrade standup-bot -n standup-bot-ns . .....
 
-sudo echo $(minikube kubectl -- -n standup-bot-ns get ingress -o json | jq -r ".items[0].status.loadBalancer.ingress[0].ip") standup.minikube >> /etc/hosts 
+sudo echo $(minikube kubectl -- -n standup-bot-ns get ingress -o json | jq -r ".items[0].status.loadBalancer.ingress[0].ip") standup.botenza.minikube >> /etc/hosts 
 
 helm uninstall standup-bot -n standup-bot-ns
 kubectl delete namespace standup-bot-ns
 ```
 
 ```shell
-helm install standup-bot -n standup-bot-ns . --set domain=standup.botenza.com --set certIssuer=letsencrypt --set debug=0
+helm install standup-bot -n standup-bot-ns . --set domain=standup.botenza.net --set certIssuer=letsencrypt --set debug=0
 ```
 
 ## Helpful links
