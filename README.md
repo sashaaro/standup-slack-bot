@@ -110,8 +110,7 @@ docker push registry.digitalocean.com/simple/standup-slack-bot:latest
 docker push registry.digitalocean.com/simple/standup-slack-bot-ui:latest
 ```
 
-
-https://cert-manager.io/docs/installation/kubernetes/
+https://cert-manager.io/docs/installation/
 
 ```bash
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.3/cert-manager.yaml
