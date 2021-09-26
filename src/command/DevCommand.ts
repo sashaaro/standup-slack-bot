@@ -3,7 +3,7 @@ import {Inject, Injector} from "injection-js";
 import {ServerCommand} from "./server.command";
 import {StandupNotifyCommand} from "./StandupNotifyCommand";
 import {bind} from "../decorator/bind";
-import {QueueConsumeCommand} from "./queue-consume.command";
+import {WorkerCommand} from "./WorkerCommand";
 
 export class DevCommand implements yargs.CommandModule {
   static meta = {
@@ -21,7 +21,7 @@ export class DevCommand implements yargs.CommandModule {
     const commands = [
       ServerCommand,
       StandupNotifyCommand,
-      QueueConsumeCommand
+      WorkerCommand
     ]
 
     for (const command of commands) {

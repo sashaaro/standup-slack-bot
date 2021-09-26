@@ -11,7 +11,7 @@ import http from "http";
 import {ApiMiddleware} from "../http/api.middleware";
 import {Redis} from "ioredis";
 import {Observable} from "rxjs";
-import {redisReady} from "./queue-consume.command";
+import {redisReady} from "./WorkerCommand";
 import * as fs from "fs";
 import {bind} from "../decorator/bind";
 import {errorHandler, requestContextMiddleware} from "../http/middlewares";

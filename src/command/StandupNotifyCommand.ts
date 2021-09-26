@@ -5,7 +5,7 @@ import {Inject} from "injection-js";
 import {IMikroFactory, LOG_TOKEN, MIKRO_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
 import {concat, Observable} from "rxjs";
 import {Redis} from "ioredis";
-import {redisReady} from "./queue-consume.command";
+import {redisReady} from "./WorkerCommand";
 import {map, mapTo, mergeMap, switchMap, takeUntil} from "rxjs/operators";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {UserStandup} from "../entity";
