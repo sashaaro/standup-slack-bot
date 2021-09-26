@@ -1,3 +1,8 @@
+{{- define "securityContext" }}
+runAsUser: 1000
+runAsGroup: 1000
+fsGroup: 1000
+{{- end }}
 {{- define "env.main" }}
 - name: DEBUG
   value: "{{ .Values.debug }}"

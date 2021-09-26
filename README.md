@@ -101,8 +101,9 @@ docker build frontend -f frontend/deploy/Dockerfile -t standup-slack-bot-ui:late
 docker tag standup-slack-bot:latest registry.digitalocean.com/simple/standup-slack-bot:latest
 docker tag standup-slack-bot-ui:latest registry.digitalocean.com/simple/standup-slack-bot-ui:latest
 
-minikube image load standup-slack-bot:latest
-minikube image load standup-slack-bot-ui:latest
+# delete all deployments with that images before
+minikube image load standup-slack-bot:latest --overwrite=true
+minikube image load standup-slack-bot-ui:latest --overwrite=true
 
 doctl registry login
 docker push registry.digitalocean.com/simple/standup-slack-bot:latest
@@ -120,10 +121,9 @@ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5
 minikube tunnel
 minikube kubectl -- -n kubernetes-dashboard get services # see kubernetes-dashboard service ip
 echo "192.168.49.2    standup.botenza.com" >> /etc/hosts
-
-minikube kubectl -- create namespace cattle-system
-helm install rancher rancher-stable/rancher --namespace cattle-system --set hostname=rancher.minikube,ingress.tls.source=secret
 ```
+
+https://artifacthub.io/packages/helm/rancher-stable/rancher
 
 ```bash
 cd deploy/k8s

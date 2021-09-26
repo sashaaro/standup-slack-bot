@@ -4,3 +4,4 @@ deploy
 var/log/*.log
 resources/public/*.css
 frontend
+*.md

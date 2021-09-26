@@ -6,11 +6,10 @@ helm install standup-bot -n standup-bot-ns . --dry-run # see compiled template
 kubectl apply -f secret/postgres-secret.yaml --namespace standup-bot-ns
 
 #for minikube
-helm install standup-bot -n standup-bot-ns . --set domain=standup.minikube --set certIssuer=selfsigned --set imagePullPolicy=Never --set debug=1
 helm upgrade standup-bot -n standup-bot-ns -f values.prod.yaml . 
 helm upgrade standup-bot -n standup-bot-ns . .....
 
-echo $(standup.minikube) standup.minikube >> /etc/hosts 
+sudo echo $(minikube kubectl -- -n standup-bot-ns get ingress -o json | jq -r ".items[0].status.loadBalancer.ingress[0].ip") standup.minikube >> /etc/hosts 
 
 helm uninstall standup-bot -n standup-bot-ns
 kubectl delete namespace standup-bot-ns

@@ -15,6 +15,8 @@ spec:
       labels:
         app: postgres
     spec:
+      #nodeSelector:
+      #  kubernetes.io/hostname: minikube / pool-zeotgq9os-8sm49
       securityContext:
       #  runAsUser: 1000
       #  runAsGroup: 1000

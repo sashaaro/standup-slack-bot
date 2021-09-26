@@ -22,7 +22,7 @@ COPY --from=builder /opt/app/dist ./dist
 COPY --from=builder /opt/app/resources ./resources
 COPY ./cli.sh .
 COPY ./.env* ./
-RUN mkdir var
-# USER worker
+RUN mkdir -p var/log && chown -R node:node var
+USER node
 
 ENTRYPOINT ["./cli.sh"]

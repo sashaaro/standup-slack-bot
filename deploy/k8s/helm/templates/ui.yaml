@@ -14,24 +14,12 @@ spec:
       labels:
         app: standup-ui
     spec:
-      #securityContext:
-      #  runAsUser: 1000
-      #  runAsGroup: 1000
-      #  fsGroup: 1000
-      #volumes:
-      #  - name: standup-ui-log
-      #    hostPath:
-      #      path: "/var/log/standup-ui"
       containers:
         - name: standup-ui
           image: {{ .Values.uiImage }}
           {{- if .Values.imagePullPolicy }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- end }}
-          # TODO nginx log volumeMounts:
-          #  - name: standup-ui-log
-          #    mountPath: /var/log
-          #    readOnly: false
           ports:
             - containerPort: 80
 ---

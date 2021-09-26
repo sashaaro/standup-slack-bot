@@ -5,10 +5,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - grafana.botenza.com
+        - grafana.botenza.net
       secretName: grafana-cert-secret
   rules:
-      - host: grafana.botenza.com
+      - host: grafana.botenza.net
         http:
           paths:
             - path: /

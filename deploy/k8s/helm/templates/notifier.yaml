@@ -14,14 +14,12 @@ spec:
       labels:
         app: standup-notifier
     spec:
-      #securityContext:
-      #  runAsUser: 1000
-      #  runAsGroup: 1000
-      #  fsGroup: 1000
+      securityContext:
+         {{- include "securityContext" . | indent 9 }}
       volumes:
         - name: standup-notifier-log
           hostPath:
-            path: "/var/log/standup-notifier"
+            path: "/var/log/standup/notifier"
       containers:
         - name: standup-notifier
           image: {{ .Values.apiImage }}
@@ -31,7 +29,7 @@ spec:
           args: ["standup:notify", "--env=prod"]
           volumeMounts:
             - name: standup-notifier-log
-              mountPath: /var/log
+              mountPath: /opt/app/var/log
               readOnly: false
           env:
             {{- include "env.main" . | indent 12 }}

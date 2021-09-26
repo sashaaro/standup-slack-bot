@@ -11,26 +11,35 @@ spec:
       labels:
         name: promtail
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       volumes:
+        - name: standup-api-logs
+          hostPath:
+            path: /var/log/standup/api
         - name: standup-notifier-logs
           hostPath:
-            path: /var/log/standup-notifier
-        - name: standup-ui-logs
+            path: /var/log/standup/notifier
+        - name: standup-queue-consumer-logs
           hostPath:
-            path: /var/log/standup-ui
+            path: /var/log/standup/queue-consumer
         - name: promtail-config
           configMap:
             name: promtail-configmap
       containers:
-        - name: promtail-container
-          image: grafana/promtail:2.2.1
+        - name: promtail
+          image: grafana/promtail:2.3.0
           args:
             - -config.file=/etc/promtail/promtail.yaml
           volumeMounts:
             - name: standup-notifier-logs
               mountPath: /var/log/standup-notifier
-            - name: standup-ui-logs
-              mountPath: /var/log/standup-ui
+            - name: standup-api-logs
+              mountPath: /var/log/standup/api
+            - name: standup-queue-consumer-logs
+              mountPath: /var/log/queue-consumer/api
             - name: promtail-config
               mountPath: /etc/promtail
 ---
@@ -59,13 +68,19 @@ data:
             labels:
               job: varlogs
               host: minikube
-              __path__: /var/log/standup-notifier/*.log
+              __path__: /var/log/standup/api/*.log
           - targets:
               - localhost
             labels:
               job: varlogs
               host: minikube
-              __path__: /var/log/standup-ui/*.log
+              __path__: /var/log/standup/notifier/*.log
+          - targets:
+              - localhost
+            labels:
+              job: varlogs
+              host: minikube
+              __path__: /var/log/standup/queue-consumer/*.log
 ---
 
 ---

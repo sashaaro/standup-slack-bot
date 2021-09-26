@@ -15,15 +15,16 @@ spec:
         app: standup-api
     spec:
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        {{- include "securityContext" . | indent 9 }}
       volumes:
         - name: standup-api-log
           hostPath:
-            path: "/var/log/standup-api"
+            path: "/var/log/standup/api"
       initContainers:
         - name: init-db-schema
+#          securityContext:
+#            runAsUser: 1000
+#            runAsGroup: 1000
           image: {{ .Values.apiImage }}
           {{- if .Values.imagePullPolicy }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -33,11 +34,9 @@ spec:
             {{- include "env.main" . | indent 12 }}
             {{- include "env.slack" . | indent 12 }}
             {{- include "env.db" . | indent 12 }}
-            - name: LOG_DIR
-              value: "/var/log"
           volumeMounts:
             - name: standup-api-log
-              mountPath: /var/log
+              mountPath: /opt/app/var/log
               readOnly: false
       containers:
         - name: standup-api
@@ -50,14 +49,12 @@ spec:
             - containerPort: 3000
           volumeMounts:
             - name: standup-api-log
-              mountPath: /var/log
+              mountPath: /opt/app/var/log
               readOnly: false
           env:
             {{- include "env.main" . | indent 12 }}
             {{- include "env.slack" . | indent 12 }}
             {{- include "env.db" . | indent 12 }}
-            - name: LOG_DIR
-              value: "/var/log"
 ---
 apiVersion: v1
 kind: Service

@@ -15,13 +15,11 @@ spec:
         app: queue-consumer
     spec:
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        {{- include "securityContext" . | indent 9 }}
       volumes:
         - name: standup-queue-consumer-log
           hostPath:
-            path: "/var/log/standup-queue-consumer"
+            path: "/var/log/standup/queue-consumer"
       containers:
         - name: queue-consumer
           image: {{ .Values.apiImage }}
@@ -31,7 +29,7 @@ spec:
           args: ["queue:consume", "--env=prod"]
           volumeMounts:
             - name: standup-queue-consumer-log
-              mountPath: /var/log
+              mountPath: /opt/app/var/log
               readOnly: false
           env:
             {{- include "env.main" . | indent 12 }}
