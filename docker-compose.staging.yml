@@ -53,9 +53,9 @@ services:
     volumes:
       - ./var:/opt/app/var
 
-  queue-consumer:
+  worker:
     <<: *base-image
-    command: ["queue:consume", "--env=prod"]
+    command: ["worker", "--env=prod"]
     user: 1000:1000
     #environment:
     #  - DEBUG=true

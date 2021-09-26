@@ -39,7 +39,7 @@ export const redisReady = (redis: Redis): Promise<void> => {
 
 export class QueueConsumeCommand implements yargs.CommandModule {
   static meta = {
-    command: 'queue:consume',
+    command: 'worker',
     describe: 'Run queue consumers'
   }
 

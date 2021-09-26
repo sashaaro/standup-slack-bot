@@ -277,6 +277,10 @@ export class SlackBotTransport {
     this.logger.debug({result}, 'Report message')
 
     await Promise.all(standup.users.getItems().map((userStandup) => {
+      // this.sendMessage(userStandup.user,
+      //     `<https://${userStandup.standup.team.originTeam.workspace.domain}.slack.com/archives/${result.channel}/p${result.message.ts}|aaaa> sadfjlhd`
+      // )
+
       // https://api.slack.com/docs/rate-limits ?!
       return this.updateMessage({
         token: userStandup.standup.team.originTeam.workspace.accessToken,

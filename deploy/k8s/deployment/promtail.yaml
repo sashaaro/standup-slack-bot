@@ -22,9 +22,9 @@ spec:
         - name: standup-notifier-logs
           hostPath:
             path: /var/log/standup/notifier
-        - name: standup-queue-consumer-logs
+        - name: standup-worker-logs
           hostPath:
-            path: /var/log/standup/queue-consumer
+            path: /var/log/standup/worker
         - name: promtail-config
           configMap:
             name: promtail-configmap
@@ -38,8 +38,8 @@ spec:
               mountPath: /var/log/standup-notifier
             - name: standup-api-logs
               mountPath: /var/log/standup/api
-            - name: standup-queue-consumer-logs
-              mountPath: /var/log/queue-consumer/api
+            - name: standup-worker-logs
+              mountPath: /var/log/worker/api
             - name: promtail-config
               mountPath: /etc/promtail
 ---
@@ -80,7 +80,7 @@ data:
             labels:
               job: varlogs
               host: minikube
-              __path__: /var/log/standup/queue-consumer/*.log
+              __path__: /var/log/standup/worker/*.log
 ---
 
 ---

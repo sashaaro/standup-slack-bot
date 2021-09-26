@@ -1,34 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: queue-consumer
+  name: standup-worker
   labels:
-    app: queue-consumer
+    app: standup-worker
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: queue-consumer
+      app: standup-worker
   template:
     metadata:
       labels:
-        app: queue-consumer
+        app: standup-worker
     spec:
       securityContext:
         {{- include "securityContext" . | indent 9 }}
       volumes:
-        - name: standup-queue-consumer-log
+        - name: standup-worker-log
           hostPath:
-            path: "/var/log/standup/queue-consumer"
+            path: "/var/log/standup/worker"
       containers:
-        - name: queue-consumer
+        - name: standup-worker
           image: {{ .Values.apiImage }}
           {{- if .Values.imagePullPolicy }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- end }}
-          args: ["queue:consume", "--env=prod"]
+          args: ["worker", "--env=prod"]
           volumeMounts:
-            - name: standup-queue-consumer-log
+            - name: standup-worker-log
               mountPath: /opt/app/var/log
               readOnly: false
           env:

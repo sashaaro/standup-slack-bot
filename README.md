@@ -40,9 +40,9 @@ Standup notifier
 ./cli.sh standup:notify
 ```
 
-Queue consumer
+Queue consume worker
 ```bash
-./cli.sh queue:consume
+./cli.sh worker
 ```
 
 Server
