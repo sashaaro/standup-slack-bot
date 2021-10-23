@@ -16,7 +16,7 @@ spec:
     spec:
 #      initContainers:
 #        - name: create-db
-#          image: postgres:13.3-alpine
+#          image: postgres:14.0-alpine
 #          env:
 #            - name: PGHOST
 #              valueFrom:

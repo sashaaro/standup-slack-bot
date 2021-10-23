@@ -23,7 +23,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: postgres
-          image: postgres:13.4-alpine
+          image: postgres:14.0-alpine
           volumeMounts:
             - mountPath: "/var/lib/postgresql/data"
               name: postgresql-data
