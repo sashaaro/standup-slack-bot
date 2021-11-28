@@ -1,11 +1,11 @@
 import {Logger, LogLevel} from '@slack/logger';
-import {Logger as PinoLogger} from "pino";
+import pino from "pino";
 
 export class WinstonSlackLoggerAdapter implements Logger
 {
     private level: LogLevel;
 
-    constructor(private logger: PinoLogger) {
+    constructor(private logger: pino.Logger) {
     }
 
     debug(...msg: any[]): void {

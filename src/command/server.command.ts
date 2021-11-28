@@ -15,7 +15,7 @@ import {redisReady} from "./WorkerCommand";
 import * as fs from "fs";
 import {bind} from "../decorator/bind";
 import {errorHandler, requestContextMiddleware} from "../http/middlewares";
-import {Logger} from "pino";
+import pino from "pino";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
@@ -32,7 +32,7 @@ export class ServerCommand implements yargs.CommandModule {
     private injector: Injector,
     @Inject(MIKRO_FACTORY_TOKEN) private mikroFactory: IMikroFactory,
     @Inject(REDIS_TOKEN) private redis: Redis,
-    @Inject(LOG_TOKEN) protected log: Logger,
+    @Inject(LOG_TOKEN) protected log: pino.Logger,
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 

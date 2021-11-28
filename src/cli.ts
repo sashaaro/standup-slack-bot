@@ -5,7 +5,7 @@ import {ReflectiveInjector} from "injection-js";
 import {createConfFromEnv, createLogger, createProviders} from "./services/providers";
 import {TERMINATE} from "./services/token";
 import Rollbar from "rollbar";
-import pino, {Logger} from "pino";
+import pino from "pino";
 import fs from "fs";
 import dotenv from "dotenv";
 
@@ -20,7 +20,7 @@ if (fs.existsSync(`.env.${env}`)) {
   dotenv.config({path: `.env.${env}`})
 }
 const config = createConfFromEnv(env);
-const logger: Logger = createLogger(config);
+const logger: pino.Logger = createLogger(config);
 
 // https://getpino.io/#/docs/help?id=exit-logging
 process.on('uncaughtException', pino.final(logger, (err, finalLogger) => {

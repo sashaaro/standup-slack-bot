@@ -1,7 +1,7 @@
 import { Injectable, Inject } from 'injection-js';
 import {Observable, of} from "rxjs";
 import {map, mergeMap, share, tap} from "rxjs/operators";
-import {Logger} from "pino";
+import pino from "pino";
 import {TeamRepository} from "../repository/team.repository";
 import {StandupRepository} from "../repository/standupRepository";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
@@ -35,7 +35,7 @@ function cron(expr) {
 
 @Injectable()
 export default class StandupNotifier {
-  constructor(@Inject(LOG_TOKEN) protected logger: Logger){}
+  constructor(@Inject(LOG_TOKEN) protected logger: pino.Logger){}
 
   create(mikroORM: MikroORM<PostgreSqlDriver>) {
     const interval$ = cron('5 * * * * *')

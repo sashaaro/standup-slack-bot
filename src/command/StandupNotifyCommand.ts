@@ -10,7 +10,7 @@ import {map, mapTo, mergeMap, switchMap, takeUntil} from "rxjs/operators";
 import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {UserStandup} from "../entity";
 import {bind} from "../decorator/bind";
-import {Logger} from "pino";
+import pino from "pino";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
   static meta = {
@@ -23,7 +23,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     private standupNotifier: StandupNotifier,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(TERMINATE) protected terminate$: Observable<void>,
-    @Inject(LOG_TOKEN) protected log: Logger,
+    @Inject(LOG_TOKEN) protected log: pino.Logger,
     @Inject(MIKRO_FACTORY_TOKEN) private mikroFactory: IMikroFactory,
   ) {}
 

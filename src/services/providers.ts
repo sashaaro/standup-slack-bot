@@ -17,7 +17,7 @@ import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
 import {SlackEventListener} from "../slack/slack-event-listener";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {QueueRegistry} from "./queue.registry";
-import pino, {DestinationStream, Logger, LoggerOptions} from "pino";
+import pino from "pino";
 import {LoadStrategy, MikroORM} from "@mikro-orm/core";
 import {EntityManager, PostgreSqlDriver} from "@mikro-orm/postgresql";
 import { AsyncLocalStorage } from "async_hooks";
@@ -74,8 +74,8 @@ export const createConfFromEnv = (env) => ({
 } as IAppConfig)
 
 
-export const createLogger = (config: IAppConfig): Logger => {
-  const pinoOptions: LoggerOptions = {
+export const createLogger = (config: IAppConfig): pino.Logger => {
+  const pinoOptions: pino.LoggerOptions = {
     level: 'warn',
     base: null, // https://github.com/pinojs/pino/blob/master/docs/api.md#base-object
     mixin: () => {
@@ -95,7 +95,7 @@ export const createLogger = (config: IAppConfig): Logger => {
     },
   }
 
-  let steam: DestinationStream = pino.destination(`${config.logDir || 'var/log'}/${process.env.APP_CONTEXT || 'app'}.log`);
+  let steam: pino.DestinationStream = pino.destination(`${config.logDir || 'var/log'}/${process.env.APP_CONTEXT || 'app'}.log`);
   if (config.debug) {
     pinoOptions.level = 'debug';
     pinoOptions.prettifier = true;
@@ -107,7 +107,7 @@ export const createLogger = (config: IAppConfig): Logger => {
 }
 
 // TODO https://github.com/microsoft/tsyringe ?!
-export const createProviders = (config: IAppConfig, logger: Logger): {providers: Provider[], commands: Provider[]} => {
+export const createProviders = (config: IAppConfig, logger: pino.Logger): {providers: Provider[], commands: Provider[]} => {
   let providers: Provider[] = [
     {
       provide: CONFIG_TOKEN,
@@ -165,7 +165,7 @@ export const createProviders = (config: IAppConfig, logger: Logger): {providers:
     QueueRegistry,
     {
       provide: WebClient,
-      useFactory: (config: IAppConfig, logger: Logger) => new WebClient(null,  {
+      useFactory: (config: IAppConfig, logger: pino.Logger) => new WebClient(null,  {
         logger: new WinstonSlackLoggerAdapter(logger.child({channel: 'slack'})),
         logLevel: LogLevel.DEBUG
       }),

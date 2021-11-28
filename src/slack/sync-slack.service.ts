@@ -5,7 +5,7 @@ import {SlackIm} from "./model/ScopeGranted";
 import {SlackChannel, SlackConversation} from "./model/SlackChannel";
 import {Channel} from "../entity";
 import {Inject, Injectable} from "injection-js";
-import {Logger} from "pino";
+import pino from "pino";
 import {WebClient} from "@slack/web-api";
 import SlackWorkspace from "../entity/slack-workspace";
 import {em} from "../services/providers";
@@ -15,7 +15,7 @@ import {ChannelRepository} from "../repository/channel.repository";
 @Injectable()
 export class SyncSlackService {
   constructor(
-    @Inject(LOG_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private logger: pino.Logger,
     private webClient: WebClient,
   ) {
   }

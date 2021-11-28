@@ -3,7 +3,7 @@ import {em, QUEUE_NAME_SLACK_EVENTS} from "../services/providers";
 import {MessageResponse} from "./model/MessageResponse";
 import {ChannelLeft, MemberJoinedChannel} from "./model/SlackChannel";
 import SlackWorkspace from "../entity/slack-workspace";
-import {Logger} from "pino";
+import pino from "pino";
 import {Standup, User} from "../entity";
 import {ACTION_OPEN_DIALOG, SlackBotTransport} from "./slack-bot-transport.service";
 import {SlackAction, ViewSubmission} from "./model/ViewSubmission";
@@ -109,7 +109,7 @@ export class SlackEventListener {
     private slackBotTransport: SlackBotTransport,
     private syncSlack: SyncSlackService,
     private queueRegistry: QueueRegistry,
-    @Inject(LOG_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private logger: pino.Logger,
     private webClient: WebClient
   ) {
     for (const event in this.evensHandlers) {

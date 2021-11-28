@@ -5,7 +5,7 @@ import {
   ChatUpdateArguments,
   WebClient
 } from '@slack/web-api'
-import {Logger} from "pino";
+import pino from "pino";
 import {ContextualError, HasPreviousError, isPlatformError, sortByIndex} from "../services/utils";
 import {MessageResult} from "./model/MessageResult";
 import {OpenViewResult} from "./model/OpenViewResult";
@@ -31,7 +31,7 @@ class SlackMethodError extends HasPreviousError {
 @Injectable()
 export class SlackBotTransport {
   constructor(
-    @Inject(LOG_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private logger: pino.Logger,
     private webClient: WebClient
   ) {
   }

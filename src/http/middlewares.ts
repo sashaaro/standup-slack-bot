@@ -1,5 +1,5 @@
 import 'express-async-errors';
-import {Logger} from "pino";
+import pino from "pino";
 import {em, emStorage} from "../services/providers";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
@@ -10,7 +10,7 @@ import {User} from "../entity";
 import {Handler, ErrorRequestHandler, Request, Response} from "express";
 import {v4 as uuidv4} from "uuid";
 
-export const errorHandler = (dumpError: boolean, logger: Logger): ErrorRequestHandler => (err, req, res, next) => {
+export const errorHandler = (dumpError: boolean, logger: pino.Logger): ErrorRequestHandler => (err, req, res, next) => {
   if (err instanceof AccessDenyError) {
     res.status(403).send(); // check if not sent yet
   } else if (err instanceof BadRequestError) {
@@ -74,7 +74,7 @@ export const authenticate = (user: User, req?) => {
   }
 }
 
-export const apiContextMiddleware = (log: Logger): Handler => async (req, res, next) => {
+export const apiContextMiddleware = (log: pino.Logger): Handler => async (req, res, next) => {
   const userID = req.session['user_id'];
   let user: User;
 

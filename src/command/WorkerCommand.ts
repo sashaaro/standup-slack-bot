@@ -15,7 +15,7 @@ import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
 import {QueueRegistry} from "../services/queue.registry";
 import {HasPreviousError} from "../services/utils";
 import {bind} from "../decorator/bind";
-import {Logger} from "pino";
+import pino from "pino";
 
 
 class JobError extends HasPreviousError {
@@ -73,7 +73,7 @@ export class WorkerCommand implements yargs.CommandModule {
   constructor(
     private injector: Injector,
     private slackEventListener: SlackEventListener,
-    @Inject(LOG_TOKEN) private log: Logger,
+    @Inject(LOG_TOKEN) private log: pino.Logger,
     @Inject(MIKRO_FACTORY_TOKEN) private mikroFactory: IMikroFactory,
     @Inject(REDIS_TOKEN) private redis: Redis,
     private queueRegistry: QueueRegistry,

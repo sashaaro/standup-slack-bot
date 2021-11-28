@@ -1,13 +1,13 @@
 import {Inject, Injectable} from 'injection-js';
 import {BadRequestError, ResourceNotFoundError} from "../api.middleware";
-import {classToPlain, plainToClassFromExist} from "class-transformer";
+import {instanceToPlain, plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";
 import {em} from "../../services/providers";
 import {Channel, Question, Team, Timezone, User} from "../../entity";
 import {TeamRepository} from "../../repository/team.repository";
 import {TeamDTO} from "../../dto/team-dto";
 import {LOG_TOKEN} from "../../services/token";
-import {Logger} from "pino";
+import pino from "pino";
 import {TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, teamStatuses} from "../../entity/team";
 import {reqContext} from "../middlewares";
 import {authorized} from "../../decorator/authorized";
@@ -25,7 +25,7 @@ const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] 
 @Injectable()
 export class TeamController {
   constructor(
-    @Inject(LOG_TOKEN) private log: Logger
+    @Inject(LOG_TOKEN) private log: pino.Logger
   ) {
   }
 
@@ -135,7 +135,7 @@ export class TeamController {
         }
       }
       this.clearTeam(updatedTeam);
-      res.send(classToPlain(updatedTeam, {strategy: 'excludeAll', groups: ["edit"]}));
+      res.send(instanceToPlain(updatedTeam, {strategy: 'excludeAll', groups: ["edit"]}));
     } else {
       res.status(400).send(errors);
     }
@@ -168,7 +168,7 @@ export class TeamController {
       throw new ResourceNotFoundError(); // 404
     }
 
-    res.send(classToPlain(team, {strategy: 'excludeAll', groups: ["edit"]}));
+    res.send(instanceToPlain(team, {strategy: 'excludeAll', groups: ["edit"]}));
   }
 
   @authorized

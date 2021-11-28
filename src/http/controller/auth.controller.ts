@@ -6,7 +6,7 @@ import {OauthAccessResponse} from "../../slack/model/ScopeGranted";
 import {SlackUserInfo} from "../../slack/model/SlackUser";
 import {AccessDenyError, ResourceNotFoundError} from "../api.middleware";
 import {SlackTeam} from "../../slack/model/SlackTeam";
-import {Logger} from "pino";
+import pino from "pino";
 import {SyncSlackService} from "../../slack/sync-slack.service";
 import {HasPreviousError, isPlatformError} from "../../services/utils";
 import SlackWorkspace from "../../entity/slack-workspace";
@@ -25,7 +25,7 @@ export class AuthController {
   constructor(
     @Inject(CONFIG_TOKEN) private config: IAppConfig,
     private webClient: WebClient,
-    @Inject(LOG_TOKEN) private logger: Logger,
+    @Inject(LOG_TOKEN) private logger: pino.Logger,
     private syncSlackService: SyncSlackService,
   ) {
   }
