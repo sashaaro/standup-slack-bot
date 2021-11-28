@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   serve:
-    image: node:14.17.6-alpine
+    image: node:16.13-alpine
     entrypoint: npm
     command: ["run", "watch"]
     user: 1000:1000
