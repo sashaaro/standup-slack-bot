@@ -151,10 +151,12 @@
         >
           <mat-label>Options (Pass enter)</mat-label>
           <mat-chip-list #optionList>
-            <div cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="drop(questionControl.get('options'), $event)">
+            <div>
+<!--              cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="drop(questionControl.get('options'), $event)"-->
+
+              <!--                cdkDrag-->
               <mat-chip
                 *ngFor="let option of questionControl.get('options').controls; let optionIndex = index"
-                cdkDrag
                 removable
                 disableRipple
                 [selected]="false"
@@ -165,7 +167,7 @@
                 <div #optionText contenteditable="true" (keydown.enter)="$event.preventDefault(); optionText.blur()" (focus)="focusOption = option" (blur)="focusOption = null" [formControl]="option.get('text')"></div>
                 <div class="option-actions">
                   <mat-icon (click)="focus(optionText)" inline>edit</mat-icon>
-                  <mat-icon cdkDragHandle inline>drag_indicator</mat-icon>
+<!--                  <mat-icon cdkDragHandle inline>drag_indicator</mat-icon>-->
                   <mat-icon matChipRemove>cancel</mat-icon>
                 </div>
               </mat-chip>
@@ -249,3 +251,4 @@
     <!-- The mat-dialog-close directive optionally accepts a value as a result for the dialog. -->
   </mat-dialog-actions>
 </ng-template>
+
