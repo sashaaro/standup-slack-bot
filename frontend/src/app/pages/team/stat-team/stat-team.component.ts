@@ -71,7 +71,7 @@ export class StatTeamComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     var ctx = (document.getElementById('canvas') as HTMLCanvasElement).getContext('2d');
     import ('chart.js').then(({Chart}) => {
-      console.log(new Chart(ctx, chartConfig))
+      //console.log(new Chart(ctx, chartConfig))
     })
   }
 
