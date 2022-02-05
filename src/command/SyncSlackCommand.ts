@@ -17,18 +17,19 @@ export class SyncSlackCommand implements yargs.CommandModule<any, any> {
 
   constructor(
     private syncSlackService: SyncSlackService,
-    @Inject(MIKRO_TOKEN) private mikroORM: MikroORM<PostgreSqlDriver>,
+    @Inject(MIKRO_TOKEN) private mikroORM,
   ) {}
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    if (!await this.mikroORM.isConnected()) {
-      await this.mikroORM.connect()
+    const mikroORM = await this.mikroORM
+    if (!await mikroORM.isConnected()) {
+      await mikroORM.connect()
     }
 
-    const workspaces = await this.mikroORM.em.getRepository(SlackWorkspace).findAll()
+    const workspaces = await mikroORM.em.getRepository(SlackWorkspace).findAll()
 
-    emStorage.run(this.mikroORM.em, () => {
+    emStorage.run(mikroORM.em, () => {
       for(const workspace of workspaces) {
         this.syncSlackService.syncForWorkspace(workspace)
       }

@@ -204,7 +204,7 @@ export class SlackEventListener {
       const hasOptions = question.options.length > 1;
 
       if (hasOptions && item.type !== 'static_select') {
-        this.logger.warning(item, 'wrong item type')
+        this.logger.warn(item, 'wrong item type')
       }
 
       const value = hasOptions ? item.selected_option.value : item.value

@@ -1,5 +1,5 @@
 import {
-  BeforeCreate,
+  BeforeCreate, Cascade,
   Collection,
   Entity,
   ManyToMany,
@@ -50,6 +50,7 @@ class Question {
   @OneToMany(() => QuestionOption, o => o.question, {
     //eager: true,
     //cascade: true
+    cascade: [Cascade.PERSIST],
   })
   options = new Collection<QuestionOption, Question>(this);
 

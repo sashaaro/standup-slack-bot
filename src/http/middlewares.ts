@@ -39,7 +39,7 @@ export const emMiddleware = (mikro: MikroORM<PostgreSqlDriver>): Handler => (req
 }
 
 
-export function createAsyncLocalStorageMiddleware<T>(storage: AsyncLocalStorage<T>, valueFactory: (req: Request, res: Response) => Promise<T>): Handler {
+export function createAsyncLocalStorageMiddleware<T>(storage: AsyncLocalStorage<T>|any, valueFactory: (req: Request, res: Response) => Promise<T>): Handler {
   return (req, res, next) => {
     valueFactory(req, res).then(value => {
       storage.run(value, next)

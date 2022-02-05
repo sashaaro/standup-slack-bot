@@ -101,7 +101,7 @@ export class AuthController {
     if (response.token_type === 'bot') {
       workspace.accessToken = response.access_token
     } else {
-      this.logger.warning(response, 'Oauth response no content token type as bot')
+      this.logger.warn(response, 'Oauth response no content token type as bot')
       // TODO throw ?!
     }
 

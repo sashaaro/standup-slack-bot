@@ -1,5 +1,5 @@
 import {Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Property} from "@mikro-orm/core";
-import {Expose} from "class-transformer";
+import {Expose, Exclude} from "class-transformer";
 import SlackWorkspace from "./slack-workspace";
 import {User} from "./user";
 import {ChannelRepository} from "../repository/channel.repository";
@@ -23,10 +23,11 @@ export class Channel {
   isEnabled: boolean;
 
   // TODO isPrivate: boolean;
-
+  @Exclude()
   @ManyToOne(() => User)
   createdBy: User
 
+  @Exclude()
   @ManyToOne(() => SlackWorkspace, {
     nullable: false
   })

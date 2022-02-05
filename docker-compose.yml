@@ -9,6 +9,7 @@ services:
     tty: true
     ports:
       - "3000:3000"
+      - "9229:9229"
     volumes:
       - .:/opt/app
     working_dir: /opt/app

@@ -7,7 +7,7 @@ import {concat, Observable} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./WorkerCommand";
 import {map, mapTo, mergeMap, switchMap, takeUntil} from "rxjs/operators";
-import {fromPromise} from "rxjs/internal/observable/fromPromise";
+import {from} from "rxjs";
 import {UserStandup} from "../entity";
 import {bind} from "../decorator/bind";
 import pino from "pino";
@@ -50,7 +50,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     start$.pipe(
       mergeMap(standup => {
         return concat(...standup.team.users.getItems().map(
-          user => fromPromise(
+          user => from(
             this.slackTransport.sendGreetingMessage(user, standup)
           ).pipe(
             switchMap(messageResult => {
@@ -58,7 +58,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
               userStandup.standup = standup;
               userStandup.user = user;
               userStandup.slackMessage = messageResult;
-              return fromPromise(em.persistAndFlush(userStandup)).pipe(mapTo(userStandup))
+              return from(em.persistAndFlush(userStandup)).pipe(mapTo(userStandup))
             }))
           )
         )
@@ -72,7 +72,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     });
 
     end$.pipe(
-      mergeMap(standups => fromPromise(
+      mergeMap(standups => from(
         Promise.all( // TODO allStandup
           standups.map(standup =>
             this.slackTransport.sendReport(standup).then(msg => standup) // TODO save report msg

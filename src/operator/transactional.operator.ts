@@ -1,6 +1,6 @@
 import {MonoTypeOperatorFunction, Observable, of, throwError} from "rxjs";
 import {catchError, finalize, mapTo, mergeMap, tap} from "rxjs/operators";
-import {fromPromise} from "rxjs/internal/observable/fromPromise";
+import {from} from "rxjs";
 import {EntityManager} from "@mikro-orm/postgresql";
 
 // export function transactional<T>(emProvider: () => EntityManager): MonoTypeOperatorFunction<T> {

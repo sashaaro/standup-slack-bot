@@ -23,15 +23,15 @@ const config = createConfFromEnv(env);
 const logger: pino.Logger = createLogger(config);
 
 // https://getpino.io/#/docs/help?id=exit-logging
-process.on('uncaughtException', pino.final(logger, (err, finalLogger) => {
-  finalLogger.error(err, 'uncaughtException')
-  process.exit(1)
-}))
-
-process.on('unhandledRejection', pino.final(logger, (err, finalLogger) => {
-  finalLogger.error(err, 'unhandledRejection')
-  process.exit(1)
-}))
+// process.on('uncaughtException', pino.final(logger, (err, finalLogger) => {
+//   finalLogger.error(err, 'uncaughtException')
+//   process.exit(1)
+// }))
+//
+// process.on('unhandledRejection', pino.final(logger, (err, finalLogger) => {
+//   finalLogger.error(err, 'unhandledRejection')
+//   process.exit(1)
+// }))
 
 const {providers, commands} = createProviders(config, logger);
 // consider https://github.com/TypedProject/tsed/tree/production/packages/di

@@ -1,10 +1,9 @@
 import { Injectable, Inject } from 'injection-js';
-import {Observable, of} from "rxjs";
+import {Observable, of, from} from "rxjs";
 import {map, mergeMap, share, tap} from "rxjs/operators";
 import pino from "pino";
 import {TeamRepository} from "../repository/team.repository";
 import {StandupRepository} from "../repository/standupRepository";
-import {fromPromise} from "rxjs/internal/observable/fromPromise";
 import {LOG_TOKEN} from "../services/token";
 import {Team, Standup} from "../entity";
 import {MikroORM} from "@mikro-orm/core";
@@ -22,13 +21,13 @@ function cron(expr) {
   let counter = 0
 
   return new Observable((subscriber) => {
-    const task = schedule(expr, () => {
+    const task: any = schedule(expr, () => {
       subscriber.next(counter++)
     })
 
     task.start()
 
-    return () => task.destroy(); // TODO undefnied?!
+    return () => task.stop();
   })
 }
 
@@ -46,7 +45,7 @@ export default class StandupNotifier {
 
     const start$ = interval$.pipe(
       mergeMap(date =>
-        fromPromise(
+        from(
           (mikroORM.em.getRepository(Team) as TeamRepository).findByStart(date)
         ).pipe(
           tap(teams => this.logger.debug({
@@ -58,11 +57,11 @@ export default class StandupNotifier {
       ),
       mergeMap(({teams, date}) => of(...teams.map(team => ({team, date})))),
       // withinContext(emStorage, () => mikroORM.em.fork(true, true)),
-      mergeMap(({team, date}) => fromPromise(this.createStandup(team, date, mikroORM))),
+      mergeMap(({team, date}) => from(this.createStandup(team, date, mikroORM))),
     )
 
     const end$ = interval$.pipe(
-      mergeMap(date => fromPromise((mikroORM.em.getRepository(Standup) as StandupRepository).findEnd(date)))
+      mergeMap(date => from((mikroORM.em.getRepository(Standup) as StandupRepository).findEnd(date)))
     )
 
     return {start$, end$};

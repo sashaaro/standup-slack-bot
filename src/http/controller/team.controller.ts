@@ -3,7 +3,7 @@ import {BadRequestError, ResourceNotFoundError} from "../api.middleware";
 import {instanceToPlain, plainToClassFromExist} from "class-transformer";
 import {validateSync, ValidationError} from "class-validator";
 import {em} from "../../services/providers";
-import {Channel, Question, Team, Timezone, User} from "../../entity";
+import {Channel, Question, QuestionOption, Team, Timezone, User} from "../../entity";
 import {TeamRepository} from "../../repository/team.repository";
 import {TeamDTO} from "../../dto/team-dto";
 import {LOG_TOKEN} from "../../services/token";
@@ -82,12 +82,16 @@ export class TeamController {
       team.timezone = em().getReference(Timezone, teamDTO.timezoneId);
       teamDTO.userIds.forEach(u => team.users.add(em().getReference(User, u)))
       team.reportChannel = em().getReference(Channel, teamDTO.reportChannelId);
-      teamDTO.questions.forEach(q => team.questions.add(em().create(Question, q)));
+      teamDTO.questions.forEach(q => {
+        if (q.options) {
+          q.options = q.options.map(o => em().create(QuestionOption, o))
+        }
+        team.questions.add(em().create(Question, q))
+      });
 
-      team.workspace = reqContext().user.workspace;
       team.createdBy = reqContext().user;
+      team.workspace = team.createdBy.workspace;
       team.status = TEAM_STATUS_ACTIVATED;
-
       await em().persistAndFlush(team)
       res.send(team);
     } else {

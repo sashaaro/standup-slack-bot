@@ -51,7 +51,7 @@ const migrationsDir = __dirname + '/../migrations';
 export const QUEUE_NAME_SLACK_EVENTS = 'slack_events';
 export const QUEUE_NAME_SLACK_INTERACTIVE = 'slack_interactive';
 
-export const emStorage = new AsyncLocalStorage<EntityManager<PostgreSqlDriver>>();
+export const emStorage: AsyncLocalStorage<EntityManager<PostgreSqlDriver>> = new AsyncLocalStorage<EntityManager<PostgreSqlDriver>>();
 export const em = () => emStorage.getStore()
 
 export const createConfFromEnv = (env) => ({
