@@ -133,8 +133,6 @@ export class SyncSlackService {
     //     .set({isArchived: true})
     //     .execute()
 
-    const channelRepository = await em().getRepository(SlackWorkspace)
-
     let response;
     let cursor = null;
     do {
