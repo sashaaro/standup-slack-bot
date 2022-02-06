@@ -18,7 +18,12 @@
             <div class="stand-up-item__question">{{ answer.question.text }}</div>
             <div class="stand-up-item__answer" [class.stand-up-item__answer--options]="answer.option">
               <ng-container *ngIf="answer.option">
-                <div *ngFor="let option of answer.question.options" [class.active]="option.id === answer.option.id">{{ option.text }}</div>
+                <div *ngFor="let option of answer.question.options" [class.active]="option.id === answer.option.id">
+                  {{ option.text }}
+                  <ng-container *ngIf="option.id === answer.option.id">
+                    <mat-icon>done</mat-icon>
+                  </ng-container>
+                </div>
               </ng-container>
               <div *ngIf="!answer.option">{{ answer.answerMessage }}</div>
             </div>

@@ -166,13 +166,24 @@ ng-select {
 }
 
 .user-pic {
-  border-radius: 9px;
+  border-radius: 6px;
   margin-right: 8px;
-  height: 24px;
-  width: 24px;
-  max-height: 24px;
-  max-width: 24px;
+  height: 34px;
+  width: 34px;
+  max-height: 34px;
+  max-width: 34px;
 }
+
+.user-name {
+  align-self: flex-start;
+  margin-top: 7px;
+}
+
+.mat-autocomplete-panel.mat-autocomplete-visible::ng-deep {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
 
 .user-chip-list {
   .mat-chip::ng-deep {
@@ -200,6 +211,7 @@ ng-select {
   padding-bottom: 4px !important;
   padding-right: 7px !important;
   padding-left: 10px !important;
+  height: auto !important;
 }
 
 

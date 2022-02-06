@@ -43,7 +43,7 @@
     border-top-right-radius: 0;
   }
 
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 
@@ -131,14 +131,18 @@ app-team {
     font-size: 16px;
     //font-style: italic;
 
+    mat-icon {
+      font-size: 24px;
+      color: green;
+      vertical-align: sub;
+    }
+
     &--options {
       > div {
-        opacity: 0.18;
+        opacity: 0.4;
         &.active {
+          margin-top: -4px;
           opacity: 1;
-          background-color: #e6ffe5;
-          border-radius: 8px;
-          box-shadow: 0px 0px 6px 5px #e6ffe5;
         }
       }
     }

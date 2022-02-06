@@ -146,6 +146,8 @@ body, * {
 .users {
   .mat-option {
     //height: 40px !important;
+    padding-top: 3px;
+    padding-bottom: 3px;
     border-bottom: 1px solid rgba(34,36,38,.15);
     &:last-child {
       //border-bottom: none;

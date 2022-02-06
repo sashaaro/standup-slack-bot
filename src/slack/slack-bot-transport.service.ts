@@ -66,7 +66,8 @@ export class SlackBotTransport {
 
     const standup = userStandup.standup
 
-    for (const question of [...standup.team.questions.getItems()].sort(sortByIndex)) {
+    const quetions = [...standup.team.questions.getItems()].sort(sortByIndex)
+    for (const question of quetions) {
       const answer = userStandup.answers.getItems().find(answer => answer.question.id === question.id);
 
       const hasOptions = question.options.length > 1;
@@ -130,12 +131,12 @@ export class SlackBotTransport {
         })
       }
 
-      const isLast = question === standup.team.questions[standup.team.questions.length - 1]
-      if (!isLast) {
-        view.blocks.push({
-          type: "divider"
-        })
-      }
+      //const isLast = question === quetions[quetions.length - 1]
+      // if (!isLast) {
+      //   view.blocks.push({
+      //     type: "divider"
+      //   })
+      //}
     }
 
     // TODO validate https://github.com/slackapi/slack-api-specs/blob/master/web-api/slack_web_openapi_v2.json ?!

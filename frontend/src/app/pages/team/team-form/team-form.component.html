@@ -59,12 +59,13 @@
               (removed)="remove(usersControl, $event.chip.value)"
               disableRipple
             >
-              <img class="user-pic" *ngIf="user.profile.image_24" [src]="user.profile.image_24"/>
-              {{ user.profile?.display_name || user.profile?.real_name }}
+              <img class="user-pic" *ngIf="user.profile.image_48" [src]="user.profile.image_48"/>
+              <div class="user-name">{{ user.profile?.display_name || user.profile?.real_name }}</div>
               <mat-icon matChipRemove>cancel</mat-icon>
           </mat-chip>
           </div>
           <input
+            class="user-search-input"
             placeholder="Search user..."
             [matAutocomplete]="auto"
             [formControl]="searchUserControl"
@@ -73,8 +74,8 @@
 
         <mat-autocomplete class="users" #auto="matAutocomplete" (optionSelected)="usersControl.value.push($event.option.value);usersControl.updateValueAndValidity()">
           <mat-option *ngFor="let user of (autocompleteUsers$ | async)" [value]="user">
-            <img class="user-pic" *ngIf="user.profile.image_24" [src]="user.profile.image_24"/>
-            {{ user.profile?.display_name || user.profile?.real_name }}
+            <img class="user-pic" *ngIf="user.profile.image_48" [src]="user.profile.image_48"/>
+            <div class="user-name">{{ user.profile?.display_name || user.profile?.real_name }}</div>
           </mat-option>
         </mat-autocomplete>
 
