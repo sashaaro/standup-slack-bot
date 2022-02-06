@@ -2,14 +2,12 @@ import {SlackUserProfile} from "../slack/model/SlackUser";
 import {Team} from "./team";
 import {Exclude, Expose, Transform, Type} from "class-transformer";
 import {
-  BaseEntity,
   Collection,
   Entity,
   ManyToMany,
   ManyToOne,
   PrimaryKey,
   Property,
-  SerializedPrimaryKey
 } from "@mikro-orm/core";
 import SlackWorkspace from "./slack-workspace";
 import {TeamSnapshot} from "./team-snapshot";
@@ -19,8 +17,10 @@ class Profile implements SlackUserProfile {
   title: string;
   phone: string;
   skype: string;
+  @Expose({groups: ['edit', 'view_standups']})
   real_name: string;
   real_name_normalized: string;
+  @Expose({groups: ['edit', 'view_standups']})
   display_name: string;
   display_name_normalized: string;
   status_text: string;

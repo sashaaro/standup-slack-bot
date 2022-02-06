@@ -277,6 +277,15 @@ components:
           format: int64
         profile:
           type: object
+          properties:
+            first_name:
+              type: string
+            last_name:
+              type: string
+            real_name:
+              type: string
+            display_name:
+              type: string
     Team:
       type: object
       properties:

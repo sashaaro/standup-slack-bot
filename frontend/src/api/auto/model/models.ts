@@ -14,4 +14,5 @@ export * from './team';
 export * from './timezone';
 export * from './timezoneUtcOffset';
 export * from './user';
+export * from './userProfile';
 export * from './validationError';

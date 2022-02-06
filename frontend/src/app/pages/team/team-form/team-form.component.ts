@@ -20,7 +20,7 @@ import {
 import {UntilDestroy, untilDestroyed} from '@ngneat/until-destroy';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Router} from '@angular/router';
-import {BehaviorSubject, combineLatest, fromEvent, NEVER, of, Subject} from 'rxjs';
+import {BehaviorSubject, combineLatest, fromEvent, NEVER, Observable, of, Subject} from 'rxjs';
 import {
   distinct,
   distinctUntilChanged,
@@ -89,7 +89,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   @ViewChild('statsDialogRef', {static: true})
   public statsDialog: TemplateRef<any>;
 
-  public searchUserControl = new FormControl();
+  public searchUserControl = new FormControl(null, {updateOn: "change"});
 
   public submitting = false;
   public users$ = this.userService.getUsers();
@@ -100,22 +100,31 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       valueChanges(this.usersControl).pipe(
         map(selected => (selected || []).map(s => s.id))
       ),
-      valueChanges(this.searchUserControl),
+      valueChanges(this.searchUserControl).pipe(
+        filter((su, i) => typeof su !== 'object')
+      )
     ]).pipe(
       map(([users, selected, filterValue]) => {
-        filterValue = filterValue ? filterValue.toLowerCase() : filterValue;
+        //console.log([users, selected, filterValue])
 
         users = [...users];
-        if (filterValue) {
-          users = users.filter(
-            (u: any) => (u.name + ' ' + u.profile?.first_name + ' ' + u.profile?.last_name)
-              .toLowerCase()
-              .indexOf(filterValue) === 0
-          );
-        }
-        users.filter(u => !selected.includes(u.id));
+        if (filterValue && filterValue.trim()) {
+           filterValue = filterValue.toLowerCase();
 
-        return users;
+           users = users
+             .map(u => {
+               const matchIndex = [u.profile?.display_name, u.profile?.real_name, u.name]
+                 .filter(s => s)
+                 .join('')
+                 .toLowerCase()
+                 .indexOf(filterValue)
+
+               return {...u, matchIndex}
+             })
+             .filter(u => u.matchIndex !== -1)
+             .sort((a, b) => a.matchIndex === b.matchIndex ? 0 : a.matchIndex > b.matchIndex ? -1 : 1)
+        }
+        return users.filter(u => !selected.includes(u.id));
       })
     );
 

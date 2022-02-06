@@ -9,12 +9,12 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { UserProfile } from './userProfile';
 
 
-export interface User { 
-    id?: number;
-    name?: number;
-    profile?: UserProfile;
+export interface UserProfile { 
+    first_name?: string;
+    last_name?: string;
+    real_name?: string;
+    display_name?: string;
 }
 

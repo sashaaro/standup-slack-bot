@@ -27,7 +27,9 @@
 
         <div class="stand-up-item__content">
           <img [src]="userStandup.user.profile?.image_192"/>
-          <div class="stand-up-item__name"> {{ userStandup.user.profile?.first_name ? userStandup.user.profile?.first_name + (userStandup.user.profile.last_name ? ' ' + userStandup.user.profile.last_name : '') : userStandup.user.name }}</div>
+          <div class="stand-up-item__name">
+            {{ userStandup.user.profile?.display_name || userStandup.user.profile?.real_name }}
+          </div>
         </div>
       </div>
     </div>

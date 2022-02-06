@@ -30,5 +30,6 @@ model/team.ts
 model/timezone.ts
 model/timezoneUtcOffset.ts
 model/user.ts
+model/userProfile.ts
 model/validationError.ts
 variables.ts

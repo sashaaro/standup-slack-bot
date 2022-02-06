@@ -127,14 +127,14 @@ export class AuthController {
       // TODO special role?
     }
 
-    if (!user.name) { // || new Date() - user.updatedAt > 3 days
+    //if (!user.name) { // || new Date() - user.updatedAt > 3 days
       const userInfo: SlackUserInfo = await this.webClient.users.info({
         user: user.id,
         token: workspace.accessToken
       }) as any
       user.name = userInfo.user.name;
       user.profile = userInfo.user.profile;
-    }
+    //}
 
     user.workspace = workspace;
     await userRepository.persistAndFlush(user);
