@@ -60,18 +60,20 @@ app-team {
 
   &--no-answers {
     img {
-      opacity: 0.4;
+      //opacity: 0.4;
     }
   }
 
   &__no-answers {
+    width: 100%;
     font-weight: 600;
     font-size: 18px;
     align-self: center;
   }
 
-  &__content {
+  &__user {
     display: flex;
+    width: 140px;
     flex-direction: column;
     align-items: center;
     align-self: flex-start;
@@ -80,6 +82,8 @@ app-team {
       width: 70px;
       margin-bottom: 7px;
     }
+
+    margin-left: 7px;
   }
 
   &__name {
@@ -89,6 +93,7 @@ app-team {
 
   &__results {
     display: grid;
+    width: 100%;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(var(--question-rows, 0), auto);
     grid-column-gap: 30px;
@@ -97,7 +102,6 @@ app-team {
   }
 
   &__result {
-    width: 350px;
     padding-left: 12px;
     border-left: 4px solid;
     /* https://semantic-ui.com/usage/theming.html*/

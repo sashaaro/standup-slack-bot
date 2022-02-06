@@ -13,7 +13,7 @@
       <div *ngFor="let userStandup of standup.users" class="stand-up-item" [class.stand-up-item--no-answers]="userStandup.answers.length === 0">
         <div *ngIf="userStandup.answers.length === 0" class="stand-up-item__no-answers">No answers 🐥</div>
 
-        <div class="stand-up-item__results" [style.--question-rows]="ceil(userStandup.answers.length / 2)">
+        <div *ngIf="userStandup.answers.length > 0" class="stand-up-item__results" [style.--question-rows]="ceil(userStandup.answers.length / 2)">
           <div *ngFor="let answer of userStandup.answers; let index = index" class="stand-up-item__result" [class]="'stand-up-item__result--' + index % 5">
             <div class="stand-up-item__question">{{ answer.question.text }}</div>
             <div class="stand-up-item__answer" [class.stand-up-item__answer--options]="answer.option">
@@ -30,7 +30,7 @@
           </div>
         </div>
 
-        <div class="stand-up-item__content">
+        <div class="stand-up-item__user">
           <img [src]="userStandup.user.profile?.image_192"/>
           <div class="stand-up-item__name">
             {{ userStandup.user.profile?.display_name || userStandup.user.profile?.real_name }}
