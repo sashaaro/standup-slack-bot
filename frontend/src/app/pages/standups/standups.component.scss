@@ -38,12 +38,12 @@
 
   &__content {
     @include card;
-    padding: 18px 45px;
+    padding: 14px 32px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
   }
 
-  margin-bottom: 16px;
+  margin-bottom: 22px;
 }
 
 
@@ -73,7 +73,7 @@ app-team {
 
   &__user {
     display: flex;
-    width: 140px;
+    width: 165px;
     flex-direction: column;
     align-items: center;
     align-self: flex-start;
