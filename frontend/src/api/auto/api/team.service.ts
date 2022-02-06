@@ -13,14 +13,19 @@
 
 import { Inject, Injectable, Optional }                      from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams,
-         HttpResponse, HttpEvent, HttpParameterCodec }       from '@angular/common/http';
+         HttpResponse, HttpEvent, HttpParameterCodec, HttpContext 
+        }       from '@angular/common/http';
 import { CustomHttpParameterCodec }                          from '../encoder';
 import { Observable }                                        from 'rxjs';
 
-import { InlineObject } from '../model/models';
-import { Team } from '../model/models';
-import { ValidationError } from '../model/models';
+// @ts-ignore
+import { InlineObject } from '../model/inlineObject';
+// @ts-ignore
+import { Team } from '../model/team';
+// @ts-ignore
+import { ValidationError } from '../model/validationError';
 
+// @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
 import { Configuration }                                     from '../configuration';
 
@@ -91,10 +96,10 @@ export class TeamService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public createTeam(team?: Team, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Team>;
-    public createTeam(team?: Team, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Team>>;
-    public createTeam(team?: Team, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Team>>;
-    public createTeam(team?: Team, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
+    public createTeam(team?: Team, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Team>;
+    public createTeam(team?: Team, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Team>>;
+    public createTeam(team?: Team, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Team>>;
+    public createTeam(team?: Team, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -110,6 +115,11 @@ export class TeamService {
             localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
         }
 
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
 
         // to determine the Content-Type header
         const consumes: string[] = [
@@ -120,17 +130,24 @@ export class TeamService {
             localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
         }
 
-        let responseType_: 'text' | 'json' = 'json';
-        if(localVarHttpHeaderAcceptSelected && localVarHttpHeaderAcceptSelected.startsWith('text')) {
-            responseType_ = 'text';
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
         }
 
         return this.httpClient.post<Team>(`${this.configuration.basePath}/team`,
             team,
             {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 withCredentials: this.configuration.withCredentials,
-                localVarHeaders: localVarHeaders,
+                headers: localVarHeaders,
                 observe: observe,
                 reportProgress: reportProgress
             }
@@ -142,10 +159,10 @@ export class TeamService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTeam(id: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Team>;
-    public getTeam(id: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Team>>;
-    public getTeam(id: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Team>>;
-    public getTeam(id: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
+    public getTeam(id: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Team>;
+    public getTeam(id: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Team>>;
+    public getTeam(id: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Team>>;
+    public getTeam(id: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (id === null || id === undefined) {
             throw new Error('Required parameter id was null or undefined when calling getTeam.');
         }
@@ -164,17 +181,29 @@ export class TeamService {
             localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
         }
 
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
 
-        let responseType_: 'text' | 'json' = 'json';
-        if(localVarHttpHeaderAcceptSelected && localVarHttpHeaderAcceptSelected.startsWith('text')) {
-            responseType_ = 'text';
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
         }
 
         return this.httpClient.get<Team>(`${this.configuration.basePath}/team/${encodeURIComponent(String(id))}`,
             {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 withCredentials: this.configuration.withCredentials,
-                localVarHeaders: localVarHeaders,
+                headers: localVarHeaders,
                 observe: observe,
                 reportProgress: reportProgress
             }
@@ -186,10 +215,10 @@ export class TeamService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTeams(status?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Team>>;
-    public getTeams(status?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Team>>>;
-    public getTeams(status?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Team>>>;
-    public getTeams(status?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
+    public getTeams(status?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<Team>>;
+    public getTeams(status?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<Team>>>;
+    public getTeams(status?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<Team>>>;
+    public getTeams(status?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
 
         let localVarQueryParameters = new HttpParams({encoder: this.encoder});
         if (status !== undefined && status !== null) {
@@ -211,18 +240,30 @@ export class TeamService {
             localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
         }
 
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
 
-        let responseType_: 'text' | 'json' = 'json';
-        if(localVarHttpHeaderAcceptSelected && localVarHttpHeaderAcceptSelected.startsWith('text')) {
-            responseType_ = 'text';
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
         }
 
         return this.httpClient.get<Array<Team>>(`${this.configuration.basePath}/team`,
             {
+                context: localVarHttpContext,
                 params: localVarQueryParameters,
                 responseType: <any>responseType_,
                 withCredentials: this.configuration.withCredentials,
-                localVarHeaders: localVarHeaders,
+                headers: localVarHeaders,
                 observe: observe,
                 reportProgress: reportProgress
             }
@@ -235,10 +276,10 @@ export class TeamService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public updateStatus(id: number, inlineObject?: InlineObject, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Team>;
-    public updateStatus(id: number, inlineObject?: InlineObject, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Team>>;
-    public updateStatus(id: number, inlineObject?: InlineObject, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Team>>;
-    public updateStatus(id: number, inlineObject?: InlineObject, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
+    public updateStatus(id: number, inlineObject?: InlineObject, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Team>;
+    public updateStatus(id: number, inlineObject?: InlineObject, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Team>>;
+    public updateStatus(id: number, inlineObject?: InlineObject, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Team>>;
+    public updateStatus(id: number, inlineObject?: InlineObject, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (id === null || id === undefined) {
             throw new Error('Required parameter id was null or undefined when calling updateStatus.');
         }
@@ -257,6 +298,11 @@ export class TeamService {
             localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
         }
 
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
 
         // to determine the Content-Type header
         const consumes: string[] = [
@@ -267,17 +313,24 @@ export class TeamService {
             localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
         }
 
-        let responseType_: 'text' | 'json' = 'json';
-        if(localVarHttpHeaderAcceptSelected && localVarHttpHeaderAcceptSelected.startsWith('text')) {
-            responseType_ = 'text';
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
         }
 
         return this.httpClient.patch<Team>(`${this.configuration.basePath}/team/${encodeURIComponent(String(id))}/status`,
             inlineObject,
             {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 withCredentials: this.configuration.withCredentials,
-                localVarHeaders: localVarHeaders,
+                headers: localVarHeaders,
                 observe: observe,
                 reportProgress: reportProgress
             }
@@ -290,10 +343,10 @@ export class TeamService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public updateTeam(id: number, team?: Team, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Team>;
-    public updateTeam(id: number, team?: Team, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Team>>;
-    public updateTeam(id: number, team?: Team, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Team>>;
-    public updateTeam(id: number, team?: Team, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
+    public updateTeam(id: number, team?: Team, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Team>;
+    public updateTeam(id: number, team?: Team, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Team>>;
+    public updateTeam(id: number, team?: Team, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Team>>;
+    public updateTeam(id: number, team?: Team, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (id === null || id === undefined) {
             throw new Error('Required parameter id was null or undefined when calling updateTeam.');
         }
@@ -312,6 +365,11 @@ export class TeamService {
             localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
         }
 
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
 
         // to determine the Content-Type header
         const consumes: string[] = [
@@ -322,17 +380,24 @@ export class TeamService {
             localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
         }
 
-        let responseType_: 'text' | 'json' = 'json';
-        if(localVarHttpHeaderAcceptSelected && localVarHttpHeaderAcceptSelected.startsWith('text')) {
-            responseType_ = 'text';
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
         }
 
         return this.httpClient.put<Team>(`${this.configuration.basePath}/team/${encodeURIComponent(String(id))}`,
             team,
             {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 withCredentials: this.configuration.withCredentials,
-                localVarHeaders: localVarHeaders,
+                headers: localVarHeaders,
                 observe: observe,
                 reportProgress: reportProgress
             }

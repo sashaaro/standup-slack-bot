@@ -13,12 +13,15 @@
 
 import { Inject, Injectable, Optional }                      from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams,
-         HttpResponse, HttpEvent, HttpParameterCodec }       from '@angular/common/http';
+         HttpResponse, HttpEvent, HttpParameterCodec, HttpContext 
+        }       from '@angular/common/http';
 import { CustomHttpParameterCodec }                          from '../encoder';
 import { Observable }                                        from 'rxjs';
 
-import { Channel } from '../model/models';
+// @ts-ignore
+import { Channel } from '../model/channel';
 
+// @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
 import { Configuration }                                     from '../configuration';
 
@@ -88,10 +91,10 @@ export class ChannelService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getChannels(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Channel>>;
-    public getChannels(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Channel>>>;
-    public getChannels(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Channel>>>;
-    public getChannels(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
+    public getChannels(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<Channel>>;
+    public getChannels(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<Channel>>>;
+    public getChannels(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<Channel>>>;
+    public getChannels(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -107,17 +110,29 @@ export class ChannelService {
             localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
         }
 
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
 
-        let responseType_: 'text' | 'json' = 'json';
-        if(localVarHttpHeaderAcceptSelected && localVarHttpHeaderAcceptSelected.startsWith('text')) {
-            responseType_ = 'text';
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
         }
 
         return this.httpClient.get<Array<Channel>>(`${this.configuration.basePath}/channel`,
             {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 withCredentials: this.configuration.withCredentials,
-                localVarHeaders: localVarHeaders,
+                headers: localVarHeaders,
                 observe: observe,
                 reportProgress: reportProgress
             }

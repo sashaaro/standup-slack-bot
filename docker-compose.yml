@@ -27,7 +27,7 @@ services:
     image: redis:6.2.5-alpine
 
   openapi-generator:
-    image: openapitools/openapi-generator-cli:v5.2.1
+    image: openapitools/openapi-generator-cli:v5.4.0
     user: "1000"
     volumes:
       - .:/opt/app
