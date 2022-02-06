@@ -29,7 +29,7 @@ export class TeamRepository extends EntityRepository<Team> {
       .andWhere(`(team.start::time - timezone.utc_offset) = ?::time`, [formatTime(startedAt, false)])
       .andWhere({'team.status': TEAM_STATUS_ACTIVATED})
       .andWhere(
-          `team.schedule_bitmask & ${convertWeekDayToBitSql('(extract("dow" from ? at time zone timezone.name)::int + 7) % 7')} <> 0::bit(7)`,
+          `team.schedule_bitmask & ${convertWeekDayToBitSql('extract("isodow" from ? at time zone timezone.name)')} <> 0::bit(7)`,
           [startedAt])
 
     return qb.getResultList()
