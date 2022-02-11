@@ -1,8 +1,7 @@
 import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
-  IMikroFactory,
-  LOG_TOKEN, MIKRO_FACTORY_TOKEN,
+  LOG_TOKEN, MIKRO_TOKEN,
   REDIS_TOKEN,
   TERMINATE
 } from "../services/token";
@@ -13,9 +12,11 @@ import {Job} from "bull";
 import {SlackEventListener} from "../slack/slack-event-listener";
 import {InteractiveResponseTypeEnum} from "../slack/model/InteractiveResponse";
 import {QueueRegistry} from "../services/queue.registry";
-import {HasPreviousError} from "../services/utils";
+import {HasPreviousError, initMikroORM} from "../services/utils";
 import {bind} from "../decorator/bind";
 import pino from "pino";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 
 
 class JobError extends HasPreviousError {
@@ -74,7 +75,7 @@ export class WorkerCommand implements yargs.CommandModule {
     private injector: Injector,
     private slackEventListener: SlackEventListener,
     @Inject(LOG_TOKEN) private log: pino.Logger,
-    @Inject(MIKRO_FACTORY_TOKEN) private mikroFactory: IMikroFactory,
+    @Inject(MIKRO_TOKEN) private orm: MikroORM<PostgreSqlDriver>,
     @Inject(REDIS_TOKEN) private redis: Redis,
     private queueRegistry: QueueRegistry,
     @Inject(TERMINATE) protected terminate$: Observable<void>
@@ -92,9 +93,8 @@ export class WorkerCommand implements yargs.CommandModule {
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    const mikroORM = await this.mikroFactory('Standup Bot Consumer')
-    await mikroORM.connect()
-    emStorage.enterWith(mikroORM.em)
+    await initMikroORM(this.orm)
+    emStorage.enterWith(this.orm.em)
 
     const queue = args.queue as string;
     const availableQueues = Object.keys(this.queueHandlers);
@@ -150,9 +150,6 @@ export class WorkerCommand implements yargs.CommandModule {
 
     this.terminate$.subscribe(() => {
       queues.forEach(q => q.close())
-
-      mikroORM.close()
-      this.redis.disconnect()
     })
   }
 }

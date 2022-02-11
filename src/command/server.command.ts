@@ -2,8 +2,7 @@ import * as yargs from "yargs";
 import {Inject, Injector} from "injection-js";
 import {
   CONFIG_TOKEN,
-  IMikroFactory,
-  LOG_TOKEN, MIKRO_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE,
+  LOG_TOKEN, MIKRO_TOKEN, REDIS_TOKEN, TERMINATE,
 } from "../services/token";
 import express from 'express'
 import 'express-async-errors';
@@ -18,6 +17,7 @@ import {errorHandler, requestContextMiddleware} from "../http/middlewares";
 import pino from "pino";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
+import {initMikroORM} from "../services/utils";
 
 export class ServerCommand implements yargs.CommandModule {
   static meta: Partial<yargs.CommandModule<any, any>> = {
@@ -30,7 +30,7 @@ export class ServerCommand implements yargs.CommandModule {
 
   constructor(
     private injector: Injector,
-    @Inject(MIKRO_FACTORY_TOKEN) private mikroFactory: IMikroFactory,
+    @Inject(MIKRO_TOKEN) private mikroORM: MikroORM<PostgreSqlDriver>,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(LOG_TOKEN) protected log: pino.Logger,
     @Inject(TERMINATE) protected terminate$: Observable<void>
@@ -57,8 +57,7 @@ export class ServerCommand implements yargs.CommandModule {
 
   private async startServer(port?: string|number)
   {
-    this.mikroORM = await this.mikroFactory('Standup Bot Server')
-    await this.mikroORM.connect()
+    await initMikroORM(this.mikroORM)
 
     try {
       await this.redis.connect();
@@ -106,11 +105,9 @@ export class ServerCommand implements yargs.CommandModule {
     server.listen(port)
       .on('error', (error) => {
         this.log.error(error, 'Server error');
-        this.close();
       })
       .on('close', () => {
         this.log.info('Server closed');
-        this.close();
       });
 
     this.terminate$.subscribe(() => {
@@ -120,18 +117,5 @@ export class ServerCommand implements yargs.CommandModule {
         }
       });
     })
-  }
-
-  private close() {
-    this.mikroORM.close().catch(e => {
-      this.log.error(e, 'Close mikroORM error')
-    });
-    try {
-      this.redis.disconnect()
-    } catch (e) {
-      if (!e.message.startsWith('Connection is closed')) {
-        this.log.error(e, 'Close redis error')
-      }
-    }
   }
 }

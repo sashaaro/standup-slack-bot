@@ -7,7 +7,7 @@ import {ContextualError, stringifyError} from "../services/utils";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "./api.middleware";
 import {AsyncLocalStorage} from "async_hooks";
 import {User} from "../entity";
-import {Handler, ErrorRequestHandler, Request, Response} from "express";
+import {Handler, ErrorRequestHandler, Request, Response, NextFunction} from "express";
 import {v4 as uuidv4} from "uuid";
 
 export const errorHandler = (dumpError: boolean, logger: pino.Logger): ErrorRequestHandler => (err, req, res, next) => {
@@ -28,8 +28,11 @@ export const errorHandler = (dumpError: boolean, logger: pino.Logger): ErrorRequ
   }
 }
 
-export const emMiddleware = (mikro: MikroORM<PostgreSqlDriver>): Handler => (req, res, next) => {
-  const em = mikro.em.fork(true, true);
+export const emMiddleware = (mikro: MikroORM<PostgreSqlDriver>): Handler => (req, res, next: any) => {
+  const em = mikro.em.fork({
+    clear: true,
+    useContext: true
+  });
   em.execute(`set application_name to "Standup Bot Server Request ${req.method}: ${req.path}";`)
   emStorage.run(em, next)
 

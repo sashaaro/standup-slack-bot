@@ -11,6 +11,7 @@ import SlackWorkspace from "../entity/slack-workspace";
 import {em} from "../services/providers";
 import {LOG_TOKEN} from "../services/token";
 import {ChannelRepository} from "../repository/channel.repository";
+import {wrap} from "@mikro-orm/core";
 
 @Injectable()
 export class SyncSlackService {
@@ -170,7 +171,7 @@ export class SyncSlackService {
 
       await em().begin()
       for (const channel of channels) {
-        const d = {
+        const d: any = {
           name: channel.name,
           name_normalized: channel.name_normalized,
           is_archived: channel.is_archived,
@@ -188,11 +189,10 @@ export class SyncSlackService {
         //   .getQuery())
         await em()
           .createQueryBuilder(Channel, 'ch')
-          .insert({...d, id: channel.id})
+          .insert(wrap(new Channel()).assign({...d, id: channel.id}))
           .onConflict('id').merge(d)
           //.onConflict('created_by_id').ignore()
-          .execute()
-
+          .execute();
 
 //         await conn.execute(`INSERT INTO customers (id, name, email)
 //        VALUES('Microsoft','hotline@microsoft.com') ON CONFLICT (channel_pkey)

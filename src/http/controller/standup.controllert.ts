@@ -2,9 +2,10 @@ import {Injectable} from 'injection-js';
 import {serialize} from "class-transformer";
 import {em} from "../../services/providers";
 import Standup from "../../entity/standup";
-import {QueryFlag} from "@mikro-orm/core";
-import {Handler} from "express";
+import {QueryFlag, QueryOrder} from "@mikro-orm/core";
 import {authorized} from "../../decorator/authorized";
+import {Team} from "../../entity";
+import {TeamRepository} from "../../repository/team.repository";
 
 @Injectable()
 export class StandupController {
@@ -23,8 +24,9 @@ export class StandupController {
 
     const offset = (page - 1) * limit
 
+    const teamRepo: TeamRepository = em().getRepository(Team)
     const [standups, total] = await em().findAndCount(Standup, {
-      team: {originTeam: teamID}
+      team: {originTeam: teamRepo.getReference(teamID)}
     }, {
       limit,
       offset,
@@ -36,9 +38,9 @@ export class StandupController {
         'users',
         'users.user',
         'users.answers',
-      ],
-      orderBy: {startAt: -1},// TODO , 'users.answers.createdAt': 1},
-      //fields: ['team'],
+      ] as any,
+      orderBy: {startAt: QueryOrder.ASC} as any,// TODO , 'users.answers.createdAt': 1},
+      fields: ['team'],
       flags: [QueryFlag.PAGINATE]
     })
 

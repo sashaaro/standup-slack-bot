@@ -17,6 +17,7 @@ import {LOG_TOKEN} from "../services/token";
 import {StandupRepository} from "../repository/standupRepository";
 import {ChatUpdateArguments, WebClient} from "@slack/web-api";
 import {response} from "express";
+import {wrap} from "@mikro-orm/core";
 
 interface IEventHandler {
   (data: any): Promise<any>|any
@@ -39,7 +40,7 @@ export class SlackEventListener {
         return;
       }
 
-      const user = await em().getRepository(User).findOne({id: messageResponse.user}, ['workspace'])
+      const user = await em().getRepository(User).findOne({id: messageResponse.user}, {populate: ['workspace']})
 
       if (!user) { // TODO skip bot message
         throw new MessageUserNotFoundError('Message author is not found', messageResponse)
@@ -70,7 +71,7 @@ export class SlackEventListener {
     member_left_channel: async (response: MemberJoinedChannel) => { // TODO left interface
       const workspaceRepository = em().getRepository(SlackWorkspace)
 
-      let workspace = (await workspaceRepository.findOne(response.team)) || workspaceRepository.create({id: response.team});
+      let workspace = (await workspaceRepository.findOne(response.team)) || wrap(new SlackWorkspace).assign({id: response.team});
       workspace = await this.syncSlack.updateWorkspace(workspace) // why?
       await this.syncSlack.joinSlackChannel(response.channel, {
         workspace: workspace
@@ -79,7 +80,7 @@ export class SlackEventListener {
     member_joined_channel: async (response: MemberJoinedChannel) => {
       const workspaceRepository = em().getRepository(SlackWorkspace)
 
-      let workspace = (await workspaceRepository.findOne(response.team)) || workspaceRepository.create({id: response.team});
+      let workspace = (await workspaceRepository.findOne(response.team)) || wrap(new SlackWorkspace).assign({id: response.team});
       workspace = await this.syncSlack.updateWorkspace(workspace) // why?
       await this.syncSlack.joinSlackChannel(response.channel, {
         workspace: workspace
@@ -191,7 +192,7 @@ export class SlackEventListener {
     const questions = await em().find(
       QuestionSnapshot,
       {id: {$in: questionsIds}},
-      ['options']
+        {populate: ['options']}
     );
 
     if (questions.length !== questionsIds.length) {

@@ -14,7 +14,8 @@ import {
 import {TeamDTO} from "../dto/team-dto";
 import {TEAM_STATUS_ACTIVATED, weekDayBits} from "../entity/team";
 import {transactional} from "../decorator/transactional";
-import {LoadStrategy, QueryFlag} from "@mikro-orm/core";
+import {LoadStrategy, QueryFlag, wrap} from "@mikro-orm/core";
+import {QueryOrder} from "@mikro-orm/core";
 
 export class TeamRepository extends EntityRepository<Team> {
   findByStart(startedAt: Date): Promise<Team[]> {
@@ -90,9 +91,9 @@ export class TeamRepository extends EntityRepository<Team> {
         'questions',
         'questions.options',
         'questions.originQuestion',
-      ],
+      ] as any,
       strategy: LoadStrategy.SELECT_IN,
-      orderBy: {createdAt: 'DESC'}
+      orderBy: {createdAt: QueryOrder.DESC}
     })
 
     em = em || this.em;
@@ -161,9 +162,9 @@ export class TeamRepository extends EntityRepository<Team> {
         name: teamDTO.name,
         scheduleBitmask: teamDTO.scheduleBitmask,
         start: teamDTO.start,
-        timezone: em.getReference(Timezone, teamDTO.timezoneId),
+        timezone: em.getReference(Timezone, teamDTO.timezoneId, {wrapped: true}),
         duration: teamDTO.duration,
-        reportChannel: em.getReference(Channel, teamDTO.reportChannelId),
+        reportChannel: em.getReference(Channel, teamDTO.reportChannelId, {wrapped: true}),
       })
       .where({id: teamDTO.id})
       .execute();
@@ -183,11 +184,12 @@ export class TeamRepository extends EntityRepository<Team> {
     const existQuestions = teamDTO.questions.filter(q => !!q.id)
 
     // mark as disabled removed questions
-    let qb: QueryBuilder<any> = em.createQueryBuilder(Question)
+    let qb = em.createQueryBuilder(Question)
       .update({isEnabled: false})
       .where({team: {id: teamDTO.id}})
     if (existQuestions.length) {
       //qb = qb.andWhere(`id NOT IN(${existQuestions.map(d => '?').join(',')})`, existQuestions.map(q => q.id))
+      // @ts-ignore
       qb = qb.andWhere({id: {$nin: existQuestions.map(o => o.id)}})
     }
     await qb.execute();
@@ -202,7 +204,9 @@ export class TeamRepository extends EntityRepository<Team> {
     ]);
     for (const q of teamDTO.questions) {
       if (!q.id) {
-        const newQ = em.create(Question, {...q, team: em.getReference(Team, teamDTO.id), options: []})
+        const newQ = new Question()
+        wrap(newQ).assign({...q, team: em.getReference(Team, teamDTO.id, {wrapped: true}), options: []})
+
         await em.persist(newQ);
         await em.flush();
         q.id = newQ.id
@@ -213,14 +217,15 @@ export class TeamRepository extends EntityRepository<Team> {
       const existOptions = options.filter(o => !!o.id)
 
       // mark as disabled removed options
-      qb = em
+      let optionQb = em
         .createQueryBuilder(QuestionOption)
         .update({isEnabled: false})
         .where({question_id: q.id})
       if (existOptions.length) {
-        qb = qb.andWhere({id: {$nin: existOptions.map(o => o.id)}})
+        // @ts-ignore
+        optionQb = optionQb.andWhere({id: {$nin: existOptions.map(o => o.id)}})
       }
-      await qb.execute()
+      await optionQb.execute()
       await Promise.all([
         ...existOptions.map(o => em
             .createQueryBuilder(QuestionOption)
@@ -231,12 +236,13 @@ export class TeamRepository extends EntityRepository<Team> {
       ])
 
       await em.persist(
-        newOptions.map(o => em.create(QuestionOption, {...o, question: em.getReference(Question, q.id), isEnabled: true})) // TODO find same
+        newOptions.map(o => wrap(new QuestionOption()).assign({...o, question: em.getReference(Question, q.id, {wrapped: true}), isEnabled: true})) // TODO find same
       );
       await em.flush();
     }
 
-    const team = await em.findOneOrFail(Team, {
+    // @ts-ignore
+    const team = await em.findOneOrFail<Team>(Team, {
       id: teamDTO.id,
       /*questions: {
         isEnabled: true,
@@ -245,12 +251,10 @@ export class TeamRepository extends EntityRepository<Team> {
         }
       } as any*/
     }, {
-      populate: ['users', 'questions', 'questions.options'],
+      populate: ['users', 'questions', 'questions.options'] as any,
       refresh: true,
       strategy: LoadStrategy.JOINED
     })
-
-
 
     const lastSnapshot = await this.findSnapshot(team, em);
     const newSnapshot = this.createSnapshot(team);

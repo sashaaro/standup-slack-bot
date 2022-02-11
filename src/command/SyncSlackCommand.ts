@@ -2,11 +2,10 @@ import * as yargs from "yargs";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {Inject, Injectable} from "injection-js";
 import {MIKRO_TOKEN} from "../services/token";
-import {MikroORM} from "@mikro-orm/core";
-import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import SlackWorkspace from "../entity/slack-workspace";
 import {emStorage} from "../services/providers";
 import {bind} from "../decorator/bind";
+import {initMikroORM} from "../services/utils";
 
 @Injectable()
 export class SyncSlackCommand implements yargs.CommandModule<any, any> {
@@ -17,19 +16,16 @@ export class SyncSlackCommand implements yargs.CommandModule<any, any> {
 
   constructor(
     private syncSlackService: SyncSlackService,
-    @Inject(MIKRO_TOKEN) private mikroORM,
+    @Inject(MIKRO_TOKEN) private orm,
   ) {}
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
-    const mikroORM = await this.mikroORM
-    if (!await mikroORM.isConnected()) {
-      await mikroORM.connect()
-    }
+    await initMikroORM(this.orm)
 
-    const workspaces = await mikroORM.em.getRepository(SlackWorkspace).findAll()
+    const workspaces = await this.orm.em.getRepository(SlackWorkspace).findAll()
 
-    emStorage.run(mikroORM.em, () => {
+    emStorage.run(this.orm.em, () => {
       for(const workspace of workspaces) {
         this.syncSlackService.syncForWorkspace(workspace)
       }

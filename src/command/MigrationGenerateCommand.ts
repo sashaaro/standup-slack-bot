@@ -1,9 +1,8 @@
 import * as yargs from "yargs";
 import {Inject, Injectable} from "injection-js";
 import {MIKRO_TOKEN} from "../services/token";
-import {MikroORM} from "@mikro-orm/core";
-import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {bind} from "../decorator/bind";
+import {initMikroORM} from "../services/utils";
 
 @Injectable()
 export class MigrationGenerateCommand implements yargs.CommandModule {
@@ -13,18 +12,13 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
     aliases: 'migrations:generate',
   }
 
-  constructor(@Inject(MIKRO_TOKEN) private mikroORM) {}
+  constructor(@Inject(MIKRO_TOKEN) private orm) {}
 
   @bind
   async handler(args: yargs.Arguments) {
-    let mikroORM: MikroORM<PostgreSqlDriver>;
-    mikroORM = await this.mikroORM
+    await initMikroORM(this.orm)
 
-    if (!await mikroORM.isConnected()) {
-      await mikroORM.connect()
-    }
-
-    await mikroORM.getMigrator().createMigration()
-    await mikroORM.close()
+    await this.orm.getMigrator().createMigration()
+    await this.orm.close()
   }
 }

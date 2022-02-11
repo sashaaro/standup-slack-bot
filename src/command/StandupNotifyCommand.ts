@@ -2,7 +2,7 @@ import * as yargs from "yargs";
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import StandupNotifier from "../slack/standup-notifier";
 import {Inject} from "injection-js";
-import {IMikroFactory, LOG_TOKEN, MIKRO_FACTORY_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
+import {LOG_TOKEN, MIKRO_TOKEN, REDIS_TOKEN, TERMINATE} from "../services/token";
 import {concat, Observable} from "rxjs";
 import {Redis} from "ioredis";
 import {redisReady} from "./WorkerCommand";
@@ -11,6 +11,9 @@ import {from} from "rxjs";
 import {UserStandup} from "../entity";
 import {bind} from "../decorator/bind";
 import pino from "pino";
+import {MikroORM} from "@mikro-orm/core";
+import {PostgreSqlDriver} from "@mikro-orm/postgresql";
+import {initMikroORM} from "../services/utils";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
   static meta = {
@@ -24,16 +27,15 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(TERMINATE) protected terminate$: Observable<void>,
     @Inject(LOG_TOKEN) protected log: pino.Logger,
-    @Inject(MIKRO_FACTORY_TOKEN) private mikroFactory: IMikroFactory,
+    @Inject(MIKRO_TOKEN) private orm: MikroORM<PostgreSqlDriver>,
   ) {}
 
   @bind
   async handler(args: yargs.Arguments<{}>) {
     this.log.info('Database connection estimating...');
-    const mikroORM = await this.mikroFactory('Standup Bot Notifier')
-    await mikroORM.connect()
+    await initMikroORM(this.orm)
 
-    const em = mikroORM.em;
+    const em = this.orm.em;
 
     try {
       await this.redis.connect();
@@ -46,7 +48,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     await redisReady(this.redis);
 
     this.log.info('Start standup notificator loop...');
-    const {start$, end$} = this.standupNotifier.create(mikroORM)
+    const {start$, end$} = this.standupNotifier.create(this.orm)
     start$.pipe(
       mergeMap(standup => {
         return concat(...standup.team.users.getItems().map(
@@ -87,10 +89,6 @@ export class StandupNotifyCommand implements yargs.CommandModule {
       },
       error: error => this.log.error(error, 'Send report error')
     })
-
-    this.terminate$.subscribe(() => {
-      em.getConnection().close();
-    });
 
     this.log.info('Notifier listen');
   }

@@ -1,7 +1,7 @@
 import Standup from "../entity/standup";
 import {qbStandupJoins, scopeTeamSnapshotJoins, scopeTeamWorkspaceJoins, scopeUserAnswerQuestion} from "./scopes";
 import UserStandup from "../entity/user-standup";
-import {EntityRepository} from "@mikro-orm/postgresql";
+import {EntityRepository, QueryBuilder} from "@mikro-orm/postgresql";
 import {QueryFlag} from "@mikro-orm/core";
 import {User} from "../entity";
 
@@ -39,22 +39,27 @@ export class StandupRepository extends EntityRepository<Standup> {
   }
 
   findUserStandup(userId: string, standupId: number): Promise<UserStandup> {
+    // TODO isEnabled filter
     return this.em.findOne(UserStandup, {
-      // TODO isEnabled filter
-      user: this.em.getReference(User, userId),
-      standup: this.em.getReference(Standup, standupId)
-    }, [
-      'user',
-      'standup',
-      'standup.team',
-      'standup.team.questions',
-      'standup.team.questions.options',
-      'standup.team.originTeam',
-      'standup.team.originTeam.workspace',
-      'answers',
-      'answers.question',
-    ]); // TODO check left join!
-    const qb = this.em.getRepository(UserStandup).createQueryBuilder('userStandup')
+      user: this.em.getReference<User>(User, userId, {wrapped: true}),
+      standup: this.em.getReference(Standup, standupId, {wrapped: true})
+    } as any, {
+      populate: [
+        'user',
+        'standup',
+        'standup.team',
+        'standup.team.questions',
+        'standup.team.questions.options',
+        'standup.team.originTeam',
+        'standup.team.originTeam.workspace',
+        'answers',
+        'answers.question',
+      ]
+    });
+    // TODO check left join!
+
+
+    const qb: QueryBuilder<UserStandup> = this.em.getRepository(UserStandup).createQueryBuilder('userStandup')
       .where({user_id: userId, standup_id: standupId}) // TODO add unique index userId standupId
       .leftJoinAndSelect('userStandup.user', 'user')
       .leftJoinAndSelect('userStandup.standup', 'standup')

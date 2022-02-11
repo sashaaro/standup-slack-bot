@@ -8,18 +8,18 @@ services:
     user: 1000:1000
     tty: true
     ports:
-      - "3000:3000"
+      - "3001:3000"
       - "9229:9229"
     volumes:
-      - .:/opt/app
-    working_dir: /opt/app
-    depends_on:
-      - postgres
+      - ./..:/opt/app
+    working_dir: /opt/app/standup-slack-bot
+    #depends_on:
+    #  - postgres
 
   postgres:
     image: postgres:14.0-alpine
     ports:
-      - "5432:5432"
+      - "5435:5432"
     environment:
       POSTGRES_PASSWORD: postgres
 

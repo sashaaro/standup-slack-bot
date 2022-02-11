@@ -1,15 +1,15 @@
 import {Provider} from "injection-js";
 import {
-  CONFIG_TOKEN, IMikroFactory, LOG_TOKEN, MIKRO_FACTORY_TOKEN, MIKRO_TOKEN,
+  CONFIG_TOKEN, LOG_TOKEN, MIKRO_CONFIG_TOKEN, MIKRO_TOKEN,
   REDIS_TOKEN,
-  TERMINATE,
+  TERMINATE, TERMINATE_HANDLER,
 } from "./token";
 import StandupNotifier from "../slack/standup-notifier";
 import actions from "../http/controller";
 import {LogLevel, WebClient} from '@slack/web-api'
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import {createEventAdapter} from "@slack/events-api";
-import IOredis from 'ioredis';
+import IOredis, {Redis} from 'ioredis';
 import {commands, devCommands} from "../command";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
@@ -18,7 +18,7 @@ import {SlackEventListener} from "../slack/slack-event-listener";
 import {SyncSlackService} from "../slack/sync-slack.service";
 import {QueueRegistry} from "./queue.registry";
 import pino from "pino";
-import {LoadStrategy, MikroORM} from "@mikro-orm/core";
+import {Configuration, LoadStrategy, MigrationsOptions, MikroORM} from "@mikro-orm/core";
 import {EntityManager, PostgreSqlDriver} from "@mikro-orm/postgresql";
 import { AsyncLocalStorage } from "async_hooks";
 import * as entities from "../entity";
@@ -95,12 +95,13 @@ export const createLogger = (config: IAppConfig): pino.Logger => {
     },
   }
 
-  let steam: pino.DestinationStream = pino.destination(`${config.logDir || 'var/log'}/${process.env.APP_CONTEXT || 'app'}.log`);
+  let steam: pino.DestinationStream;
   if (config.debug) {
     pinoOptions.level = 'debug';
-    pinoOptions.prettifier = true;
-    pinoOptions.prettyPrint = {};
-    steam = process.stdout
+    //steam = process.stdout
+    pinoOptions.transport = {target: 'pino-pretty'};
+  } else {
+    steam = pino.destination(`${config.logDir || 'var/log'}/${process.env.APP_CONTEXT || 'app'}.log`);
   }
 
   return pino(pinoOptions, steam)
@@ -124,43 +125,43 @@ export const createProviders = (config: IAppConfig, logger: pino.Logger): {provi
     },
     {
       provide: LOG_TOKEN,
-      useValue: logger,
-      deps: [CONFIG_TOKEN]
+      useValue: logger
     },
     {
-      provide: MIKRO_FACTORY_TOKEN,
-      useFactory: (config: IAppConfig): IMikroFactory => async (applicationName: string) => {
+      provide: MIKRO_CONFIG_TOKEN,
+      useFactory: (config: IAppConfig): Configuration<PostgreSqlDriver> => {
         const clientUrl =
-          `postgresql://${config.db.username}:${config.db.password}@${config.db.host}:5432/${config.db.database}`
-        const mikroORM: MikroORM<PostgreSqlDriver> = await MikroORM.init({
+            `postgresql://${config.db.username}:${config.db.password}@${config.db.host}:5432/${config.db.database}`
+
+        const migrations: MigrationsOptions = {
+          transactional: true,
+          path: migrationsDir,
+          disableForeignKeys: false, //?!
+          allOrNothing: true,
+          dropTables: false,
+          emit: 'ts'
+        };
+
+        return new Configuration<PostgreSqlDriver>({
           entities: Object.values(entities),
           highlighter: config.debug ? new SqlHighlighter() : undefined,
-          debug: config.debug,
+          debug: config.debug ? ['query', 'query-params', 'info'] : false,
           type: 'postgresql',
+          allowGlobalContext: true,
           loadStrategy: LoadStrategy.JOINED,
           clientUrl,
           context: () => emStorage.getStore(),
-          migrations: {
-            transactional: true,
-            path: migrationsDir,
-            pattern: /^[\w-]+\d+\.js$/,
-            disableForeignKeys: false, //?!
-            allOrNothing: true,
-            dropTables: false,
-            emit: 'ts'
-          }
+          migrations
         });
-        await mikroORM.em.execute(`set application_name to "${applicationName}";`)
-        return mikroORM
       },
       deps: [CONFIG_TOKEN]
     },
     {
       provide: MIKRO_TOKEN,
-      useFactory: (factory: IMikroFactory) => {
-        return factory('Standup_bot')
+      useFactory: (config: Configuration<PostgreSqlDriver>) => {
+        return new MikroORM<PostgreSqlDriver>(config);
       },
-      deps: [MIKRO_FACTORY_TOKEN]
+      deps: [MIKRO_CONFIG_TOKEN]
     },
     QueueRegistry,
     {
@@ -194,12 +195,39 @@ export const createProviders = (config: IAppConfig, logger: pino.Logger): {provi
         })
       })
     },
+    {
+      provide: TERMINATE_HANDLER,
+      useFactory: (mikroOrm: MikroORM, redis: Redis) => () => {
+        if (mikroOrm) {
+          mikroOrm.isConnected().then(isConnected => {
+            logger.info('Closing orm connection...')
+            if (isConnected) {
+              mikroOrm.close().catch(err => {
+                this.log.error(e, 'Close mikroORM error')
+              });
+            }
+          })
+        }
+
+        if (redis) { // TODO && redis.status === ...
+          try {
+            redis.disconnect()
+          } catch (e) {
+            if (!e.message.startsWith('Connection is closed')) {
+              logger.error(e, 'Close redis error')
+            }
+          }
+        }
+      },
+      deps: [MIKRO_TOKEN, REDIS_TOKEN]
+    }
   ]
 
   let commandProviders = [...commands]
   if (config.env !== "prod") {
     commandProviders = [...commandProviders, ...devCommands]
   }
+
 
   providers = [...providers, ...commandProviders]
 

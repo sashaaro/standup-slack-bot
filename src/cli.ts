@@ -1,26 +1,48 @@
 #!/usr/bin/env node
 import "reflect-metadata";
-import yargs, {Arguments} from "yargs";
+import yargs from "yargs/yargs";
 import {ReflectiveInjector} from "injection-js";
 import {createConfFromEnv, createLogger, createProviders} from "./services/providers";
-import {TERMINATE} from "./services/token";
+import {MIKRO_CONFIG_TOKEN, MIKRO_TOKEN, TERMINATE, TERMINATE_HANDLER} from "./services/token";
 import Rollbar from "rollbar";
 import pino from "pino";
 import fs from "fs";
 import dotenv from "dotenv";
+import {CLIConfigurator} from "@mikro-orm/cli";
+import {hideBin} from "yargs/helpers";
+import {initMikroORM} from "./services/utils";
 
-const argv = yargs.option('env', {
-  default: 'dev',
-  describe: 'Environment'
-})
 
-const env = (argv.argv as any).env;
+// const env = yargs.option('env', {
+//   default: 'dev',
+//   describe: 'Environment'
+// }).argv.env;
+
+const env = 'dev';
 
 if (fs.existsSync(`.env.${env}`)) {
   dotenv.config({path: `.env.${env}`})
 }
 const config = createConfFromEnv(env);
 const logger: pino.Logger = createLogger(config);
+
+const argv: yargs.Argv = yargs(hideBin(process.argv))
+  .scriptName('standup-bot')
+  .usage('$0 <cmd> [args]')
+  .fail((msg, err) => {
+    if (err) {
+      logger.fatal(err, 'Application fail')
+    } else {
+      logger.warn(msg)
+    }
+    injector.get(TERMINATE_HANDLER)()
+  })
+
+// argv
+//   .onFinishCommand(e => {
+//     injector.get(TERMINATE_HANDLER)()
+//   })
+
 
 // https://getpino.io/#/docs/help?id=exit-logging
 // process.on('uncaughtException', pino.final(logger, (err, finalLogger) => {
@@ -39,7 +61,8 @@ const injector = ReflectiveInjector.resolveAndCreate(providers);
 
 logger.info({env, debug: config.debug}, `Start`)
 
-injector.get(TERMINATE).subscribe(() => {
+injector.get(TERMINATE).subscribe(_ => {
+  injector.get(TERMINATE_HANDLER)()
   logger.info('Terminate...')
 })
 
@@ -48,23 +71,36 @@ if (config.rollBarAccessToken) {
     accessToken: config.rollBarAccessToken,
     captureUncaught: true,
     captureUnhandledRejections: true,
-    environment: process.argv.join(' ')
+    environment: env//process.argv.join(' ')
   });
 }
-
-let main = yargs
-  .usage("Usage: $0 <command> [options]")
 
 commands.forEach((command: any) => {
   const meta = command.meta as Partial<yargs.CommandModule<any, any>>
   const handler: (args: Arguments<any>) => void = async (args) => {
-      await injector.get(command).handler(args)
+    await injector.get(command).handler(args)
   }
-  main = main.command({...meta, handler});
+  argv.command({...meta, handler});
 })
 
+const ormCommands: any[] = [
+  ...CLIConfigurator.createOrmCommands(() => {
+      return new Promise((resolve, reject) => {
+        const mikro = injector.get(MIKRO_TOKEN)
+          initMikroORM(mikro)
+            .then(_ => {
+              resolve(mikro)
+            })
+            .catch(er => reject(er))
+      })
+  }),
+  ...CLIConfigurator.createConfigCommands(() => injector.get(MIKRO_CONFIG_TOKEN))
+]
 
-main
-  .strict()
-  .fail(e => logger.fatal(e, 'Application fail'))
+ormCommands.forEach(cmd => argv.command(cmd))
+
+argv
+  //.strict()
+  .demandCommand(1, 'You need at least one command before moving on')
+  .help()
   .argv

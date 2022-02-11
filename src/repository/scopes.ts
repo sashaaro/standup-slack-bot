@@ -2,7 +2,7 @@
 import {Team} from "../entity/team";
 import {QueryBuilder} from "@mikro-orm/postgresql";
 
-export function scopeTeamWorkspaceJoins(qb: QueryBuilder): QueryBuilder<any> {
+export function scopeTeamWorkspaceJoins(qb: QueryBuilder<any>): QueryBuilder<any> {
   return qb.joinAndSelect('standup.team', 'teamSnapshot')
     .joinAndSelect('teamSnapshot.originTeam', 'team')
     .joinAndSelect('team.workspace', 'workspace')

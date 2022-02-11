@@ -8,9 +8,9 @@ import {SyncSlackCommand} from "./SyncSlackCommand";
 import {DevCommand} from "./DevCommand";
 
 export const dbCommands: any = [
-  MigrationGenerateCommand,
-  DatabaseMigrateCommand,
-  DatabaseFixtureCommand,
+  //MigrationGenerateCommand,
+  //DatabaseMigrateCommand,
+  //DatabaseFixtureCommand,
 ]
 
 export const commands: any = [

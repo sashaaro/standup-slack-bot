@@ -11,7 +11,7 @@ import pino from "pino";
 import {TEAM_STATUS_ACHIEVED, TEAM_STATUS_ACTIVATED, teamStatuses} from "../../entity/team";
 import {reqContext} from "../middlewares";
 import {authorized} from "../../decorator/authorized";
-import {NotFoundError} from "@mikro-orm/core";
+import {NotFoundError, wrap} from "@mikro-orm/core";
 
 const clearFromTarget = (errors: ValidationError[]): Partial<ValidationError>[] => {
   return errors.map(error => {
@@ -79,14 +79,19 @@ export class TeamController {
       team.name = teamDTO.name;
       team.scheduleBitmask = teamDTO.scheduleBitmask;
       team.start = teamDTO.start;
-      team.timezone = em().getReference(Timezone, teamDTO.timezoneId);
+      team.timezone = em().getReference(Timezone, teamDTO.timezoneId, {wrapped: true});
       teamDTO.userIds.forEach(u => team.users.add(em().getReference(User, u)))
-      team.reportChannel = em().getReference(Channel, teamDTO.reportChannelId);
+      team.reportChannel = em().getReference(Channel, teamDTO.reportChannelId, {wrapped: true});
       teamDTO.questions.forEach(q => {
         if (q.options) {
-          q.options = q.options.map(o => em().create(QuestionOption, o))
+          q.options = q.options.map(o => {
+            const qo = new QuestionOption();
+            wrap(qo).assign(o);
+            return qo;
+          })
         }
-        team.questions.add(em().create(Question, q))
+        const qu = new Question()
+        team.questions.add(wrap(qu).assign(q))
       });
 
       team.createdBy = reqContext().user;

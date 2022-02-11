@@ -4,6 +4,7 @@ import {MIKRO_TOKEN} from "../services/token";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {bind} from "../decorator/bind";
+import {initMikroORM} from "../services/utils";
 
 @Injectable()
 export class DatabaseMigrateCommand implements yargs.CommandModule {
@@ -12,18 +13,13 @@ export class DatabaseMigrateCommand implements yargs.CommandModule {
     describe: 'Migrate database',
   }
 
-  constructor(@Inject(MIKRO_TOKEN) private mikroORM) {}
+  constructor(@Inject(MIKRO_TOKEN) private orm) {}
 
   @bind
   async handler(args: yargs.Arguments) {
-    let mikroORM: MikroORM<PostgreSqlDriver>;
-    mikroORM = await this.mikroORM
+    await initMikroORM(this.orm)
 
-    if (!await mikroORM.isConnected()) {
-      await mikroORM.connect()
-    }
-
-    await mikroORM.getMigrator().up()
-    await mikroORM.close()
+    await this.orm.getMigrator().up()
+    await this.orm.close()
   }
 }

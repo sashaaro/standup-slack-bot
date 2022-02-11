@@ -20,7 +20,7 @@
 <!--          <mat-icon inline>360</mat-icon> Create review 360-->
 <!--        </a>-->
         <a class="item" routerLink="/team/create" routerLinkActive #rla="routerLinkActive" [class.active]="rla.isActive">
-          <mat-icon inline>add_circle</mat-icon> Create team
+          <mat-icon inline>add</mat-icon> Create team
         </a>
 <!--        <a class="item" routerLink="/settings" routerLinkActive #rla2="routerLinkActive" [class.active]="rla2.isActive">-->
 <!--          <mat-icon inline>settings</mat-icon> Settings-->
@@ -29,7 +29,10 @@
 <!--          <mat-icon inline>support</mat-icon> Support-->
 <!--        </a>-->
 
-        <a class="item" href="#" (click)="$event.preventDefault(); logout()">Logout</a></div>
+        <a class="item" href="#" (click)="$event.preventDefault(); logout()">
+          <mat-icon inline>logout</mat-icon> Logout
+        </a>
+      </div>
     </div>
 
     <ng-template #guestRightMenu>

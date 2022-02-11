@@ -1,5 +1,5 @@
 import {CodedError, WebAPIPlatformError} from "@slack/web-api";
-import {Platform, Type, ValidationError} from "@mikro-orm/core";
+import {MikroORM, Platform, Type, ValidationError} from "@mikro-orm/core";
 import {AsyncLocalStorage} from "async_hooks";
 import {Observable} from "rxjs";
 import {TransformFnParams} from "class-transformer/types/interfaces";
@@ -130,3 +130,16 @@ export class BitmaskType extends Type<number, string> {
 
 
 export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+
+export const initMikroORM = async (orm: MikroORM, connect: boolean = true, applicationName?: string) => {
+  await orm.discoverEntities();
+  if (connect) {
+    if (orm.config.get('ensureIndexes')) {
+      await orm.getSchemaGenerator().ensureIndexes();
+      if (applicationName) {
+        await orm.em.execute(`set application_name to "${applicationName}";`) // TODO hostname
+      }
+    }
+  }
+}
