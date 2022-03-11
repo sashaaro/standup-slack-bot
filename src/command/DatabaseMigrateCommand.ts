@@ -1,17 +1,13 @@
 import * as yargs from "yargs";
 import {Inject, Injectable} from "injection-js";
 import {MIKRO_TOKEN} from "../services/token";
-import {MikroORM} from "@mikro-orm/core";
-import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {bind} from "../decorator/bind";
 import {initMikroORM} from "../services/utils";
 
 @Injectable()
 export class DatabaseMigrateCommand implements yargs.CommandModule {
-  static meta = {
-    command: 'database:migrate',
-    describe: 'Migrate database',
-  }
+  command = 'database:migrate'
+  describe = 'Migrate database'
 
   constructor(@Inject(MIKRO_TOKEN) private orm) {}
 

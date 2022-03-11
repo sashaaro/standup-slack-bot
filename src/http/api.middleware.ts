@@ -9,7 +9,6 @@ import {TeamController} from "./controller/team.controller";
 import {UserController} from "./controller/user.controller";
 import {ChannelController} from "./controller/channel.controller";
 import {StandupController} from "./controller/standup.controllert";
-import {OptionController} from "./controller/option.controller";
 import pinoHttp from "pino-http";
 import {createMessageAdapter} from "@slack/interactive-messages";
 import {QUEUE_NAME_SLACK_EVENTS, QUEUE_NAME_SLACK_INTERACTIVE} from "../services/providers";
@@ -39,7 +38,7 @@ export class BadRequestError extends Error {
 export class ApiMiddleware {
   constructor(private injector: Injector) {}
 
-  use(mikro: MikroORM<PostgreSqlDriver>): express.Router {
+  use(orm: MikroORM<PostgreSqlDriver>): express.Router {
     const injector = this.injector;
 
     const router = express.Router()
@@ -55,7 +54,7 @@ export class ApiMiddleware {
       // TODO ?! cookie: { secure: true }
     }))
 
-    router.use(emMiddleware(mikro));
+    router.use(emMiddleware(orm));
     router.use(apiContextMiddleware(injector.get(LOG_TOKEN)));
 
     const auto = injector.get(AuthController);
@@ -101,7 +100,7 @@ export class ApiMiddleware {
     return router;
   }
 
-  useSlackApi(mikro: MikroORM<PostgreSqlDriver>): express.Router {
+  useSlackApi(orm: MikroORM<PostgreSqlDriver>): express.Router {
     const router = express.Router()
 
     const config = this.injector.get(CONFIG_TOKEN)
@@ -154,7 +153,7 @@ export class ApiMiddleware {
     })
 
 
-    router.use(emMiddleware(mikro));
+    router.use(emMiddleware(orm));
 
     router.use('/interactive', slackInteractions.expressMiddleware());
     router.use('/events', slackEvents.expressMiddleware());

@@ -3,7 +3,7 @@ import pino from "pino";
 import {em, emStorage} from "../services/providers";
 import {MikroORM} from "@mikro-orm/core";
 import {PostgreSqlDriver} from "@mikro-orm/postgresql";
-import {ContextualError, stringifyError} from "../services/utils";
+import {stringifyError} from "../services/utils";
 import {AccessDenyError, BadRequestError, ResourceNotFoundError} from "./api.middleware";
 import {AsyncLocalStorage} from "async_hooks";
 import {User} from "../entity";
@@ -28,12 +28,13 @@ export const errorHandler = (dumpError: boolean, logger: pino.Logger): ErrorRequ
   }
 }
 
-export const emMiddleware = (mikro: MikroORM<PostgreSqlDriver>): Handler => (req, res, next: any) => {
-  const em = mikro.em.fork({
+export const emMiddleware = (orm: MikroORM<PostgreSqlDriver>): Handler => (req, res, next: any) => {
+  const em = orm.em.fork({
     clear: true,
     useContext: true
   });
-  em.execute(`set application_name to "Standup Bot Server Request ${req.method}: ${req.path}";`)
+  //em.execute(`set application_name to "Standup Bot Server Request ${req.method}: ${req.path}";`).catch(err => {
+  //})
   emStorage.run(em, next)
 
   // res.on('finish', () => {

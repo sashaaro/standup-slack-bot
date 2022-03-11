@@ -3,6 +3,7 @@ import {MikroORM, Platform, Type, ValidationError} from "@mikro-orm/core";
 import {AsyncLocalStorage} from "async_hooks";
 import {Observable} from "rxjs";
 import {TransformFnParams} from "class-transformer/types/interfaces";
+import {AbstractSqlDriver} from "@mikro-orm/postgresql";
 
 export const transformCollection: (params: TransformFnParams) => any = (params) => [...params.value.getItems()]
 
@@ -132,9 +133,11 @@ export class BitmaskType extends Type<number, string> {
 export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 
-export const initMikroORM = async (orm: MikroORM, connect: boolean = true, applicationName?: string) => {
+export const initMikroORM = async (orm: MikroORM<AbstractSqlDriver>, connect: boolean = true, applicationName?: string) => {
   await orm.discoverEntities();
   if (connect) {
+    await orm.connect();
+    
     if (orm.config.get('ensureIndexes')) {
       await orm.getSchemaGenerator().ensureIndexes();
       if (applicationName) {

@@ -9,10 +9,8 @@ import {initMikroORM} from "../services/utils";
 
 @Injectable()
 export class SyncSlackCommand implements yargs.CommandModule<any, any> {
-  static meta: Partial<yargs.CommandModule<any, any>> = {
-    command: 'slack:sync',
-    describe: 'Sync data from slack api'
-  };
+  command = 'slack:sync'
+  describe = 'Sync data from slack api'
 
   constructor(
     private syncSlackService: SyncSlackService,

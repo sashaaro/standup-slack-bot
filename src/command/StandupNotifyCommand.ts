@@ -16,10 +16,8 @@ import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {initMikroORM} from "../services/utils";
 
 export class StandupNotifyCommand implements yargs.CommandModule {
-  static meta = {
-    command: 'standup:notify',
-    describe: 'Notify teams about standup starting'
-  }
+  command = 'standup:notify'
+  describe = 'Notify teams about standup starting'
 
   constructor(
     private slackTransport: SlackBotTransport,

@@ -7,10 +7,8 @@ import {initMikroORM} from "../services/utils";
 
 @Injectable()
 export class DatabaseFixtureCommand implements yargs.CommandModule {
-  static meta = {
-    command: 'database:fixture',
-    describe: 'Load database fixture',
-  }
+  command = 'database:fixture'
+  describe = 'Load database fixture'
 
   constructor(
     @Inject(MIKRO_TOKEN) private orm,

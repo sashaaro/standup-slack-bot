@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import "reflect-metadata";
-import yargs from "yargs/yargs";
+import yargs from "yargs";
 import {ReflectiveInjector} from "injection-js";
 import {createConfFromEnv, createLogger, createProviders} from "./services/providers";
 import {MIKRO_CONFIG_TOKEN, MIKRO_TOKEN, TERMINATE, TERMINATE_HANDLER} from "./services/token";
@@ -57,7 +57,7 @@ const argv: yargs.Argv = yargs(hideBin(process.argv))
 
 const {providers, commands} = createProviders(config, logger);
 // consider https://github.com/TypedProject/tsed/tree/production/packages/di
-const injector = ReflectiveInjector.resolveAndCreate(providers);
+const injector = ReflectiveInjector.resolveAndCreate([...providers, ...commands]);
 
 logger.info({env, debug: config.debug}, `Start`)
 
@@ -75,29 +75,24 @@ if (config.rollBarAccessToken) {
   });
 }
 
-commands.forEach((command: any) => {
-  const meta = command.meta as Partial<yargs.CommandModule<any, any>>
-  const handler: (args: Arguments<any>) => void = async (args) => {
-    await injector.get(command).handler(args)
-  }
-  argv.command({...meta, handler});
+// const ormCommands: any[] = [
+//   ...CLIConfigurator.createOrmCommands(() => {
+//       return new Promise((resolve, reject) => {
+//         const mikro = injector.get(MIKRO_TOKEN)
+//           initMikroORM(mikro)
+//             .then(_ => {
+//               resolve(mikro)
+//             })
+//             .catch(er => reject(er))
+//       })
+//   }),
+//   ...CLIConfigurator.createConfigCommands(() => injector.get(MIKRO_CONFIG_TOKEN))
+// ]
+
+commands.forEach(cmd => {
+  argv.command(injector.get(cmd))
 })
-
-const ormCommands: any[] = [
-  ...CLIConfigurator.createOrmCommands(() => {
-      return new Promise((resolve, reject) => {
-        const mikro = injector.get(MIKRO_TOKEN)
-          initMikroORM(mikro)
-            .then(_ => {
-              resolve(mikro)
-            })
-            .catch(er => reject(er))
-      })
-  }),
-  ...CLIConfigurator.createConfigCommands(() => injector.get(MIKRO_CONFIG_TOKEN))
-]
-
-ormCommands.forEach(cmd => argv.command(cmd))
+// ormCommands.forEach(cmd => argv.command(cmd))
 
 argv
   //.strict()

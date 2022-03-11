@@ -1,6 +1,6 @@
 import { Migration } from '@mikro-orm/migrations';
 
-export class Migration20210423213940 extends Migration {
+export class Migration20220211232205 extends Migration {
 
   async up(): Promise<void> {
     this.addSql('create table "slack_workspace" ("id" varchar(255) not null, "name" varchar(255) not null, "domain" varchar(255) not null, "slack_data" jsonb null, "access_token" varchar(255) not null);');
@@ -9,39 +9,39 @@ export class Migration20210423213940 extends Migration {
     this.addSql('create table "user" ("id" varchar(255) not null, "name" varchar(500) not null, "workspace_id" varchar(255) not null, "im" varchar(20) null, "access_token" varchar(255) null, "profile" jsonb not null);');
     this.addSql('alter table "user" add constraint "user_pkey" primary key ("id");');
 
-    this.addSql('create table "channel" ("id" varchar(255) not null, "name" varchar(255) not null, "name_normalized" varchar(255) not null, "is_archived" bool not null default false, "is_enabled" bool not null default false, "created_by_id" varchar(255) not null, "workspace_id" varchar(255) not null);');
+    this.addSql('create table "channel" ("id" varchar(255) not null, "name" varchar(255) not null, "name_normalized" varchar(255) not null, "is_archived" boolean not null default false, "is_enabled" boolean not null default false, "created_by_id" varchar(255) not null, "workspace_id" varchar(255) not null);');
     this.addSql('alter table "channel" add constraint "channel_pkey" primary key ("id");');
 
     this.addSql('create table "timezone" ("id" serial primary key, "utc_offset" interval not null, "name" varchar(255) not null);');
 
-    this.addSql('create table "team" ("id" serial primary key, "name" varchar(255) not null, "status" int2 not null, "workspace_id" varchar(255) not null, "duration" int4 not null default 30, "start" varchar(255) not null default \'11:00\', "days" integer[] not null default \'{0,1,2,3,4}\', "timezone_id" int4 not null, "report_channel_id" varchar(255) not null, "created_by_id" varchar(255) not null);');
+    this.addSql('create table "team" ("id" serial primary key, "name" varchar(255) not null, "status" smallint not null, "workspace_id" varchar(255) not null, "duration" int not null default 30, "start" varchar(255) not null default \'11:00\', "schedule_bitmask" bit(7) not null default 31::bit(7), "timezone_id" int not null, "report_channel_id" varchar(255) not null, "created_by_id" varchar(255) not null);');
 
-    this.addSql('create table "question" ("id" serial primary key, "index" int4 not null, "text" varchar(255) not null, "is_enabled" bool not null default true, "created_at" timestamptz(0) not null, "team_id" int4 not null);');
+    this.addSql('create table "question" ("id" serial primary key, "index" int not null, "text" varchar(255) not null, "is_enabled" boolean not null default true, "created_at" timestamptz(0) not null, "team_id" int not null);');
 
-    this.addSql('create table "question_option" ("id" serial primary key, "question_id" int4 not null, "is_enabled" bool not null default true, "text" varchar(255) not null, "index" int4 not null, "updated_at" timestamptz(0) not null, "created_at" timestamptz(0) not null);');
+    this.addSql('create table "question_option" ("id" serial primary key, "question_id" int not null, "is_enabled" boolean not null default true, "text" varchar(255) not null, "index" int not null, "updated_at" timestamptz(0) not null, "created_at" timestamptz(0) not null);');
 
-    this.addSql('create table "team_snapshot" ("id" serial primary key, "origin_team_id" int4 not null, "created_at" timestamptz(0) not null default CURRENT_TIMESTAMP);');
+    this.addSql('create table "team_snapshot" ("id" serial primary key, "origin_team_id" int not null, "created_at" timestamptz(0) not null default CURRENT_TIMESTAMP);');
 
-    this.addSql('create table "standup" ("id" serial primary key, "team_id" int4 not null, "start_at" timestamptz(0) not null, "end_at" timestamptz(0) not null);');
+    this.addSql('create table "standup" ("id" serial primary key, "team_id" int not null, "start_at" timestamptz(0) not null, "end_at" timestamptz(0) not null);');
 
-    this.addSql('create table "user_standup" ("id" serial primary key, "user_id" varchar(255) not null, "standup_id" int4 not null, "created_at" timestamptz(0) not null, "slack_message" jsonb not null);');
+    this.addSql('create table "user_standup" ("id" serial primary key, "user_id" varchar(255) not null, "standup_id" int not null, "created_at" timestamptz(0) not null, "slack_message" jsonb not null);');
 
-    this.addSql('create table "question_snapshot" ("id" serial primary key, "index" int4 not null, "text" varchar(255) not null, "origin_question_id" int4 not null, "team_id" int4 not null);');
+    this.addSql('create table "question_snapshot" ("id" serial primary key, "index" int not null, "text" varchar(255) not null, "origin_question_id" int not null, "team_id" int not null);');
 
-    this.addSql('create table "question_option_snapshot" ("id" serial primary key, "index" int4 not null, "text" varchar(255) not null, "question_id" int4 not null, "origin_option_id" int4 not null);');
+    this.addSql('create table "question_option_snapshot" ("id" serial primary key, "index" int not null, "text" varchar(255) not null, "question_id" int not null, "origin_option_id" int not null);');
 
-    this.addSql('create table "answer_request" ("id" serial primary key, "user_standup_id" int4 not null, "question_id" int4 not null, "answer_message" varchar(255) null, "option_id" int4 null, "created_at" timestamptz(0) not null, "answer_created_at" timestamptz(0) null);');
+    this.addSql('create table "answer_request" ("id" serial primary key, "user_standup_id" int not null, "question_id" int not null, "answer_message" varchar(255) null, "option_id" int null, "created_at" timestamptz(0) not null, "answer_created_at" timestamptz(0) null);');
 
-    this.addSql('create table "user_team_snapshots" ("user_id" varchar(255) not null, "team_snapshot_id" int4 not null);');
+    this.addSql('create table "user_team_snapshots" ("user_id" varchar(255) not null, "team_snapshot_id" int not null);');
     this.addSql('alter table "user_team_snapshots" add constraint "user_team_snapshots_pkey" primary key ("user_id", "team_snapshot_id");');
 
-    this.addSql('create table "team_snapshot_users" ("team_snapshot_id" int4 not null, "user_id" varchar(255) not null);');
+    this.addSql('create table "team_snapshot_users" ("team_snapshot_id" int not null, "user_id" varchar(255) not null);');
     this.addSql('alter table "team_snapshot_users" add constraint "team_snapshot_users_pkey" primary key ("team_snapshot_id", "user_id");');
 
-    this.addSql('create table "user_teams" ("user_id" varchar(255) not null, "team_id" int4 not null);');
+    this.addSql('create table "user_teams" ("user_id" varchar(255) not null, "team_id" int not null);');
     this.addSql('alter table "user_teams" add constraint "user_teams_pkey" primary key ("user_id", "team_id");');
 
-    this.addSql('create table "team_users" ("team_id" int4 not null, "user_id" varchar(255) not null);');
+    this.addSql('create table "team_users" ("team_id" int not null, "user_id" varchar(255) not null);');
     this.addSql('alter table "team_users" add constraint "team_users_pkey" primary key ("team_id", "user_id");');
 
     this.addSql('alter table "user" add constraint "user_workspace_id_foreign" foreign key ("workspace_id") references "slack_workspace" ("id") on update cascade;');

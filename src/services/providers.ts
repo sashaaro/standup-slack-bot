@@ -147,6 +147,7 @@ export const createProviders = (config: IAppConfig, logger: pino.Logger): {provi
           highlighter: config.debug ? new SqlHighlighter() : undefined,
           debug: config.debug ? ['query', 'query-params', 'info'] : false,
           type: 'postgresql',
+          pool: { min: 1, max: 1 },
           allowGlobalContext: true,
           loadStrategy: LoadStrategy.JOINED,
           clientUrl,
@@ -203,7 +204,7 @@ export const createProviders = (config: IAppConfig, logger: pino.Logger): {provi
             logger.info('Closing orm connection...')
             if (isConnected) {
               mikroOrm.close().catch(err => {
-                this.log.error(e, 'Close mikroORM error')
+                logger.error(err, 'Close mikroORM error')
               });
             }
           })
@@ -227,9 +228,6 @@ export const createProviders = (config: IAppConfig, logger: pino.Logger): {provi
   if (config.env !== "prod") {
     commandProviders = [...commandProviders, ...devCommands]
   }
-
-
-  providers = [...providers, ...commandProviders]
 
   return {providers, commands: commandProviders};
 }

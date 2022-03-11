@@ -39,10 +39,8 @@ export const redisReady = (redis: Redis): Promise<void> => {
 }
 
 export class WorkerCommand implements yargs.CommandModule {
-  static meta = {
-    command: 'worker',
-    describe: 'Run queue consumers'
-  }
+  command = 'worker'
+  describe = 'Run queue consumers'
 
   queueHandlers = {
     [QUEUE_NAME_SLACK_EVENTS]: async (job: Job) => {
@@ -79,7 +77,9 @@ export class WorkerCommand implements yargs.CommandModule {
     @Inject(REDIS_TOKEN) private redis: Redis,
     private queueRegistry: QueueRegistry,
     @Inject(TERMINATE) protected terminate$: Observable<void>
-  ) {}
+  ) {
+
+  }
 
   builder(args: yargs.Argv) {
     return args

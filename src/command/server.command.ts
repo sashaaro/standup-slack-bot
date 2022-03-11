@@ -20,23 +20,18 @@ import {PostgreSqlDriver} from "@mikro-orm/postgresql";
 import {initMikroORM} from "../services/utils";
 
 export class ServerCommand implements yargs.CommandModule {
-  static meta: Partial<yargs.CommandModule<any, any>> = {
-    command: 'server:run',
-    describe: 'Run server',
-    builder: ServerCommand.builder
-  };
-
-  private mikroORM: MikroORM<PostgreSqlDriver>
+  command = 'server:run'
+  describe = 'Run server'
 
   constructor(
     private injector: Injector,
-    @Inject(MIKRO_TOKEN) private mikroORM: MikroORM<PostgreSqlDriver>,
+    @Inject(MIKRO_TOKEN) private orm: MikroORM<PostgreSqlDriver>,
     @Inject(REDIS_TOKEN) private redis: Redis,
     @Inject(LOG_TOKEN) protected log: pino.Logger,
     @Inject(TERMINATE) protected terminate$: Observable<void>
   ) {}
 
-  static builder(args: yargs.Argv) {
+  builder(args: yargs.Argv) {
     return args
       .positional("port", {
         alias: "p",
@@ -57,7 +52,7 @@ export class ServerCommand implements yargs.CommandModule {
 
   private async startServer(port?: string|number)
   {
-    await initMikroORM(this.mikroORM)
+    await initMikroORM(this.orm)
 
     try {
       await this.redis.connect();
@@ -75,13 +70,13 @@ export class ServerCommand implements yargs.CommandModule {
 
     const apiMiddleware = new ApiMiddleware(this.injector)
 
-    expressApp.use('/api/slack', apiMiddleware.useSlackApi(this.mikroORM));
+    expressApp.use('/api/slack', apiMiddleware.useSlackApi(this.orm));
     expressApp.use('/api/doc', express.static('./resources/public'));
-    expressApp.use('/api', apiMiddleware.use(this.mikroORM));
+    expressApp.use('/api', apiMiddleware.use(this.orm));
 
     expressApp.get('/health-check', async (request, response) => {
       const redis = this.redis.status === 'connected';
-      const postgres = await this.mikroORM.isConnected()
+      const postgres = await this.orm.isConnected()
 
       response.status(redis && postgres ? 200 : 500);
       response.setHeader('Content-type', 'application/json')
