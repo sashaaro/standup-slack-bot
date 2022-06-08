@@ -1,18 +1,16 @@
 import {
-  ComponentFactoryResolver, ComponentRef,
+  ComponentRef,
   Directive,
   ElementRef, EmbeddedViewRef, Inject, InjectionToken,
-  Injector,
   Input,
   OnInit,
   Renderer2,
   TemplateRef,
   ViewContainerRef
 } from '@angular/core';
-import {Observable, of, Subject} from "rxjs";
+import {isObservable, Observable, of, Subject} from "rxjs";
 import {LoaderComponent} from "./loader/loader.component";
 import {UntilDestroy, untilDestroyed} from "@ngneat/until-destroy";
-import {withLatestFrom} from "rxjs/operators";
 
 const CLASS_LOADER_CONTAINER = 'loader-container'
 
@@ -21,6 +19,7 @@ export const CONTAINER_LOADING = new InjectionToken<Subject<boolean>>('app.conta
 @UntilDestroy()
 @Directive({
   selector: '[appAsync]',
+  standalone: true,
   providers: [
     {
       provide: CONTAINER_LOADING,
@@ -50,8 +49,6 @@ export class AsyncDirective<T> implements OnInit {
     private templateRef: TemplateRef<any>,
     private element: ElementRef<HTMLElement>,
     private render: Renderer2,
-    private resolver: ComponentFactoryResolver,
-    private injector: Injector,
     @Inject(CONTAINER_LOADING) private loadingSubject: Subject<boolean>
   ) {
   }
@@ -64,9 +61,7 @@ export class AsyncDirective<T> implements OnInit {
       this.loading(loading, true)
     })
 
-    this.loader = this.resolver
-      .resolveComponentFactory(LoaderComponent)
-      .create(this.injector);
+    this.loader = this.containerRef.createComponent(LoaderComponent);
     if (this.placeholder) {
       this.placeholderViewRef = this.containerRef.createEmbeddedView(this.loader.instance.placeholderRef);
       this.rootRef = this.placeholderViewRef.rootNodes[0] as HTMLElement;
@@ -76,6 +71,11 @@ export class AsyncDirective<T> implements OnInit {
     }
 
     this.loading(true);
+
+    if (!isObservable(this.stream$)) {
+      throw new Error('AsyncDirective stream$ is not specify')
+    }
+
     this.stream$
       .pipe(untilDestroyed(this))
       .subscribe(context => {

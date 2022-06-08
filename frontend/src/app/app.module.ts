@@ -71,7 +71,6 @@ const scopes = [
     FormatTimezonePipe,
     ContenteditableDirective,
     StandupsComponent,
-    AsyncDirective,
     LoaderComponent,
     StatTeamComponent,
     SettingsComponent,
@@ -99,6 +98,8 @@ const scopes = [
     MatSnackBarModule,
     MatDialogModule,
     MatCheckboxModule,
+
+    AsyncDirective,
   ],
   providers: [
     {
