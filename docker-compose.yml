@@ -1,5 +1,8 @@
 version: "3.7"
 
+volumes:
+  postgres_data: ~
+
 services:
   serve:
     image: node:16.13-alpine
@@ -11,8 +14,11 @@ services:
       - "3001:3000"
       - "9229:9229"
     volumes:
-      - ./..:/opt/app
-    working_dir: /opt/app/standup-slack-bot
+      - .:/opt/app
+    working_dir: /opt/app
+    #volumes:
+    #  - ./..:/opt/app
+    #working_dir: /opt/app/standup-slack-bot
     #depends_on:
     #  - postgres
 

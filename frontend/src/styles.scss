@@ -280,3 +280,6 @@ body, * {
 //@font-face{font-family:'Lato';src:url(https://semantic-ui.com/fonts/lato/Lato-Italic.woff2) format('woff2');font-style:italic;font-weight:normal;}
 //@font-face{font-family:'Lato';src:url(https://semantic-ui.com/fonts/lato/Lato-Bold.woff2) format('woff2');font-style:normal;font-weight:700;}
 //@font-face{font-family:'Lato';src:url(https://semantic-ui.com/fonts/lato/Lato-BoldItalic.woff2) format('woff2');font-style:italic;font-weight:700;}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

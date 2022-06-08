@@ -7,7 +7,7 @@ import {
   SimpleChanges, TemplateRef, ViewChild,
   ViewChildren
 } from '@angular/core';
-import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
+import {AbstractControl, UntypedFormArray, UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {
   ChannelService, Question, StatService,
   Team,
@@ -59,14 +59,14 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   public weekDays = weekDays;
   public weekDayBits = weekDayBits;
 
-  public questionsControl: FormArray = new FormArray([
+  public questionsControl: UntypedFormArray = new UntypedFormArray([
     this.createQuestionControl()
   ]);
-  public usersControl = new FormControl([], [Validators.required, Validators.minLength(1)]);
+  public usersControl = new UntypedFormControl([], [Validators.required, Validators.minLength(1)]);
   public form = this.fb.group({
     name: [null, Validators.required],
-    days: new FormArray(
-      weekDayBits.map((d, index) => new FormControl(index < 5)),
+    days: new UntypedFormArray(
+      weekDayBits.map((d, index) => new UntypedFormControl(index < 5)),
       [
         Validators.required,
         (control) => control.value.filter(v => v).length === 0 ? {required: true} : null
@@ -89,7 +89,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
   @ViewChild('statsDialogRef', {static: true})
   public statsDialog: TemplateRef<any>;
 
-  public searchUserControl = new FormControl(null, {updateOn: "change"});
+  public searchUserControl = new UntypedFormControl(null, {updateOn: "change"});
 
   public submitting = false;
   public users$ = this.userService.getUsers();
@@ -156,7 +156,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
 
   constructor(
     private router: Router,
-    private fb: FormBuilder,
+    private fb: UntypedFormBuilder,
     private userService: UserService,
     private teamService: TeamService,
     private timezoneService: TimezoneService,
@@ -183,7 +183,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       if (this.team) {
         this.team.questions.forEach(q => {
           const questionControl = this.createQuestionControl();
-          const optionsControl = questionControl.get('options') as FormArray;
+          const optionsControl = questionControl.get('options') as UntypedFormArray;
           q.options.forEach(o => optionsControl.push(this.createOptionControl()));
           this.questionsControl.push(questionControl);
         });
@@ -280,11 +280,11 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     control.markAsUntouched();
   }
 
-  drop(control: FormArray, event: CdkDragDrop<User>) {
+  drop(control: UntypedFormArray, event: CdkDragDrop<User>) {
     moveItemInArray(control.controls, event.previousIndex, event.currentIndex);
   }
 
-  addOption(optionsControl: FormArray | any, event: MatChipInputEvent) {
+  addOption(optionsControl: UntypedFormArray | any, event: MatChipInputEvent) {
     const value = event.value.trim();
     if (!value) {
       return;
@@ -320,7 +320,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     teamDTO.questions = this.questionsControl.controls.map((control, index) => ({
       ...control.value,
       index,
-      options: (control.get('options') as FormArray).controls.map((oc, index) => ({...oc.value, index}))
+      options: (control.get('options') as UntypedFormArray).controls.map((oc, index) => ({...oc.value, index}))
     })); // value.questions.map((q, index) => ({...q, index}));
     teamDTO.questions.forEach((q) => q.text = q.text?.trim());
 
@@ -445,10 +445,10 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
     });
   }
 
-  private applyFormErrors(errors: ValidationError[], form: FormGroup | FormArray) {
+  private applyFormErrors(errors: ValidationError[], form: UntypedFormGroup | UntypedFormArray) {
     errors.forEach(error => {
       const prop: any = parseInt(error.property) || error.property;
-      const control = form instanceof FormArray ? form.at(prop) : form.get(prop) as AbstractControl;
+      const control = form instanceof UntypedFormArray ? form.at(prop) : form.get(prop) as AbstractControl;
       if (!control) {
         console.warn('Errors are not assigned to undefined control');
         return;
@@ -460,7 +460,7 @@ export class TeamFormComponent implements OnInit, OnChanges, AfterViewInit {
       }
 
       if (error.children.length > 0) {
-        if (control instanceof FormGroup || control instanceof FormArray) {
+        if (control instanceof UntypedFormGroup || control instanceof UntypedFormArray) {
           this.applyFormErrors(error.children, control);
         } else {
           console.warn('Children errors are not assigned to control');
