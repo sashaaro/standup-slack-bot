@@ -198,8 +198,8 @@ export class TeamController {
     }
 
     await em().createQueryBuilder(Team, 't')
-      .where({id: team.id})
       .update({status: status})
+      .where({id: team.id})
       .execute()
 
     team.status = status;
