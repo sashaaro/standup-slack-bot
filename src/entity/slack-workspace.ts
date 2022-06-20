@@ -2,6 +2,7 @@ import {Collection, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryKey, Proper
 import {User} from "./user";
 import {SlackTeam} from "../slack/model/SlackTeam";
 import {Expose} from "class-transformer";
+import {Team} from "./team";
 
 @Entity()
 class SlackWorkspace {
@@ -16,7 +17,7 @@ class SlackWorkspace {
   domain: string;
 
   @OneToMany(() => User, user => user.workspace)
-  users: User[]
+  users = new Collection<User>(this);
 
   //@OneToMany(type => Team, team => team.workspace)
   //team: Team[]

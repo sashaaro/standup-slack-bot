@@ -10,7 +10,7 @@ import {LogLevel, WebClient} from '@slack/web-api'
 import {SlackBotTransport} from "../slack/slack-bot-transport.service";
 import {createEventAdapter} from "@slack/events-api";
 import IOredis, {Redis} from 'ioredis';
-import {commands, devCommands} from "../command";
+import {commands, dbCommands, devCommands} from "../command";
 import {Observable} from "rxjs";
 import SlackEventAdapter from "@slack/events-api/dist/adapter";
 import {WinstonSlackLoggerAdapter} from "../slack/WinstonSlackLoggerAdapter";
@@ -224,7 +224,7 @@ export const createProviders = (config: IAppConfig, logger: pino.Logger): {provi
     }
   ]
 
-  let commandProviders = [...commands]
+  let commandProviders = [...commands, ...dbCommands]
   if (config.env !== "prod") {
     commandProviders = [...commandProviders, ...devCommands]
   }

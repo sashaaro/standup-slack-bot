@@ -23,27 +23,36 @@ services:
     #  - postgres
 
   postgres:
-    image: postgres:14.0-alpine
+    image: postgres:14.3-alpine
     ports:
       - "5435:5432"
     environment:
       POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:6.2.5-alpine
+    image: redis:7.0.2-alpine
 
-  openapi-generator:
-    image: openapitools/openapi-generator-cli:v5.4.0
-    user: "1000"
-    volumes:
-      - .:/opt/app
-    environment:
-      JAVA_OPTS: >
-        -Dio.swagger.parser.util.RemoteUrl.trustAll=true -Dio.swagger.v3.parser.util.RemoteUrl.trustAll=true
-    command: generate -i http://serve:3000/api/doc/swagger.yaml -g typescript-angular -o /opt/app/frontend/src/api/auto -p modelPropertyNaming=original -p ngVersion11.0.0
-    working_dir: /opt/app
+  #openapi-generator:
+  #  image: openapitools/openapi-generator-cli:v5.4.0
+  #  user: "1000"
+  #  volumes:
+  #    - .:/opt/app
+  #  environment:
+  #    JAVA_OPTS: >
+  #      -Dio.swagger.parser.util.RemoteUrl.trustAll=true -Dio.swagger.v3.parser.util.RemoteUrl.trustAll=true
+  #  command: generate -i http://serve:3000/api/doc/swagger.yaml -g typescript-angular -o /opt/app/frontend/src/api/auto -p modelPropertyNaming=original -p ngVersion11.0.0
+  #  working_dir: /opt/app
 
-  tunnel:
-    image: jpillora/chisel:latest
+  #tunnel:
+  #  image: jpillora/chisel:latest
+  #  network_mode: host
+  #  command: "client botenza.net:8080 R:3000:3000"
+
+  ngrok:
+    image: ngrok/ngrok:alpine
     network_mode: host
-    command: "client botenza.net:8080 R:3000:3000"
+    command: 'http 3001'
+    environment:
+      - NGROK_AUTHTOKEN="5JQkpVKmfEKtnDuiGSznS_tzZ5SqpbpJ9Re3JdHjj5"

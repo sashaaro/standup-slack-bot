@@ -2,6 +2,8 @@ CREATE ROLE standup WITH PASSWORD 'standup_123';
 CREATE DATABASE standup WITH OWNER "standup";
 GRANT ALL PRIVILEGES ON DATABASE standup TO standup;
 ALTER DATABASE standup OWNER TO standup;
+ALTER ROLE standup WITH LOGIN;
+
 
 -- ALTER USER standup WITH PASSWORD 'standup_123';
 CREATE DATABASE grafana;

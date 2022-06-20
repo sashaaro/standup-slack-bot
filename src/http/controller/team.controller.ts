@@ -86,12 +86,12 @@ export class TeamController {
         if (q.options) {
           q.options = q.options.map(o => {
             const qo = new QuestionOption();
-            wrap(qo).assign(o);
+            wrap(qo).assign(o, {em: em()});
             return qo;
           })
         }
-        const qu = new Question()
-        team.questions.add(wrap(qu).assign(q))
+        delete q.id
+        team.questions.add(wrap(new Question()).assign(q, {em: em()}))
       });
 
       team.createdBy = reqContext().user;
