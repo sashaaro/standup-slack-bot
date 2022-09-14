@@ -73,7 +73,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
 
     end$.pipe(
       mergeMap(standups => from(
-        Promise.all( // TODO allStandup
+        Promise.allSettled( // TODO allStandup
           standups.map(standup =>
             this.slackTransport.sendReport(standup).then(msg => standup) // TODO save report msg
           ))
@@ -83,7 +83,7 @@ export class StandupNotifyCommand implements yargs.CommandModule {
     ).subscribe({
       next: standups => {
         // TODO insert to slack message table?!
-        this.log.info({standups: standups.map(s => s.id)}, 'Standups ended and reports were sent');
+        // TODO this.log.info({standups: standups.map(s => s.id)}, 'Standups ended and reports were sent');
       },
       error: error => this.log.error(error, 'Send report error')
     })

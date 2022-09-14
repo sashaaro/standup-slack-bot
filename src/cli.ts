@@ -1,30 +1,13 @@
 #!/usr/bin/env node
 import "reflect-metadata";
 import yargs from "yargs";
-import {ReflectiveInjector} from "injection-js";
-import {createConfFromEnv, createLogger, createProviders} from "./services/providers";
 import {MIKRO_CONFIG_TOKEN, MIKRO_TOKEN, TERMINATE, TERMINATE_HANDLER} from "./services/token";
 import Rollbar from "rollbar";
-import pino from "pino";
-import fs from "fs";
-import dotenv from "dotenv";
 import {CLIConfigurator} from "@mikro-orm/cli";
 import {hideBin} from "yargs/helpers";
 import {initMikroORM} from "./services/utils";
-
-
-// const env = yargs.option('env', {
-//   default: 'dev',
-//   describe: 'Environment'
-// }).argv.env;
-
-const env = 'dev';
-
-if (fs.existsSync(`.env.${env}`)) {
-  dotenv.config({path: `.env.${env}`})
-}
-const config = createConfFromEnv(env);
-const logger: pino.Logger = createLogger(config);
+import {config, injector, logger} from "./services";
+import {commands} from "./command";
 
 const argv: yargs.Argv = yargs(hideBin(process.argv))
   .scriptName('standup-bot')
@@ -55,11 +38,9 @@ const argv: yargs.Argv = yargs(hideBin(process.argv))
 //   process.exit(1)
 // }))
 
-const {providers, commands} = createProviders(config, logger);
 // consider https://github.com/TypedProject/tsed/tree/production/packages/di
-const injector = ReflectiveInjector.resolveAndCreate([...providers, ...commands]);
 
-logger.info({env, debug: config.debug}, `Start`)
+logger.info({env: config.env, debug: config.debug}, `Start`)
 
 injector.get(TERMINATE).subscribe(_ => {
   injector.get(TERMINATE_HANDLER)()
@@ -71,7 +52,7 @@ if (config.rollBarAccessToken) {
     accessToken: config.rollBarAccessToken,
     captureUncaught: true,
     captureUnhandledRejections: true,
-    environment: env//process.argv.join(' ')
+    environment: config.env//process.argv.join(' ')
   });
 }
 

@@ -1,5 +1,5 @@
 import {Injectable} from 'injection-js';
-import {serialize} from "class-transformer";
+import {instanceToPlain} from "class-transformer";
 import {em} from "../../services/providers";
 import Standup from "../../entity/standup";
 import {QueryFlag, QueryOrder} from "@mikro-orm/core";
@@ -48,7 +48,7 @@ export class StandupController {
     res.setHeader('Access-Control-Allow-Headers', 'x-total')
     res.setHeader('Content-Type', 'application/json');
 
-    res.send(serialize(standups, {
+    res.send(instanceToPlain(standups, {
       strategy: 'excludeAll',
       groups: ["view_standups"]
     }))

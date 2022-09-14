@@ -5,17 +5,17 @@
 
 ```bash
 cp .env.dist .env.dev
-docker-compose run --rm -u $(id -u) serve install
-docker-compose run --workdir=/opt/app/frontend --rm -u $(id -u) serve install
+docker compose run --rm -u $(id -u) serve install
+docker compose run --workdir=/opt/app/frontend --rm -u $(id -u) serve install
 
-docker-compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres
+docker compose exec --env=PGPASSWORD=postgres postgres psql -Upostgres
 # see init-postgres.sql
 
 echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 sudo sysctl -w fs.inotify.max_user_watches=524288
 
-docker-compose up -d
-docker-compose exec -u $(id -u) serve sh
+docker compose up -d
+docker compose exec -u $(id -u) serve sh
 ```
 
 Create new migration
@@ -52,12 +52,12 @@ Server
 
 Sync slack data from api
 ```shell
-docker-compose exec serve ./cli.sh slack:sync
+docker compose exec serve ./cli.sh slack:sync
 ```
 
 Generate angular api module
 ```shell
-docker-compose run --rm openapi-generator
+docker compose run --rm openapi-generator
 ```
 
 Run jest tests
@@ -72,7 +72,7 @@ cp .env.dist .env.dev
 Build images
 ```bash
 cp .env.dist .env.prod
-docker-compose -f docker-compose.staging.yml build
+docker compose -f docker-compose.staging.yml build
 ```
 Create db and execute migrations
 ```bash
